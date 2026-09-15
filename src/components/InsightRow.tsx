@@ -33,10 +33,20 @@ export const InsightRow = ({
   record,
   onAddToAnalysis,
   onJumpToSource,
-  reveal
+  reveal,
+  attributes: attributesOverride,
+  onEdit,
+  onRemove
 }: {
   result: InsightResult
   record: BusinessRecord
+  /** Set for an authored insight, whose evidence the key-based lookup in
+   *  attributes.ts cannot resolve. */
+  attributes?: AttributeRow[]
+  /** Set for an authored insight. Built-in rows get neither — they come from
+   *  the catalog and are regenerated on every dev start. */
+  onEdit?: () => void
+  onRemove?: () => void
   /** Offered once an analysis exists, on rows it did not use. */
   onAddToAnalysis?: () => void
   /** Follow an evidence row's source chip to that source's card in Sources.
@@ -67,7 +77,7 @@ export const InsightRow = ({
   }, [reveal])
   const adverse = result.reason === 'should_exist_not_found'
   const isResult = result.state === 'result'
-  const attributes = attributesFor(result.insightId, record)
+  const attributes = attributesOverride ?? attributesFor(result.insightId, record)
 
   // The source's message earns a line only when it says something the statement
   // does not. On a no result the statement often already carries the reason.
@@ -135,6 +145,32 @@ export const InsightRow = ({
             hasSubtext ? 'self-start' : 'self-center'
           ].join(' ')}
         >
+          {onEdit && (
+            <ActionButton
+              aria-label="Edit this insight"
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit()
+              }}
+              size="compact"
+              variant="quiet"
+            >
+              Edit
+            </ActionButton>
+          )}
+          {onRemove && (
+            <ActionButton
+              aria-label="Remove this insight"
+              onClick={(event) => {
+                event.stopPropagation()
+                onRemove()
+              }}
+              size="compact"
+              variant="quiet"
+            >
+              Remove
+            </ActionButton>
+          )}
           {onAddToAnalysis && (
             <ActionButton variant="quiet" size="compact" onClick={onAddToAnalysis}>
               Add to analysis

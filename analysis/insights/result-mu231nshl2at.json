@@ -1,0 +1,11 @@
+{
+  "id": "mu231nshl2at",
+  "compiled": {
+    "attribute": "name",
+    "subject": { "nameType": "legal", "side": "submitted" },
+    "relation": "exact_match",
+    "sources": [{ "id": "sos_registrations", "jurisdictions": ["DOMESTIC"] }],
+    "states": ["exact match", "no exact match"]
+  },
+  "unsupported": []
+}

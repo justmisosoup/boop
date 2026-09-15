@@ -545,7 +545,7 @@ const profileUrl = (refs: SourceRef[] | undefined) =>
     .map((r) => (r.type === 'profile' ? (r.metadata as { url?: string })?.url : undefined))
     .find(Boolean)
 
-const profileName = (type: string) =>
+export const profileName = (type: string) =>
   PROFILE_NAMES[type.toLowerCase()] ?? `${type.charAt(0).toUpperCase()}${type.slice(1)}`
 
 

@@ -6,13 +6,17 @@ import type { AttributeRow } from '../lib/attributes'
 import type { BusinessRecord, Derived, SourceRef } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
+import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
+import { streetViewFor } from '../lib/addressStreetViews'
+import { profileName } from '../lib/attributes'
 import { stateName } from '../lib/states'
+import { useScreenshotViewer } from './ScreenshotViewer'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
  *  the two tabs disagreeing about what a group is called is worse than long. */
 const GROUP_LABEL = new Map(GROUPS.map((g) => [g.id, g.label]))
-import { attributeRowsByGroup, sourceLabel } from './AttributesTab'
+import { WEBSITE_METADATA, attributeRowsByGroup, sourceLabel } from './AttributesTab'
 
 type Registration = BusinessRecord['registrations'][number]
 
@@ -97,6 +101,17 @@ const NOT_SUPPLIED = new Set<GroupId>([
   'sos'
 ])
 
+/**
+ * Google's own card.
+ *
+ * Street View is a source in its own right — a car was at the address and the
+ * frame is what it saw — so it gets a card rather than living inside the
+ * registries that stated the addresses. It supplies nothing the filings
+ * supplied; what it gives is the one thing none of them can, which is a look
+ * at the place.
+ */
+const STREET_VIEW_CARD = 'src:Street View'
+
 /** One source, and everything on the record that came from it. */
 type Source = {
   id: string
@@ -150,7 +165,9 @@ export const sourcesFor = (
     return made
   }
 
-  for (const [group, rows] of attributeRowsByGroup(record, results, groupFor)) {
+  const byGroup = attributeRowsByGroup(record, results, groupFor)
+
+  for (const [group, rows] of byGroup) {
     // Screening groups hold check RESULTS, not record attributes. The names in
     // them are the same names the Name and People groups already supply, so
     // counting them here inflated every source and listed Watchlist, PEP and
@@ -247,6 +264,17 @@ export const sourcesFor = (
     }
   }
 
+  // Every address Google was asked about — including the one it holds nothing
+  // for. A card that silently omits the address with no coverage claims a
+  // completeness it does not have.
+  const looked = [...(byGroup.get('address')?.values() ?? [])].filter((row) =>
+    streetViewFor(row.matchValue ?? row.value)
+  )
+  if (looked.length > 0) {
+    const card = get(STREET_VIEW_CARD, 'Street View')
+    for (const row of looked) add(card.supplied, 'address', { row, role: row.label, bare: true })
+  }
+
   // A filing's registered agent is a person that filing names. Most are also in
   // the record's people[] and resolve on their own; some — Delaware's agent
   // here — appear nowhere else, and leaving them only in the payload put a
@@ -295,11 +323,17 @@ export const sourcesFor = (
   // you nothing except which registry published the most fields.
   const filed = (s: Source) => s.registration?.registrationDate ?? ''
 
+  // Street View sits at the foot of its band. It is the only source here that
+  // is about the addresses rather than the business's own pages, and ordered
+  // by attribute count it outranked the crawl that found the site.
+  const trailing = (s: Source) => (s.id === STREET_VIEW_CARD ? 1 : 0)
+
   return [...byId.values()]
     .map((s) => ({ ...s, band: band(s) }))
     .sort(
     (a, b) =>
       rank(a) - rank(b) ||
+      trailing(a) - trailing(b) ||
       (a.registration && b.registration
         ? filed(a).localeCompare(filed(b))
         : count(b) - count(a)) ||
@@ -463,6 +497,132 @@ const SourceRecords = ({ refs }: { refs: SourceRef[] }) => {
   )
 }
 
+/**
+ * The captures behind a card's pages.
+ *
+ * The hover preview on a chip is a pointer affordance and reaches neither
+ * touch nor a screen reader; this is where the same evidence has a permanent
+ * home — and where five profiles sit side by side rather than one hover at a
+ * time. Thumbnails, because the question here is which pages we hold; each
+ * expands to the page itself.
+ */
+type Capture = { label: string; alt: string; src?: string; capturedAt: string; note?: string }
+
+/** One capture, as a thumbnail that expands. Shared by the page captures and
+ *  the Street View frames — same evidence, same affordance. */
+const CaptureThumb = ({ capture }: { capture: Capture }) => {
+  const { open } = useScreenshotViewer()
+  const { src, alt, label, capturedAt, note } = capture
+
+  const frame = src ? (
+    <img
+      alt={alt}
+      src={src}
+      loading="lazy"
+      // Anchored to the top of the page, not its middle: a page says who it is
+      // at its head, and five centred crops are five bodies of text.
+      className="h-28 w-44 rounded-control border border-solid border-border bg-white object-cover object-top transition-shadow group-hover:shadow-elevation-popover"
+    />
+  ) : (
+    // Nothing to show, said as a tile. Dropped from the strip, the address
+    // would look like one nobody checked.
+    <div className="flex h-28 w-44 items-center justify-center rounded-control border border-dashed border-border px-2 text-center">
+      <MutedText className="text-caption">No imagery</MutedText>
+    </div>
+  )
+
+  if (!src) {
+    return (
+      <div className="grid w-44 gap-1">
+        {frame}
+        <Text size="sm" className="line-clamp-2 font-medium">
+          {label}
+        </Text>
+        <MutedText className="block text-caption">{note ?? ''}</MutedText>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="group grid w-44 gap-1 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={() => open({ src, alt, capturedAt })}
+    >
+      {frame}
+      <Text size="sm" className="line-clamp-2 font-medium">
+        {label}
+      </Text>
+      <MutedText className="block text-caption">{note ?? capturedLabel(capturedAt)}</MutedText>
+    </button>
+  )
+}
+
+const CaptureStrip = ({ captures }: { captures: Capture[] }) => {
+  if (captures.length === 0) return null
+
+  return (
+    <div className="mt-4">
+      <Heading level={4}>{captures.length > 1 ? 'Captures' : 'Capture'}</Heading>
+      <div className="mt-2 flex flex-wrap gap-3">
+        {captures.map((capture) => (
+          <CaptureThumb key={capture.label + (capture.src ?? '')} capture={capture} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const SourceCaptures = ({ items }: { items: Supplied[] }) => {
+  // Off the rows, not the card's `refs`: a profile's ref is typed `profile`
+  // and never matches the brand the card folded it under, so the Web presence
+  // card holds none of them. The row is where the page's own URL survived.
+  const captures = new Map<string, Capture>()
+  for (const item of items) {
+    // Metadata rows carry the site's own URL as a fallback href, so the home
+    // page arrived under "Domain ID" — a registrar fact labelling a capture of
+    // a page that never stated it. Only rows that ARE a page contribute one.
+    if (WEBSITE_METADATA.has(item.row.label)) continue
+
+    const shot = item.row.href ? screenshotFor(item.row.href, '') : undefined
+    if (!shot || captures.has(shot.src)) continue
+
+    captures.set(shot.src, { ...shot, label: item.role ?? item.row.label })
+  }
+
+  return <CaptureStrip captures={[...captures.values()]} />
+}
+
+/**
+ * The frames, one per address Google was asked about.
+ *
+ * Dated by the imagery, not by our reading of it: the strip's job is to show
+ * that a 2015 frame and a 2025 frame are not the same kind of evidence.
+ */
+const StreetViewCaptures = ({ items }: { items: Supplied[] }) => {
+  // One frame per doorway, named by the first address to reach it: the
+  // submitted spelling, not whichever filing wrote a suite number.
+  const captures = new Map<string, Capture>()
+  for (const item of items) {
+    const address = item.row.matchValue ?? item.row.value
+    const frame = streetViewFor(address)
+    if (!frame) continue
+
+    const key = frame.src ?? address
+    if (captures.has(key)) continue
+
+    captures.set(key, {
+      label: address,
+      alt: frame.alt,
+      src: frame.src,
+      capturedAt: frame.capturedAt,
+      note: frame.imageryDate ? `Street View · ${frame.imageryDate}` : 'No coverage'
+    })
+  }
+
+  return <CaptureStrip captures={[...captures.values()]} />
+}
+
 /** Where the filing sits in the registry, rather than what it says. */
 const FilingDetails = ({ r }: { r: Registration }) => (
   <div className="mt-4">
@@ -609,7 +769,8 @@ export const SourcesTab = ({
               <div className="border-t border-solid border-border px-4 py-3">
                 {s.registration && <RegistrationPayload r={s.registration} />}
 
-                {groups.map(([g, rows]) => (
+                {s.id !== STREET_VIEW_CARD &&
+                  groups.map(([g, rows]) => (
                   <div key={g} className="mt-4 first:mt-0">
                     {/* A card supplying one group does not need that group
                         named — the card title already says what this is, and
@@ -644,7 +805,21 @@ export const SourcesTab = ({
                   </div>
                 ))}
 
-                {s.registration ? <FilingDetails r={s.registration} /> : <SourceRecords refs={s.refs} />}
+                {s.registration ? (
+                  <FilingDetails r={s.registration} />
+                ) : s.id === STREET_VIEW_CARD ? (
+                  <StreetViewCaptures items={groups.flatMap(([, rows]) => rows)} />
+                ) : (
+                  <>
+                    {/* Not on Submitted: the customer gave us the URL, and a
+                        capture of the page they named is evidence about the
+                        page, not about their having named it. */}
+                    {s.id !== SUBMITTED_CARD && (
+                      <SourceCaptures items={groups.flatMap(([, rows]) => rows)} />
+                    )}
+                    <SourceRecords refs={s.refs} />
+                  </>
+                )}
               </div>
             )}
           </Surface>

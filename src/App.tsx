@@ -16,6 +16,8 @@ import {
 
 import { AnalysisDock } from './components/AnalysisDock'
 import { AttributesTab, countAttributes } from './components/AttributesTab'
+import { CatalogTab } from './components/CatalogTab'
+import { InsightPrompt } from './components/InsightPrompt'
 import { AnalysisPanel } from './components/AnalysisPanel'
 import { BusinessLede } from './components/BusinessLede'
 import { ScreenshotViewerProvider } from './components/ScreenshotViewer'
@@ -23,8 +25,11 @@ import { SourcesTab, sourcesFor } from './components/SourcesTab'
 import { InsightRow } from './components/InsightRow'
 import records from './data/records.json'
 import { categoriesOf, deriveResults, type BusinessRecord } from './lib/deriveResults'
-import { GROUPS, makeGroupFor } from './lib/groups'
+import { GROUPS, type GroupId, makeGroupFor } from './lib/groups'
 import { useAnalysis } from './lib/useAnalysis'
+import type { AuthoredInsight } from './lib/customInsights'
+import { authoredAttributes } from './lib/deriveAuthored'
+import { useAuthoredInsights } from './lib/useAuthoredInsights'
 
 const ALL = records as unknown as BusinessRecord[]
 
@@ -56,8 +61,19 @@ export default function App() {
     setOpen(false)
   }
 
-  const results = useMemo(() => deriveResults(selected), [selected])
-  const undetermined = results.filter((r) => r.reasonUndetermined).length
+  const authored = useAuthoredInsights(selected)
+  const derived = useMemo(() => deriveResults(selected), [selected])
+  /**
+   * Authored insights are part of the record's insight set, not a sidecar.
+   * `AnalysisRequest.insights` is "EVERY insight on the record — the session
+   * picks from these", so an authored one has to be in this array to be usable
+   * by the assessment at all.
+   */
+  const results = useMemo(
+    () => [...derived, ...authored.results],
+    [derived, authored.results]
+  )
+  const undetermined = derived.filter((r) => r.reasonUndetermined).length
 
   const analysis = useAnalysis(selected, results)
 
@@ -75,13 +91,27 @@ export default function App() {
     () => countAttributes(selected, results, groupFor),
     [selected, results, groupFor]
   )
+  /**
+   * Authored insights are not in the review-task category map, so `groupFor`
+   * would file every one of them under "other". They carry their own group,
+   * set when they were derived, so that wins for them and nothing else.
+   */
+  const authoredById = useMemo(
+    () => new Map((authored.insights ?? []).map((insight) => [insight.id, insight])),
+    [authored.insights]
+  )
+  const groupOf = (result: (typeof results)[number]) =>
+    authoredById.has(result.insightId) ? (result.group as GroupId) : groupFor(result.insightId)
+
   const grouped = GROUPS.map((g) => ({
     ...g,
-    rows: results.filter((r) => groupFor(r.insightId) === g.id)
+    rows: results.filter((r) => groupOf(r) === g.id)
   })).filter((g) => g.rows.length > 0)
   const [dockOpen, setDockOpen] = useState(true)
   const [revealed, setRevealed] = useState<string[]>([])
   const [tab, setTab] = useState('analysis')
+  /** 'new', or the authored insight being edited inline. */
+  const [writingInsight, setWritingInsight] = useState<'new' | AuthoredInsight | null>(null)
 
   // Ids the current answer already used — those rows do not offer "add".
   const used = new Set(analysis.active?.result.used ?? [])
@@ -215,6 +245,9 @@ export default function App() {
               Sources
               <TabsCount>{sourceCount}</TabsCount>
             </TabsTrigger>
+            {/* The catalog is about the insight set itself, not this record, so
+                it sits last — after everything that reads the business. */}
+            <TabsTrigger value="catalog">Catalog</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis" className="space-y-4 pt-4">
@@ -249,6 +282,15 @@ export default function App() {
                         key={r.insightId}
                         result={r}
                         record={selected}
+                        attributes={
+                          authoredById.get(r.insightId)
+                            ? authoredAttributes(
+                                // biome-ignore lint/style/noNonNullAssertion: guarded above
+                                authoredById.get(r.insightId)!,
+                                selected
+                              )
+                            : undefined
+                        }
                         reveal={revealed.includes(r.insightId)}
                         onAddToAnalysis={
                           analysis.active && !used.has(r.insightId) && !analysis.waiting
@@ -256,12 +298,51 @@ export default function App() {
                             : undefined
                         }
                         onJumpToSource={jumpToSource}
+                        onEdit={
+                          authoredById.has(r.insightId)
+                            ? () => {
+                                const insight = authoredById.get(r.insightId)
+                                if (insight) setWritingInsight(insight)
+                              }
+                            : undefined
+                        }
+                        onRemove={
+                          authoredById.has(r.insightId)
+                            ? () => authored.remove(r.insightId)
+                            : undefined
+                        }
                       />
                     ))}
                   </div>
                 </Surface>
               </section>
             ))}
+
+            {/* Authoring sits with the rows, because this tab is what the
+                assessment reads — an insight added anywhere else cannot reach
+                it. Collapsed to a single row until opened, so it does not
+                compete with the insights themselves. */}
+            {writingInsight ? (
+              <InsightPrompt
+                initial={writingInsight === 'new' ? undefined : writingInsight}
+                key={writingInsight === 'new' ? 'new' : writingInsight.id}
+                onCancel={() => setWritingInsight(null)}
+                onSave={async (insight) => {
+                  await authored.save(insight)
+                  setWritingInsight(null)
+                }}
+                record={selected}
+                saving={authored.saving}
+              />
+            ) : (
+              <button
+                className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--core-radius-card)] border border-border border-dashed px-4 py-3 text-left text-[13px] text-[var(--core-color-text-muted)] hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground"
+                onClick={() => setWritingInsight('new')}
+                type="button"
+              >
+                + Add an insight
+              </button>
+            )}
 
             {/* The count gates the CARD, not the sentence inside it. Gating only
                 the text left an empty panel under the last group on every record
@@ -292,6 +373,10 @@ export default function App() {
               groupFor={groupFor}
               focus={sourceFocus}
             />
+          </TabsContent>
+
+          <TabsContent value="catalog" className="space-y-4 pt-4">
+            <CatalogTab record={selected} authored={authored} />
           </TabsContent>
         </TabsRoot>
       </div>
