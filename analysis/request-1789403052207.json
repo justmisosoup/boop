@@ -1,0 +1,51 @@
+{
+  "id": "1789403052207",
+  "requestedAt": "2026-09-14T16:24:12.207Z",
+  "business": {
+    "name": "Kairos Physical Therapy PLLC",
+    "entityType": "LLC",
+    "state": "NY",
+    "formed": "2022-06-13"
+  },
+  "prompt": "I onboard business bank accounts for SMBs. Is this business real and operating, and is there anything here that should stop me approving it?",
+  "insights": [
+    {
+      "statement": "No officer match for submitted person on state registrations",
+      "state": "result",
+      "evidence": [
+        "Submitted: Joshua Gee",
+        "Officers on state registrations: KAIROS PHYSICAL THERAPY PLLC"
+      ]
+    },
+    {
+      "statement": "Good-standing sub-status not published by the state",
+      "state": "no_result",
+      "reason": "not_published",
+      "evidence": [
+        "Registration state: NY"
+      ]
+    },
+    {
+      "statement": "State registration match for submitted business name",
+      "state": "result",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "statement": "The registration is active in the formation state",
+      "state": "result",
+      "evidence": [
+        "Source value: Domestic Active"
+      ]
+    },
+    {
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    }
+  ],
+  "history": []
+}

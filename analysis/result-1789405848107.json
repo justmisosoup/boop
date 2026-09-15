@@ -1,0 +1,56 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name", "entity_type", "sos_active", "sos_match", "sos_domestic", "sos_inactive",
+    "sos_unknown", "sos_domestic_sub_status", "address_verification",
+    "address_deliverability", "address_property_type", "location_frequency:high",
+    "person_verification", "website_status", "website_url_domain_ownership",
+    "web_business_name_verification", "web_address_verification", "web_person_verification",
+    "watchlist", "politically_exposed_persons", "adverse_media", "industry",
+    "liens", "litigations", "bankruptcies", "business_connections"
+  ],
+  "headline": "A real, established Delaware corporation, well corroborated on identity and operations — the open items are liens and litigation, not who this is.",
+  "confirmed": [
+    { "text": "The entity is confirmed on every identity axis available: name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address." },
+    { "text": "It is operating. The address is commercial and deliverable, the website is reachable with the domain registrant corroborating the business at high confidence, and the website independently matches the submitted name and address. Formed 2018 — not newly stood up." },
+    { "text": "A submitted person matches an officer on a state registration. That is the strongest control-person evidence registry data can give, and it is frequently unavailable." },
+    { "text": "Screening is clear across watchlist, PEP, and prohibited industry. No bankruptcy filings." },
+    { "text": "Open liens were found, and litigation records were returned.", "adverse": true },
+    { "text": "Adverse media screening returned hits, which the provider itself scored low." },
+    { "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses." }
+  ],
+  "couldNotConfirm": [
+    {
+      "point": "Whether the Delaware registration is in good standing",
+      "why": "not_published",
+      "wouldAnswer": "Delaware publishes no good-standing sub-status for anyone. A Certificate of Good Standing from the customer is the only route."
+    },
+    {
+      "point": "Registration status in the formation state, and the status of several other registrations",
+      "why": "not_held_or_unreachable",
+      "wouldAnswer": "These returned no status rather than a negative one. Re-running the registration search may clear them."
+    },
+    {
+      "point": "What the liens and litigation actually are",
+      "why": "no_insight_covers_it",
+      "wouldAnswer": "The record establishes that open liens and litigation exist, not their amounts, dates or whether they are satisfied. Ordering the lien and litigation detail is the one thing standing between this file and a decision."
+    },
+    {
+      "point": "Who ultimately owns the business",
+      "why": "no_insight_covers_it",
+      "wouldAnswer": "No beneficial-ownership insight exists in the catalog — ownership is only ever implied from what filings name. A UBO determination cannot be met from this record."
+    }
+  ],
+  "recommendations": {
+    "actions": [
+      "Do not treat identity as the open question. Name, address, entity type, an officer and an independent website all corroborate — this file is stronger on identity than most SMB applications.",
+      "Route on the liens and litigation. Their existence is established; their materiality is not, and nothing else here would delay account opening.",
+      "Read the shared addresses in context: five addresses at 101+ businesses is the ordinary shape of a company using registered agents across multiple states, not a shell pattern."
+    ],
+    "data": [
+      "Order the lien and litigation detail — amounts, dates, and whether satisfied.",
+      "Request a Certificate of Good Standing from the customer if standing is a gating requirement.",
+      "Re-run the registration search to resolve the registrations that returned no status."
+    ]
+  }
+}

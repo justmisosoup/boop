@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "generated_by": "Claude (Opus 5), reading the derived insight results for each record",
+    "generated_at": "2026-09-11",
+    "how": "One pass per record over the insight results — state, value, reason — with no access to the review-task status grades.",
+    "live": "Set ANTHROPIC_API_KEY in prototype/.env.local and run `bun run assess` to regenerate against the live API.",
+    "prompt_used_for_variant": "We onboard business bank accounts for SMBs. Most applicants are sole proprietors and small LLCs. We care most about whether the business is real and operating, and much less about the sophistication of its web presence."
+  },
+  "88997c81": {
+    "score": 71,
+    "default": "A Delaware LLC with active California registration and a verified name. Two registration facts are unresolved rather than negative: Delaware does not publish a good-standing sub-status, and the domestic status came back unknown from the source. The Wilmington address is a registered agent's and is shared with over a hundred businesses — both expected for a Delaware entity, and neither is evidence about the business itself. Related businesses were found, which is worth a look given the shared agent address.",
+    "prompted": "For an SMB account this reads as a real operating business: the name verifies against an active California registration and the address is deliverable. The Delaware registered-agent address and its high sharing count are the normal shape of a Delaware LLC and not something to weigh here. What is left unresolved is Delaware's standing, which the state does not publish — that is a limit of the record, not a gap in the applicant."
+  },
+  "fc367e16": {
+    "score": 74,
+    "default": "A Delaware corporation with an active registration and a verified name, operating from a San Francisco office with four further addresses on file. Registration status is mixed across states — active in some, inactive in others, unresolved in the rest — which for a multi-state corporation is ordinary housekeeping rather than a signal on its own. Delaware publishes no good-standing sub-status, so that question has no answer available."
+  },
+  "f9e61338": {
+    "score": 62,
+    "default": "A long-established Delaware corporation with an active registration and a verified name. Two things warrant attention and they are different in kind: watchlist screening returned hits, which is a finding that needs resolving against the entity's own attributes; and registration status is partially inactive and partially unresolved across states. The registered-agent address shared with many businesses is expected for an entity of this shape and is not evidence."
+  },
+  "2c356f2e": {
+    "score": 58,
+    "default": "A New York PLLC, actively registered, with a reachable website and a corroborating domain registrant. The business name on the website does not match the submitted name — a genuine mismatch, not an absence, and the clearest thing to resolve here. A submitted person could not be matched to any officer record. New York does not publish a good-standing sub-status, so that is unavailable rather than missing."
+  },
+  "8568c10f": {
+    "score": 44,
+    "default": "No registration was found in any state searched, and with no formation record the entity type cannot be established. That means the name and address could not be verified against anything — an absence of material to check, not a contradiction. Screening returned nothing across watchlist, litigation and lien records. The question this record raises is what kind of business this is; until that is answered, most of what is missing cannot be read either way."
+  },
+  "57726109": {
+    "score": 51,
+    "default": "A California LLC whose registration is inactive in the formation state and inactive in the submitted address state. That is a result, not a gap, and it is the substantive finding here. The submitted name is a close rather than exact match to the registration, and the address could not be verified against a registration. Screening returned nothing."
+  },
+  "dedf1a31": {
+    "score": 68,
+    "default": "A long-registered New York LLC, active and name-verified, operating from a deliverable commercial address shared with few other businesses. Related businesses were found. New York does not publish a good-standing sub-status. One of the people on the record is itself a company, which is where ownership resolution would continue."
+  },
+  "e9e37b6c": {
+    "score": 41,
+    "default": "No registration found in any state searched and no formation record, so neither the name nor the address could be verified against anything. The sole address is a registered agent's and is shared with over a hundred businesses; for an entity with no registration behind it, that combination is the thing to look at rather than either fact alone. Screening returned nothing."
+  },
+  "9ee2e53d": {
+    "score": 55,
+    "default": "A California corporation whose registration is inactive in the formation state, with a verified name and a verified officer. Liens were found and adverse media screening returned hits scored low by the provider — both are results to resolve, not absences. The address is commercial, deliverable and shared with few businesses."
+  },
+  "29325585": {
+    "score": 63,
+    "default": "An active California LLC in good standing — the one record here where the state publishes a sub-status and it is affirmative. The name and address both verify. Watchlist screening returned hits, which is the finding to resolve; related businesses were also found."
+  },
+  "3e2fec7a": {
+    "score": 72,
+    "default": "A recently formed California LLC, active and in good standing, with a verified name and address. The address is residential and shared with few other businesses. Screening returned nothing and no related businesses were found.",
+    "prompted": "This is close to the cleanest shape an SMB application takes: active, in good standing, name and address verified, nothing returned by screening. The residential address is unremarkable for a business of this size and age and carries no weight here."
+  },
+  "9ce25ef8": {
+    "score": 47,
+    "default": "A Florida corporation whose registration is inactive in both the formation state and the submitted address state — the substantive finding, and a result rather than a gap. The name and a residential Florida address verify. A second address is outside the United States and has no structured fields, so deliverability and property type could not run against it. Florida does not publish a good-standing sub-status."
+  }
+}

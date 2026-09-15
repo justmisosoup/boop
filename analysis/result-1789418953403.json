@@ -1,0 +1,55 @@
+{
+  "headline": "Clean file with one thing to clear: the practice trades as Kairos Physio without a matching DBA filing, and control rests on the website rather than the registry.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "Two things are open against the policy: the unregistered trading name in Business identity, and control evidence that Ownership can only take as far as a website match, because New York publishes no members for a PLLC. Neither is adverse — screening is clean and the entity is active — but both are name-and-control checks a KYB policy usually gates on, and the steps below close them with the customer rather than with an order.",
+        "cites": [
+          "dba_name",
+          "person_verification"
+        ]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Ask the customer for the assumed-name filing for \"Kairos Physio\", or confirm they trade only under the legal name.",
+      "cites": [
+        "dba_name"
+      ]
+    },
+    {
+      "text": "Establish who owns the practice from the customer directly — New York publishes no members for a PLLC, so no order reaches it, and the control person named on the website is not necessarily an owner.",
+      "cites": [
+        "person_verification",
+        "web_person_verification"
+      ],
+      "closes": [
+        "ownership"
+      ]
+    },
+    {
+      "text": "Verify the control person against a document rather than the website.",
+      "cites": [
+        "person_verification",
+        "web_person_verification"
+      ]
+    },
+    {
+      "text": "Decide whether professional licensure needs checking separately; this record does not cover it.",
+      "cites": [
+        "industry"
+      ]
+    },
+    {
+      "text": "If good standing is gating, request the certificate — New York publishes no sub-status.",
+      "cites": [
+        "sos_domestic_sub_status"
+      ],
+      "closes": [
+        "good_standing"
+      ]
+    }
+  ]
+}

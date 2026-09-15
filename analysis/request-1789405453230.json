@@ -1,0 +1,221 @@
+{
+  "id": "1789405453230",
+  "requestedAt": "2026-09-14T17:04:13.230Z",
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "kind": "question",
+  "prompt": "is this an operating business",
+  "insights": [
+    {
+      "id": "litigations",
+      "statement": "litigations returned “Found” — not yet mapped to an insight",
+      "state": "result",
+      "because": "The business has 10 related litigations",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "Related businesses share officers, agents or addresses",
+      "state": "result",
+      "because": "17 connections found",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "liens",
+      "statement": "Liens found",
+      "state": "result",
+      "because": "We found 1 Lien(s)",
+      "evidence": [
+        "Source value: Liens Found"
+      ]
+    },
+    {
+      "id": "location_frequency:high",
+      "statement": "5 addresses shared with 101 or more businesses",
+      "state": "result",
+      "evidence": [
+        "56 Broad St Ste 14028, Boston, MA 02109-4301 — 1001 businesses at this location",
+        "10020 W Fairview Ave Ste 104, Boise, ID 83704-8570 — 10001 businesses at this location",
+        "14 Scenic Dr, Dayton, NJ 08810-1495 — 1001 businesses at this location",
+        "2035 Sunset Lake Rd, Newark, DE 19702-2600 — 10001 businesses at this location",
+        "524 S 2nd St Ste 505, Springfield, IL 62701-1749 — 1001 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:moderate",
+      "statement": "2 addresses shared with 21–100 businesses",
+      "state": "result",
+      "evidence": [
+        "85 2nd St, San Francisco, CA 94105-3459 — 21 businesses at this location",
+        "85 2nd St Ste 710, San Francisco, CA 94105-3465 — 21 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "3 addresses shared with 1–20 businesses",
+      "state": "result",
+      "evidence": [
+        "1818 11th St Ste 101, Sacramento, CA 95811-6515 — 2 businesses at this location",
+        "2101 Bryant St, San Francisco, CA 94110-2138 — 2 businesses at this location",
+        "82ND S — 1 businesses at this location"
+      ]
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "Inactive in some states, active in others",
+      "state": "result",
+      "because": "1 of 5 filings are Inactive",
+      "evidence": [
+        "Source value: Partially Inactive"
+      ]
+    },
+    {
+      "id": "sos_unknown",
+      "statement": "Status of some registrations could not be resolved",
+      "state": "unknown",
+      "because": "2 of 5 filings have no status provided",
+      "evidence": [
+        "Source value: Partially Unknown"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Good-standing sub-status not published by the state",
+      "state": "no_result",
+      "reason": "not_published",
+      "because": "The domestic sub-status is Not Provided by State.",
+      "evidence": [
+        "Registration state: DE"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Registration status in the formation state could not be resolved",
+      "state": "unknown",
+      "because": "No domestic filing status provided",
+      "evidence": [
+        "Source value: Domestic Unknown"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "State registration match for business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_verification",
+      "statement": "State registration match for submitted address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "Address is deliverable",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "Address is a commercial property",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Officer match for submitted person on state registrations",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "Registration active in the submitted address state",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "Active registration in at least one state",
+      "state": "result",
+      "because": "2 of 5 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "adverse_media",
+      "statement": "Adverse media screening returned hits, scored low by the provider",
+      "state": "result",
+      "because": "No adverse media was found",
+      "evidence": [
+        "Source value: Low risk"
+      ]
+    },
+    {
+      "id": "bankruptcies",
+      "statement": "No bankruptcy filings found",
+      "state": "result",
+      "because": "The business has no bankruptcy filings",
+      "evidence": [
+        "Source value: None Found"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type confirmed against a registration",
+      "state": "result",
+      "because": "Entity type is a CORPORATION",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "PEP screening returned no hits",
+      "state": "result",
+      "because": "There were no hits on submitted individuals or their relatives and close associates",
+      "evidence": [
+        "Source value: No hits"
+      ]
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": []
+}

@@ -1,0 +1,77 @@
+{
+  "id": "1789403506407",
+  "requestedAt": "2026-09-14T16:31:46.407Z",
+  "business": {
+    "name": "Kairos Physical Therapy PLLC",
+    "entityType": "LLC",
+    "state": "NY",
+    "formed": "2022-06-13"
+  },
+  "prompt": "What about now\n",
+  "insights": [
+    {
+      "statement": "DBA filing match not found for submitted DBA name",
+      "state": "result",
+      "evidence": [
+        "Submitted DBA: Kairos Physio"
+      ]
+    },
+    {
+      "statement": "No officer match for submitted person on state registrations",
+      "state": "result",
+      "evidence": [
+        "Submitted: Joshua Gee",
+        "Officers on state registrations: KAIROS PHYSICAL THERAPY PLLC"
+      ]
+    },
+    {
+      "statement": "Related businesses share officers, agents or addresses with this business",
+      "state": "result",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "statement": "1 address is moderate frequency",
+      "state": "result",
+      "evidence": [
+        "801 Madison Ave Fl 3, New York, NY 10065-5930 — 21 businesses at this location"
+      ]
+    },
+    {
+      "statement": "Good-standing sub-status not published by the state",
+      "state": "no_result",
+      "reason": "not_published",
+      "evidence": [
+        "Registration state: NY"
+      ]
+    },
+    {
+      "statement": "State registration match for submitted business name",
+      "state": "result",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "statement": "The registration is active in the formation state",
+      "state": "result",
+      "evidence": [
+        "Source value: Domestic Active"
+      ]
+    },
+    {
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    }
+  ],
+  "history": [
+    {
+      "prompt": "I onboard business bank accounts for SMBs. Is this business real and operating, and is there anything here that should stop me approving it?",
+      "answer": "Yes — this reads as a real, operating business, and nothing in the selected insights is a reason to stop.\n\nThe substantive positives: the submitted name matches a New York registration, that registration is active in the formation state, and watchlist screening came back with no hits. For an SMB account that is the core of what you need — a legally existing entity, currently in good order, not on a list.\n\nTwo things look like gaps but are not findings against the business. New York does not publish a good-standing sub-status at all, so that question has no answer available anywhere — it tells you nothing about this applicant. And the officer check found no match for Joshua Gee because the only officer New York publishes on this filing is the PLLC itself, listed for service of process. That is how the state files professional LLCs; it is not evidence that Joshua Gee is unconnected to the business, only that the registry has nothing to compare him against.\n\nThe one thing worth noting rather than acting on: you have no independent confirmation of who controls this entity. The officer check could not supply it, and nothing else you selected speaks to it. If your policy needs a named control person verified, that is the gap to close — through a document or a person-level check — not something these insights can answer either way."
+    }
+  ]
+}

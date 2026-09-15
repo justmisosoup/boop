@@ -1,0 +1,126 @@
+{
+  "id": "1789419194052",
+  "requestedAt": "2026-09-14T20:53:14.052Z",
+  "businessId": "c6b6bbef-0f2d-4d27-8d4c-f0d96e666f7b",
+  "business": {
+    "name": "Charm Coffee LLC",
+    "entityType": "LLC",
+    "state": "CA",
+    "formed": "2022-02-24"
+  },
+  "kind": "report",
+  "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+  "insights": [
+    {
+      "id": "address_verification",
+      "statement": "No state registration match for submitted address",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted Office Address",
+      "evidence": [
+        "Registrations on file: 1"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "State registration match for business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "Address is deliverable",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "Address is a commercial property",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "2 addresses shared with 1–20 businesses",
+      "state": "result",
+      "evidence": [
+        "1939 Ocean Ave, San Francisco, CA 94127-2721 — 1 businesses at this location",
+        "7980 Linda Vista Rd Apt 46, San Diego, CA 92111-5159 — 1 businesses at this location"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "Registration active in the submitted address state",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "Active registration in at least one state",
+      "state": "result",
+      "because": "1 of 1 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Registration in good standing",
+      "state": "result",
+      "because": "The domestic registration is in Good Standing.",
+      "evidence": [
+        "Source value: Good Standing"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Registration active in the formation state",
+      "state": "result",
+      "because": "Active domestic filing found",
+      "evidence": [
+        "Source value: Domestic Active"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type confirmed against a registration",
+      "state": "result",
+      "because": "Entity type is a LLC",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "No related businesses found",
+      "state": "result",
+      "because": "No connections found",
+      "evidence": [
+        "Source value: Not Found"
+      ]
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": []
+}

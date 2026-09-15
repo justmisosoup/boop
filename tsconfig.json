@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": false,
+    "declaration": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noImplicitAny": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "noFallthroughCasesInSwitch": true,
+    "types": [
+      "vite/client"
+    ],
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "strictNullChecks": true
+  },
+  "include": [
+    "src"
+  ]
+}

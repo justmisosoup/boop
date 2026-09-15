@@ -1,0 +1,62 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "sos_active",
+    "sos_domestic",
+    "sos_match",
+    "address_verification",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:moderate",
+    "website_status",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_person_verification",
+    "website_url_domain_ownership",
+    "watchlist",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies",
+    "dba_name",
+    "person_verification",
+    "sos_domestic_sub_status",
+    "beneficial_ownership_check"
+  ],
+  "headline": "Yes — this is a real, operating New York practice with unusually good corroboration, and nothing here should stop an SMB account approval.",
+  "confirmed": [
+    { "text": "The submitted name and address both match an active New York registration, and that registration is active in both the formation state and the submitted address state." },
+    { "text": "The website is reachable and independently corroborates the business on three axes — name, address and person — with the domain registrant matching at high confidence. For an SMB applicant that is stronger third-party corroboration than most files carry." },
+    { "text": "The submitted address is commercial, deliverable, and shared with 21–100 other businesses, which is ordinary for a clinical suite at a Manhattan medical address." },
+    { "text": "Screening is clean across watchlist, liens, litigation and bankruptcy. Adverse media returned hits that the provider itself scored low." },
+    { "text": "No DBA filing was found matching the submitted DBA \"Kairos Physio\". New York does support DBA filings, so this is an established absence rather than a coverage gap — the trading name is in use without a registered fictitious-name filing behind it.", "adverse": true }
+  ],
+  "couldNotConfirm": [
+    {
+      "point": "Whether the registration is in good standing",
+      "why": "not_published",
+      "wouldAnswer": "New York publishes no good-standing sub-status for anyone, so no order will produce it. A Certificate of Good Standing requested from the customer is the only route."
+    },
+    {
+      "point": "That Joshua Gee is an officer or control person of the entity",
+      "why": "not_published",
+      "wouldAnswer": "The only officer New York publishes on a professional LLC filing is the PLLC itself, for service of process. He does appear on the business's own website, which is corroboration but not a registry record."
+    },
+    {
+      "point": "Who ultimately owns or benefits from the business",
+      "why": "no_insight_covers_it",
+      "wouldAnswer": "No beneficial-ownership insight exists in the catalog — ownership is only ever implied from what filings name. If your policy requires a UBO determination, it cannot be met from this record."
+    }
+  ],
+  "recommendations": {
+    "actions": [
+      "Approve on identity and operating evidence. The file is stronger than a typical SMB application, and the two things missing are both New York's limits rather than the applicant's.",
+      "If policy requires a named control person, accept the website corroboration or ask for a signed certification — the registry will not supply it for a PLLC."
+    ],
+    "data": [
+      "Ask the customer for the DBA registration for \"Kairos Physio\" if they trade under it, or drop the DBA from the application.",
+      "Request a Certificate of Good Standing directly from the customer if standing is a gating requirement."
+    ]
+  }
+}

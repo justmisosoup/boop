@@ -1,0 +1,173 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "formation_state",
+    "sos_active",
+    "sos_match",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "dba_name",
+    "person_verification",
+    "web_person_verification",
+    "address_deliverability",
+    "address_property_type",
+    "website_status",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "web_phone_number_verification",
+    "website_url_discovery",
+    "location_frequency:moderate",
+    "location_frequency:low",
+    "business_connections",
+    "profile_discovery",
+    "profile_status",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "industry",
+    "risky_keywords",
+    "liens",
+    "litigations",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Kairos Physio is a one-to-one orthopaedic physical therapy and strength training practice on Madison Avenue in Manhattan's Upper East Side, treating patients directly rather than through referral volume. Sessions are delivered by Doctors of Physical Therapy on a concierge model — no aides, no double-booking — alongside assessment services such as dynamometry and body-composition analysis. Revenue is patient fees for treatment and training.",
+          "sources": [
+            {
+              "title": "kairosphysio.com — practice website",
+              "url": "https://kairosphysio.com"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "The registered entity is established and current. The submitted name and address both match state registrations, entity type is confirmed against a filing, and the PLLC is active in its formation state and in the state of its submitted address — which for a single-location clinic are the same state, so there is no multi-state picture to reconcile.",
+          "cites": [
+            "name",
+            "address_verification",
+            "entity_type",
+            "formation_state",
+            "sos_active",
+            "sos_match",
+            "sos_domestic"
+          ]
+        },
+        {
+          "text": "The trading name is where the record parts from the filings. The practice operates publicly as Kairos Physio — it is the domain, the branding and the name a patient would recognise — but no DBA filing matching it was found. New York does register assumed names for a PLLC, so this is an established absence rather than a coverage gap: the business is trading under a name it has not registered. For a three-year-old practice this is ordinary administrative drift rather than concealment, and it is still a name mismatch a reviewer has to clear.",
+          "cites": [
+            "dba_name",
+            "name"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "good_standing",
+          "point": "Whether the PLLC is in good standing in New York",
+          "why": "not_published",
+          "wouldAnswer": "The state does not publish a good-standing sub-status, so no order returns one. A Certificate of Good Standing from the customer is the only route.",
+          "cites": [
+            "sos_domestic_sub_status"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "Control cannot be established from the filings. No officer match was found for the submitted person on state registrations — New York does not publish members or managers for a PLLC, so there is nothing on the registry side to match against. The submitted person is corroborated by the practice website instead, which names them in a form the check could read. That is weaker evidence than a filing, and for this entity type it is the best the record can do.",
+          "cites": [
+            "person_verification",
+            "web_person_verification"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "ownership",
+          "point": "Who owns the practice",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "No beneficial-ownership insight exists in the catalog, and unlike a corporation there are no officer filings to imply it from. A licensed PLLC must be owned by licensed practitioners, which narrows it but does not answer it; only the customer or a licence check can."
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "The practice is plainly operating. The address is commercial and deliverable, the website is reachable, and the domain registrant corroborates the business at high confidence. The site independently matches the submitted name, address, email address and phone number — four agreements, and for a business this size the website is the operating footprint rather than a marketing surface.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "website_status",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "web_phone_number_verification"
+          ]
+        },
+        {
+          "text": "The address footprint is small and unremarkable: one address shared with 21–100 businesses — a Madison Avenue medical building, which is what a suite in a shared clinical address looks like — and two shared with twenty or fewer. There is no registered-agent sprawl here because there is nothing to sprawl across.",
+          "cites": [
+            "location_frequency:moderate",
+            "location_frequency:low",
+            "business_connections"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "profile_reachable",
+          "point": "Whether the third-party profile is live",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The reachability check ran and reached no conclusion. The profile was supplied by the customer in any case, so it corroborates little the website does not already carry.",
+          "cites": [
+            "profile_status",
+            "profile_discovery"
+          ],
+          "noAction": "the profile was customer-supplied and the website already carries what it would corroborate."
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Screening is clean across the board. Watchlist and PEP returned no hits, no prohibited industry or risky keywords were identified, and there are no liens, no litigation records and no bankruptcy filings. Adverse media returned hits the provider scored low — worth a glance, no more.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons",
+            "industry",
+            "risky_keywords",
+            "liens",
+            "litigations",
+            "bankruptcies",
+            "adverse_media"
+          ]
+        },
+        {
+          "text": "Nothing on this record points at the business. Healthcare practices carry their own licensing exposure — a PLLC exists precisely because the work is licensed — but professional licensure is not something this record checks, so its absence here is not reassurance either way.",
+          "cites": [
+            "industry",
+            "entity_type"
+          ]
+        }
+      ]
+    }
+  ]
+}

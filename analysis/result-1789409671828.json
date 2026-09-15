@@ -1,0 +1,61 @@
+{
+  "headline": "Middesk Inc clears identity and operating comfortably for SMB account opening. The decision rests on open liens and litigation, which this record establishes exist but cannot size.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "Two things are open against the policy: the unsized liens in Compliance, and the beneficial-ownership determination in Ownership that this record cannot produce at any price. The steps below close the file — the first is an order, the second a decision about what the policy will accept, and nothing else is blocking.",
+        "cites": [
+          "liens",
+          "person_verification"
+        ]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Order the lien and litigation detail — amounts, dates, and whether satisfied.",
+      "cites": [
+        "liens",
+        "litigations"
+      ],
+      "closes": [
+        "lien_detail"
+      ]
+    },
+    {
+      "text": "Settle whether the policy's beneficial-ownership requirement can be waived; no order will answer it.",
+      "closes": [
+        "ownership"
+      ]
+    },
+    {
+      "text": "Treat identity as closed and route the review on the liens alone.",
+      "cites": [
+        "name",
+        "person_verification",
+        "website_url_domain_ownership"
+      ]
+    },
+    {
+      "text": "If good standing is gating, ask the customer for the certificate — Delaware publishes no sub-status.",
+      "cites": [
+        "sos_domestic_sub_status"
+      ],
+      "closes": [
+        "good_standing",
+        "standing_and_unresolved"
+      ]
+    },
+    {
+      "text": "Re-run the registration search to clear the filings that returned no status, if your risk tier needs it.",
+      "cites": [
+        "sos_domestic",
+        "sos_unknown"
+      ],
+      "closes": [
+        "unresolved_registrations"
+      ]
+    }
+  ]
+}

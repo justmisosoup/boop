@@ -1,0 +1,46 @@
+/* Core foundations only.
+ *
+ * NOTHING from the app's legacy stylesheet (src/index.css) belongs here — no
+ * global `*` reset, no raw hex, no legacy button rules. Every value resolves
+ * from a `--core-*` token, and those are scoped to `.core-theme`.
+ */
+@import './core/theme.css';
+
+/* Font faces. The files are loaded here; the family name comes from the core
+   token `--core-font-family-display`, never a hand-written stack. */
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('./fonts/SuisseIntl-Regular.otf');
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  font-weight: 600;
+  src: url('./fonts/SuisseIntl-SemiBold.otf');
+}
+
+@font-face {
+  font-family: 'Suisse Intl Mono';
+  src: url('./fonts/SuisseIntl-Mono.ttf');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* Canvas only. Typography is NOT set here — @/core carries the font on its own
+   primitives (`font-suisse` in the cva variants, `.core-action`, `.core-badge`).
+   Every text node in this prototype must be a core primitive; if something
+   renders in a fallback face, the fix is to use the primitive, not to paint a
+   font rule over the top. */
+.core-theme {
+  background-color: var(--core-color-surface-canvas);
+  color: var(--core-color-text-primary);
+}

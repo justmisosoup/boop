@@ -1,0 +1,674 @@
+[
+  {
+    "fixture": "F1",
+    "synthetic": true,
+    "label": "Residential cleaner, sole proprietor, no registration",
+    "stresses": "Almost nothing to find. Tests whether absence is read correctly, and whether an Unknown entity type flows through without blocking the assessment.\n",
+    "submitted": {
+      "name": "Marisol Vega Home Cleaning",
+      "address": {
+        "addressLine1": "2417 Fernwood Ave",
+        "city": "Fresno",
+        "state": "CA",
+        "postalCode": 93726
+      },
+      "people": [
+        {
+          "name": "Marisol Vega"
+        }
+      ],
+      "tin": null,
+      "phone": "+15592840173",
+      "email": "marisol@vegahomecleaning.com",
+      "website": null
+    },
+    "found": {
+      "name": "Marisol Vega Home Cleaning",
+      "status": "in_review",
+      "externalId": null,
+      "formation": null,
+      "names": [
+        {
+          "name": "Marisol Vega Home Cleaning",
+          "type": "submitted",
+          "sources": []
+        }
+      ],
+      "addresses": [
+        {
+          "addressLine1": "2417 Fernwood Ave",
+          "city": "Fresno",
+          "state": "CA",
+          "postalCode": 93726,
+          "fullAddress": "2417 Fernwood Ave, Fresno, CA 93726-4412",
+          "latitude": 36.79521,
+          "longitude": -119.78412,
+          "labels": [],
+          "sources": [
+            {
+              "type": "submitted"
+            },
+            {
+              "type": "usps"
+            }
+          ],
+          "propertyType": "residential",
+          "deliverability": "deliverable",
+          "locationFrequencyBand": "low"
+        }
+      ],
+      "people": [],
+      "registrations": [],
+      "tin": null
+    },
+    "acquisition": [
+      {
+        "source": "sos_registrations",
+        "attempted": true,
+        "jurisdictions": [
+          "CA"
+        ],
+        "returned": "empty",
+        "note": "searched CA by submitted name; no registration matched"
+      },
+      {
+        "source": "dba_registration",
+        "attempted": false,
+        "why": "opt-in package not ordered"
+      },
+      {
+        "source": "usps",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "website",
+        "attempted": true,
+        "returned": "empty",
+        "note": "no website submitted and none discovered"
+      },
+      {
+        "source": "profile",
+        "attempted": false,
+        "why": "opt-in package not ordered"
+      },
+      {
+        "source": "tin",
+        "attempted": false,
+        "why": "no TIN submitted"
+      },
+      {
+        "source": "watchlist",
+        "attempted": true,
+        "returned": "empty"
+      }
+    ],
+    "traces": [
+      "Entity type has no registration to resolve from. The name-only sole-prop model (doc 01) is opt-in and not ordered here, so entity type is genuinely unresolvable — the case plans/05-context.md traces. Whether that surfaces as Unknown or as no_result / not_required depends on derived applicant context, not on this file (decisions/004).\n",
+      "A residential address is what a sole-proprietor cleaner should have. The record carries propertyType: residential as a fact; nothing here says it is a concern.\n"
+    ]
+  },
+  {
+    "fixture": "F2",
+    "synthetic": true,
+    "label": "Venture-backed C corporation, Delaware-formed, operating elsewhere",
+    "stresses": "The state publishes no officers. Tests the difference between \"not published\" and \"should exist, not found\" — the two reasons an analyst must never confuse.\n",
+    "submitted": {
+      "name": "Northwind Robotics, Inc.",
+      "address": {
+        "addressLine1": "1120 Dexter Ave N Ste 400",
+        "city": "Seattle",
+        "state": "WA",
+        "postalCode": 98109
+      },
+      "people": [
+        {
+          "name": "Priya Raghunathan"
+        },
+        {
+          "name": "Daniel Okonkwo"
+        }
+      ],
+      "tin": "88-4417203",
+      "website": "https://northwindrobotics.example"
+    },
+    "found": {
+      "name": "Northwind Robotics, Inc.",
+      "status": "in_review",
+      "externalId": null,
+      "formation": {
+        "date": "2021-04-19",
+        "entityType": "CORPORATION",
+        "state": "DE"
+      },
+      "names": [
+        {
+          "name": "Northwind Robotics, Inc.",
+          "type": "legal",
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ]
+        }
+      ],
+      "addresses": [
+        {
+          "addressLine1": "1120 Dexter Ave N Ste 400",
+          "city": "Seattle",
+          "state": "WA",
+          "postalCode": 98109,
+          "fullAddress": "1120 Dexter Ave N Ste 400, Seattle, WA 98109-3547",
+          "latitude": 47.62881,
+          "longitude": -122.34217,
+          "labels": [],
+          "sources": [
+            {
+              "type": "submitted"
+            },
+            {
+              "type": "registration"
+            },
+            {
+              "type": "usps"
+            }
+          ],
+          "propertyType": "commercial",
+          "deliverability": "deliverable",
+          "locationFrequencyBand": "moderate"
+        },
+        {
+          "addressLine1": "251 Little Falls Dr",
+          "city": "Wilmington",
+          "state": "DE",
+          "postalCode": 19808,
+          "fullAddress": "251 Little Falls Dr, Wilmington, DE 19808-1674",
+          "latitude": 39.74129,
+          "longitude": -75.67341,
+          "labels": [
+            "registered_agent"
+          ],
+          "sources": [
+            {
+              "type": "registration"
+            },
+            {
+              "type": "usps"
+            }
+          ],
+          "propertyType": "commercial",
+          "deliverability": "deliverable",
+          "locationFrequencyBand": "high"
+        }
+      ],
+      "people": [],
+      "registrations": [
+        {
+          "name": "NORTHWIND ROBOTICS, INC.",
+          "state": "DE",
+          "status": "unknown",
+          "subStatus": null,
+          "jurisdiction": "domestic",
+          "registrationDate": "2021-04-19",
+          "officers": [],
+          "registeredAgent": "Delaware Corporate Services LLC"
+        },
+        {
+          "name": "Northwind Robotics, Inc.",
+          "state": "WA",
+          "status": "active",
+          "subStatus": "GOOD_STANDING",
+          "jurisdiction": "foreign",
+          "registrationDate": "2021-06-02",
+          "officers": [
+            {
+              "name": "Priya Raghunathan",
+              "titles": [
+                "CHIEF EXECUTIVE OFFICER"
+              ]
+            },
+            {
+              "name": "Daniel Okonkwo",
+              "titles": [
+                "CHIEF TECHNOLOGY OFFICER"
+              ]
+            }
+          ],
+          "registeredAgent": "Evergreen Agent Services Inc"
+        }
+      ],
+      "tin": "88-4417203"
+    },
+    "acquisition": [
+      {
+        "source": "sos_registrations",
+        "attempted": true,
+        "jurisdictions": [
+          "DE",
+          "WA"
+        ],
+        "returned": "partial",
+        "note": "DE returned a registration with an empty officers array and no sub-status. WA returned a registration with officers and titles.\n"
+      },
+      {
+        "source": "usps",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "website",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "tin",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "watchlist",
+        "attempted": true,
+        "returned": "empty"
+      },
+      {
+        "source": "adverse_media",
+        "attempted": true,
+        "returned": "empty"
+      }
+    ],
+    "traces": [
+      "DE officers: the array is empty and DE is in the documented no-officers set. The insight returns no result, and the reason resolves from catalog/coverage.yaml as not_published — a limit of the state, not a finding. Nothing in this file authors either.\n",
+      "The same insight over WA returns officers and titles from the same record. This is the contrast plans/03-assessment.md requires, drawn from coverage data rather than from a fifth fixture.\n",
+      "DE registration status is `unknown` — OBSERVED as real API behaviour on a Delaware registration. Distinct from the officers case: the registration was found, the standing was not published.\n",
+      "The registered-agent address in DE is high frequency and labelled registered_agent. Both are facts. For a Delaware C corp they are ordinary.\n"
+    ]
+  },
+  {
+    "fixture": "F3",
+    "synthetic": true,
+    "label": "Single-property real-estate LLC",
+    "stresses": "A record that is almost entirely empty by design. No website, no employees, no reviews — all structurally absent. Tests the failure where absence reads as risk.\n",
+    "submitted": {
+      "name": "Cedar Ridge Holdings LLC",
+      "address": {
+        "addressLine1": "4820 Mesquite Bend Rd",
+        "city": "Round Rock",
+        "state": "TX",
+        "postalCode": 78665
+      },
+      "people": [
+        {
+          "name": "Alan Petrosyan"
+        }
+      ],
+      "tin": "47-2290183",
+      "website": null,
+      "phone": null
+    },
+    "found": {
+      "name": "Cedar Ridge Holdings LLC",
+      "status": "in_review",
+      "externalId": null,
+      "formation": {
+        "date": "2016-11-08",
+        "entityType": "LLC",
+        "state": "TX"
+      },
+      "names": [
+        {
+          "name": "CEDAR RIDGE HOLDINGS LLC",
+          "type": "legal",
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ]
+        }
+      ],
+      "addresses": [
+        {
+          "addressLine1": "4820 Mesquite Bend Rd",
+          "city": "Round Rock",
+          "state": "TX",
+          "postalCode": 78665,
+          "fullAddress": "4820 Mesquite Bend Rd, Round Rock, TX 78665-2231",
+          "latitude": 30.54417,
+          "longitude": -97.62238,
+          "labels": [],
+          "sources": [
+            {
+              "type": "submitted"
+            },
+            {
+              "type": "registration"
+            },
+            {
+              "type": "usps"
+            }
+          ],
+          "propertyType": "residential",
+          "deliverability": "deliverable",
+          "locationFrequencyBand": "low"
+        }
+      ],
+      "people": [
+        {
+          "name": "Alan Petrosyan",
+          "titles": [],
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ]
+        }
+      ],
+      "registrations": [
+        {
+          "name": "CEDAR RIDGE HOLDINGS LLC",
+          "state": "TX",
+          "status": "active",
+          "subStatus": "GOOD_STANDING",
+          "jurisdiction": "domestic",
+          "registrationDate": "2016-11-08",
+          "officers": [
+            {
+              "name": "Alan Petrosyan",
+              "titles": []
+            }
+          ],
+          "registeredAgent": "Alan Petrosyan"
+        }
+      ],
+      "tin": "47-2290183"
+    },
+    "acquisition": [
+      {
+        "source": "sos_registrations",
+        "attempted": true,
+        "jurisdictions": [
+          "TX"
+        ],
+        "returned": "data",
+        "note": "TX returns the registered agent as an \"officer\" and publishes no titles (doc 01). The officers array is populated; titles are empty.\n"
+      },
+      {
+        "source": "usps",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "website",
+        "attempted": true,
+        "returned": "empty",
+        "note": "no website submitted, none discovered"
+      },
+      {
+        "source": "profile",
+        "attempted": true,
+        "returned": "empty",
+        "note": "no Google/Yelp/LinkedIn profile discovered"
+      },
+      {
+        "source": "phone_risk",
+        "attempted": false,
+        "why": "no phone submitted"
+      },
+      {
+        "source": "tin",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "watchlist",
+        "attempted": true,
+        "returned": "empty"
+      },
+      {
+        "source": "litigations",
+        "attempted": true,
+        "returned": "empty"
+      },
+      {
+        "source": "liens",
+        "attempted": true,
+        "returned": "empty"
+      }
+    ],
+    "traces": [
+      "A single-property holding LLC has no website, no staff and no reviews because of what it is, not because something is missing. Every one of those is a no_result whose reason comes from derived applicant context, not coverage.\n",
+      "Officer titles are empty and TX is in the documented names-only set. The registered agent appearing as the sole officer is TX behaviour (doc 01), not a nominee pattern — the sort of thing a naive read gets wrong.\n",
+      "The address is residential, and for a property-holding entity run from home that is ordinary. Same fact as F1, different business, and neither is a finding.\n"
+    ],
+    "variants": {
+      "declared_for": "prefill only",
+      "why": "Prefill demonstrates ambiguity, and four distinct businesses cannot show a ranked candidate list (plans/04-search.md). These are variants of F3, never additional businesses, and nothing outside prefill may treat them as such.\n",
+      "records": [
+        {
+          "name": "Cedar Ridge Holdings LLC",
+          "state": "AZ",
+          "formationDate": "2019-03-22",
+          "entityType": "LLC",
+          "city": "Mesa",
+          "status": "active",
+          "relationship": "unrelated — same name, different state"
+        },
+        {
+          "name": "Cedar Ridge Holdings, L.L.C.",
+          "state": "FL",
+          "formationDate": "2011-07-14",
+          "entityType": "LLC",
+          "city": "Sarasota",
+          "status": "inactive",
+          "relationship": "unrelated — punctuation variant, different state"
+        },
+        {
+          "name": "Cedar Ridge Holding Company",
+          "state": "TX",
+          "formationDate": "2004-01-30",
+          "entityType": "CORPORATION",
+          "city": "Dallas",
+          "status": "active",
+          "relationship": "unrelated — similar name, same state as F3"
+        }
+      ]
+    }
+  },
+  {
+    "fixture": "F4",
+    "synthetic": true,
+    "label": "US subsidiary of a foreign parent",
+    "stresses": "The ownership chain leaves reachable data. Tests how far resolution goes and how it reports where it stopped.\n",
+    "submitted": {
+      "name": "Trellis Analytics US, Inc.",
+      "address": {
+        "addressLine1": "411 W 14th St Fl 3",
+        "city": "New York",
+        "state": "NY",
+        "postalCode": 10014
+      },
+      "people": [
+        {
+          "name": "Johanna Reiter"
+        }
+      ],
+      "tin": "93-1120584",
+      "website": "https://trellisanalytics.example"
+    },
+    "found": {
+      "name": "Trellis Analytics US, Inc.",
+      "status": "in_review",
+      "externalId": null,
+      "formation": {
+        "date": "2019-09-17",
+        "entityType": "CORPORATION",
+        "state": "DE"
+      },
+      "names": [
+        {
+          "name": "TRELLIS ANALYTICS US, INC.",
+          "type": "legal",
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ]
+        }
+      ],
+      "addresses": [
+        {
+          "addressLine1": "411 W 14th St Fl 3",
+          "city": "New York",
+          "state": "NY",
+          "postalCode": 10014,
+          "fullAddress": "411 W 14th St Fl 3, New York, NY 10014-1088",
+          "latitude": 40.74117,
+          "longitude": -74.00648,
+          "labels": [],
+          "sources": [
+            {
+              "type": "submitted"
+            },
+            {
+              "type": "registration"
+            },
+            {
+              "type": "usps"
+            }
+          ],
+          "propertyType": "commercial",
+          "deliverability": "deliverable",
+          "locationFrequencyBand": "high"
+        },
+        {
+          "addressLine1": null,
+          "city": null,
+          "state": null,
+          "postalCode": null,
+          "fullAddress": "WIDENMAYERSTRASSE 14, 80538 MUNCHEN, GERMANY",
+          "latitude": 48.14412,
+          "longitude": 11.59218,
+          "labels": [],
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ],
+          "propertyType": null,
+          "deliverability": null,
+          "locationFrequencyBand": null,
+          "note": "Foreign address — structured fields null, fullAddress populated. OBSERVED as real API behaviour on a Canadian address.\n"
+        }
+      ],
+      "people": [
+        {
+          "name": "Johanna Reiter",
+          "titles": [
+            "DIRECTOR"
+          ],
+          "sources": [
+            {
+              "type": "registration"
+            }
+          ]
+        }
+      ],
+      "registrations": [
+        {
+          "name": "TRELLIS ANALYTICS US, INC.",
+          "state": "DE",
+          "status": "unknown",
+          "subStatus": null,
+          "jurisdiction": "domestic",
+          "registrationDate": "2019-09-17",
+          "officers": [],
+          "registeredAgent": "Delaware Corporate Services LLC"
+        },
+        {
+          "name": "Trellis Analytics US, Inc.",
+          "state": "NY",
+          "status": "active",
+          "subStatus": "GOOD_STANDING",
+          "jurisdiction": "foreign",
+          "registrationDate": "2019-11-04",
+          "officers": [
+            {
+              "name": "Johanna Reiter",
+              "titles": [
+                "DIRECTOR"
+              ]
+            },
+            {
+              "name": "Trellis Analytics GmbH",
+              "titles": [
+                "SHAREHOLDER"
+              ]
+            }
+          ],
+          "registeredAgent": "Empire State Agents LLC"
+        }
+      ],
+      "connections": [
+        {
+          "relatedName": "Trellis Analytics GmbH",
+          "connectionType": "EntityAsPerson",
+          "basis": "listed as shareholder on the NY registration",
+          "resolvedTo": null
+        }
+      ],
+      "tin": "93-1120584"
+    },
+    "acquisition": [
+      {
+        "source": "sos_registrations",
+        "attempted": true,
+        "jurisdictions": [
+          "DE",
+          "NY"
+        ],
+        "returned": "partial",
+        "note": "DE returned an empty officers array; NY returned officers with titles"
+      },
+      {
+        "source": "global_registrations",
+        "attempted": true,
+        "jurisdictions": [
+          "DE-country"
+        ],
+        "returned": "empty",
+        "note": "German commercial register not held. The parent exists and is named on the NY filing; no record of it was retrieved.\n"
+      },
+      {
+        "source": "connections",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "usps",
+        "attempted": true,
+        "returned": "partial",
+        "note": "US address resolved; foreign address not processable by USPS"
+      },
+      {
+        "source": "website",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "tin",
+        "attempted": true,
+        "returned": "data"
+      },
+      {
+        "source": "watchlist",
+        "attempted": true,
+        "returned": "empty"
+      }
+    ],
+    "traces": [
+      "Resolution stops at Trellis Analytics GmbH. The chain is known to continue — a named entity with no retrieved record — and the honest report is where it stopped and why, which is a limit of our holdings rather than of the German register. That is the not_held_or_unreachable case decisions/004 made expressible as a standing gap.\n",
+      "Contrast with DE officers on the same record, which is not_published. One record carrying both non-adverse reasons, distinguishable only by where each resolves from.\n",
+      "The foreign address has null structured fields. Per-field coverage is not theoretical here — deliverability and property type cannot run against it, while the US address resolves normally.\n",
+      "No UBO data exists (doc 08). Ownership is implied from what the filings name, never confirmed. The assessment must not present the chain as ownership resolved.\n"
+    ]
+  }
+]

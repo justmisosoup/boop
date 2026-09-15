@@ -1,0 +1,1375 @@
+/*
+ * Scoped core theme tokens — light and dark.
+ *
+ * Wrap a subtree with class="core-theme" to activate these variables.
+ * Add data-theme="dark" on the same element for dark mode.
+ *
+ * This is a scoped themeability proof, NOT full-app dark mode.
+ */
+
+.core-theme {
+  --tw-ring-offset-color: var(--core-color-focus-offset);
+  /* Compatibility aliases from the first scoped-token proof. */
+  --core-color-bg-primary: #ffffff;
+  --core-color-bg-secondary: #f9fafb;
+  --core-color-bg-surface: #ecf0f4;
+
+  /* Motion — shared duration + easing scale for transitions/animations.
+     Mode-independent; consumed via Tailwind `duration-*` / `ease-*` aliases
+     (see tailwind.config.js) so chrome and app animations stay consistent. */
+  --core-duration-fast: 120ms;
+  --core-duration-standard: 200ms;
+  --core-duration-slow: 320ms;
+  --core-duration-slower: 500ms;
+  --core-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --core-ease-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Layering — the z-index ladder for chrome and overlays. Mode-independent.
+     nav (app chrome rails) < floating (corner-anchored non-modal panels) <
+     overlay (dialogs/drawers) < popover (menus/tooltips, topmost). Consumed
+     via Tailwind `z-nav` / `z-floating` / `z-overlay` / `z-popover`; existing
+     primitives' arbitrary z values migrate onto these separately. */
+  --core-z-nav: 1000;
+  --core-z-floating: 1050;
+  --core-z-overlay: 1100;
+  --core-z-popover: 1200;
+
+  /* Surface */
+  --core-color-surface-canvas: #f9fafb;
+  --core-color-surface-default: #ffffff;
+  --core-color-surface-card: #ffffff;
+  --core-color-surface-raised: #ffffff;
+  --core-color-surface-subtle: #ecf0f4;
+  --core-color-surface-inset: #f4f6f8;
+  --core-color-surface-inverse: #0b3139;
+  --core-color-surface-popover: #ffffff;
+  --core-color-surface-modal: #ffffff;
+  /* Recessed "well" behind a raised tile (segmented-control track, sunken panels). */
+  --core-color-surface-sunken: #ecf0f4;
+
+  /* Text */
+  --core-color-text-primary: #333333;
+  --core-color-text-secondary: #5f6874;
+  --core-color-text-muted: #566b70;
+  --core-color-text-disabled: #9dadb0;
+  --core-color-text-inverse: #ffffff;
+  --core-color-text-link: #2563eb;
+  --core-color-text-on-action: #ffffff;
+  --core-color-text-on-status: #333333;
+  --core-color-text-danger: #cd2523;
+  --core-color-text-success: #097f3d;
+  --core-color-text-warning: #c4440e;
+
+  /* Border / divider */
+  --core-color-border-subtle: #ecf0f4;
+  --core-color-border-default: #d9e0e8;
+  --core-color-border-strong: #bdc2c9;
+  --core-color-border-bold: #77818f;
+  --core-color-border-muted: #ecf0f4;
+  --core-color-border-divider: #ecf0f4;
+  --core-color-border-inverse: #56726f;
+
+  /* Interactive compatibility */
+  --core-color-interactive-default: #3c5a61;
+  --core-color-interactive-hover: #6d8388;
+  --core-color-interactive-active: #0b3139;
+  --core-color-interactive-disabled: #9dadb0;
+
+  /* Interaction state specimens */
+  --core-color-state-default-bg: #ffffff;
+  --core-color-state-hover-bg: #f9fafb;
+  --core-color-state-active-bg: #ecf0f4;
+  --core-color-state-selected-bg: #ecf0f4;
+  --core-color-state-selected-fg: #0b3139;
+  --core-color-state-selected-border: #3c5a61;
+  --core-color-state-disabled-bg: #ecf0f4;
+  --core-color-state-disabled-fg: #9dadb0;
+  --core-color-state-invalid-bg: #fce6e6;
+  --core-color-state-invalid-fg: #cd2523;
+  --core-color-state-invalid-border: #f4b7b6;
+  --core-color-state-loading-bg: #f4f6f8;
+
+  /* Washed metadata chips (chat citations, thinking step chips): a tinted
+     rest that DEEPENS on hover. state-hover-bg brightens — correct for
+     white/transparent rests, backwards on an already-filled chip. Consumed
+     via bg-[var(…)] like the avatar tints; no mapped utility. */
+  --core-color-chip-bg: #eef2f6;
+  --core-color-chip-hover-bg: #e2e9ef;
+
+  /* Skeleton */
+  --core-color-skeleton-bg: #ecf0f4;
+  --core-color-skeleton-shimmer: #f9fafb;
+  --core-color-skeleton-border: #d9e0e8;
+  --core-shadow-badge-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --core-shadow-count-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* Focus */
+  --core-color-focus-ring: #3c5a61;
+  --core-color-focus-offset: #ffffff;
+  --core-color-focus-control: #3c5a61;
+  --core-color-focus-destructive: #cd2523;
+
+  /* Actions */
+  --core-color-action-primary-bg: #3c5a61;
+  --core-color-action-primary-fg: #ffffff;
+  --core-color-action-primary-border: #3c5a61;
+  --core-color-action-primary-hover-bg: #6d8388;
+  --core-color-action-primary-active-bg: #0b3139;
+  --core-color-action-primary-disabled-bg: #9dadb0;
+  --core-color-action-primary-disabled-fg: #ffffff;
+
+  --core-color-action-secondary-bg: #ffffff;
+  --core-color-action-secondary-fg: #333333;
+  --core-color-action-secondary-border: #d9e0e8;
+  --core-color-action-secondary-hover-bg: #f4f6f8;
+  --core-color-action-secondary-active-bg: #ecf0f4;
+  --core-color-action-secondary-disabled-bg: #ecf0f4;
+  --core-color-action-secondary-disabled-fg: #9dadb0;
+
+  --core-color-action-quiet-bg: transparent;
+  --core-color-action-quiet-fg: #3c5a61;
+  --core-color-action-quiet-border: transparent;
+  --core-color-action-quiet-hover-bg: #ecf0f4;
+  --core-color-action-quiet-active-bg: #d9e0e8;
+  --core-color-action-quiet-disabled-bg: transparent;
+  --core-color-action-quiet-disabled-fg: #9dadb0;
+
+  --core-color-action-destructive-bg: #cd2523;
+  --core-color-action-destructive-fg: #ffffff;
+  --core-color-action-destructive-border: #cd2523;
+  --core-color-action-destructive-hover-bg: #a91f1d;
+  --core-color-action-destructive-active-bg: #861918;
+  --core-color-action-destructive-disabled-bg: #fce6e6;
+  --core-color-action-destructive-disabled-fg: #9dadb0;
+
+  /* Controls / forms */
+  --core-color-control-bg: #ffffff;
+  --core-color-control-fg: #333333;
+  --core-color-control-placeholder: #77818f;
+  --core-color-control-border: #d9e0e8;
+  --core-color-control-border-hover: #bdc2c9;
+  --core-color-control-border-focus: #3c5a61;
+  --core-color-control-disabled-bg: #ecf0f4;
+  --core-color-control-disabled-fg: #9dadb0;
+  --core-color-control-error-fg: #cd2523;
+  --core-color-control-error-border: #cd2523;
+  --core-color-control-error-bg: #fce6e6;
+  --core-color-control-helper-text: #5f6874;
+
+  /* Switch / toggle */
+  /* Midnight 300 (graded ramp): the lightest system value that clears 3:1
+     against white surfaces and the white thumb (WCAG AA 1.4.11) — the canvas
+     margin is thin (3.03), so don't go lighter. */
+  --core-color-switch-track-off: #819499;
+  /* Midnight 700 from the graded midnight ramp. */
+  --core-color-switch-track-on: #325159;
+  /* Slate 100. */
+  --core-color-switch-track-disabled: #f1f5f9;
+  /* Midnight 100 from the graded midnight ramp: a teal tint that still hints
+     "on" while sitting clearly in the disabled register, a full ramp level
+     below the midnight-300 off track. WCAG-exempt (SC 1.4.11). */
+  --core-color-switch-track-on-disabled: #cfd7d8;
+  --core-color-switch-invalid-ring: #cd2523;
+  --core-color-switch-thumb: #ffffff;
+
+  /* Tables / lists */
+  --core-color-table-header-bg: #f9fafb;
+  --core-color-table-header-text: #5f6874;
+  --core-color-table-row-bg: #ffffff;
+  --core-color-table-row-hover-bg: #eef1f5;
+  --core-color-table-row-stripe-bg: #f6f8fa;
+  --core-color-table-row-selected-bg: #e2e8f0;
+  --core-color-table-action-hover-bg: #d9e0e8;
+  --core-color-table-cell-text: #333333;
+  --core-color-table-border: #d9e0e8;
+  --core-color-table-divider: #ecf0f4;
+  --core-color-list-item-bg: #ffffff;
+  --core-color-list-item-hover-bg: #f9fafb;
+  --core-color-list-item-selected-bg: #ecf0f4;
+  --core-color-list-border: #d9e0e8;
+
+  /* Navigation */
+  --core-color-nav-bg: #f9fafb;
+  --core-color-nav-border: #d9e0e8;
+  --core-color-nav-item-text: #333333;
+  --core-color-nav-item-muted: #5f6874;
+  --core-color-nav-item-hover-bg: #eef1f5;
+  --core-color-nav-item-active-bg: #e3e9ef;
+  --core-color-nav-item-active-text: #0b3139;
+  --core-color-tab-fg: #5f6874;
+  --core-color-tab-fg-active: #0b3139;
+  --core-color-tab-indicator: #0b3139;
+  --core-color-tab-hover-indicator: #c4ced3;
+  --core-color-tab-track: #d9e0e8;
+
+  /* Overlay and elevation */
+  /* Neutral black scrim — keeps the dimmed surface tint-free and consistent
+     with the dark theme, which also uses a neutral-black backdrop. */
+  --core-color-overlay-backdrop: rgba(0, 0, 0, 0.4);
+  --core-color-overlay-scrim: rgba(0, 0, 0, 0.16);
+  --core-color-overlay-modal-bg: #ffffff;
+  --core-color-overlay-popover-bg: #ffffff;
+  --core-color-overlay-tooltip-bg: #0b3139;
+  --core-color-overlay-tooltip-text: #ffffff;
+  --core-color-elevation-card: 0 1px 2px rgba(11, 49, 57, 0.05);
+  /* Soft lift for a small raised control tile (segmented-control active segment). */
+  --core-color-elevation-control: 0 1px 3px rgba(11, 49, 57, 0.12),
+    0 1px 2px rgba(11, 49, 57, 0.06);
+  --core-color-elevation-raised: 0 10px 24px rgba(11, 49, 57, 0.1), 0 2px 6px rgba(11, 49, 57, 0.06);
+  --core-color-elevation-popover: 0 16px 32px rgba(11, 49, 57, 0.12);
+  --core-color-elevation-modal: 0 24px 56px rgba(11, 49, 57, 0.18);
+  --core-color-elevation-drawer: -12px 0 32px rgba(11, 49, 57, 0.16);
+
+  /* Status */
+  --core-color-status-success: #097f3d;
+  --core-color-status-success-light: #e2f7e6;
+  --core-color-status-success-bg: #e2f7e6;
+  --core-color-status-success-fg: #097f3d;
+  --core-color-status-success-border: #b7e8c1;
+  --core-color-status-warning: #c4440e;
+  --core-color-status-warning-light: #fcf1e4;
+  --core-color-status-warning-bg: #fcf1e4;
+  --core-color-status-warning-fg: #c4440e;
+  --core-color-status-warning-border: #f1c99f;
+  --core-color-status-error: #cd2523;
+  --core-color-status-error-light: #fce6e6;
+  --core-color-status-danger-bg: #fce6e6;
+  --core-color-status-danger-fg: #cd2523;
+  --core-color-status-danger-border: #f4b7b6;
+  --core-color-status-info: #0637ff;
+  --core-color-status-info-light: #dde4ff;
+  --core-color-status-info-bg: #dde4ff;
+  --core-color-status-info-fg: #0637ff;
+  --core-color-status-info-border: #b8c5ff;
+  --core-color-status-neutral-bg: #ecf0f4;
+  --core-color-status-neutral-fg: #5f6874;
+  --core-color-status-neutral-border: #d9e0e8;
+
+  /* Avatar — decorative identity tints, picked deterministically from a name.
+     Soft, muted pairs: bg is a low-saturation fill; fg is a same-family text/icon
+     color tuned for legibility on it. Ten hues spread around the wheel for variety. */
+  --core-color-avatar-1-bg: #f7ece9;
+  --core-color-avatar-1-fg: #9e564a;
+  --core-color-avatar-2-bg: #f8eedf;
+  --core-color-avatar-2-fg: #936031;
+  --core-color-avatar-3-bg: #f4f0da;
+  --core-color-avatar-3-fg: #74632a;
+  --core-color-avatar-4-bg: #e7f1e2;
+  --core-color-avatar-4-fg: #4a6e3a;
+  --core-color-avatar-5-bg: #e1f1ee;
+  --core-color-avatar-5-fg: #356f64;
+  --core-color-avatar-6-bg: #e4eff6;
+  --core-color-avatar-6-fg: #3c6d8e;
+  --core-color-avatar-7-bg: #e9edfa;
+  --core-color-avatar-7-fg: #435d9c;
+  --core-color-avatar-8-bg: #edebf9;
+  --core-color-avatar-8-fg: #564c9b;
+  --core-color-avatar-9-bg: #f1eafa;
+  --core-color-avatar-9-fg: #6d4f9b;
+  --core-color-avatar-10-bg: #f7ecf1;
+  --core-color-avatar-10-fg: #95526f;
+
+  /* Risk / materiality */
+  --core-color-risk-none-bg: #ecf0f4;
+  --core-color-risk-none-fg: #5f6874;
+  --core-color-risk-none-border: #d9e0e8;
+  --core-color-risk-low-bg: #e2f7e6;
+  --core-color-risk-low-fg: #097f3d;
+  --core-color-risk-low-border: #b7e8c1;
+  --core-color-risk-moderate-bg: #fcf1e4;
+  --core-color-risk-moderate-fg: #c4440e;
+  --core-color-risk-moderate-border: #f1c99f;
+  --core-color-risk-high-bg: #fce6e6;
+  --core-color-risk-high-fg: #cd2523;
+  --core-color-risk-high-border: #f4b7b6;
+  --core-color-risk-critical-bg: #cd2523;
+  --core-color-risk-critical-fg: #ffffff;
+  --core-color-risk-critical-border: #cd2523;
+  --core-color-risk-unknown-bg: #ecf0f4;
+  --core-color-risk-unknown-fg: #5f6874;
+  --core-color-risk-unknown-border: #d9e0e8;
+
+  /* Workflow */
+  --core-color-workflow-draft-bg: #ecf0f4;
+  --core-color-workflow-draft-fg: #5f6874;
+  --core-color-workflow-draft-border: #d9e0e8;
+  --core-color-workflow-preview-bg: #dde4ff;
+  --core-color-workflow-preview-fg: #0637ff;
+  --core-color-workflow-preview-border: #b8c5ff;
+  --core-color-workflow-queued-bg: #fff9c7;
+  --core-color-workflow-queued-fg: #5f6874;
+  --core-color-workflow-queued-border: #f7e559;
+  --core-color-workflow-processing-bg: #fcf1e4;
+  --core-color-workflow-processing-fg: #c4440e;
+  --core-color-workflow-processing-border: #f1c99f;
+  --core-color-workflow-pending-bg: #fcf1e4;
+  --core-color-workflow-pending-fg: #c4440e;
+  --core-color-workflow-pending-border: #f1c99f;
+  --core-color-workflow-complete-bg: #e2f7e6;
+  --core-color-workflow-complete-fg: #097f3d;
+  --core-color-workflow-complete-border: #b7e8c1;
+  --core-color-workflow-submitted-bg: #c9e4e4;
+  --core-color-workflow-submitted-fg: #243636;
+  --core-color-workflow-submitted-border: #aab8b7;
+  --core-color-workflow-disabled-bg: #ecf0f4;
+  --core-color-workflow-disabled-fg: #9dadb0;
+  --core-color-workflow-disabled-border: #d9e0e8;
+  --core-color-workflow-failed-bg: #fce6e6;
+  --core-color-workflow-failed-fg: #cd2523;
+  --core-color-workflow-failed-border: #f4b7b6;
+
+  /* Outcome / verification sentiment */
+  --core-color-outcome-positive-bg: #c9e4e4;
+  --core-color-outcome-positive-fg: #243636;
+  --core-color-outcome-positive-border: #aab8b7;
+  --core-color-outcome-negative-bg: #fcf1e4;
+  --core-color-outcome-negative-fg: #c4440e;
+  --core-color-outcome-negative-border: #f1c99f;
+  --core-color-outcome-neutral-bg: #ecf0f4;
+  --core-color-outcome-neutral-fg: #5f6874;
+  --core-color-outcome-neutral-border: #d9e0e8;
+
+  /* Confidence and evidence stay neutral by default. */
+  --core-color-confidence-high-bg: #ffffff;
+  --core-color-confidence-high-fg: #333333;
+  --core-color-confidence-high-border: #d9e0e8;
+  --core-color-confidence-medium-bg: #ffffff;
+  --core-color-confidence-medium-fg: #333333;
+  --core-color-confidence-medium-border: #d9e0e8;
+  --core-color-confidence-low-bg: #ffffff;
+  --core-color-confidence-low-fg: #333333;
+  --core-color-confidence-low-border: #d9e0e8;
+  --core-color-confidence-unavailable-bg: #ecf0f4;
+  --core-color-confidence-unavailable-fg: #5f6874;
+  --core-color-confidence-unavailable-border: #d9e0e8;
+  --core-color-evidence-strong-bg: #ffffff;
+  --core-color-evidence-strong-fg: #333333;
+  --core-color-evidence-strong-border: #d9e0e8;
+  --core-color-evidence-moderate-bg: #ffffff;
+  --core-color-evidence-moderate-fg: #333333;
+  --core-color-evidence-moderate-border: #d9e0e8;
+  --core-color-evidence-weak-bg: #ffffff;
+  --core-color-evidence-weak-fg: #333333;
+  --core-color-evidence-weak-border: #d9e0e8;
+  --core-color-evidence-unavailable-bg: #ecf0f4;
+  --core-color-evidence-unavailable-fg: #5f6874;
+  --core-color-evidence-unavailable-border: #d9e0e8;
+
+  /* Brand */
+  --core-color-brand-primary: #56726f;
+  --core-color-brand-accent: #a8ff1c;
+  /* Text/icon color ON the accent; theme-invariant like the accent itself
+     (the lime never flips, so neither can its on-color). */
+  --core-color-brand-on-accent: #0b3139;
+
+  /* Spacing (theme-invariant) */
+  --core-spacing-xxs: 4px;
+  --core-spacing-xs: 8px;
+  --core-spacing-sm: 12px;
+  --core-spacing-md: 16px;
+  --core-spacing-lg: 20px;
+  --core-spacing-xl: 24px;
+  --core-spacing-2xl: 40px;
+  --core-spacing-layout-md: 32px;
+  --core-spacing-3xl: 48px;
+  --core-spacing-4xl: 56px;
+
+  /* Border radius (theme-invariant) */
+  --core-radius-xxs: 2px;
+  --core-radius-xs: 4px;
+  --core-radius-sm: 10px;
+  --core-radius-md: 24px;
+  --core-radius-lg: 34px;
+  --core-radius-control: 4px;
+  --core-radius-action-standard: 8px;
+  --core-radius-card: 10px;
+  --core-radius-modal: 24px;
+  --core-radius-drawer: 24px;
+  --core-radius-popover: 10px;
+  --core-radius-pill: 9999px;
+  --core-radius-full: 9999px;
+
+  /* Typography (theme-invariant) */
+  --core-font-family-display: "Suisse Intl", sans-serif;
+  --core-font-family-default: "Suisse Intl", sans-serif;
+  --core-font-size-xs: 0.625rem;
+  --core-font-size-sm: 0.75rem;
+  --core-font-size-dense: 0.8125rem;
+  --core-font-size-md: 0.875rem;
+  --core-font-size-lg: 1rem;
+  --core-font-size-xl: 1.75rem;
+  --core-font-size-display-sm: 1.25rem;
+  --core-font-size-display-md: 1.5rem;
+  --core-font-size-display-lg: 1.875rem;
+  --core-font-size-display-xl: 3.125rem;
+  --core-font-weight-light: 300;
+  --core-font-weight-normal: 400;
+  --core-font-weight-bold: 600;
+
+  /* Syntax highlighting — consumed by `coreSyntaxStyle` (src/core/syntaxStyle.ts)
+     as literal var() values in react-syntax-highlighter's inline style, so
+     highlighted code follows the active light/dark scope. */
+  --core-color-syntax-fg: #3b3f46;
+  --core-color-syntax-key: #0e7490;
+  --core-color-syntax-string: #15803d;
+  --core-color-syntax-number: #b45309;
+  --core-color-syntax-literal: #7c3aed;
+  --core-color-syntax-comment: #64748b;
+  --core-color-syntax-keyword: #be123c;
+}
+
+.core-theme[data-theme="dark"] {
+  --core-color-bg-primary: #061a20;
+  --core-color-bg-secondary: #102f38;
+  --core-color-bg-surface: #1a3d46;
+
+  --core-color-surface-canvas: #061a20;
+  --core-color-surface-default: #102f38;
+  --core-color-surface-card: #102f38;
+  --core-color-surface-raised: #1a3d46;
+  --core-color-surface-subtle: #173a44;
+  --core-color-surface-inset: #04151a;
+  --core-color-surface-inverse: #ffffff;
+  --core-color-surface-popover: #1a3d46;
+  --core-color-surface-modal: #102f38;
+  --core-color-surface-sunken: #0a2229;
+
+  --core-color-text-primary: #f3f7f7;
+  --core-color-text-secondary: #c5d1d3;
+  --core-color-text-muted: #91a4a8;
+  --core-color-text-disabled: #6f858a;
+  --core-color-text-inverse: #333333;
+  --core-color-text-link: #9fb0ff;
+  --core-color-text-on-action: #0b3139;
+  --core-color-text-on-status: #ffffff;
+  --core-color-text-danger: #ff8a8a;
+  --core-color-text-success: #65d77a;
+  --core-color-text-warning: #ffb36b;
+
+  --core-color-border-subtle: #203840;
+  --core-color-border-default: #335760;
+  --core-color-border-strong: #466d74;
+  --core-color-border-bold: #6a959c;
+  --core-color-border-muted: #27434b;
+  --core-color-border-divider: #27434b;
+  --core-color-border-inverse: #d9e0e8;
+
+  --core-color-interactive-default: #9fb0ff;
+  --core-color-interactive-hover: #c8d3ff;
+  --core-color-interactive-active: #dce5ff;
+  --core-color-interactive-disabled: #526a70;
+
+  --core-color-state-default-bg: #102f38;
+  --core-color-state-hover-bg: #254d57;
+  --core-color-state-active-bg: #04151a;
+  --core-color-state-selected-bg: #254d57;
+  --core-color-state-selected-fg: #f3f7f7;
+  --core-color-state-selected-border: #bfd1d3;
+  --core-color-state-disabled-bg: #0b242b;
+  --core-color-state-disabled-fg: #6f858a;
+  --core-color-state-invalid-bg: #2a1718;
+  --core-color-state-invalid-fg: #f08d8d;
+  --core-color-state-invalid-border: #8a3a3d;
+  --core-color-state-loading-bg: #0d2830;
+
+  /* Chip rest sits below the raised panel it lives on; hover lifts toward
+     the shared dark hover value. */
+  --core-color-chip-bg: #10333d;
+  --core-color-chip-hover-bg: #254d57;
+
+  --core-color-skeleton-bg: #0b242b;
+  --core-color-skeleton-shimmer: #203840;
+  --core-color-skeleton-border: #203840;
+  --core-shadow-badge-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --core-shadow-count-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  --core-color-focus-ring: #bfd1d3;
+  --core-color-focus-offset: #061a20;
+  --core-color-focus-control: #bfd1d3;
+  --core-color-focus-destructive: #ff8a8a;
+
+  --core-color-action-primary-bg: #dce9e9;
+  --core-color-action-primary-fg: #061a20;
+  --core-color-action-primary-border: #dce9e9;
+  --core-color-action-primary-hover-bg: #f3f7f7;
+  --core-color-action-primary-active-bg: #bfd1d3;
+  --core-color-action-primary-disabled-bg: #2b4b53;
+  --core-color-action-primary-disabled-fg: #6f858a;
+
+  --core-color-action-secondary-bg: #102f38;
+  --core-color-action-secondary-fg: #f3f7f7;
+  --core-color-action-secondary-border: #335760;
+  --core-color-action-secondary-hover-bg: #254d57;
+  --core-color-action-secondary-active-bg: #04151a;
+  --core-color-action-secondary-disabled-bg: #0b242b;
+  --core-color-action-secondary-disabled-fg: #6f858a;
+
+  --core-color-action-quiet-bg: transparent;
+  --core-color-action-quiet-fg: #c5d1d3;
+  --core-color-action-quiet-border: transparent;
+  --core-color-action-quiet-hover-bg: #173a44;
+  --core-color-action-quiet-active-bg: #04151a;
+  --core-color-action-quiet-disabled-bg: transparent;
+  --core-color-action-quiet-disabled-fg: #6f858a;
+
+  --core-color-action-destructive-bg: #f08d8d;
+  --core-color-action-destructive-fg: #061a20;
+  --core-color-action-destructive-border: #f08d8d;
+  --core-color-action-destructive-hover-bg: #ffaaaa;
+  --core-color-action-destructive-active-bg: #d96f72;
+  --core-color-action-destructive-disabled-bg: #2a1718;
+  --core-color-action-destructive-disabled-fg: #6f858a;
+
+  --core-color-control-bg: #102f38;
+  --core-color-control-fg: #f3f7f7;
+  --core-color-control-placeholder: #91a4a8;
+  --core-color-control-border: #335760;
+  --core-color-control-border-hover: #6f8b92;
+  --core-color-control-border-focus: #bfd1d3;
+  --core-color-control-disabled-bg: #0b242b;
+  --core-color-control-disabled-fg: #6f858a;
+  --core-color-control-error-fg: #f08d8d;
+  --core-color-control-error-border: #8a3a3d;
+  --core-color-control-error-bg: #2a1718;
+  --core-color-control-helper-text: #c5d1d3;
+
+  /* Switch / toggle */
+  /* Legacy midnight mid-tone: >=3:1 against both the #102f38 surface and the
+     #f3f7f7 thumb (WCAG 2.1 AA, SC 1.4.11). */
+  --core-color-switch-track-off: #6d8388;
+  --core-color-switch-track-on: #5b8893;
+  --core-color-switch-track-disabled: #0b242b;
+  /* Dimmed teal, not the light-theme #a8b6b9, which would read brighter than
+     the enabled on-track on the dark surface. */
+  --core-color-switch-track-on-disabled: #2b4b53;
+  /* The shared control-error-border (#8a3a3d) is only 1.85:1 against the dark
+     surface; the invalid ring needs >=3:1 (WCAG 2.1 AA, SC 1.4.11). */
+  --core-color-switch-invalid-ring: #ff8a8a;
+  --core-color-switch-thumb: #f3f7f7;
+
+  --core-color-table-header-bg: #1b3239;
+  --core-color-table-header-text: #c5d1d3;
+  --core-color-table-row-bg: #102f38;
+  --core-color-table-row-hover-bg: #173a44;
+  --core-color-table-row-stripe-bg: #0e2a31;
+  --core-color-table-row-selected-bg: #254d57;
+  --core-color-table-action-hover-bg: #2c6471;
+  --core-color-table-cell-text: #f3f7f7;
+  --core-color-table-border: #335760;
+  --core-color-table-divider: #27434b;
+  --core-color-list-item-bg: #102f38;
+  --core-color-list-item-hover-bg: #173a44;
+  --core-color-list-item-selected-bg: #14273f;
+  --core-color-list-border: #335760;
+
+  --core-color-nav-bg: #04151a;
+  --core-color-nav-border: #203840;
+  --core-color-nav-item-text: #c5d1d3;
+  --core-color-nav-item-muted: #91a4a8;
+  --core-color-nav-item-hover-bg: #102f38;
+  --core-color-nav-item-active-bg: #265560;
+  --core-color-nav-item-active-text: #f3f7f7;
+  --core-color-tab-fg: #91a4a8;
+  --core-color-tab-fg-active: #f3f7f7;
+  --core-color-tab-indicator: #cde3e3;
+  --core-color-tab-hover-indicator: #4f7178;
+  --core-color-tab-track: #335760;
+
+  --core-color-overlay-backdrop: rgba(0, 0, 0, 0.52);
+  --core-color-overlay-scrim: rgba(0, 0, 0, 0.28);
+  --core-color-overlay-modal-bg: #102f38;
+  --core-color-overlay-popover-bg: #1a3d46;
+  --core-color-overlay-tooltip-bg: #ffffff;
+  --core-color-overlay-tooltip-text: #0b3139;
+  --core-color-elevation-card: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --core-color-elevation-control: 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  --core-color-elevation-raised: 0 14px 32px rgba(0, 0, 0, 0.44), 0 2px 8px rgba(0, 0, 0, 0.28);
+  --core-color-elevation-popover: 0 16px 32px rgba(0, 0, 0, 0.36);
+  --core-color-elevation-modal: 0 24px 56px rgba(0, 0, 0, 0.48);
+  --core-color-elevation-drawer: -12px 0 32px rgba(0, 0, 0, 0.4);
+
+  --core-color-status-success: #74d98a;
+  --core-color-status-success-light: #152d21;
+  --core-color-status-success-bg: #152d21;
+  --core-color-status-success-fg: #74d98a;
+  --core-color-status-success-border: #2d6140;
+  --core-color-status-warning: #f2b36d;
+  --core-color-status-warning-light: #2b2116;
+  --core-color-status-warning-bg: #2b2116;
+  --core-color-status-warning-fg: #f2b36d;
+  --core-color-status-warning-border: #795331;
+  --core-color-status-error: #f08d8d;
+  --core-color-status-error-light: #2a1718;
+  --core-color-status-danger-bg: #2a1718;
+  --core-color-status-danger-fg: #f08d8d;
+  --core-color-status-danger-border: #8a3a3d;
+  --core-color-status-info: #9bbcff;
+  --core-color-status-info-light: #14273f;
+  --core-color-status-info-bg: #14273f;
+  --core-color-status-info-fg: #9bbcff;
+  --core-color-status-info-border: #405a9f;
+  --core-color-status-neutral-bg: #1b3239;
+  --core-color-status-neutral-fg: #c5d1d3;
+  --core-color-status-neutral-border: #335760;
+
+  /* Avatar — decorative identity tints (dark): muted dark fill + soft light fg.
+     Same ten hues as light, in the same order. */
+  --core-color-avatar-1-bg: #322019;
+  --core-color-avatar-1-fg: #e3a99c;
+  --core-color-avatar-2-bg: #2e2512;
+  --core-color-avatar-2-fg: #ddb184;
+  --core-color-avatar-3-bg: #2b2810;
+  --core-color-avatar-3-fg: #d8c585;
+  --core-color-avatar-4-bg: #1d2e18;
+  --core-color-avatar-4-fg: #a6cf93;
+  --core-color-avatar-5-bg: #11302b;
+  --core-color-avatar-5-fg: #82d4c4;
+  --core-color-avatar-6-bg: #122a39;
+  --core-color-avatar-6-fg: #9cc6e3;
+  --core-color-avatar-7-bg: #18233f;
+  --core-color-avatar-7-fg: #a4b4e6;
+  --core-color-avatar-8-bg: #211f3a;
+  --core-color-avatar-8-fg: #bab3ee;
+  --core-color-avatar-9-bg: #271f3c;
+  --core-color-avatar-9-fg: #c7aceb;
+  --core-color-avatar-10-bg: #311d2a;
+  --core-color-avatar-10-fg: #e9a8c4;
+
+  --core-color-risk-none-bg: #1b3239;
+  --core-color-risk-none-fg: #c5d1d3;
+  --core-color-risk-none-border: #335760;
+  --core-color-risk-low-bg: #152d21;
+  --core-color-risk-low-fg: #74d98a;
+  --core-color-risk-low-border: #2d6140;
+  --core-color-risk-moderate-bg: #2b2116;
+  --core-color-risk-moderate-fg: #f2b36d;
+  --core-color-risk-moderate-border: #795331;
+  --core-color-risk-high-bg: #2a1718;
+  --core-color-risk-high-fg: #f08d8d;
+  --core-color-risk-high-border: #8a3a3d;
+  --core-color-risk-critical-bg: #f08d8d;
+  --core-color-risk-critical-fg: #061a20;
+  --core-color-risk-critical-border: #f08d8d;
+  --core-color-risk-unknown-bg: #1b3239;
+  --core-color-risk-unknown-fg: #c5d1d3;
+  --core-color-risk-unknown-border: #335760;
+
+  --core-color-workflow-draft-bg: #1b3239;
+  --core-color-workflow-draft-fg: #c5d1d3;
+  --core-color-workflow-draft-border: #335760;
+  --core-color-workflow-preview-bg: #14273f;
+  --core-color-workflow-preview-fg: #9bbcff;
+  --core-color-workflow-preview-border: #405a9f;
+  --core-color-workflow-queued-bg: #2b2814;
+  --core-color-workflow-queued-fg: #e6d85f;
+  --core-color-workflow-queued-border: #776b2a;
+  --core-color-workflow-processing-bg: #2b2116;
+  --core-color-workflow-processing-fg: #f2b36d;
+  --core-color-workflow-processing-border: #795331;
+  --core-color-workflow-pending-bg: #2b2116;
+  --core-color-workflow-pending-fg: #f2b36d;
+  --core-color-workflow-pending-border: #795331;
+  --core-color-workflow-complete-bg: #152d21;
+  --core-color-workflow-complete-fg: #74d98a;
+  --core-color-workflow-complete-border: #2d6140;
+  --core-color-workflow-submitted-bg: #14273f;
+  --core-color-workflow-submitted-fg: #dce5ff;
+  --core-color-workflow-submitted-border: #5f78d6;
+  --core-color-workflow-disabled-bg: #0b242b;
+  --core-color-workflow-disabled-fg: #6f858a;
+  --core-color-workflow-disabled-border: #27434b;
+  --core-color-workflow-failed-bg: #2a1718;
+  --core-color-workflow-failed-fg: #f08d8d;
+  --core-color-workflow-failed-border: #8a3a3d;
+
+  --core-color-outcome-positive-bg: #152d21;
+  --core-color-outcome-positive-fg: #74d98a;
+  --core-color-outcome-positive-border: #2d6140;
+  --core-color-outcome-negative-bg: #2b2116;
+  --core-color-outcome-negative-fg: #f2b36d;
+  --core-color-outcome-negative-border: #795331;
+  --core-color-outcome-neutral-bg: #1b3239;
+  --core-color-outcome-neutral-fg: #c5d1d3;
+  --core-color-outcome-neutral-border: #335760;
+
+  --core-color-confidence-high-bg: #102f38;
+  --core-color-confidence-high-fg: #f3f7f7;
+  --core-color-confidence-high-border: #335760;
+  --core-color-confidence-medium-bg: #102f38;
+  --core-color-confidence-medium-fg: #f3f7f7;
+  --core-color-confidence-medium-border: #335760;
+  --core-color-confidence-low-bg: #102f38;
+  --core-color-confidence-low-fg: #f3f7f7;
+  --core-color-confidence-low-border: #335760;
+  --core-color-confidence-unavailable-bg: #1b3239;
+  --core-color-confidence-unavailable-fg: #c5d1d3;
+  --core-color-confidence-unavailable-border: #335760;
+  --core-color-evidence-strong-bg: #102f38;
+  --core-color-evidence-strong-fg: #f3f7f7;
+  --core-color-evidence-strong-border: #335760;
+  --core-color-evidence-moderate-bg: #102f38;
+  --core-color-evidence-moderate-fg: #f3f7f7;
+  --core-color-evidence-moderate-border: #335760;
+  --core-color-evidence-weak-bg: #102f38;
+  --core-color-evidence-weak-fg: #f3f7f7;
+  --core-color-evidence-weak-border: #335760;
+  --core-color-evidence-unavailable-bg: #1b3239;
+  --core-color-evidence-unavailable-fg: #c5d1d3;
+  --core-color-evidence-unavailable-border: #335760;
+
+  --core-color-brand-primary: #bfd1d3;
+  --core-color-brand-accent: #a8ff1c;
+  --core-color-brand-on-accent: #0b3139;
+
+  /* Syntax highlighting — brightened to clear contrast on the near-black code
+     surface (#061a20). */
+  --core-color-syntax-fg: #cbd5e1;
+  --core-color-syntax-key: #5eead4;
+  --core-color-syntax-string: #86efac;
+  --core-color-syntax-number: #fcd34d;
+  --core-color-syntax-literal: #c4b5fd;
+  --core-color-syntax-comment: #94a3b8;
+  --core-color-syntax-keyword: #fda4af;
+}
+
+.core-theme .core-surface-raised {
+  border-color: var(--core-color-border-strong);
+  box-shadow: var(--core-color-elevation-raised);
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-theme *,
+  .core-theme *::before,
+  .core-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.core-theme .core-action {
+  background-color: var(--core-action-bg);
+  border-color: var(--core-action-border);
+  border-radius: var(--core-radius-pill);
+  border-style: solid;
+  border-width: 1px;
+  box-shadow: none;
+  color: var(--core-action-fg);
+  cursor: pointer;
+  font-family: var(--core-font-family-default);
+  gap: var(--core-spacing-xs);
+  letter-spacing: 0;
+}
+
+.core-theme .core-action-compact {
+  font-size: var(--core-font-size-dense);
+  min-height: calc(var(--core-spacing-md) + var(--core-spacing-md));
+  min-width: calc(var(--core-spacing-2xl) + var(--core-spacing-xs));
+  padding: var(--core-spacing-xxs) var(--core-spacing-sm);
+}
+
+.core-theme .core-action-standard {
+  font-size: var(--core-font-size-md);
+  min-height: calc(var(--core-spacing-2xl) - var(--core-spacing-xxs));
+  min-width: calc(var(--core-spacing-2xl) + var(--core-spacing-xl));
+  padding: var(--core-spacing-xs) var(--core-spacing-md);
+}
+
+.core-theme .core-action svg {
+  flex-shrink: 0;
+  height: var(--core-font-size-md);
+  stroke-width: 1.75;
+  width: var(--core-font-size-md);
+}
+
+.core-theme .core-icon-action {
+  border-radius: var(--core-radius-sm);
+  min-width: 0;
+  padding: 0;
+}
+
+.core-theme .core-icon-action-compact {
+  height: calc(var(--core-spacing-md) + var(--core-spacing-md));
+  width: calc(var(--core-spacing-md) + var(--core-spacing-md));
+}
+
+.core-theme .core-icon-action-standard {
+  height: calc(var(--core-spacing-2xl) - var(--core-spacing-xxs));
+  width: calc(var(--core-spacing-2xl) - var(--core-spacing-xxs));
+}
+
+.core-theme .core-icon-action svg {
+  height: var(--core-font-size-md);
+  width: var(--core-font-size-md);
+}
+
+.core-theme .core-action-spinner {
+  height: var(--core-font-size-md);
+  width: var(--core-font-size-md);
+}
+
+.core-theme .core-action-primary {
+  --core-action-bg: var(--core-color-action-primary-bg);
+  --core-action-fg: var(--core-color-action-primary-fg);
+  --core-action-border: var(--core-color-action-primary-border);
+  --core-action-hover-bg: var(--core-color-action-primary-hover-bg);
+  --core-action-active-bg: var(--core-color-action-primary-active-bg);
+  --core-action-disabled-bg: var(--core-color-action-primary-disabled-bg);
+  --core-action-disabled-fg: var(--core-color-action-primary-disabled-fg);
+}
+
+.core-theme .core-action-secondary {
+  --core-action-bg: var(--core-color-action-secondary-bg);
+  --core-action-fg: var(--core-color-action-secondary-fg);
+  --core-action-border: var(--core-color-action-secondary-border);
+  --core-action-hover-bg: var(--core-color-action-secondary-hover-bg);
+  --core-action-active-bg: var(--core-color-action-secondary-active-bg);
+  --core-action-disabled-bg: var(--core-color-action-secondary-disabled-bg);
+  --core-action-disabled-fg: var(--core-color-action-secondary-disabled-fg);
+}
+
+.core-theme .core-action-quiet {
+  --core-action-bg: var(--core-color-action-quiet-bg);
+  --core-action-fg: var(--core-color-action-quiet-fg);
+  --core-action-border: var(--core-color-action-quiet-border);
+  --core-action-hover-bg: var(--core-color-action-quiet-hover-bg);
+  --core-action-active-bg: var(--core-color-action-quiet-active-bg);
+  --core-action-disabled-bg: var(--core-color-action-quiet-disabled-bg);
+  --core-action-disabled-fg: var(--core-color-action-quiet-disabled-fg);
+}
+
+/* Quiet actions on a surface with its own hover state (e.g. a clickable table
+   row): the quiet hover tint is ~identical to the row-hover tint, so borrow the
+   darker *active* background for hover. Opt in via Action `onInteractiveSurface`. */
+.core-theme .core-action-quiet.core-action-on-surface {
+  --core-action-hover-bg: var(--core-color-action-quiet-active-bg);
+}
+
+.core-theme .core-action-destructive {
+  --core-action-bg: var(--core-color-action-destructive-bg);
+  --core-action-fg: var(--core-color-action-destructive-fg);
+  --core-action-border: var(--core-color-action-destructive-border);
+  --core-action-hover-bg: var(--core-color-action-destructive-hover-bg);
+  --core-action-active-bg: var(--core-color-action-destructive-active-bg);
+  --core-action-disabled-bg: var(--core-color-action-destructive-disabled-bg);
+  --core-action-disabled-fg: var(--core-color-action-destructive-disabled-fg);
+}
+
+.core-theme .core-action:hover:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--core-action-hover-bg);
+}
+
+.core-theme .core-action:active:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--core-action-active-bg);
+}
+
+.core-theme .core-action:focus-visible:not(:disabled):not([aria-disabled='true']) {
+  border-color: var(--core-color-focus-control);
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-action:disabled,
+.core-theme .core-action[aria-disabled='true'] {
+  background-color: var(--core-action-disabled-bg);
+  border-color: var(--core-action-disabled-bg);
+  color: var(--core-action-disabled-fg);
+}
+
+.core-theme .core-badge {
+  border-radius: var(--core-radius-pill);
+  box-shadow: var(--core-shadow-badge-inset);
+  font-family: var(--core-font-family-default);
+  font-size: var(--core-font-size-xs);
+  padding: var(--core-spacing-xxs) var(--core-spacing-xs);
+}
+
+.core-theme .core-badge-compact {
+  font-size: var(--core-font-size-xs);
+  min-height: var(--core-spacing-lg);
+}
+
+.core-theme .core-badge-standard {
+  font-size: var(--core-font-size-sm);
+  min-height: var(--core-spacing-xl);
+}
+
+.core-theme .core-chip.core-badge-compact {
+  font-size: var(--core-font-size-sm);
+  min-height: var(--core-spacing-xl);
+  padding-left: var(--core-spacing-xs);
+  padding-right: var(--core-spacing-xs);
+}
+
+.core-theme .core-chip.core-badge-standard {
+  font-size: var(--core-font-size-md);
+  min-height: calc(var(--core-spacing-md) + var(--core-spacing-md));
+  padding-left: var(--core-spacing-sm);
+  padding-right: var(--core-spacing-sm);
+}
+
+.core-theme .core-count {
+  border-radius: var(--core-radius-pill);
+  box-shadow: var(--core-shadow-count-inset);
+  font-size: var(--core-font-size-xs);
+  height: var(--core-spacing-lg);
+  min-width: var(--core-spacing-lg);
+  padding: 0 var(--core-spacing-xxs);
+}
+
+.core-theme .core-risk-dot {
+  height: var(--core-spacing-xxs);
+  width: var(--core-spacing-xxs);
+}
+
+.core-theme .core-mode-toggle {
+  align-items: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--core-radius-pill);
+  color: var(--core-color-text-muted);
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+
+.core-theme .core-mode-toggle:hover {
+  color: var(--core-color-text-primary);
+}
+
+.core-theme .core-mode-toggle[data-active='true'] {
+  background-color: var(--core-color-text-primary);
+  color: var(--core-color-surface-canvas);
+}
+
+.core-theme .core-nav-link {
+  align-items: center;
+  background-color: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  color: var(--core-color-text-muted);
+  display: flex;
+  padding: 10px 16px 10px 13px;
+  text-align: left;
+  width: 100%;
+}
+
+.core-theme .core-nav-link:hover {
+  background-color: var(--core-color-surface-subtle);
+  color: var(--core-color-text-primary);
+}
+
+.core-theme .core-nav-link[data-active='true'] {
+  background-color: var(--core-color-surface-subtle);
+  border-left-color: var(--core-color-text-primary);
+  color: var(--core-color-text-primary);
+  font-weight: 600;
+}
+
+.core-theme .core-feedback-state {
+  background-color: var(--core-color-surface-card);
+  color: var(--core-color-text-primary);
+}
+
+.core-theme .core-loading-region {
+  color: var(--core-color-text-secondary);
+}
+
+.core-theme [data-disabled='true'] label {
+  color: var(--core-color-control-disabled-fg);
+}
+
+.core-theme .core-input {
+  font-family: var(--core-font-family-default);
+  font-size: var(--core-font-size-md);
+}
+
+.core-theme .core-input:hover:not(:disabled) {
+  background-color: var(--core-color-state-hover-bg);
+}
+
+.core-theme .core-input:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-input[aria-invalid='true'] {
+  box-shadow: 0 0 0 2px var(--core-color-control-error-bg);
+}
+
+.core-theme .core-input[aria-invalid='true']:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--core-color-control-error-bg),
+    0 0 0 4px var(--core-color-control-error-border);
+}
+
+/* A field rendered as a <button> rather than an <input> — e.g. the Combobox
+   trigger. The unlayered global `button` reset (src/index.css) zeroes the
+   padding/border/background/color that `inputVariants` sets, leaving floating
+   text with no box. Restore the input chrome here: this scoped selector
+   out-specifies the reset (0,2,0 beats the reset's 0,1,0), so it wins without
+   `!important`. Padding mirrors `inputVariants` standard; the focus ring + hover
+   background come from the shared `.core-input` rules above (the trigger also
+   carries the `core-input` class). */
+.core-theme .core-input-trigger {
+  background-color: var(--core-color-control-bg);
+  border: 1px solid var(--core-color-control-border);
+  color: var(--core-color-control-fg);
+  padding: var(--core-spacing-xs) var(--core-spacing-sm);
+}
+
+.core-theme .core-input-trigger:hover:not(:disabled) {
+  border-color: var(--core-color-control-border-hover);
+}
+
+.core-theme .core-input-trigger:focus-visible {
+  border-color: var(--core-color-control-border-focus);
+}
+
+/* TokenInput (multi-value chip field). The chip container is a <div>, so its
+   focus + invalid rings key off :focus-within (the inner input) rather than
+   :focus-visible, and they live here because a box-shadow ring can't be a
+   Tailwind arbitrary (a bare shadow-[var()] is parsed as a color). Mirrors the
+   shared .core-input rings. */
+.core-theme .core-token-input:focus-within {
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-token-input[aria-invalid='true'] {
+  box-shadow: 0 0 0 2px var(--core-color-control-error-bg);
+}
+
+.core-theme .core-token-input[aria-invalid='true']:focus-within {
+  box-shadow:
+    0 0 0 2px var(--core-color-control-error-bg),
+    0 0 0 4px var(--core-color-control-error-border);
+}
+
+.core-theme .core-choice-root[data-disabled='true'] {
+  color: var(--core-color-control-disabled-fg);
+  cursor: not-allowed;
+}
+
+.core-theme .core-choice-label {
+  line-height: var(--core-spacing-lg);
+}
+
+.core-theme .core-checkbox-control,
+.core-theme .core-radio-control {
+  background-color: var(--core-color-control-bg);
+  border: 1px solid var(--core-color-border-bold);
+  color: var(--core-color-action-primary-fg);
+}
+
+.core-theme .core-checkbox-control:hover,
+.core-theme .core-radio-control:hover {
+  border-color: var(--core-color-border-bold);
+}
+
+.core-theme .core-checkbox-control:focus-visible,
+.core-theme .core-radio-control:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-checkbox-control[data-state='checked'],
+.core-theme .core-checkbox-control[data-state='indeterminate'] {
+  background-color: var(--core-color-action-primary-bg);
+  border-color: var(--core-color-action-primary-border);
+}
+
+.core-theme .core-radio-control[data-state='checked'] {
+  border-color: var(--core-color-action-primary-border);
+}
+
+.core-theme .core-checkbox-control[data-disabled],
+.core-theme .core-radio-control[data-disabled] {
+  background-color: var(--core-color-control-disabled-bg);
+  border-color: var(--core-color-control-border);
+  color: var(--core-color-control-disabled-fg);
+}
+
+.core-theme .core-checkbox-control[aria-invalid='true'],
+.core-theme .core-radio-control[aria-invalid='true'],
+.core-theme .core-radio-group[aria-invalid='true'] .core-radio-control {
+  background-color: var(--core-color-control-bg);
+  border-color: var(--core-color-control-error-border);
+  box-shadow: 0 0 0 2px var(--core-color-control-error-bg);
+}
+
+.core-theme .core-checkbox-control[aria-invalid='true'][data-state='checked'],
+.core-theme .core-checkbox-control[aria-invalid='true'][data-state='indeterminate'] {
+  background-color: var(--core-color-action-primary-bg);
+}
+
+.core-theme .core-checkbox-indicator,
+.core-theme .core-radio-indicator {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.core-theme .core-checkbox-indicator {
+  color: var(--core-color-action-primary-fg);
+}
+
+.core-theme .core-checkbox-control[data-disabled] .core-checkbox-indicator {
+  color: var(--core-color-control-disabled-fg);
+}
+
+.core-theme .core-checkbox-check,
+.core-theme .core-checkbox-minus,
+.core-theme .core-radio-dot {
+  opacity: 0;
+  position: absolute;
+  transform: scale(0.8);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.core-theme .core-checkbox-control[data-state='checked'] .core-checkbox-check,
+.core-theme .core-checkbox-control[data-state='indeterminate'] .core-checkbox-minus,
+.core-theme .core-radio-control[data-state='checked'] .core-radio-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.core-theme .core-radio-dot {
+  background-color: var(--core-color-action-primary-bg);
+  border-radius: var(--core-radius-full);
+  height: 8px;
+  width: 8px;
+}
+
+.core-theme .core-switch-control {
+  background-color: var(--core-color-switch-track-off);
+  transition: background-color 120ms ease;
+}
+
+.core-theme .core-switch-control:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-switch-control[data-state='checked'] {
+  background-color: var(--core-color-switch-track-on);
+}
+
+.core-theme .core-switch-control[data-disabled] {
+  background-color: var(--core-color-switch-track-disabled);
+  cursor: not-allowed;
+}
+
+.core-theme .core-switch-control[data-disabled][data-state='checked'] {
+  background-color: var(--core-color-switch-track-on-disabled);
+}
+
+.core-theme .core-switch-control[aria-invalid='true'] {
+  box-shadow:
+    0 0 0 2px var(--core-color-control-error-bg),
+    0 0 0 3px var(--core-color-switch-invalid-ring);
+}
+
+.core-theme .core-switch-thumb {
+  background-color: var(--core-color-switch-thumb);
+  border-radius: var(--core-radius-full);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.18),
+    0 1px 3px rgba(16, 24, 40, 0.12);
+  display: block;
+  height: 16px;
+  transform: translateX(2px);
+  transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  width: 16px;
+  will-change: transform;
+}
+
+.core-theme .core-switch-control[data-state='checked'] .core-switch-thumb {
+  transform: translateX(18px);
+}
+
+.core-theme .core-switch-control[data-disabled] .core-switch-thumb {
+  box-shadow: none;
+}
+
+/* Slider (single-thumb) — geometry lives in Slider.tsx; colors/states here.
+   Mirrors the switch token approach so the two controls read as siblings. */
+.core-theme .core-slider-track {
+  background-color: var(--core-color-surface-sunken);
+  border-radius: var(--core-radius-full);
+  flex-grow: 1;
+  height: 4px;
+  position: relative;
+  width: 100%;
+}
+
+.core-theme .core-slider-range {
+  background-color: var(--core-color-border-bold);
+  border-radius: var(--core-radius-full);
+  height: 100%;
+  position: absolute;
+}
+
+.core-theme .core-slider-thumb {
+  background-color: var(--core-color-switch-thumb);
+  border: 1px solid var(--core-color-border-default);
+  border-radius: var(--core-radius-full);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.18),
+    0 1px 3px rgba(16, 24, 40, 0.12);
+  cursor: pointer;
+  display: block;
+  height: 16px;
+  outline: none;
+  transition: box-shadow 120ms ease;
+  width: 16px;
+}
+
+.core-theme .core-slider-thumb:hover {
+  border-color: var(--core-color-border-bold);
+}
+
+.core-theme .core-slider-thumb:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--core-color-focus-offset),
+    0 0 0 4px var(--core-color-focus-control);
+}
+
+.core-theme .core-slider-root[data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.core-theme .core-slider-root[data-disabled] .core-slider-thumb {
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.core-theme .core-menu-content {
+  --core-menu-content-padding: var(--core-spacing-xxs);
+  background-color: var(--core-color-surface-popover);
+  border-color: var(--core-color-border-default);
+  color: var(--core-color-text-primary);
+  font-family: var(--core-font-family-default);
+  font-size: var(--core-font-size-sm);
+  padding: var(--core-menu-content-padding);
+}
+
+.core-theme .core-menu-content[data-size='standard'] {
+  --core-menu-content-padding: 6px;
+}
+
+.core-theme .core-menu-label {
+  color: var(--core-color-text-muted);
+  padding: 6px 8px;
+}
+
+.core-theme .core-menu-item {
+  font-size: var(--core-font-size-sm);
+}
+
+.core-theme .core-menu-separator {
+  background-color: var(--core-color-border-divider);
+  margin: var(--core-spacing-xxs) calc(-1 * var(--core-menu-content-padding));
+}
+
+.core-theme .core-menu-checkbox-indicator,
+.core-theme .core-menu-radio-indicator {
+  background-color: var(--core-color-control-bg);
+  border-color: var(--core-color-border-bold);
+  color: var(--core-color-action-primary-fg);
+}
+
+.core-theme [data-highlighted] > .core-menu-checkbox-indicator,
+.core-theme [data-highlighted] > .core-menu-radio-indicator {
+  border-color: var(--core-color-border-bold);
+}
+
+.core-theme [data-state='checked'] > .core-menu-checkbox-indicator,
+.core-theme [data-state='indeterminate'] > .core-menu-checkbox-indicator {
+  background-color: var(--core-color-action-primary-bg);
+  border-color: var(--core-color-action-primary-border);
+}
+
+.core-theme [data-state='checked'] > .core-menu-radio-indicator {
+  border-color: var(--core-color-action-primary-border);
+}
+
+.core-theme .core-menu-checkbox-check,
+.core-theme .core-menu-checkbox-minus,
+.core-theme .core-menu-radio-dot {
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.core-theme [data-state='checked'] > .core-menu-checkbox-indicator .core-menu-checkbox-check,
+.core-theme [data-state='indeterminate'] > .core-menu-checkbox-indicator .core-menu-checkbox-minus,
+.core-theme [data-state='checked'] > .core-menu-radio-indicator .core-menu-radio-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.core-theme [data-state='checked'] > .core-menu-radio-indicator .core-menu-radio-dot {
+  background-color: var(--core-color-action-primary-bg);
+}
+
+.core-theme [data-disabled] > .core-menu-checkbox-indicator,
+.core-theme [data-disabled] > .core-menu-radio-indicator {
+  background-color: var(--core-color-control-disabled-bg);
+  border-color: var(--core-color-control-border);
+  color: var(--core-color-control-disabled-fg);
+}
+
+.core-theme .core-menu-shortcut {
+  align-items: center;
+  color: var(--core-color-text-muted);
+  display: inline-flex;
+  gap: 2px;
+}
+
+.core-theme .core-menu-shortcut-key {
+  align-items: center;
+  background-color: var(--core-color-surface-raised);
+  border: 1px solid var(--core-color-border-default);
+  border-radius: var(--core-radius-control);
+  box-shadow: var(--core-shadow-count-inset);
+  color: var(--core-color-text-secondary);
+  display: inline-flex;
+  font-family: var(--core-font-family-default);
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-bold);
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 18px;
+  padding: 0 5px;
+}
+
+.core-theme .core-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--core-color-skeleton-bg) 20%,
+    var(--core-color-skeleton-shimmer) 50%,
+    var(--core-color-skeleton-bg) 80%
+  );
+  background-size: 200% 100%;
+  border: 1px solid var(--core-color-skeleton-border);
+}

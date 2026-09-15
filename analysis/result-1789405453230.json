@@ -1,0 +1,69 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "entity_type",
+    "sos_active",
+    "sos_domestic",
+    "sos_match",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic_sub_status",
+    "address_verification",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:high",
+    "person_verification",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies",
+    "business_connections"
+  ],
+  "headline": "A real, established Delaware corporation with a verified name, address and officer — the open items are liens and litigation, not identity.",
+  "confirmed": [
+    { "text": "The entity exists and is confirmed: the submitted name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address." },
+    { "text": "It is operating from a real commercial address — deliverable, commercial, and matching what the registry holds. Formed 2018, so it is not a newly stood-up entity." },
+    { "text": "A submitted person matches an officer on a state registration, which is the strongest form of control-person evidence available from registry data and is often unavailable." },
+    { "text": "Sanctions, watchlist and PEP screening are all clear, and no bankruptcy filings were found." },
+    { "text": "Liens were found, and litigation records were returned.", "adverse": true },
+    { "text": "Adverse media screening returned hits, which the provider itself scored low." },
+    { "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses." }
+  ],
+  "couldNotConfirm": [
+    {
+      "point": "Whether the Delaware registration is in good standing",
+      "why": "not_published",
+      "wouldAnswer": "Delaware publishes no good-standing sub-status. A Certificate of Good Standing requested from the customer is the only route."
+    },
+    {
+      "point": "The registration status in the formation state, and the status of several other registrations",
+      "why": "not_held_or_unreachable",
+      "wouldAnswer": "These came back unresolved rather than negative — the source did not return a status. A re-run of the registration search may clear them."
+    },
+    {
+      "point": "What the liens and litigation actually are",
+      "why": "no_insight_covers_it",
+      "wouldAnswer": "The insight reports that liens and litigation exist, not their amounts, dates, or whether they are satisfied. Ordering the lien and litigation detail is what would answer it, and it is the one thing standing between this file and a decision."
+    },
+    {
+      "point": "Who ultimately owns the business",
+      "why": "no_insight_covers_it",
+      "wouldAnswer": "No beneficial-ownership insight exists in the catalog — ownership is only ever implied from what filings name. If policy requires a UBO determination it cannot be met from this record."
+    }
+  ],
+  "recommendations": {
+    "actions": [
+      "Do not treat identity as the open question. Name, address, entity type and an officer all verify against registry data — this file is stronger on identity than most.",
+      "Route on the liens and litigation. Their existence is established; their materiality is not, and nothing else here would stop account opening.",
+      "Read the shared addresses in context. Five addresses shared with 101+ businesses is ordinary for a company with registered agents across multiple states, and should not be read as a shell pattern on its own."
+    ],
+    "data": [
+      "Order the lien and litigation detail — amounts, dates, and whether satisfied.",
+      "Request a Certificate of Good Standing from the customer if standing is a gating requirement.",
+      "Re-run the registration search to try to resolve the registrations that returned no status."
+    ]
+  }
+}

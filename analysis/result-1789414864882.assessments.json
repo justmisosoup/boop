@@ -1,0 +1,200 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "sos_active",
+    "sos_match",
+    "sos_inactive",
+    "sos_domestic",
+    "sos_unknown",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "web_person_verification",
+    "address_deliverability",
+    "address_property_type",
+    "website_status",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "website_url_discovery",
+    "location_frequency:high",
+    "location_frequency:moderate",
+    "location_frequency:low",
+    "business_connections",
+    "profile_discovery",
+    "profile_status",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "industry",
+    "risky_keywords",
+    "bankruptcies",
+    "liens",
+    "litigations"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Middesk is a San Francisco B2B software company selling business-identity infrastructure — verifying businesses for financial-services onboarding, and filing state and federal registrations on their behalf. Its customers are banks, lenders and payments companies onboarding business accounts of their own. The product line is software and filing services: it does not lend, and it does not hold customer funds.",
+          "sources": [
+            {
+              "title": "Middesk — Y Combinator company profile",
+              "url": "https://www.ycombinator.com/companies/middesk"
+            },
+            {
+              "title": "middesk.com — company website",
+              "url": "https://www.middesk.com"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "Identity is settled on every axis the registries can speak to. The submitted name and address both match state registrations, entity type is confirmed against a filing, and there is an active registration in at least one state — including, specifically, the state of the submitted address. That last point is the one that matters: an active registration somewhere is weak if the company operates elsewhere, and here the two coincide.",
+          "cites": [
+            "name",
+            "address_verification",
+            "entity_type",
+            "sos_active",
+            "sos_match"
+          ]
+        },
+        {
+          "text": "Registration status reads mixed — active in some states, inactive in others — and that is ordinary housekeeping for a company registered across many of them rather than a sign of lapse. A business withdraws from a state it has stopped operating in. The pattern would only matter if the inactive one were the state of operation, and it is not.",
+          "cites": [
+            "sos_inactive",
+            "sos_match"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "good_standing",
+          "point": "Whether it is in good standing in Delaware",
+          "why": "not_published",
+          "wouldAnswer": "Delaware publishes no good-standing sub-status for any company, so no order will ever return one. A Certificate of Good Standing from the customer is the only route to it.",
+          "cites": [
+            "sos_domestic_sub_status"
+          ]
+        },
+        {
+          "id": "unresolved_registrations",
+          "point": "The status of the formation-state registration and several others",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "These came back unresolved rather than negative — the search ran and reached no conclusion, which is our limit and not a fact about the company. A re-run of the registration search may clear them.",
+          "cites": [
+            "sos_domestic",
+            "sos_unknown"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "A submitted person matches an officer named on a state registration. That is the strongest control-person evidence registry data produces, because it ties a named individual to a filing the state holds rather than to anything the customer supplied. For an operating company of this age it is the expected result, and the file has it.",
+          "cites": [
+            "person_verification"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "website_person",
+          "point": "Whether the person named on the website is the person submitted",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The website person check came back unverified — the site does not name them in a form the check could match. The officer match on the state registration covers this ground more authoritatively, so the gap costs nothing here.",
+          "cites": [
+            "web_person_verification"
+          ],
+          "noAction": "the officer match on the state registration covers this ground more authoritatively."
+        },
+        {
+          "id": "ownership",
+          "point": "Who ultimately owns or benefits from the business",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "No beneficial-ownership insight exists in the catalog. Ownership is only ever implied from the people filings happen to name, and an officer is not an owner. If your policy requires a UBO determination, this record cannot satisfy it by any order."
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "It is visibly operating rather than merely registered. The address is commercial and deliverable, the website is reachable, and the domain registrant corroborates the business at high confidence. The site independently matches the submitted business name, address and email address — three separate agreements, not one restated three ways. Registry data proves an entity exists; this is what shows someone is running it.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "website_status",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification"
+          ]
+        },
+        {
+          "text": "The address footprint is ten addresses spread across the frequency bands: three shared with twenty businesses or fewer, two in the middle, and five shared with more than a hundred. Read cold, five high-frequency addresses look like a shell pattern. Read against a company registered in many states, they are its registered agents — and the presence of low-frequency addresses alongside them is what distinguishes the two, because a shell has the crowded addresses without the quiet ones.",
+          "cites": [
+            "location_frequency:high",
+            "location_frequency:moderate",
+            "location_frequency:low",
+            "business_connections"
+          ]
+        },
+        {
+          "text": "Both the website and the third-party profile on file were supplied by the customer rather than discovered independently. The profile is reachable, which is worth little on its own — what carries weight is that the domain registration corroborates the business without the customer's help.",
+          "cites": [
+            "website_url_discovery",
+            "profile_discovery",
+            "profile_status",
+            "website_url_domain_ownership"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Screening is clean where it matters most. Watchlist and PEP returned no hits, no prohibited industry was identified, no risky keywords were found, and there are no bankruptcy filings. Adverse media returned hits that the provider itself scored low — worth an analyst's glance rather than an escalation.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons",
+            "industry",
+            "risky_keywords",
+            "bankruptcies",
+            "adverse_media"
+          ]
+        },
+        {
+          "text": "Open liens were found and litigation records were returned. This is the only thing on the record that points at the business rather than at the limits of the data.",
+          "cites": [
+            "liens",
+            "litigations"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "lien_detail",
+          "point": "What the liens and litigation actually are",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "The record establishes that they exist and stops there — no amounts, no dates, no indication of whether they are satisfied. Nothing in the catalog goes further; it takes a lien and litigation detail order.",
+          "cites": [
+            "liens",
+            "litigations"
+          ]
+        }
+      ]
+    }
+  ]
+}

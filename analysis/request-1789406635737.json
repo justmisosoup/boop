@@ -1,0 +1,320 @@
+{
+  "id": "1789406635737",
+  "requestedAt": "2026-09-14T17:23:55.737Z",
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "kind": "report",
+  "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+  "insights": [
+    {
+      "id": "web_person_verification",
+      "statement": "web person verification returned “Unverified” — not yet mapped to an insight",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted person",
+      "evidence": [
+        "Registrations on file: 5"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "Related businesses share officers, agents or addresses",
+      "state": "result",
+      "because": "17 connections found",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "litigations",
+      "statement": "litigations returned “Found” — not yet mapped to an insight",
+      "state": "result",
+      "because": "The business has 10 related litigations",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "liens",
+      "statement": "liens returned “Open Liens Found” — not yet mapped to an insight",
+      "state": "result",
+      "because": "We found 1 Open Lien(s)",
+      "evidence": [
+        "Source value: Open Liens Found"
+      ]
+    },
+    {
+      "id": "location_frequency:high",
+      "statement": "5 addresses shared with 101 or more businesses",
+      "state": "result",
+      "evidence": [
+        "56 Broad St Ste 14028, Boston, MA 02109-4301 — 1001 businesses at this location",
+        "10020 W Fairview Ave Ste 104, Boise, ID 83704-8570 — 10001 businesses at this location",
+        "14 Scenic Dr, Dayton, NJ 08810-1495 — 1001 businesses at this location",
+        "2035 Sunset Lake Rd, Newark, DE 19702-2600 — 10001 businesses at this location",
+        "524 S 2nd St Ste 505, Springfield, IL 62701-1749 — 1001 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:moderate",
+      "statement": "2 addresses shared with 21–100 businesses",
+      "state": "result",
+      "evidence": [
+        "85 2nd St, San Francisco, CA 94105-3459 — 21 businesses at this location",
+        "85 2nd St Ste 710, San Francisco, CA 94105-3465 — 21 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "3 addresses shared with 1–20 businesses",
+      "state": "result",
+      "evidence": [
+        "1818 11th St Ste 101, Sacramento, CA 95811-6515 — 2 businesses at this location",
+        "2101 Bryant St, San Francisco, CA 94110-2138 — 2 businesses at this location",
+        "82ND S — 1 businesses at this location"
+      ]
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "Inactive in some states, active in others",
+      "state": "result",
+      "because": "1 of 5 filings are Inactive",
+      "evidence": [
+        "Source value: Partially Inactive"
+      ]
+    },
+    {
+      "id": "sos_unknown",
+      "statement": "Status of some registrations could not be resolved",
+      "state": "unknown",
+      "because": "2 of 5 filings have no status provided",
+      "evidence": [
+        "Source value: Partially Unknown"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Good-standing sub-status not published by the state",
+      "state": "no_result",
+      "reason": "not_published",
+      "because": "The domestic sub-status is Not Provided by State.",
+      "evidence": [
+        "Registration state: DE"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Registration status in the formation state could not be resolved",
+      "state": "unknown",
+      "because": "No domestic filing status provided",
+      "evidence": [
+        "Source value: Domestic Unknown"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "State registration match for business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_verification",
+      "statement": "State registration match for submitted address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "Address is deliverable",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "Address is a commercial property",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Officer match for submitted person on state registrations",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "Registration active in the submitted address state",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "Active registration in at least one state",
+      "state": "result",
+      "because": "2 of 5 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "industry",
+      "statement": "No prohibited industry identified",
+      "state": "result",
+      "because": "This business likely does not operate in a high risk industry",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "website_status",
+      "statement": "Website is reachable",
+      "state": "result",
+      "because": "Website was Online when the business record was ordered",
+      "evidence": [
+        "Source value: Online"
+      ]
+    },
+    {
+      "id": "website_url_domain_ownership",
+      "statement": "Domain registrant corroborates the business — high confidence",
+      "state": "result",
+      "because": "We have high confidence that the submitted website URL belongs to the business.",
+      "evidence": [
+        "Source value: High Confidence"
+      ]
+    },
+    {
+      "id": "adverse_media",
+      "statement": "Adverse media screening returned hits, scored low by the provider",
+      "state": "result",
+      "because": "No adverse media was found",
+      "evidence": [
+        "Source value: Low risk"
+      ]
+    },
+    {
+      "id": "bankruptcies",
+      "statement": "No bankruptcy filings found",
+      "state": "result",
+      "because": "The business has no bankruptcy filings",
+      "evidence": [
+        "Source value: None Found"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type confirmed against a registration",
+      "state": "result",
+      "because": "Entity type is a CORPORATION",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "PEP screening returned no hits",
+      "state": "result",
+      "because": "There were no hits on submitted individuals or their relatives and close associates",
+      "evidence": [
+        "Source value: No hits"
+      ]
+    },
+    {
+      "id": "profile_discovery",
+      "statement": "Third-party profile supplied by the customer",
+      "state": "result",
+      "because": "Third party profiles submitted",
+      "evidence": [
+        "Source value: Submitted"
+      ]
+    },
+    {
+      "id": "profile_status",
+      "statement": "Third-party profile is reachable",
+      "state": "result",
+      "because": "All third party profiles are online",
+      "evidence": [
+        "Source value: Online"
+      ]
+    },
+    {
+      "id": "risky_keywords",
+      "statement": "No risky keywords found",
+      "state": "result",
+      "because": "No risky keywords found.",
+      "evidence": [
+        "Source value: None"
+      ]
+    },
+    {
+      "id": "web_address_verification",
+      "statement": "Website match for submitted address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "web_business_name_verification",
+      "statement": "Website match for business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "web_email_address_verification",
+      "statement": "Website match for submitted email address",
+      "state": "result",
+      "because": "Successfully verified the submitted Email Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "website_url_discovery",
+      "statement": "Website supplied by the customer",
+      "state": "result",
+      "because": "Website URL was submitted",
+      "evidence": [
+        "Source value: Submitted"
+      ]
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": []
+}

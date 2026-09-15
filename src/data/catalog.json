@@ -1,0 +1,863 @@
+{
+  "insights": {
+    "version": 0.1,
+    "scope": "review tasks only",
+    "status_grades_excluded": true,
+    "insights": [
+      {
+        "id": "business_name_verification",
+        "review_task_key": "name",
+        "name": "Business name",
+        "statement": "the submitted business name is verified against a registration",
+        "group": "Formation Identity",
+        "template": "verification",
+        "values": [
+          "Verified",
+          "Similar Match",
+          "Unverified"
+        ],
+        "attributes": [
+          "business.name",
+          "registrations.name",
+          "registrations.dbas",
+          "registrations.alternative_name"
+        ],
+        "sources": {
+          "default": [
+            "sos_registrations",
+            "global_registrations"
+          ],
+          "opt_in": [
+            "dba_registration",
+            "city_registration",
+            "jurisdiction_registration",
+            "st_permit",
+            "tax_exempt_organization",
+            "ptin_holder",
+            "professional_license",
+            "npi_record",
+            "fmcsa_registration",
+            "sba_entity_v2",
+            "sam_entity_extract",
+            "sec_filing",
+            "form_5500",
+            "lien",
+            "generic_verification_source",
+            "website",
+            "profile"
+          ]
+        },
+        "coverage": [
+          "DBA filings unsupported in 15 states (DOCUMENTED, doc 01)",
+          "previous_name exists on the SOS record but scraper coverage is limited (DOCUMENTED)"
+        ],
+        "notes": "\"Unverified\" was OBSERVED on records with formation=null and no registration — nothing to verify against, graded failure. Under this model that is a no_result, not a verification outcome. See templates.yaml: the enum deliberately excludes `unverified`.\n"
+      },
+      {
+        "id": "sos_registration_status",
+        "review_task_key": [
+          "sos_active",
+          "sos_inactive",
+          "sos_domestic",
+          "sos_match",
+          "sos_unknown",
+          "sos_not_found"
+        ],
+        "name": "Secretary of State registration status",
+        "statement": "the business holds registrations with these statuses in these states",
+        "group": "Formation Identity",
+        "template": "status",
+        "values": {
+          "sos_active": [
+            "Active"
+          ],
+          "sos_inactive": [
+            "Inactive",
+            "Partially Inactive"
+          ],
+          "sos_domestic": [
+            "Domestic Active",
+            "Domestic Inactive",
+            "Domestic Unknown"
+          ],
+          "sos_match": [
+            "Submitted Active",
+            "Submitted Inactive",
+            "Submitted Not Registered"
+          ],
+          "sos_unknown": [
+            "Partially Unknown"
+          ],
+          "sos_not_found": [
+            "Not Registered"
+          ]
+        },
+        "attributes": [
+          "registrations.status",
+          "registrations.sub_status",
+          "registrations.status_details",
+          "registrations.state",
+          "registrations.jurisdiction",
+          "registrations.file_number",
+          "registrations.registration_date",
+          "formation.state",
+          "formation.date"
+        ],
+        "sources": {
+          "default": [
+            "sos_registrations",
+            "global_registrations"
+          ]
+        },
+        "coverage": [
+          "7 states have no SOS ingestion at all — AK, AR, DC, HI, IA, RI, WV (DOCUMENTED, docs 04/07)"
+        ],
+        "open": [
+          "These six keys are facets of one multi-state picture, not six insights. One record OBSERVED carrying sos_active (Active), sos_inactive (Partially Inactive) and sos_unknown (Partially Unknown) simultaneously. Entered as one insight over a set of registrations; confirm before writing entries for the rest of the surface.\n"
+        ]
+      },
+      {
+        "id": "sos_good_standing",
+        "review_task_key": "sos_domestic_sub_status",
+        "name": "Good standing",
+        "statement": "the domestic registration's sub-status as the state reports it",
+        "group": "Formation Identity",
+        "template": "status",
+        "values": [
+          "Good Standing",
+          "Not Provided by State"
+        ],
+        "documented_values": [
+          "GOOD_STANDING",
+          "NOT_GOOD_STANDING",
+          "PENDING_ACTIVE",
+          "PENDING_INACTIVE",
+          "DISSOLVED",
+          "blank"
+        ],
+        "attributes": [
+          "registrations.sub_status",
+          "certificate_of_good_standing"
+        ],
+        "sources": {
+          "default": [
+            "sos_registrations"
+          ],
+          "opt_in": [
+            "certificate_of_good_standing"
+          ]
+        },
+        "coverage": [
+          "\"Not Provided by State\" is a no_result / not_published, OBSERVED today as a `warning`. This is the clearest live instance of the problem the concept exists to fix.\n"
+        ]
+      },
+      {
+        "id": "address_deliverability",
+        "review_task_key": "address_deliverability",
+        "name": "Address deliverability",
+        "statement": "USPS reports this address as deliverable, undeliverable, vacant or unknown",
+        "group": "Operating Identity",
+        "template": "status",
+        "values": [
+          "Deliverable"
+        ],
+        "documented_values": [
+          "deliverable",
+          "undeliverable",
+          "vacant",
+          "unknown"
+        ],
+        "attributes": [
+          "addresses.full_address",
+          "addresses.deliverability"
+        ],
+        "sources": {
+          "default": [
+            "usps"
+          ]
+        }
+      },
+      {
+        "id": "address_property_type",
+        "review_task_key": "address_property_type",
+        "name": "Address property type",
+        "statement": "USPS reports this address as commercial or residential",
+        "group": "Operating Identity",
+        "template": "status",
+        "values": [
+          "Commercial",
+          "Residential"
+        ],
+        "attributes": [
+          "addresses.property_type"
+        ],
+        "sources": {
+          "default": [
+            "usps"
+          ]
+        },
+        "notes": "PO boxes count as commercial (DOCUMENTED, doc 02)."
+      },
+      {
+        "id": "address_registered_agent",
+        "review_task_key": "address_registered_agent",
+        "name": "Registered agent address",
+        "statement": "this address belongs to a registered-agent firm",
+        "group": "Operating Identity",
+        "template": "discovery",
+        "values": [
+          "Registered Agent"
+        ],
+        "attributes": [
+          "addresses.labels",
+          "registrations.registered_agent.name"
+        ],
+        "sources": {
+          "default": [
+            "sos_registrations"
+          ]
+        },
+        "notes": "RA name match, RA-count threshold, or LLM classification (DOCUMENTED, doc 02)."
+      },
+      {
+        "id": "address_cmra",
+        "review_task_key": null,
+        "name": "CMRA address",
+        "statement": "this address is a commercial mail receiving agency",
+        "group": "Operating Identity",
+        "template": "discovery",
+        "attributes": [
+          "addresses.cmra"
+        ],
+        "sources": {
+          "default": [
+            "usps"
+          ]
+        },
+        "notes": "DOCUMENTED in doc 02; NOT OBSERVED in any review task across 13 records."
+      },
+      {
+        "id": "location_frequency",
+        "review_task_key": "location_frequency",
+        "name": "Location frequency",
+        "statement": "this address is shared with other businesses, in this band",
+        "group": "Operating Identity",
+        "template": "status",
+        "values": [
+          "Low frequency",
+          "Moderate frequency",
+          "High frequency"
+        ],
+        "bands": {
+          "low": 1,
+          "moderate": 21,
+          "high": 101
+        },
+        "attributes": [
+          "addresses.location_frequency"
+        ],
+        "open": [
+          "Banded, not counted. No number and no reachable list of the businesses sharing the address is returned. The count template as drafted does not fit this — it promises \"the count, and the items, each reachable\". Either the underlying count becomes reachable, or the template changes, or this is a status insight over bands. Entered as status pending that.\n"
+        ]
+      },
+      {
+        "id": "address_frequency_profile",
+        "review_task_key": [
+          "location_frequency",
+          "address_property_type"
+        ],
+        "name": "Address frequency and type",
+        "statement": "a high frequency commercial address was found",
+        "group": "Operating Identity",
+        "template": "status",
+        "attributes": [
+          "addresses.location_frequency",
+          "addresses.property_type"
+        ],
+        "status": "proposed — composed insight, confirm before extending the pattern",
+        "notes": "Worked example of composition, and of neutrality.\nTwo attributes, one statement. The same statement is neutral or notable depending on the business: a high-frequency COMMERCIAL address is an office building, which is ordinary. A high-frequency RESIDENTIAL address is the shell-company pattern. Neither reading belongs to the insight — it reports what was found, and the assessment decides what it means against entity type, industry and size.\nThis is why the pair is more useful composed than split: read separately, \"High frequency\" and \"Commercial\" each invite a judgement that only makes sense together. The source material makes the same point — \"a high-frequency commercial address is not as consequential as a high-frequency residential address\" (doc 02).\nStill holds: the band must keep its count reachable (101+ businesses at this address), or the statement asserts \"high\" against a threshold the reader cannot see. See the open item on `location_frequency`.\n"
+      },
+      {
+        "id": "submitted_registration_address_distance",
+        "review_task_key": null,
+        "name": "Distance between submitted and registration address",
+        "statement": "the submitted address is 0.6 mi from the registration address",
+        "group": "Operating Identity",
+        "template": "measurement",
+        "attributes": [
+          "addresses.latitude",
+          "addresses.longitude",
+          "addresses.sources",
+          "addresses.labels",
+          "business.submitted_address"
+        ],
+        "status": "proposed — needs a template decision",
+        "notes": "Second worked example, and a different shape from the first.\nComputable today. `addresses[]` carries `latitude` / `longitude` and `sources[].type: registration` (OBSERVED), so the distance between the submitted address and the registration-sourced address is derivable from data already returned. No new source needed.\nNeutral by construction. 0.6 mi is a measurement. It is ordinary for a business that moved suite or uses a nearby registered agent, and notable for one claiming a single fixed premises. The assessment decides; the insight states the distance.\nContrast with the existing review task: `address_verification` returns Verified / Unverified — a binary produced by thresholding something. The distance is the fact underneath it. Same relationship as `location_frequency`'s bands to its count.\n",
+        "template_gap": "No template in templates.yaml fits a measured quantity with a unit. This is not `count` (nothing is being counted), not `status` (not an enumerated state), not `verification` (not an agreement outcome).\nThe class is broader than this one insight: a distance in miles, an age in days (domain registered 14 days ago vs formation 10 years ago — named in doc 03), a duration, a ratio. All are neutral numbers with units whose meaning is the assessment's to decide.\nProposal: a `measurement` template — {value, unit, of, measured_between}. Do not add it to templates.yaml until deliverable 1 is confirmed against the API; recorded here so the gap is not lost.\n"
+      },
+      {
+        "id": "watchlist_screening",
+        "review_task_key": "watchlist",
+        "name": "Watchlist",
+        "statement": "screening the business against watchlist sources returned these hits",
+        "group": "Entity Screening",
+        "template": "screening_hits",
+        "values": [
+          "No Hits",
+          "Hits"
+        ],
+        "attributes": [
+          "business.names",
+          "account_watchlist_sources"
+        ],
+        "sources": {
+          "default": [
+            "OFAC SDN",
+            "OFAC SSI",
+            "OFAC FSE",
+            "NS-CMIC",
+            "NS-MBS",
+            "NS-ISA",
+            "PLC",
+            "CAP",
+            "BIS Entity List",
+            "DPL",
+            "UVL",
+            "MEU",
+            "State Dept ITAR Debarred",
+            "ISN"
+          ]
+        },
+        "coverage": [
+          "\"No Hits\" does not distinguish \"screened, found nothing\" from \"not screened\". A no_result is not expressible in this surface today.\n"
+        ]
+      },
+      {
+        "id": "adverse_media_screening",
+        "review_task_key": "adverse_media",
+        "name": "Adverse media",
+        "statement": "adverse media screening returned these hits, with their match scores and topics",
+        "group": "Entity Screening",
+        "template": "screening_hits",
+        "values": [
+          "No results",
+          "Low risk"
+        ],
+        "attributes": [
+          "adverse_media_screening_result.match_score",
+          "adverse_media_screening_result.status",
+          "adverse_media_screening_result.risk_scores"
+        ],
+        "risk_score_topics": [
+          "sanctions",
+          "terrorism",
+          "terror_funding",
+          "money_laundering",
+          "fraud_bribery_corruption",
+          "tax_evasion",
+          "insider_trading",
+          "organized_crime"
+        ],
+        "decompose": true,
+        "notes": "\"Low risk\" is a grade in the subLabel, and the review task takes the MAX of the per-topic risk_scores (≥0.66 fail, ≥0.33 warn) — a threshold rule, which is an assessment. The insight reports the hits, their match_score and their per-topic risk_scores. The max-and-threshold read moves to the assessment. `status: included / dismissed by analyst` is a RECORDED disposition — a fact, reportable (see templates.yaml screening_hits).\n"
+      },
+      {
+        "id": "bankruptcies_screening",
+        "review_task_key": "bankruptcies",
+        "name": "Bankruptcies",
+        "statement": "searching bankruptcy records returned these filings",
+        "group": "Entity Screening",
+        "template": "screening_hits",
+        "values": [
+          "None Found"
+        ],
+        "sources": {
+          "opt_in": [
+            "bankruptcies"
+          ]
+        }
+      },
+      {
+        "id": "litigations_screening",
+        "review_task_key": "litigations",
+        "name": "Litigations",
+        "statement": "searching litigation records returned these cases",
+        "group": "Entity Screening",
+        "template": "screening_hits",
+        "values": [
+          "None Found"
+        ],
+        "sources": {
+          "opt_in": [
+            "litigations"
+          ]
+        }
+      },
+      {
+        "id": "liens_screening",
+        "review_task_key": "liens",
+        "name": "Liens",
+        "statement": "searching lien records returned these liens",
+        "group": "Entity Screening",
+        "template": "screening_hits",
+        "values": [
+          "No Liens",
+          "Liens Found"
+        ],
+        "sources": {
+          "opt_in": [
+            "liens",
+            "tax_liens",
+            "ucc_liens"
+          ]
+        }
+      },
+      {
+        "id": "business_connections",
+        "review_task_key": "business_connections",
+        "name": "Connections",
+        "statement": "these related businesses share officers, agents or addresses with this business",
+        "group": "Network",
+        "template": "discovery",
+        "values": [
+          "Not Found",
+          "Found"
+        ],
+        "attributes": [
+          "related_businesses",
+          "related_business_connections",
+          "connection_type"
+        ],
+        "coverage": [
+          "Officers are the primary input and are unavailable in much of the country: 20 of 43 SOS-covered states return an empty officers array (CA, CO, DE, ID, IL, KS, MD, ME, MO, MT, ND, NJ, OH, OK, SC, SD, TN, WI, plus PA), and 7 states have no SOS ingestion at all (AK, AR, DC, HI, IA, RI, WV). (DOCUMENTED, docs 04/07 — see decisions/005 for count discrepancies.)\n",
+          "No UBO data. Ownership is implied from authoritative sources, not confirmed (DOCUMENTED, doc 08).\n"
+        ]
+      },
+      {
+        "id": "person_verification",
+        "review_task_key": "person_verification",
+        "name": "Person verification",
+        "statement": "the submitted person is verified against a registration officer record",
+        "group": "People Screening",
+        "template": "verification",
+        "values": [
+          "Verified"
+        ],
+        "attributes": [
+          "business.people.name",
+          "registrations.officers.name",
+          "registrations.officers.roles"
+        ],
+        "coverage": [
+          "Officer titles captured in 25 states; names only, no title, in 7 (DOCUMENTED)",
+          "20 of 43 SOS states return an empty officers array (DOCUMENTED)",
+          "7 states have no SOS ingestion at all (DOCUMENTED)"
+        ]
+      }
+    ],
+    "not_insights": [
+      {
+        "id": "address_risk",
+        "review_task_key": "address_risk",
+        "values": [
+          "Low",
+          "Moderate",
+          "High"
+        ],
+        "why": "A weighted composite that returns a grade. Decomposes into address_property_type, address_deliverability, address_cmra, address_registered_agent, location_frequency, plus VirtualAddress and GeographicalLocation which have no review task today. Full weights DOCUMENTED in doc 02. See decompositions.md.\n"
+      }
+    ]
+  },
+  "templates": {
+    "version": 0.5,
+    "confirmed_against": [
+      "source/documents/",
+      "source/review-tasks.yaml"
+    ],
+    "confirmed_against_full_api_enumeration": false,
+    "result_envelope": {
+      "fields": {
+        "insight_id": {
+          "required": "always",
+          "type": "string",
+          "note": "references catalog/insights.yaml"
+        },
+        "state": {
+          "required": "always",
+          "enum": [
+            "result",
+            "unknown",
+            "no_result"
+          ],
+          "note": "result   — the insight ran and reached a conclusion; `value` is present\n           and shaped by the template\nunknown  — the insight ran, looked, and reached no conclusion. A\n           legitimate result, not a failure\nno_result — there was nothing to run the insight against\n"
+        },
+        "reason": {
+          "required": "when state == no_result",
+          "forbidden": "when state in [result, unknown]",
+          "enum": [
+            "not_published",
+            "not_required",
+            "not_held_or_unreachable",
+            "should_exist_not_found"
+          ],
+          "note": "Attached evidence, not part of the verdict. The result is `no_result`; the reason says why, underneath it. Closed set, defined in plans/00-MASTER-PLAN.md — a no result that none of the four describes is a finding for decisions/, not a fifth reason.\nOnly should_exist_not_found is adverse. The other three are gaps in our data or facts about the world and must never render as findings against the business.\n"
+        },
+        "coverage_ref": {
+          "required": "when reason == not_published; and when reason == not_held_or_unreachable AND the gap is standing\n",
+          "forbidden": "when reason in [not_required, should_exist_not_found]",
+          "type": "reference into catalog/coverage.yaml",
+          "note": "A result citing a coverage rule asserts a standing, structural fact about what we can get — this is what phase 3 needs to produce a no result from data rather than from an authored fixture.\nnot_held_or_unreachable has two origins and the citation separates them: WITH a coverage_ref it is a known, permanent gap in our holdings (a state whose registry we do not ingest); WITHOUT one, the acquisition attempt failed this time and may succeed next time. Same reason, different advice — \"do not wait for this\" versus \"try again\".\n"
+        },
+        "context_ref": {
+          "required": "when reason == not_required",
+          "forbidden": "when reason != not_required",
+          "type": "reference to the derived applicant-context fact that decided it",
+          "note": "not_required is not coverage. A sole proprietor has no registration to find anywhere — the reason is a fact about entity type and industry, not about a jurisdiction, so it resolves at assessment time from derived applicant context (decisions/004). Without the citation the reason is an assertion, and the F1 trace becomes authored, which plans/07-logic.md forbids.\nConsequence carried deliberately: this reason can only be assigned on the second of the two passes (establish context, then interpret against it). On the first pass the insight knows only that it had nothing to work with.\n"
+        },
+        "value": {
+          "required": "when state == result",
+          "forbidden": "when state in [unknown, no_result]",
+          "type": "per template `value` below"
+        },
+        "evidence": {
+          "required": "always",
+          "type": "list of attribute references",
+          "note": "What was consulted, including when nothing was found. Present and possibly empty on no_result — an empty evidence list is itself informative, and the analyst can see we looked.\n"
+        },
+        "sources": {
+          "required": "always",
+          "type": "list of source references",
+          "note": "which sources answered, including whether default or opt-in"
+        }
+      },
+      "invariants": [
+        "No field in any template may carry a judging adjective. No \"high-risk\", \"suspicious\", \"poor\", \"good\". If a value needs an adjective to mean anything, the adjective belongs to the assessment.",
+        "No template returns a grade, score or risk band.",
+        "There is no not-applicable state. Deciding an insight does not apply is a judgement and belongs to the assessment; the nearest honest insight-level statement is no_result with reason not_required — itself assigned from derived context, not by the insight in isolation."
+      ]
+    },
+    "templates": [
+      {
+        "id": "verification",
+        "shape": "agreement between something submitted and something found",
+        "value": {
+          "outcome": {
+            "enum": [
+              "verified",
+              "similar_match",
+              "mismatch"
+            ]
+          },
+          "submitted": {
+            "type": "string"
+          },
+          "found": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "confirmed": {
+          "source_vocabulary": [
+            "verified",
+            "similar_match",
+            "mismatch",
+            "unverified"
+          ],
+          "source_refs": [
+            "doc 03 — web_business_name_verification, web_address_verification, web_person_verification, web_phone_number_verification",
+            "OBSERVED — review task `name` returns Verified / Similar Match / Unverified"
+          ],
+          "divergence": "The source's fourth value `unverified` is NOT in this enum. Confirmed that it means \"nothing found to compare against\": OBSERVED on records with formation=null and no registration. Under this model that is a no_result with a reason, or an unknown — not a verification outcome. The mapping every consumer must apply:\n  unverified + no record to compare  → no_result (reason from coverage/context)\n  unverified + record exists, no conclusion reached → unknown\nRecorded rather than applied silently, because the source vocabulary is\nwhat the API returns and the divergence is ours.\n"
+        }
+      },
+      {
+        "id": "status",
+        "shape": "an enumerated state observed in a source, in that source's vocabulary",
+        "value": {
+          "state": {
+            "type": "string",
+            "note": "from a per-insight enum declared on the catalog entry"
+          },
+          "as_of": {
+            "type": "date",
+            "optional": true
+          }
+        },
+        "confirmed": {
+          "source_vocabularies": {
+            "registration_status": [
+              "active",
+              "inactive",
+              "dissolved",
+              "revoked"
+            ],
+            "registration_sub_status": [
+              "GOOD_STANDING",
+              "NOT_GOOD_STANDING",
+              "PENDING_ACTIVE",
+              "PENDING_INACTIVE",
+              "DISSOLVED",
+              "blank"
+            ],
+            "address_deliverability": [
+              "deliverable",
+              "undeliverable",
+              "vacant",
+              "unknown"
+            ],
+            "address_property_type": [
+              "commercial",
+              "residential"
+            ],
+            "website_status": [
+              "online",
+              "offline",
+              "unknown"
+            ],
+            "profile_status": [
+              "online",
+              "offline",
+              "unknown"
+            ]
+          },
+          "note": "Do not normalise across sources. \"revoked\" and \"dissolved\" stay as the source reports them.\n",
+          "divergence": "Several source vocabularies contain `unknown` as a state value (address_deliverability, website_status, profile_status). That is the envelope's `unknown` result, not a status value — the insight ran and reached no conclusion. Consumers map it out of the enum.\n"
+        }
+      },
+      {
+        "id": "discovery",
+        "shape": "whether a thing exists and was located",
+        "value": {
+          "found": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "list"
+          },
+          "submitted": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "confirmed": {
+          "source_vocabulary": [
+            "submitted",
+            "found",
+            "not_found"
+          ],
+          "source_refs": [
+            "website_url_discovery",
+            "profile_discovery"
+          ],
+          "divergence": "The source's three values mix an input with an outcome — `submitted` says the customer gave us something, which is provenance, not a result. Restated as a boolean plus items, carrying `submitted` alongside. Confirmed against doc 03: no source check depends on distinguishing \"found what was submitted\" from \"found something else\" — that is web_*_verification's job, which is a verification.\n"
+        }
+      },
+      {
+        "id": "classification",
+        "shape": "an assigned code or label, with confidence",
+        "value": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "scheme": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "string",
+            "note": "as the source reports it; not normalised"
+          }
+        },
+        "confirmed": {
+          "source_refs": [
+            "doc 05 / doc 02 — industry_classification produces NAICS codes, MCC codes and a prohibited-industry label with a confidence score",
+            "doc 03 — website_url_domain_ownership returns high|medium|low_confidence / not_enough_info"
+          ],
+          "note": "CONFIRMED including the confidence field. Prohibited-industry labels (~17: CANNABIS, GAMBLING, ADULT_CONTENT, VIRTUAL_CURRENCY, MULTI_LEVEL_MARKETING, GET_RICH_QUICK, … / OTHER_NON_PROHIBITED) are labels from a scheme, not judgements this insight makes — whether a prohibited label matters is the customer's policy, at the assessment. `not_enough_info` is a no_result, not a confidence level.\n"
+        }
+      },
+      {
+        "id": "screening_hits",
+        "shape": "a list of candidate matches against a screened list or corpus",
+        "value": {
+          "hits": [
+            {
+              "candidate": {
+                "type": "string"
+              },
+              "match_score": {
+                "type": "number",
+                "note": 0,
+                "as the source reports it": null
+              },
+              "matched_on": {
+                "type": "list"
+              },
+              "hit_type": {
+                "type": "string",
+                "optional": true,
+                "note": "pep | alias | association"
+              },
+              "risk_scores": {
+                "type": "map",
+                "optional": true,
+                "note": "0-1 per topic"
+              },
+              "recorded_disposition": {
+                "optional": true,
+                "fields": [
+                  "value",
+                  "recorded_by",
+                  "recorded_at"
+                ]
+              }
+            }
+          ],
+          "hit_count": {
+            "type": "integer"
+          }
+        },
+        "confirmed": {
+          "source_refs": [
+            "doc 08 / 09 — adverse_media_screening_result.match_score (kept if >= 0.85), .status (included / dismissed by analyst), .risk_scores per topic",
+            "doc 09 — politically_exposed_person_screening.results, hit_type = pep | alias | association"
+          ],
+          "note": "CONFIRMED, including the recorded-vs-computed disposition split proposed before the documents landed: `status: included / dismissed by analyst` is a disposition a PERSON recorded — a fact, reportable.\n",
+          "divergence": "\"The review task uses the max of these (>=0.66 fail, >=0.33 warn)\" (docs 08/09) is a threshold rule over the risk_scores. That is an assessment. The insight reports the per-topic scores; the max-and-threshold read moves up a layer. Same for the >= 0.85 match_score cutoff — report it as the source's inclusion rule, do not restate it as a finding.\n"
+        }
+      },
+      {
+        "id": "change_events",
+        "shape": "a dated list of what changed",
+        "value": {
+          "events": [
+            {
+              "date": {
+                "type": "date"
+              },
+              "field": {
+                "type": "string"
+              },
+              "from": {
+                "type": "string",
+                "optional": true
+              },
+              "to": {
+                "type": "string",
+                "optional": true
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "confirmed": {
+          "source_refs": [
+            "doc 01 — BusinessHistory. registration.updated (active → dissolved), name.* created / deleted",
+            "doc 02 — address.* created / deleted",
+            "doc 04 / 07 — people.* and EntityAsPerson.* created / deleted"
+          ],
+          "note": "CONFIRMED as discrete field-level events, which is what this template assumed. An empty event list is a result — nothing changed is an answer.\n",
+          "coverage": "Digital identity changes are NOT SUPPORTED at all (doc 03). Industry changes are NOT SUPPORTED (doc 05, \"Monitoring: NOT SUPPORTED\"). Both are no_result with reason not_held_or_unreachable.\n",
+          "scoped_out": "raw_documents (filing history) is out of scope for now — noted in the source documents, deliberately not carried into the catalog.\n"
+        }
+      },
+      {
+        "id": "measurement",
+        "shape": "a measured quantity with a unit",
+        "value": {
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "note": "mi, km, days, months, ratio"
+          },
+          "of": {
+            "type": "string",
+            "note": "what was measured",
+            "as a checkable predicate": null
+          },
+          "measured_between": {
+            "type": "list",
+            "optional": true,
+            "note": "the two things compared"
+          }
+        },
+        "added_in": 0.3,
+        "why_added": "Nothing in the previous set expressed a neutral number with a unit. Raised by two worked examples that the existing templates could not carry:\n  - \"the submitted address is 0.6 mi from the registration address\" —\n    computable today from addresses[].latitude / longitude and\n    sources[].type: registration (OBSERVED)\n  - \"the domain was registered 14 days ago\" against a formation date ten\n    years old (doc 03, named as a fraud-investigator use case)\nNot `count` (nothing is counted), not `status` (not an enumerated state),\nnot `classification` (no scheme).\n",
+        "constraints": [
+          "The value carries no reading. 0.6 mi is ordinary for a business that moved suite and notable for one claiming a single fixed premises; which it is, is the assessment's call.",
+          "`of` is a checkable predicate, never a characterisation.",
+          "The unit is open by design. Distance between two addresses, age of a domain or a registration, time since a status change, a ratio between two counts — all are the same shape, and the flexibility is the point. A closed unit list would just be a taxonomy nobody asked for. What is closed is the shape: value, unit, what was measured, and between what.\n"
+        ],
+        "note": "This is the template most likely to absorb work currently done by thresholded binaries. address_verification returns Verified / Unverified; the distance is the fact underneath that binary.\n"
+      },
+      {
+        "id": "count",
+        "shape": "how many things match a predicate, with those things reachable",
+        "value": {
+          "count": {
+            "type": "integer"
+          },
+          "of": {
+            "type": "string",
+            "note": "a checkable predicate",
+            "never a characterisation": null
+          },
+          "out_of": {
+            "type": "integer",
+            "optional": true,
+            "note": "the set counted over"
+          },
+          "items": {
+            "type": "list",
+            "note": "references to the counted items",
+            "individually reachable": null
+          }
+        },
+        "confirmed": {
+          "status": "SATISFIABLE TODAY, BUT NO REVIEW TASK DOES IT",
+          "detail": "The distinction that matters: the template is not unsupported by the data, it is unused by the current check set.\nSatisfiable now. The API returns addresses[], people[] and registrations[] as reachable lists with per-item attributes — OBSERVED: addresses carry labels (e.g. registered_agent), state, and sources[].type, and each item is individually addressable. So a count over a category predicate is computable from data already returned:\n  - \"2 of 4 addresses are registered-agent addresses\"\n  - \"3 of 5 addresses are commercial and high frequency\"\n  - \"1 of 2 registrations is outside the formation state\"\nThe second of those is the interesting shape — counting attributes that fall\ninto a CATEGORY defined by more than one attribute. No check produces it\ntoday; the concept does not exist yet, and the data supports it.\nNot satisfiable from a band. location_frequency returns Low / Moderate /\nHigh, documented as 1-20 / 21-100 / 101+ (doc 02), with no count and no list\nof the businesses sharing the address. The signals surface gives a banded\nrange (\"used by 21-100 other businesses\", V802) — still a band.\n",
+          "rules": [
+            "Reachability is the constraint that keeps this honest and it is not negotiable. Dropping it would let \"6 high-risk addresses found\" back in through the door the model was built to close.\n",
+            "A banded value is a measurement whose value is withheld. Where only the band is available, record the band as `status` AND record the withheld value as a coverage limitation on that insight. Do not present a band as a count. If the underlying counts become reachable, location_frequency moves here.\n",
+            "`of` may compose several attributes (\"commercial and high frequency\") as long as each component is itself a reported fact. Composing facts is allowed; composing a judgement into the predicate is not.\n"
+          ]
+        }
+      }
+    ],
+    "set_decisions": [
+      {
+        "kept_separate": [
+          "verification",
+          "discovery"
+        ],
+        "why": "Discovery asks whether a thing exists; verification asks whether what exists agrees with what was submitted. CONFIRMED against doc 03, which runs both: website_url_discovery (found / not_found) and then web_*_verification over what it found.\n"
+      },
+      {
+        "kept_separate": [
+          "status",
+          "classification"
+        ],
+        "why": "Status is an observed state in a source's vocabulary and carries no confidence. Classification always carries one. CONFIRMED: industry_classification has a confidence score; registration status does not.\n"
+      },
+      {
+        "kept_separate": [
+          "measurement",
+          "count"
+        ],
+        "why": "A count is a cardinality with reachable items. A measurement is a quantity with a unit. Merging them would let a band masquerade as a count.\n"
+      },
+      {
+        "merged": []
+      }
+    ]
+  }
+}
