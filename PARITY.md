@@ -26,7 +26,7 @@ the point of the exercise. The components below are the app's own files.
 
 Imports are `import { Surface, Text } from '@/core'`, exactly as in the app.
 
-## The two local modifications
+## The three local modifications
 
 **1. The clone is pruned.** Only the primitives this screen consumes were copied.
 The full `src/core` is 120 files and pulls in react-router, react-redux,
@@ -37,8 +37,28 @@ dependency tail this prototype has no use for.
 imports everything. This one re-exports only the pruned set. The *kept files* are
 unmodified; only the barrel differs.
 
-Both are marked in the file itself. Adding a primitive means copying its file, its
-transitive core imports, and adding a line to the barrel.
+**3. `src/core/ChatSources.tsx` carries a `screenshot` field.** The first kept file
+to be modified rather than cloned intact, so the re-clone is no longer a straight
+copy for this one file.
+
+`ChatSourceData` gained an optional `screenshot: { src, alt, onOpen? }`. When set,
+the hover preview renders the capture where the headline would go, and `onOpen`
+makes it the trigger for the consumer's viewer. Nothing else changes: a source
+without one renders exactly as before, and a capture that fails to load falls back
+to the headline it replaced.
+
+The field is there because a citation preview titled `facebook.com/middesk`, above
+a snippet reading `https://facebook.com/middesk`, says the same thing twice and
+proves nothing. What a reviewer wants at that moment is the page — the Intro card
+with `hello@middesk.com` highlighted is the evidence; the URL is only its address.
+`title` is typed `string`, so there was no way to do this from the product side.
+
+The viewer itself is NOT in core (`src/components/ScreenshotViewer.tsx`). Core's
+HoverCard contract forbids it owning a dialog reachable only from a hover body, and
+how a capture is shown at full size is the consuming screen's decision.
+
+All three are marked in the files themselves. Adding a primitive means copying its
+file, its transitive core imports, and adding a line to the barrel.
 
 ## Known inherited condition
 
@@ -88,6 +108,11 @@ If this moves in-tree, in order of size:
 3. An outcome normaliser that cannot map absence to negative — or none at the
    insight layer at all.
 4. A list-level absence summary, distinct from `EmptyState`'s region level.
+5. Captures held on the source record, taken at crawl time, with the crop the
+   extractor actually read — `src/lib/sourceScreenshots.ts` is a fixture map keyed
+   by page and attribute, standing in for that. Two open questions it does not
+   answer: how a capture reaches touch, where there is no hover preview to hang it
+   on, and what a stale capture should say when the page has since changed.
 
 ## Not yet built
 

@@ -1,4 +1,4 @@
-import type React from 'react'
+import React from 'react'
 
 import { middleEllipsis } from '@/utils/stringUtils'
 import { cn } from '@/utils/twUtils'
@@ -81,6 +81,20 @@ export type ChatSourceData = {
   /** Custom glyph (a favicon `<img>`, a product mark) sized by the consumer
    *  (12–16px reads best). Falls back to a deterministic letter tile. */
   icon?: React.ReactNode
+  /**
+   * A capture of the page this source is, shown in the preview in place of the
+   * headline — the citation's evidence rather than its address.
+   *
+   * `onOpen` makes the capture the trigger for the consumer's own full-size
+   * viewer. Give the source a `url` or `onSelect` as well — the HoverCard
+   * contract means a click inside the preview must never be the only way to
+   * something.
+   */
+  screenshot?: {
+    src: string
+    alt: string
+    onOpen?: () => void
+  }
 }
 
 // Same derivation as the BusinessHome source cards (which core cannot import)
@@ -177,19 +191,67 @@ const SourceByline = ({ source }: { source: ChatSourceData }) => {
   )
 }
 
-const SourcePreview = ({ source }: { source: ChatSourceData }) => (
+const SCREENSHOT_CLASS = cn('block w-full rounded-control border border-border')
+
+const SourceScreenshot = ({
+  screenshot,
+  onError
+}: {
+  screenshot: NonNullable<ChatSourceData['screenshot']>
+  onError: () => void
+}) => {
+  const image = (
+    <img
+      alt={screenshot.alt}
+      className={SCREENSHOT_CLASS}
+      loading='lazy'
+      src={screenshot.src}
+      onError={onError}
+    />
+  )
+
+  if (!screenshot.onOpen) return image
+
+  return (
+    <button
+      aria-label={`View ${screenshot.alt} full size`}
+      className={cn(
+        'block w-full rounded-control',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+      )}
+      type='button'
+      onClick={screenshot.onOpen}
+    >
+      {image}
+    </button>
+  )
+}
+
+const SourcePreview = ({ source }: { source: ChatSourceData }) => {
+  // A capture that will not load falls back to the headline it replaced. The
+  // alternative is a preview showing a broken-image glyph where the evidence
+  // should be, which reads as evidence that failed rather than none held.
+  const [failed, setFailed] = React.useState(false)
+  const screenshot = failed ? undefined : source.screenshot
+
+  return (
   <div className='grid gap-1.5 p-3'>
     <SourceByline source={source} />
-    <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
-      {source.title ?? source.label}
-    </div>
+    {screenshot ? (
+      <SourceScreenshot screenshot={screenshot} onError={() => setFailed(true)} />
+    ) : (
+      <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
+        {source.title ?? source.label}
+      </div>
+    )}
     {source.snippet && (
       <div className='line-clamp-3 text-caption text-[var(--core-color-text-secondary)]'>
         {source.snippet}
       </div>
     )}
   </div>
-)
+  )
+}
 
 // ---------------------------------------------------------------------------
 // SourceList — the accessible full list (the +N popover and the ChatSources
@@ -323,6 +385,8 @@ export const ChatSourceChip = ({
   sources,
   themeMode
 }: ChatSourceChipProps) => {
+  const [previewOpen, setPreviewOpen] = React.useState(false)
+
   if (sources.length === 0) return null
 
   const [first] = sources
@@ -352,6 +416,22 @@ export const ChatSourceChip = ({
   const face = <ChipFace source={first} />
   const name = `Source: ${first.title ?? first.label}`
 
+  // Opening the full-size viewer dismisses the preview that launched it. Left
+  // to its own close delay the card outlives the dialog it spawned and floats
+  // over it until the pointer happens to move.
+  const previewSource: ChatSourceData = first.screenshot?.onOpen
+    ? {
+        ...first,
+        screenshot: {
+          ...first.screenshot,
+          onOpen: () => {
+            setPreviewOpen(false)
+            first.screenshot?.onOpen?.()
+          }
+        }
+      }
+    : first
+
   const trigger = first.url ? (
     <a
       aria-label={name}
@@ -380,10 +460,10 @@ export const ChatSourceChip = ({
   }
 
   return (
-    <HoverCard>
+    <HoverCard onOpenChange={setPreviewOpen} open={previewOpen}>
       <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
       <HoverCardContent className='w-72' side='top' themeMode={themeMode}>
-        <SourcePreview source={first} />
+        <SourcePreview source={previewSource} />
       </HoverCardContent>
     </HoverCard>
   )

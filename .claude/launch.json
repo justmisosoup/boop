@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "prototype",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": ["vite", "--port", "5199", "--strictPort"],
+      "port": 5199
     }
   ]
 }

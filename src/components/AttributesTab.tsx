@@ -6,7 +6,9 @@ import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { CHIP_NO_GLYPH } from './chipStyles'
 import { registrationSources } from './SourceChip'
-import { SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
+import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
+import { screenshotFor } from '../lib/sourceScreenshots'
+import { useScreenshotViewer } from './ScreenshotViewer'
 
 /**
  * Source labels, normalised.
@@ -134,6 +136,7 @@ export const AttributeSources = ({
   href,
   note,
   title,
+  label,
   onJumpToSource
 }: {
   sources: string[]
@@ -145,8 +148,22 @@ export const AttributeSources = ({
   href?: string
   note?: string
   title?: string
+  /** The attribute this row states. Selects the capture taken for that claim —
+   *  the crop showing the email, not the whole page it sat on. */
+  label?: string
   onJumpToSource?: (cardId: string) => void
 }) => {
+  const { open: openScreenshot } = useScreenshotViewer()
+
+  // The capture is of ONE page, so it belongs to the source that IS that page.
+  // Hung on every source in the row, a Facebook capture would have appeared
+  // under the website crawl's chip as though the crawl had taken it.
+  const capture = screenshotFor(href, label ?? '')
+  const capturedBy = (name: string) =>
+    Boolean(capture) &&
+    PROFILES.has(name) &&
+    (href ?? '').toLowerCase().includes(name.toLowerCase())
+
   // Each article on its own destination. These are the pages themselves, not
   // records in the Sources tab, so they link out.
   if (links?.length)
@@ -209,7 +226,11 @@ export const AttributeSources = ({
     // Same rule as the filings: the destination is the source's card in the
     // Sources tab. The site it was found on stays in the preview.
     onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined,
-    annotation: note ?? 'Source'
+    annotation: note ?? 'Source',
+    screenshot:
+      capture && capturedBy(sourceLabel(name))
+        ? { ...capture, onOpen: () => openScreenshot(capture) }
+        : undefined
   }))
 
   // One chip, origin first: the domestic filing the value comes from, then
@@ -458,6 +479,7 @@ export const AttributesTab = ({
                         href={a.href}
                         note={a.sourceNote}
                         title={a.sourceTitle}
+                        label={a.label}
                         onJumpToSource={onJumpToSource}
                       />
                     </span>

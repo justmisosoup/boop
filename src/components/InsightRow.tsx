@@ -245,6 +245,7 @@ export const InsightRow = ({
                 href={a.href}
                 note={a.sourceNote}
                 title={a.sourceTitle}
+                label={a.label}
                 onJumpToSource={onJumpToSource}
               />
             </li>

@@ -18,6 +18,7 @@ import { AnalysisDock } from './components/AnalysisDock'
 import { AttributesTab, countAttributes } from './components/AttributesTab'
 import { AnalysisPanel } from './components/AnalysisPanel'
 import { BusinessLede } from './components/BusinessLede'
+import { ScreenshotViewerProvider } from './components/ScreenshotViewer'
 import { SourcesTab, sourcesFor } from './components/SourcesTab'
 import { InsightRow } from './components/InsightRow'
 import records from './data/records.json'
@@ -134,6 +135,7 @@ export default function App() {
   }
 
   return (
+    <ScreenshotViewerProvider>
     <div className="core-theme min-h-full">
       <div className="mx-auto max-w-[880px] px-6 pb-40 pt-10">
         {/* Search sits on the assessment screen. Typing swaps the business
@@ -305,5 +307,6 @@ export default function App() {
         hasAnalysis={analysis.versions.length > 0}
       />
     </div>
+    </ScreenshotViewerProvider>
   )
 }
