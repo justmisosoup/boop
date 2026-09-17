@@ -1,0 +1,46 @@
+{
+  "headline": "Onboard subject to conditions: the practice verifies cleanly from both the registration and its own web presence, but customer identification cannot complete without a TIN, and a professional entity needs its licensing and its members evidenced before the file stands.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "This is a straightforward file with two things genuinely missing and one that only looks missing. The TIN is the blocker: identification is otherwise complete, but a verified taxpayer identification number is a required element of it and this record has none, so the account cannot open on the file as it stands. The second is the pair of questions the entity form raises — who the members are and whether they hold current New York physical therapy licences — neither of which any registry publishes and both of which come from the customer. The third, the unmatched officer in Ownership, is not an adverse finding: New York does not publish PLLC members, and the same person was verified against the practice's own site. Beyond those, the DBA is an assumed-name filing to resolve rather than a risk, and the one unknown third-party profile is worth a second look only because everything around it corroborates so consistently.",
+        "cites": ["tin", "person_verification", "web_person_verification", "dba_name", "industry", "profile_status"]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Obtain the TIN from the customer and run the check against the business name, since customer identification cannot be completed without it and nothing else in the file substitutes.",
+      "cites": ["tin"],
+      "closes": ["tin_verification"]
+    },
+    {
+      "text": "Collect a signed beneficial-ownership certification naming every member holding 25 percent or more, and screen each of them against watchlists and PEP lists as the submitted individual already was.",
+      "cites": ["person_verification", "watchlist", "politically_exposed_persons"],
+      "closes": ["beneficial_ownership"]
+    },
+    {
+      "text": "Take the practitioners' New York physical therapy licence numbers and confirm each is current with the Office of the Professions, since a professional entity may only be owned by licensed members and the licence is what makes the revenue lawful.",
+      "cites": ["industry"],
+      "closes": ["professional_licensure"]
+    },
+    {
+      "text": "Ask the customer whether Kairos Physio is filed as an assumed name and obtain the certificate if so, because the practice appears to trade under a name no filing carries.",
+      "cites": ["dba_name"]
+    },
+    {
+      "text": "Re-check the third-party profile that returned an unknown status, which is the one piece of web evidence that neither supports nor contradicts the rest.",
+      "cites": ["profile_status", "profile_discovery"],
+      "closes": ["profile_status"]
+    },
+    {
+      "text": "Assemble the case file in stage order — identification evidence including the TIN, the ownership certification and licence confirmations, the web and address corroboration, then the screening and adverse dispositions — and date-stamp each item for the next periodic review.",
+      "cites": ["web_address_verification"]
+    },
+    {
+      "text": "Set lighter monitoring terms than the clean record alone would suggest, refreshing adverse media, liens and litigation on a fixed cycle because a practice formed in 2022 has a short history rather than a proven one.",
+      "cites": ["adverse_media", "liens", "litigations"]
+    }
+  ]
+}

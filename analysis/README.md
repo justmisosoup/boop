@@ -6,7 +6,7 @@ is the spec the session writes against — it is load-bearing, not documentation
 - `pending.json` — the latest request, written when the user hits Run.
 - `request-<id>.json` — kept per request, so a refinement can be read in context.
 - `result-<id>.assessments.json` — **stage one**, written first: the lede and the
-  four assessments. No recommendation.
+  five onboarding stages. No recommendation.
 - `result-<id>.json` — **stage two**, written after: the verdict. The endpoint
   refuses to serve it unless stage one is already on disk.
 
@@ -15,7 +15,7 @@ is the spec the session writes against — it is load-bearing, not documentation
 A report is written as **two files**, and the order is enforced rather than assumed.
 
 1. Write `result-<id>.assessments.json` — `{ by, used, sections }` covering
-   `description` and the four assessments. A `recommendation` section here is
+   `description` and the five onboarding stages. A `recommendation` section here is
    rejected. The UI renders these immediately, with the recommendation step still
    spinning: the reader watches the argument land before the conclusion.
 
@@ -54,9 +54,14 @@ financial institution opening a business bank account**.
 It reads in three movements: **what the business is**, **what we think**, then
 **why we think it**. The recommendation sits second, above the assessments it rests
 on — an analyst wants the call before the working, and reads the assessments when
-they want to disagree with it. Between them the assessments must cover whether a
-legally registered entity exists and is active, whether it is actually operating,
-who is behind it, and whether anything screens adversely.
+they want to disagree with it.
+
+The assessments are **the stages an account-opening file is actually built from**,
+not the shape of the record we happen to hold: customer identification, beneficial
+ownership and control, the nature and purpose of the account, sanctions and
+screening, and adverse information and financial standing. Written in that order the
+report is the file, in the sequence a reviewer works it — which is the point of
+structuring it this way rather than by where the data came from.
 
 The headline is the account-opening answer, not a summary of the record. It is
 printed as the first line of `recommendation`, which the reader reaches second. Do
@@ -98,22 +103,30 @@ rather than from the record.
 }
 ```
 
-### The six sections
+### The seven sections
 
-A `report` is written as the same six sections every time, so two businesses can be
+A `report` is written as the same seven sections every time, so two businesses can be
 read against each other and an analyst knows where to look. Write them under these
 ids; the UI supplies the headings and fixes the order — description, recommendation,
-then the four assessments — so the order you write them in does not matter. **Omit a section you have nothing for** — an empty one is worse
+then the five stages — so the order you write them in does not matter. **Omit a section you have nothing for** — an empty one is worse
 than none.
 
 | `id` | What goes in it |
 |---|---|
 | `description` | **The lede.** Renders with no heading, above everything. **What the business does or is — nothing else.** Line of work, who it serves, roughly how big, how long it has been going. See the ban list below. |
-| `recommendation` | **Second, above the assessments.** The decision and what it rests on. `headline` is printed as its first line, so the prose here must carry the argument rather than restate that sentence; `followUps` render beneath it as a bulleted list. |
-| `identity` | Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one. |
-| `ownership` | Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach. |
-| `activity` | Whether it is actually operating — address, website, connections, the shape of the footprint. |
-| `compliance` | Watchlist, PEP, adverse media, liens, litigation, bankruptcy, industry. |
+| `recommendation` | **Second, above the stages.** Whether to onboard, and what that rests on. `headline` is printed as its first line, so the prose here must carry the argument rather than restate that sentence; `followUps` render beneath it as a bulleted list. |
+| `identification` | Does a legally registered entity exist, is it the applicant, and does it stand as registered. Name, TIN, entity type, submitted address against the filings, and registration status including formation-state standing. |
+| `ownership` | The natural persons who own and who control, and which of the two the record can reach at all. Officers matched against public filings, submitted people, related entities, and what only a customer certification can supply. |
+| `purpose` | Whether the business is operating and what is expected to move through the account. Address, website, third-party profiles, footprint, line of work — the evidence that the stated purpose is the real one. |
+| `screening` | Watchlist and sanctions hits, PEP exposure of the business and of the individuals behind it. Say when this stage returns a finished answer rather than an absent order — the two read alike and are not alike. |
+| `adverse` | Adverse media, liens, litigation, bankruptcy, and anything else bearing on financial standing. An uncharacterised finding is stated as uncharacterised. |
+
+**Write each stage as a stage of the file, not a category of data.** The question a
+stage answers is "is this part of the onboarding file complete, and what is it
+missing" — so a stage that is satisfied says so, and a stage that is waiting on a
+document or an order says which. That is what makes the report handable to a reviewer
+as it stands. The judging still belongs to `recommendation`: a stage says what is
+present and what is outstanding, not whether the outcome is acceptable.
 
 A `question` does **not** use these. Answer it on its own terms in one section with
 `"id": "answer"` — it renders with no heading, beneath the headline, which leads
@@ -227,12 +240,17 @@ is a legitimate finding. Silently ignoring one is the failure mode.
 for a sole proprietor; a registered-agent address is ordinary for a Delaware
 corporation.
 
-**Keep the recommendation to one paragraph.** The four assessments below carry the
+**Keep the recommendation to one paragraph.** The five stages below carry the
 evidence. Re-stating what the registries, the officer match and the website each
 showed says the same thing twice, at length, in the section least able to act on it.
 
-The paragraph has one job: name what is still open **against the customer's policy**,
-and frame the steps that close it. **Point at the assessments rather than repeat
+The paragraph has one job: say **whether to onboard**, name what is still open
+**against the customer's policy**, and frame the steps that close it. The decision is
+one of three — onboard, onboard subject to named conditions, or do not onboard — and
+the headline states which. Sort the open items by what kind of thing each is: an
+order, a document to collect from the customer, a finding to read before anyone can
+weigh it, or a policy decision the bank makes about itself rather than about this
+record. **Point at the assessments rather than repeat
 them** — "the unsized liens in Compliance" tells a reader where to look and costs six
 words; re-arguing the finding costs four sentences and adds nothing they cannot
 already see. Say what kind of thing each open item is: an order, a decision about

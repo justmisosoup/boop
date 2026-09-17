@@ -1,0 +1,145 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "tin",
+    "sos_active",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_match",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "business_connections",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "location_frequency:high",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Middesk sells business identity infrastructure to regulated financial institutions — banks, lenders and fintech platforms that have to verify a business customer before opening an account or extending credit. It pulls filings from state and federal registries behind an API, and sells verification, ongoing monitoring and agent-assisted state registration on top of that data. Revenue is subscription and per-verification fees from those institutions."
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "The submitted identity and the registered one are the same entity, and the record now establishes that from four directions rather than three. The name matches the state registrations, the submitted office address matches an address on a registration, the entity type reads as a corporation against the domestic filing, and the IRS holds a record for the submitted TIN and business name together.",
+          "cites": ["name", "address_verification", "entity_type", "tin"]
+        },
+        {
+          "text": "The registration picture is mixed and reads as ordinary for a company that registers where it does business. Two of five filings are active — including the one in the state of the submitted office address — one is inactive, and two return no status at all.",
+          "cites": ["sos_active", "sos_match", "sos_inactive", "sos_unknown"]
+        },
+        {
+          "text": "The formation state is the one that cannot be read. Delaware returns no status for the domestic filing and publishes no good-standing sub-status, so the registration a reviewer would most want confirmed is the one the record cannot speak to.",
+          "cites": ["sos_domestic", "sos_domestic_sub_status"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "domestic_standing",
+          "point": "Whether the Delaware domestic registration is active and in good standing",
+          "why": "not_published",
+          "wouldAnswer": "Delaware publishes neither a status nor a good-standing sub-status through this channel. A Certificate of Good Standing from the customer is the only route.",
+          "cites": ["sos_domestic", "sos_domestic_sub_status"]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "A submitted person matches an officer on the state registrations, so the record reaches a named individual attached to the entity. Twenty related businesses share officers, agents or addresses with this one — a number that reflects founders and registered agents sitting across several entities rather than anything on its own.",
+          "cites": ["person_verification", "business_connections"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "beneficial_ownership",
+          "point": "Who ultimately owns the company, as distinct from who is named as an officer",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Officers are published and matched; beneficial ownership is a different question and nothing in the catalog reaches it. A submitted ownership structure would answer it.",
+          "cites": ["person_verification"]
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "The submitted address is deliverable and commercial. Across the addresses on the record, three are shared with twenty or fewer businesses, one with between twenty-one and a hundred, and five with more than a hundred — the signature of registered-agent offices rather than of anything adverse for a company registered in five states.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:low",
+            "location_frequency:moderate",
+            "location_frequency:high"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "web_presence",
+          "point": "Whether the company's website and online presence corroborate the application",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "No website, domain or profile check returned on this pull, though the catalog defines eleven. For a software vendor selling through a web product, that is the most direct operating evidence available and none of it is here."
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Two things on this record now point at the business rather than at the limits of the data. Adverse media returned one or more high risk sources, and a new lien was filed within the past three months. Neither is characterised further by the record — no counterparty, no amount, no subject matter.",
+          "cites": ["adverse_media", "liens"]
+        },
+        {
+          "text": "Ten related litigations sit alongside them, uncharacterised in the same way. For a company of this size litigation is unremarkable in itself; what is not established is whether these are ordinary commercial matters or whether any of them connects to the adverse media above.",
+          "cites": ["litigations"]
+        },
+        {
+          "text": "The screening that did clear, cleared completely: no watchlist hits, no politically exposed persons among the submitted individuals or their relatives and close associates, and no bankruptcy filings.",
+          "cites": ["watchlist", "politically_exposed_persons", "bankruptcies"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "adverse_media_detail",
+          "point": "What the high risk adverse media source says, and whether it concerns this business",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The record carries the score and not the source. The articles behind it are what decide whether this is a name collision or a finding.",
+          "cites": ["adverse_media"]
+        },
+        {
+          "id": "lien_detail",
+          "point": "What the new lien secures, its amount, and the secured party",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "A lien filed in the last three months is recent enough to bear on the decision, and the record carries its existence without its size.",
+          "cites": ["liens"]
+        },
+        {
+          "id": "litigation_detail",
+          "point": "Whether the ten litigations are ordinary commercial matters, and whether the business is plaintiff or defendant",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "Ten is a count, not a characterisation. Reading them is what separates routine contract disputes from anything connected to the adverse media.",
+          "cites": ["litigations"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "section": {
+    "id": "identity",
+    "body": [
+      {
+        "text": "The submitted name matches the name on five state registrations, so the applicant resolves onto real filings rather than onto a single unconfirmed one.",
+        "cites": ["name"]
+      },
+      {
+        "text": "Those five do not agree with each other. Two are active, one is inactive, and two carry no status at all. The filing in the state of the submitted address is among the active ones, which is the registration that matters most for where the business says it operates.",
+        "cites": ["sos_active", "sos_inactive", "sos_unknown", "sos_match"]
+      },
+      {
+        "text": "The formation state returns no status for the domestic filing. That is Delaware declining to publish it rather than a filing that could not be found, so the entity's standing where it was formed is simply not established here.",
+        "cites": ["sos_domestic"]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "domestic_standing",
+        "point": "Whether the Delaware domestic registration is in good standing",
+        "why": "not_published",
+        "wouldAnswer": "Delaware publishes no status or sub-status for the domestic filing, so no order returns one. A Certificate of Good Standing obtained from the customer is the only route.",
+        "cites": ["sos_domestic"]
+      }
+    ]
+  }
+}

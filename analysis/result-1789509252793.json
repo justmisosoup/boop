@@ -1,0 +1,62 @@
+{
+  "headline": "Open the account, subject to evidence of the practitioner's licence. Identity, operating status and screening are all answered; what the record cannot reach is the one condition this entity form depends on.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "Everything a single-state practice should show, it shows. One registration, active, domestic, in the state of the submitted address, with name, address, formation state and entity type all agreeing on it. The web evidence is the strongest part of the file — name, address, email, phone and the named person all corroborated by a reachable site whose domain registrant ties back to the business — and the physical footprint is a small commercial address shared with few others rather than a mail-drop.",
+        "cites": [
+          "sos_active",
+          "sos_domestic",
+          "sos_match",
+          "name",
+          "formation_state",
+          "website_url_domain_ownership",
+          "web_person_verification",
+          "address_property_type",
+          "location_frequency:low"
+        ]
+      },
+      {
+        "text": "The gap that matters is licensure. A PLLC exists only for licensed practitioners, so a current licence is the condition the entity form rests on — and the professional-licence source is opt-in and was not ordered. Nothing on the record contradicts it; nothing on the record establishes it either, and it is the one absence here that a reviewer should not wave through.",
+        "cites": ["entity_type", "industry"]
+      },
+      {
+        "text": "Two smaller things do not change the call but should not be lost. The submitted person matches the website and not the state registration, which is most likely the registry publishing no members for a PLLC rather than a discrepancy — but it means the person rests on a single source. And the submitted DBA matched no filing, so the trading name the customer gave is currently unevidenced.",
+        "cites": ["person_verification", "web_person_verification", "dba_name"]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Order the professional-licence check, or take the licence number from the customer and verify it with the New York State Education Department. This is the condition the PLLC form depends on.",
+      "cites": ["entity_type", "industry"],
+      "closes": ["professional_licensure"]
+    },
+    {
+      "text": "Confirm whether the state publishes members for a PLLC at all. If it does not, the failed officer match is the registry's silence and the website match stands as the only evidence of the person.",
+      "cites": ["person_verification"],
+      "closes": ["officer_record"]
+    },
+    {
+      "text": "Request a Certificate of Good Standing if standing is gating. New York publishes no sub-status, so no order returns one.",
+      "cites": ["sos_domestic_sub_status"],
+      "closes": ["domestic_standing"]
+    },
+    {
+      "text": "Take a beneficial-ownership declaration. The record reaches a named practitioner and stops; nothing in the catalog covers ownership.",
+      "cites": ["person_verification"],
+      "closes": ["control_persons"]
+    },
+    {
+      "text": "Order the DBA and county registration searches if the trading name matters for the account. The default search does not reach county-level filings.",
+      "cites": ["dba_name"],
+      "closes": ["dba_filing"]
+    },
+    {
+      "text": "Re-run the third-party profile check to clear the unknown status — the only piece of operating evidence that did not land.",
+      "cites": ["profile_status"],
+      "closes": ["third_party_profile"]
+    }
+  ]
+}

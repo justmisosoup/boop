@@ -1,0 +1,197 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "formation_state",
+    "sos_active",
+    "sos_domestic",
+    "sos_match",
+    "dba_name",
+    "tin",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "web_person_verification",
+    "business_connections",
+    "website_status",
+    "website_url_discovery",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "web_phone_number_verification",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "industry",
+    "risky_keywords",
+    "profile_discovery",
+    "profile_status",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Kairos Physical Therapy is a single-location outpatient physical therapy practice on the Upper East Side of Manhattan, treating patients directly rather than through a hospital system. It is organised as a professional limited liability company, the form New York requires for a practice owned and run by licensed professionals, and it earns fees per treatment session from patients and their insurers. It is a small, recently formed practice rather than a multi-site group."
+        }
+      ]
+    },
+    {
+      "id": "identification",
+      "body": [
+        {
+          "text": "The registered entity is established and it is the applicant. The submitted name matches the state registration, the submitted office address matches an address on that registration, the entity type reads as a limited liability company, and the submitted formation state matches the one found. Registration standing is unusually clean for this file: the single filing on record is active, it is the domestic one, and it is in the state of the submitted office address \u2014 there is no mixed picture to interpret.",
+          "cites": [
+            "name",
+            "address_verification",
+            "entity_type",
+            "formation_state",
+            "sos_active",
+            "sos_domestic",
+            "sos_match"
+          ]
+        },
+        {
+          "text": "Two things are missing from the stage, and they are different in kind. The submitted DBA, Kairos Physio, was searched for and no matching filing was found \u2014 that is something the record establishes rather than something it failed to reach, and for a practice trading under a shortened name in New York an assumed-name filing is what would carry it. The TIN check returned nothing at all, which is the more consequential of the two: a taxpayer identification number is a required element of customer identification for a business account, and this file does not currently have one verified against the name.",
+          "cites": [
+            "dba_name"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "tin_verification",
+          "point": "Whether the IRS holds a record for the business's TIN and name together",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The TIN check is defined and returned nothing on this pull. Running it against a TIN supplied by the customer is what closes it.",
+          "cites": [
+            "tin"
+          ]
+        },
+        {
+          "id": "formation_standing",
+          "point": "Whether the active domestic registration is also in good standing",
+          "why": "not_published",
+          "noAction": "The domestic filing already returns active in the state of formation, which is the substantive question; the sub-status the state withholds adds nothing this file needs.",
+          "cites": [
+            "sos_domestic",
+            "sos_domestic_sub_status"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "The submitted person did not match an officer on the state registration, and the reason matters more than the result. The only officer the New York filing names is the company itself \u2014 the state does not publish the members of a professional limited liability company \u2014 so there was no individual on the public record for the submitted name to match against. This is the search finding nothing to search, not the record contradicting the applicant.",
+          "cites": [
+            "person_verification"
+          ]
+        },
+        {
+          "text": "The corroboration arrived by the other route instead: the same person was verified against the business's own web presence. That is weaker than a state filing, because it rests on what the business publishes about itself, but it is not nothing \u2014 it places the named individual with this practice at this address. Two related businesses share officers, agents or addresses with this one, a footprint consistent with a single-site practice rather than a network of entities. Ownership percentages remain unestablished, as they are for any PLLC, and a professional entity adds a second question the record does not reach: whether the owners are the licensed practitioners the form requires them to be.",
+          "cites": [
+            "web_person_verification",
+            "business_connections"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "beneficial_ownership",
+          "point": "The natural persons who own 25 percent or more, and whether each is a licensed practitioner as the entity form requires",
+          "why": "not_published",
+          "wouldAnswer": "New York does not publish PLLC members, so no order reaches them. A signed beneficial-ownership certification, read against the practitioners' licence records, is what closes both halves.",
+          "cites": [
+            "person_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "body": [
+        {
+          "text": "This stage is the strongest in the file and it is corroborated from outside the application. The submitted website was online when the record was ordered, and the domain is held with high confidence by this business rather than pointing at a third party. Against that site, four separate submitted details were verified: the business name, the office address, the email address and the phone number. A practice that publishes the same address, name, telephone and contact address it gave the bank is operating as it claims to be.",
+          "cites": [
+            "website_status",
+            "website_url_discovery",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "web_phone_number_verification"
+          ]
+        },
+        {
+          "text": "The physical footprint reads the same way. The submitted office address is deliverable and commercial, and the address picture is small \u2014 two addresses shared with twenty or fewer businesses and one, a Madison Avenue floor, shared with twenty-one. For a clinic in a Manhattan medical office building that is the expected shape of a professional floor rather than a shared-address arrangement. The line of work classifies as one that does not carry elevated risk, and no risky keywords were found. What the stage does not establish is the licensing that makes the activity lawful, which for a healthcare practice is the precondition for the revenue the account would carry.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:low",
+            "location_frequency:moderate",
+            "industry",
+            "risky_keywords"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "professional_licensure",
+          "point": "Whether the practice and its practitioners hold current New York physical therapy licences",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Nothing in the catalog reaches state professional licensing boards. Licence numbers from the customer, checked against the New York Office of the Professions register, is what closes it.",
+          "cites": [
+            "industry"
+          ]
+        },
+        {
+          "id": "profile_status",
+          "point": "The status of one of the submitted third-party profiles",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "Profiles were submitted and at least one came back with an unknown status, so it neither corroborates nor contradicts the rest of the web evidence.",
+          "cites": [
+            "profile_discovery",
+            "profile_status"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screening",
+      "body": [
+        {
+          "text": "The stage runs and clears. No watchlist hits against the business or the submitted individual, and no politically exposed persons among the submitted individuals or their relatives and close associates. Because the record could not reach the entity's members, this clearance covers the person the applicant named rather than everyone who owns the practice \u2014 it will need re-running against whoever the ownership certification discloses.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adverse",
+      "body": [
+        {
+          "text": "Nothing adverse is on this record, and each check returned an answer rather than an absence. No adverse media, no liens, no related litigations and no bankruptcy filings. For a practice formed in 2022 a clean financial record is unremarkable \u2014 there has been little time to accumulate anything \u2014 so it is better read as the absence of early warning signs than as an established track record.",
+          "cites": [
+            "adverse_media",
+            "liens",
+            "litigations",
+            "bankruptcies"
+          ]
+        }
+      ]
+    }
+  ]
+}

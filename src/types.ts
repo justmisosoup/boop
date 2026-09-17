@@ -87,16 +87,17 @@ export type CouldNotConfirmReason =
  * question is answered on its own terms, not forced through six headings.
  *
  * `description` is the lede, not a peer: it renders without a heading, above
- * everything, and it does not judge — it says what the business is so the four
- * assessments beneath it have something to be about. `recommendation` is where
+ * everything, and it does not judge — it says what the business is so the
+ * onboarding stages beneath it have something to be about. `recommendation` is where
  * the judging happens, and where the headline is stated.
  */
 export type AssessmentSectionId =
   | 'description'
-  | 'identity'
+  | 'identification'
   | 'ownership'
-  | 'activity'
-  | 'compliance'
+  | 'purpose'
+  | 'screening'
+  | 'adverse'
   | 'recommendation'
   | 'answer'
 

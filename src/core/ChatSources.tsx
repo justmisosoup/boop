@@ -343,16 +343,26 @@ const SOURCE_ROW_CLASS = cn(
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring'
 )
 
-const SourceRowContent = ({ source }: { source: ChatSourceData }) => {
+const SourceRowContent = ({
+  source,
+  glyph = true
+}: {
+  source: ChatSourceData
+  /** LOCAL MODIFICATION (4): false when the list carries one shared identity —
+   *  see `ChatSources.glyph`. */
+  glyph?: boolean
+}) => {
   const byline = [sourceDomain(source), source.annotation]
     .filter(Boolean)
     .join(' · ')
 
   return (
     <>
-      <span className='mt-0.5 flex shrink-0'>
-        <SourceGlyph size={16} source={source} />
-      </span>
+      {glyph && (
+        <span className='mt-0.5 flex shrink-0'>
+          <SourceGlyph size={16} source={source} />
+        </span>
+      )}
       <span className='min-w-0 flex-1'>
         <span className='block truncate text-sm leading-5 text-foreground'>
           {source.title ?? source.label}
@@ -367,7 +377,13 @@ const SourceRowContent = ({ source }: { source: ChatSourceData }) => {
   )
 }
 
-const SourceListRow = ({ source }: { source: ChatSourceData }) => {
+const SourceListRow = ({
+  source,
+  glyph
+}: {
+  source: ChatSourceData
+  glyph?: boolean
+}) => {
   if (source.url) {
     return (
       <a
@@ -376,7 +392,7 @@ const SourceListRow = ({ source }: { source: ChatSourceData }) => {
         rel='noreferrer'
         target='_blank'
       >
-        <SourceRowContent source={source} />
+        <SourceRowContent glyph={glyph} source={source} />
       </a>
     )
   }
@@ -388,24 +404,26 @@ const SourceListRow = ({ source }: { source: ChatSourceData }) => {
         type='button'
         onClick={source.onSelect}
       >
-        <SourceRowContent source={source} />
+        <SourceRowContent glyph={glyph} source={source} />
       </button>
     )
   }
 
   return (
     <div className='flex w-full items-start gap-2 rounded-control px-2 py-1.5 text-left'>
-      <SourceRowContent source={source} />
+      <SourceRowContent glyph={glyph} source={source} />
     </div>
   )
 }
 
 const SourceList = ({
   label,
-  sources
+  sources,
+  glyph
 }: {
   label?: string
   sources: ChatSourceData[]
+  glyph?: boolean
 }) => (
   <div className='flex max-h-80 flex-col'>
     {label && (
@@ -415,7 +433,7 @@ const SourceList = ({
     )}
     <div className='overflow-y-auto overscroll-contain p-1'>
       {sources.map(source => (
-        <SourceListRow key={source.id} source={source} />
+        <SourceListRow glyph={glyph} key={source.id} source={source} />
       ))}
     </div>
   </div>
@@ -562,6 +580,19 @@ type ChatSourcesProps = {
   sources: ChatSourceData[]
   /** Visible label; the count is appended ('Sources · 12'). */
   label?: string
+  /**
+   * LOCAL MODIFICATION (4) — one identity for the whole list.
+   *
+   * The default trigger stacks a tile per source, which says "these came from
+   * different places". When they did not — three datasets of one provider, the
+   * parts of a single record — the stack is three copies of the same mark and
+   * the per-row tiles repeat it again down the list.
+   *
+   * Set it to the shared mark: the trigger renders this node alone, and the
+   * rows render without tiles, because the identity is the list's and not each
+   * row's. Unset, nothing changes.
+   */
+  glyph?: React.ReactNode
   /** Theme for the portaled list; defaults from the nearest provider. */
   themeMode?: CoreThemeMode
   className?: string
@@ -569,6 +600,7 @@ type ChatSourcesProps = {
 
 export const ChatSources = ({
   className,
+  glyph,
   label = 'Sources',
   sources,
   themeMode
@@ -590,24 +622,30 @@ export const ChatSources = ({
           )}
           type='button'
         >
-          <span className='flex shrink-0 -space-x-1'>
-            {sources.slice(0, 3).map(source => (
-              // The surface-colored ring separates overlapped tiles.
-              <span
-                className='rounded-[calc(var(--core-radius-control)-2px)] ring-1 ring-[var(--core-color-surface-default)]'
-                key={source.id}
-              >
-                <SourceGlyph size={16} source={source} />
-              </span>
-            ))}
-          </span>
+          {glyph ? (
+            <span aria-hidden='true' className='flex shrink-0 items-center'>
+              {glyph}
+            </span>
+          ) : (
+            <span className='flex shrink-0 -space-x-1'>
+              {sources.slice(0, 3).map(source => (
+                // The surface-colored ring separates overlapped tiles.
+                <span
+                  className='rounded-[calc(var(--core-radius-control)-2px)] ring-1 ring-[var(--core-color-surface-default)]'
+                  key={source.id}
+                >
+                  <SourceGlyph size={16} source={source} />
+                </span>
+              ))}
+            </span>
+          )}
           <span className='truncate'>
             {label} · {sources.length}
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className='w-80' themeMode={themeMode}>
-        <SourceList label={label} sources={sources} />
+        <SourceList glyph={glyph ? false : undefined} label={label} sources={sources} />
       </PopoverContent>
     </Popover>
   )

@@ -1,0 +1,458 @@
+{
+  "id": "1789499330523",
+  "requestedAt": "2026-09-15T19:08:50.523Z",
+  "businessId": "7adbd5eb-0ffd-4006-95b0-f2c1be438010",
+  "business": {
+    "name": "The Mala Market",
+    "entityType": "LLC",
+    "state": "TN",
+    "formed": "2017-09-14"
+  },
+  "kind": "report",
+  "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+  "insights": [
+    {
+      "id": "address_verification",
+      "statement": "No state registration match for submitted address",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted Office Address",
+      "evidence": [
+        "Registrations on file: 1"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "Related businesses share officers, agents or addresses",
+      "state": "result",
+      "because": "1 connection found",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "Submitted business name does not match any state registration",
+      "state": "result",
+      "because": "Similar match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Similar Match"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "Submitted address is deliverable",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "2 of 3 addresses are commercial properties",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial"
+      ]
+    },
+    {
+      "id": "location_frequency:high",
+      "statement": "1 address shared with 101 or more businesses",
+      "state": "result",
+      "evidence": [
+        "116 Agnes Rd Ste 200, Knoxville, TN 37919-6306 — 10001 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "2 addresses shared with 1–20 businesses",
+      "state": "result",
+      "evidence": [
+        "947 4th Ave S, Nashville, TN 37210-2623 — 2 businesses at this location",
+        "2812A Vaulx Ln, Nashville, TN 37204-2644 — 2 businesses at this location"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "Registration status active in the submitted address state",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "Registration status active in 1 state",
+      "state": "result",
+      "because": "1 of 1 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Registration in good standing",
+      "state": "result",
+      "because": "The domestic registration is in Good Standing.",
+      "evidence": [
+        "Source value: Good Standing"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Registration active in the formation state",
+      "state": "result",
+      "because": "Active domestic filing found",
+      "evidence": [
+        "Source value: Domestic Active"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "Watchlist screening returned no hits",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "entity_type_agreement",
+      "statement": "Entity type classified against all 1 registration",
+      "state": "result"
+    },
+    {
+      "id": "address_proximity",
+      "statement": "2 addresses found are over 0.2 mi from the submitted address",
+      "state": "result"
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": [
+    {
+      "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+      "result": {
+        "by": "claude-code-session",
+        "used": [
+          "name",
+          "address_verification",
+          "entity_type",
+          "entity_type_foreign",
+          "entity_type_agreement",
+          "sos_active",
+          "sos_match",
+          "sos_inactive",
+          "sos_unknown",
+          "sos_domestic",
+          "sos_domestic_sub_status",
+          "person_verification",
+          "web_person_verification",
+          "business_connections",
+          "address_deliverability",
+          "address_property_type",
+          "location_frequency:high",
+          "location_frequency:moderate",
+          "location_frequency:low",
+          "address_proximity",
+          "website_status",
+          "website_url_domain_ownership",
+          "website_url_discovery",
+          "web_business_name_verification",
+          "web_address_verification",
+          "web_email_address_verification",
+          "profile_discovery",
+          "profile_status",
+          "watchlist",
+          "politically_exposed_persons",
+          "adverse_media",
+          "industry",
+          "risky_keywords",
+          "bankruptcies",
+          "liens",
+          "litigations"
+        ],
+        "headline": "Open the account, subject to beneficial ownership certification from the customer and a read of the ten litigation matters — the entity verifies cleanly and nothing screens adversely.",
+        "sections": [
+          {
+            "id": "description",
+            "body": [
+              {
+                "text": "Middesk sells business identity infrastructure to regulated financial institutions — banks, lenders and fintech platforms that have to verify a business customer before opening an account or extending credit. It pulls filings from state and federal registries and other authoritative sources behind an API, and sells verification, ongoing monitoring and agent-assisted state registration on top of that data. Revenue is subscription and per-verification fees from those institutions.",
+                "sources": [
+                  {
+                    "title": "middesk.com — business identity and KYB platform",
+                    "url": "https://www.middesk.com/"
+                  },
+                  {
+                    "title": "docs.middesk.com — verify a business",
+                    "url": "https://docs.middesk.com/verify-business"
+                  }
+                ]
+              },
+              {
+                "text": "It does not hold customer funds, lend, or carry out any licensed financial activity of its own; it supplies the compliance layer its customers use to do those things. For an account-opening review that matters twice over — it keeps the business out of the licensed-activity questions entirely, and it means the counterparty is a software vendor whose own customers are the regulated parties.",
+                "sources": [
+                  {
+                    "title": "middesk.com — solutions: verification",
+                    "url": "https://www.middesk.com/solutions/verification"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "identity",
+            "body": [
+              {
+                "text": "The submitted identity and the registered one are the same entity, and the record establishes that from more than one angle. The business name matches across all five state registrations, the submitted office address matches a state registration, and the entity type is confirmed against the domestic filing, the four foreign filings, and all five in agreement. There is no version of this business in the registries that the application does not already describe.",
+                "cites": [
+                  "name",
+                  "address_verification",
+                  "entity_type",
+                  "entity_type_foreign",
+                  "entity_type_agreement"
+                ]
+              },
+              {
+                "text": "The status picture across those five registrations is mixed, and reads as ordinary for a company that registers where it does business rather than as decay. Two filings are active — including the one in the state of the submitted office address, which is where the business actually operates from — one is inactive, and two carry no status at all. A software company with a Delaware parent and foreign qualifications in the states it sells into accumulates registrations it later withdraws; an inactive filing among five is consistent with that, and is not on its own evidence of anything.",
+                "cites": [
+                  "sos_active",
+                  "sos_match",
+                  "sos_inactive",
+                  "sos_unknown"
+                ]
+              },
+              {
+                "text": "The one status that cannot be read is the one in the formation state. Delaware returns no domestic filing status through this channel and publishes no good-standing sub-status, so the registration a reviewer would most want confirmed is the registration the record is quietest about. That is a limit of the source rather than a finding about the business — Delaware behaves this way for every company incorporated there — but it leaves the parent registration unconfirmed on our side.",
+                "cites": [
+                  "sos_domestic",
+                  "sos_domestic_sub_status",
+                  "sos_unknown"
+                ]
+              }
+            ],
+            "gaps": [
+              {
+                "id": "domestic_status",
+                "point": "Whether the Delaware registration is active and in good standing",
+                "why": "not_published",
+                "cites": [
+                  "sos_domestic",
+                  "sos_domestic_sub_status"
+                ]
+              },
+              {
+                "id": "inactive_registration",
+                "point": "Which of the five registrations is inactive, and whether it lapsed or was deliberately withdrawn",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "sos_inactive"
+                ],
+                "noAction": "The registration that bears on this relationship is the one in the state of the submitted office address, and it is active. A withdrawn foreign qualification in a state the business no longer sells into does not affect whether the entity exists or can contract."
+              }
+            ]
+          },
+          {
+            "id": "ownership",
+            "body": [
+              {
+                "text": "Control is established on the registry side. The submitted person matches an officer on the state registrations — the strongest form this check takes, because it rests on a filing the company made rather than on anything it published about itself. For an account-opening review that answers the narrow question of whether the person presenting the application holds a role the state has a record of.",
+                "cites": [
+                  "person_verification"
+                ]
+              },
+              {
+                "text": "The website does not corroborate that person, and the reason is mundane rather than adverse: the check could not identify a match for the submitted individual on the company's own web presence. Marketing sites for infrastructure vendors routinely do not name officers in a form a parser can read. Where the officer match has already landed against a filing, the absence of a second, weaker corroboration changes nothing about what the record establishes.",
+                "cites": [
+                  "web_person_verification"
+                ]
+              },
+              {
+                "text": "Seventeen related businesses share an officer, agent or address with this one. At this size that is what a Delaware parent with four foreign qualifications and commercial registered-agent addresses produces mechanically — agents are shared with thousands of companies by design, so a connection graph built partly on address overlap will be wide for any company registered this way. The count on its own does not distinguish a shared agent from a genuine affiliate, and the record does not name the seventeen.",
+                "cites": [
+                  "business_connections",
+                  "location_frequency:high"
+                ]
+              }
+            ],
+            "gaps": [
+              {
+                "id": "beneficial_ownership",
+                "point": "Who ultimately owns and controls the company, beyond the one officer matched",
+                "why": "no_insight_covers_it",
+                "wouldAnswer": "Nothing in the catalog reaches beneficial ownership — person verification matches a submitted individual to a filing, it does not enumerate owners. For a privately held corporation this comes from the customer's own CDD collection and a cap table or ownership certification, not from an order.",
+                "cites": [
+                  "person_verification"
+                ]
+              },
+              {
+                "id": "connection_detail",
+                "point": "Which of the seventeen connections are genuine affiliates rather than registered-agent overlap",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "business_connections"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "activity",
+            "body": [
+              {
+                "text": "The operating footprint is real and it is where the application says it is. The submitted office address matches a state registration, the USPS delivers to it, and seven of the nine addresses on the record are commercial property. The address the business works from is shared with twenty-one others, which for a floor in a downtown San Francisco office building is what a tenant list looks like rather than a signal about the tenant.",
+                "cites": [
+                  "address_verification",
+                  "address_deliverability",
+                  "address_property_type",
+                  "location_frequency:moderate"
+                ]
+              },
+              {
+                "text": "Five further addresses are shared with more than a hundred businesses each, two of them with over a thousand and one with roughly ten thousand. Read in isolation those are the most alarming numbers on the record; read against an entity with a Delaware domestic filing and four foreign qualifications, they are the signature of commercial registered-agent offices, which exist to be the address of record for thousands of companies at once. The remaining three addresses are shared with one or two businesses, and the nine sit over a fifth of a mile apart — a distributed registration footprint, not one address wearing several names.",
+                "cites": [
+                  "location_frequency:high",
+                  "location_frequency:low",
+                  "address_proximity",
+                  "entity_type_foreign"
+                ]
+              },
+              {
+                "text": "The web presence corroborates the application on every axis the check reaches. The site was online when the record was ordered, and the domain registrant ties it to this business with high confidence — which matters because the URL was supplied by the customer, and a customer-supplied domain that the registrant record independently confirms is no longer merely a claim. The site also matches the submitted business name, office address and email address, and the customer-supplied third-party profile is reachable.",
+                "cites": [
+                  "website_status",
+                  "website_url_domain_ownership",
+                  "website_url_discovery",
+                  "web_business_name_verification",
+                  "web_address_verification",
+                  "web_email_address_verification",
+                  "profile_discovery",
+                  "profile_status"
+                ]
+              }
+            ],
+            "gaps": [
+              {
+                "id": "agent_addresses",
+                "point": "Whether the five high-frequency addresses are registered-agent offices",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "location_frequency:high"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "compliance",
+            "body": [
+              {
+                "text": "Screening is clean across every list that was run. Watchlist screening returned no hits, PEP screening returned none against the submitted individuals or their relatives and close associates, and adverse media returned nothing and scored low risk. No prohibited industry was identified and no risky keywords were found — consistent with a B2B software vendor, and the line of work carries no licensing question of its own.",
+                "cites": [
+                  "watchlist",
+                  "politically_exposed_persons",
+                  "adverse_media",
+                  "industry",
+                  "risky_keywords"
+                ]
+              },
+              {
+                "text": "Public-record financial distress is absent: no bankruptcy filings. One open lien is on the record, and ten related litigations. Neither count is characterised by the record — a single open lien on a company of this profile is most often a UCC-1 filed by an equipment or financing counterparty, which is a normal feature of a solvent balance sheet rather than a default, and ten litigations across a multi-state vendor with a large customer base covers everything from routine commercial disputes to matters that would bear on the decision. What separates those readings is the content of the filings, which these insights count but do not carry.",
+                "cites": [
+                  "bankruptcies",
+                  "liens",
+                  "litigations"
+                ]
+              }
+            ],
+            "gaps": [
+              {
+                "id": "lien_detail",
+                "point": "What the open lien secures, its amount, and the secured party",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "liens"
+                ]
+              },
+              {
+                "id": "litigation_detail",
+                "point": "Whether the ten litigations are ordinary commercial matters, and whether the business is plaintiff or defendant",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "litigations"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "recommendation",
+            "body": [
+              {
+                "text": "Nothing on this record argues against the relationship, and the numbers that look worst on their face are accounted for below rather than left standing: the ten-thousand-business address and the seventeen connections are read in Activity and Ownership as the ordinary shape of a Delaware corporation carrying four foreign qualifications. What is open falls into three kinds. One is a requirement this record cannot satisfy at any price — beneficial ownership is outside what an order returns, so the certification has to be collected from the customer, and for an account opening that is the item that actually gates the file. One is a document request with a known answer: Delaware publishes no domestic status or good-standing sub-status through this channel, so a certificate from the customer is the only route to the gap named in Identity. The rest are orders against filings the record counts but does not carry — the open lien in Compliance, and the ten litigation matters beside it, which are the one open item capable of changing the answer above rather than merely documenting it.",
+                "cites": [
+                  "location_frequency:high",
+                  "business_connections",
+                  "entity_type_foreign",
+                  "sos_domestic_sub_status",
+                  "liens",
+                  "litigations"
+                ]
+              }
+            ]
+          }
+        ],
+        "followUps": [
+          {
+            "text": "Collect a beneficial ownership certification from the customer, naming every individual at or above the policy's control and equity thresholds.",
+            "cites": [
+              "person_verification"
+            ],
+            "closes": [
+              "beneficial_ownership"
+            ]
+          },
+          {
+            "text": "Pull the ten litigation dockets and confirm they are ordinary commercial matters rather than allegations bearing on the conduct of the business.",
+            "cites": [
+              "litigations"
+            ],
+            "closes": [
+              "litigation_detail"
+            ]
+          },
+          {
+            "text": "Request a Delaware Certificate of Good Standing, since no order will return the domestic status.",
+            "cites": [
+              "sos_domestic",
+              "sos_domestic_sub_status"
+            ],
+            "closes": [
+              "domestic_status"
+            ]
+          },
+          {
+            "text": "Pull the open lien filing to establish the secured party, the amount and what it secures.",
+            "cites": [
+              "liens"
+            ],
+            "closes": [
+              "lien_detail"
+            ]
+          },
+          {
+            "text": "Identify which of the nine addresses are registered-agent offices, which separates the seventeen connections into agent overlap and genuine affiliates.",
+            "cites": [
+              "location_frequency:high",
+              "business_connections"
+            ],
+            "closes": [
+              "agent_addresses",
+              "connection_detail"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

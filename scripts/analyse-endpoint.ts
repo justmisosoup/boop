@@ -32,8 +32,13 @@ const readBody = async (req: Connect.IncomingMessage) => {
 /** What the standing report was run against. A reload re-pulls nothing, so the
  *  same record must reuse its answer rather than queue a second identical run and
  *  orphan the first — but a record that has genuinely changed must re-run. */
-const fingerprint = (insights: AnalysisRequest['insights']) =>
+const fingerprint = (insights: AnalysisRequest['insights'], prompt = '') =>
   createHash('sha1')
+    // The workflow is half of what a report was run against. Keyed on the
+    // insights alone, editing the workflow and re-running served the cached
+    // report straight back — the edit appeared to do nothing.
+    .update(prompt)
+    .update('\u0000')
     .update(insights.map((i) => `${i.id}|${i.state}|${i.reason ?? ''}|${i.statement}`).join('\n'))
     .digest('hex')
     .slice(0, 12)
@@ -59,10 +64,11 @@ const cachedReport = (businessId: string, print: string): string | null => {
 
 const SECTION_IDS: AssessmentSectionId[] = [
   'description',
-  'identity',
+  'identification',
   'ownership',
-  'activity',
-  'compliance',
+  'purpose',
+  'screening',
+  'adverse',
   'recommendation',
   'answer'
 ]
@@ -147,22 +153,16 @@ export const analysePlugin = (): Plugin => ({
         const body = JSON.parse(await readBody(req)) as Omit<AnalysisRequest, 'id' | 'requestedAt'> & {
           attachments?: Array<{ name: string; type: string; size: number; dataBase64: string }>
         }
-        // A standing report already answered for this record is served straight
-        // back; the client polls by id and gets it on the first tick.
-        if (body.kind === 'report') {
-          const hit = cachedReport(body.businessId, fingerprint(body.insights))
-          if (hit) {
-            const answered = existsSync(join(DIR, `result-${hit}.json`))
-            server.config.logger.info(
-              answered
-                ? `  ↻ analysis reused — ${body.business.name} (analysis/result-${hit}.json)`
-                : `  ⋯ analysis already outstanding — ${body.business.name} (write analysis/result-${hit}.json)`
-            )
-            res.end(JSON.stringify({ id: hit }))
-            return
-          }
-        }
-
+        /**
+         * Every send runs.
+         *
+         * A standing report used to be served back from a cache keyed on the
+         * record and the prompt, so that a reload did not queue a duplicate of
+         * the report that fired automatically on arrival. Nothing fires on
+         * arrival any more — a run happens because someone pressed send — and
+         * the cache's only remaining effect was to make pressing send a second
+         * time do nothing at all.
+         */
         const id = `${Date.now()}`
 
         // Attachments land on disk so the session can open them directly; the
@@ -193,7 +193,7 @@ export const analysePlugin = (): Plugin => ({
         if (request.kind === 'report') {
           writeFileSync(
             cachePath(request.businessId),
-            JSON.stringify({ id, fingerprint: fingerprint(request.insights) }, null, 2)
+            JSON.stringify({ id, fingerprint: fingerprint(request.insights, request.prompt) }, null, 2)
           )
         }
 

@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+  ActionButton,
   Heading,
+  SegmentedControl,
+  SegmentedControlItem,
   Input,
+  MetaChip,
   MutedText,
   Surface,
   TabsContent,
@@ -16,22 +20,34 @@ import {
 
 import { AnalysisDock } from './components/AnalysisDock'
 import { AttributesTab, countAttributes } from './components/AttributesTab'
-import { CatalogTab } from './components/CatalogTab'
-import { InsightPrompt } from './components/InsightPrompt'
 import { AnalysisPanel } from './components/AnalysisPanel'
 import { BusinessLede } from './components/BusinessLede'
 import { ScreenshotViewerProvider } from './components/ScreenshotViewer'
 import { SourcesTab, sourcesFor } from './components/SourcesTab'
 import { InsightRow } from './components/InsightRow'
 import records from './data/records.json'
-import { categoriesOf, deriveResults, type BusinessRecord } from './lib/deriveResults'
+import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from './lib/deriveResults'
 import { GROUPS, type GroupId, makeGroupFor } from './lib/groups'
 import { useAnalysis } from './lib/useAnalysis'
-import type { AuthoredInsight } from './lib/customInsights'
-import { authoredAttributes } from './lib/deriveAuthored'
-import { useAuthoredInsights } from './lib/useAuthoredInsights'
+import { AssessmentEditor } from './components/AssessmentEditor'
+import { useAgent } from './lib/useAgent'
+import { useLede } from './lib/useLede'
 
 const ALL = records as unknown as BusinessRecord[]
+
+/**
+ * What the assessment workflow runs against.
+ *
+ * The concepts, not the records underneath them. Listing the record's own
+ * sources here said the same thing the answer's citations already say, one
+ * filing at a time; the workflow is not written against the Delaware
+ * registration, it is written against what these three hold.
+ */
+const CONTEXT = [
+  { id: 'context:entities', label: 'Middesk Entities' },
+  { id: 'context:jurisdictions', label: 'Middesk Jurisdictions' },
+  { id: 'context:industries', label: 'Middesk Industries' }
+]
 
 const describe = (r: BusinessRecord) =>
   r.formation
@@ -61,63 +77,93 @@ export default function App() {
     setOpen(false)
   }
 
-  const authored = useAuthoredInsights(selected)
   const derived = useMemo(() => deriveResults(selected), [selected])
-  /**
-   * Authored insights are part of the record's insight set, not a sidecar.
-   * `AnalysisRequest.insights` is "EVERY insight on the record — the session
-   * picks from these", so an authored one has to be in this array to be usable
-   * by the assessment at all.
-   */
-  const results = useMemo(
-    () => [...derived, ...authored.results],
-    [derived, authored.results]
-  )
+  const results: Derived[] = useMemo(() => derived, [derived])
   const undetermined = derived.filter((r) => r.reasonUndetermined).length
 
-  const analysis = useAnalysis(selected, results)
-
-  // The settled report first, the draft while one is still being written — the
-  // lede is the first section the session writes, so it lands early.
-  const lede = (analysis.active?.result ?? analysis.draft)?.sections.find(
-    (s) => s.id === 'description'
+  // The skill that runs on arrival. Not a special case: it is the same thing a
+  // reader could have dropped into the composer themselves.
+  // The customer's assessments — the one that runs and the parts under it.
+  const agent = useAgent()
+  // Asked for on arrival and reused verbatim after: the business's own
+  // description, independent of any assessment.
+  const lede = useLede(selected.id, selected.name)
+  // The workflow that runs on arrival is the customer's, not a Middesk default
+  // — so the report waits for their store rather than firing against a stand-in.
+  const standing = agent.skills.find((s) => s.kind === 'workflow')
+  /** The assessments inside the standing one, in the order they run. */
+  const policy = useMemo(
+    () =>
+      agent.skills
+        .filter((x) => x.kind !== 'workflow' && !(agent.disabled ?? []).includes(x.id))
+        .map((x) => x.name),
+    [agent.skills, agent.disabled]
   )
+  const analysis = useAnalysis(
+    selected,
+    results,
+    standing?.instructions ?? '',
+    agent.ready && Boolean(standing)
+  )
+  const [agentOpen, setAgentOpen] = useState<string | null>(null)
+
 
   // Navigational only — grouping helps a reader find things and nothing rests
   // on it (00-MASTER-PLAN.md rule 3).
+  /**
+   * Insights that actually reported.
+   *
+   * The tab counts these, not every insight evaluated. The list below includes
+   * every check the catalog defines so a reader can see what was never answered,
+   * but counting those would say a business has 63 insights when half of them
+   * are the absence of one.
+   */
+  const reported = useMemo(() => derived.filter((r) => !r.notReported), [derived])
+
   const categories = useMemo(() => categoriesOf(selected), [selected])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
   const attributeCount = useMemo(
     () => countAttributes(selected, results, groupFor),
     [selected, results, groupFor]
   )
+  const groupOf = (result: (typeof results)[number]) => groupFor(result.insightId)
+
   /**
-   * Authored insights are not in the review-task category map, so `groupFor`
-   * would file every one of them under "other". They carry their own group,
-   * set when they were derived, so that wins for them and nothing else.
+   * Found / Not found / All.
+   *
+   * "Found" is a check that reported anything at all — a result, an unknown, a
+   * no-result with a reason. "Not found" is a check the record never mentioned:
+   * the catalog says it exists and this business has nothing for it, which is
+   * most of the list once every insight is evaluated rather than only the ones
+   * that ran.
    */
-  const authoredById = useMemo(
-    () => new Map((authored.insights ?? []).map((insight) => [insight.id, insight])),
-    [authored.insights]
+  const [filter, setFilter] = useState<'all' | 'found' | 'not_found'>('all')
+
+  const visible = useMemo(
+    () =>
+      filter === 'all'
+        ? results
+        : results.filter((r) => (filter === 'found' ? !r.notReported : r.notReported)),
+    [results, filter]
   )
-  const groupOf = (result: (typeof results)[number]) =>
-    authoredById.has(result.insightId) ? (result.group as GroupId) : groupFor(result.insightId)
 
   const grouped = GROUPS.map((g) => ({
     ...g,
-    rows: results.filter((r) => groupOf(r) === g.id)
+    rows: visible.filter((r) => groupOf(r) === g.id)
   })).filter((g) => g.rows.length > 0)
   const [dockOpen, setDockOpen] = useState(true)
   const [revealed, setRevealed] = useState<string[]>([])
   const [tab, setTab] = useState('analysis')
-  /** 'new', or the authored insight being edited inline. */
-  const [writingInsight, setWritingInsight] = useState<'new' | AuthoredInsight | null>(null)
 
   // Ids the current answer already used — those rows do not offer "add".
   const used = new Set(analysis.active?.result.used ?? [])
 
   // A citation has to land somewhere: switch to the raw insights, then scroll.
-  const sourceCount = sourcesFor(selected, results, groupFor).length
+  const recordSources = useMemo(
+    () => sourcesFor(selected, results, groupFor),
+    [selected, results, groupFor]
+  )
+  const sourceCount = recordSources.length
 
   const reveal = (ids: string[], anchor: string) => {
     setTab('insights')
@@ -227,7 +273,7 @@ export default function App() {
         <header className="mb-5 mt-6">
           <Heading level={1}>{selected.name}</Heading>
           <MutedText className="mt-1 block text-caption">{describe(selected)}</MutedText>
-          <BusinessLede section={lede} pending={analysis.waiting} />
+          <BusinessLede text={lede} />
         </header>
 
         <TabsRoot value={tab} onValueChange={setTab}>
@@ -235,7 +281,7 @@ export default function App() {
             <TabsTrigger value="analysis">Assessment</TabsTrigger>
             <TabsTrigger value="insights">
               Insights
-              <TabsCount>{results.length}</TabsCount>
+              <TabsCount>{reported.length}</TabsCount>
             </TabsTrigger>
             <TabsTrigger value="attributes">
               Attributes
@@ -245,27 +291,48 @@ export default function App() {
               Sources
               <TabsCount>{sourceCount}</TabsCount>
             </TabsTrigger>
-            {/* The catalog is about the insight set itself, not this record, so
-                it sits last — after everything that reads the business. */}
-            <TabsTrigger value="catalog">Catalog</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis" className="space-y-4 pt-4">
             <AnalysisPanel
               versions={analysis.versions}
               results={results}
+              // The count the Insights tab shows — what this business actually
+              // has — not every check the catalog defines.
+              insightCount={reported.length}
               categories={categories}
               waiting={analysis.waiting}
               waitingKind={analysis.waitingKind}
+              waitingSkills={analysis.waitingSkills}
+              waitingTyped={analysis.waitingTyped}
+              acknowledged={analysis.acknowledged}
+              policy={policy}
               draft={analysis.draft}
               slow={analysis.slow}
               error={analysis.error}
               onJumpToGroup={jumpToGroup}
+              superseded={analysis.superseded}
             />
 
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-4 pt-4">
+            {/* The default is everything: a reader who does not know a check
+                exists cannot ask for it, so the unanswered ones stay visible
+                until they choose otherwise. */}
+            <SegmentedControl
+              size="sm"
+              aria-label="Filter insights"
+              value={filter}
+              onValueChange={(value) => setFilter(value as typeof filter)}
+            >
+              <SegmentedControlItem value="all">All {results.length}</SegmentedControlItem>
+              <SegmentedControlItem value="found">Found {reported.length}</SegmentedControlItem>
+              <SegmentedControlItem value="not_found">
+                Not found {results.length - reported.length}
+              </SegmentedControlItem>
+            </SegmentedControl>
+
             {grouped.map((group) => (
               /* Core's `Section` fixes its title at Heading level 2; these are
                  sub-sections of the tab, so the heading is composed at level 3. */
@@ -282,15 +349,6 @@ export default function App() {
                         key={r.insightId}
                         result={r}
                         record={selected}
-                        attributes={
-                          authoredById.get(r.insightId)
-                            ? authoredAttributes(
-                                // biome-ignore lint/style/noNonNullAssertion: guarded above
-                                authoredById.get(r.insightId)!,
-                                selected
-                              )
-                            : undefined
-                        }
                         reveal={revealed.includes(r.insightId)}
                         onAddToAnalysis={
                           analysis.active && !used.has(r.insightId) && !analysis.waiting
@@ -298,19 +356,6 @@ export default function App() {
                             : undefined
                         }
                         onJumpToSource={jumpToSource}
-                        onEdit={
-                          authoredById.has(r.insightId)
-                            ? () => {
-                                const insight = authoredById.get(r.insightId)
-                                if (insight) setWritingInsight(insight)
-                              }
-                            : undefined
-                        }
-                        onRemove={
-                          authoredById.has(r.insightId)
-                            ? () => authored.remove(r.insightId)
-                            : undefined
-                        }
                       />
                     ))}
                   </div>
@@ -318,43 +363,6 @@ export default function App() {
               </section>
             ))}
 
-            {/* Authoring sits with the rows, because this tab is what the
-                assessment reads — an insight added anywhere else cannot reach
-                it. Collapsed to a single row until opened, so it does not
-                compete with the insights themselves. */}
-            {writingInsight ? (
-              <InsightPrompt
-                initial={writingInsight === 'new' ? undefined : writingInsight}
-                key={writingInsight === 'new' ? 'new' : writingInsight.id}
-                onCancel={() => setWritingInsight(null)}
-                onSave={async (insight) => {
-                  await authored.save(insight)
-                  setWritingInsight(null)
-                }}
-                record={selected}
-                saving={authored.saving}
-              />
-            ) : (
-              <button
-                className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--core-radius-card)] border border-border border-dashed px-4 py-3 text-left text-[13px] text-[var(--core-color-text-muted)] hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground"
-                onClick={() => setWritingInsight('new')}
-                type="button"
-              >
-                + Add an insight
-              </button>
-            )}
-
-            {/* The count gates the CARD, not the sentence inside it. Gating only
-                the text left an empty panel under the last group on every record
-                where every no-result was attributable — which is most of them. */}
-            {undetermined > 0 && (
-              <Surface variant="subtle" padding="md">
-                <MutedText className="block text-caption">
-                  {undetermined} no-result{undetermined > 1 ? 's' : ''} could not be attributed to
-                  one of the four reasons from this record alone.
-                </MutedText>
-              </Surface>
-            )}
           </TabsContent>
 
           <TabsContent value="attributes" className="space-y-6 pt-4">
@@ -375,16 +383,41 @@ export default function App() {
             />
           </TabsContent>
 
-          <TabsContent value="catalog" className="space-y-4 pt-4">
-            <CatalogTab record={selected} authored={authored} />
-          </TabsContent>
         </TabsRoot>
       </div>
+
+      <AssessmentEditor
+        open={agentOpen !== null}
+        startOn={agentOpen ?? 'list'}
+        onClose={() => setAgentOpen(null)}
+        skills={agent.skills}
+        workflow={standing}
+        onRenameWorkflow={(id, name) => {
+          const w = agent.skills.find((x) => x.id === id)
+          if (w) void agent.updateSkill(id, name, w.instructions)
+        }}
+        onCreateSkill={(name, instructions) => void agent.createSkill(name, instructions)}
+        onUpdateSkill={(id, name, instructions) => void agent.updateSkill(id, name, instructions)}
+        disabled={agent.disabled ?? []}
+        onSetEnabled={(id, on) => void agent.setEnabled(id, on)}
+        onDeleteSkill={(id) => void agent.deleteSkill(id)}
+      />
 
       <AnalysisDock
         open={dockOpen}
         setOpen={setDockOpen}
-        onRun={(prompt, attachments) => analysis.run(prompt, analysis.pinned, attachments)}
+        onSend={({ prompt, attachments, skills, typed, kind }) =>
+          analysis.run(prompt, analysis.pinned, attachments, kind, skills, typed, policy)
+        }
+        // Switched off means not offered: the menu lists what can be run, and
+        // an entry that is off would be a row you can pick and nothing happens.
+        custom={agent.skills.filter((x) => !(agent.disabled ?? []).includes(x.id))}
+        disabled={agent.disabled ?? []}
+        onCreateSkill={() => setAgentOpen('new')}
+        // The standing assessment IS the settings page, so editing it opens
+        // that page rather than an editor nested inside itself.
+        onEditSkill={(id) => setAgentOpen(id === standing?.id ? 'list' : id)}
+        onUpdateSkill={(id, name, instructions) => void agent.updateSkill(id, name, instructions)}
         waiting={analysis.waiting}
         pinned={analysis.pinned}
         results={results}

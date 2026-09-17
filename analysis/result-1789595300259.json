@@ -1,0 +1,56 @@
+{
+  "headline": "Onboard subject to conditions: identification and screening are complete, but the account should not open until the adverse media source and the recent lien are read and the ownership certification, standing certificate and operating checks are on the file.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "Nothing on this record argues against the relationship — what is outstanding is the file, and it separates into four kinds of work. Two items are conditions precedent: the adverse media source and the lien in Adverse information have to be read before anyone can weigh them, and an unread high risk score is not something an approval can carry. Two are collections from the customer: the beneficial-ownership certification, which is the only route to the owners because nothing publishes them, and the good-standing certificate the state of formation will not publish. Two are orders that simply did not return on this pull — the website and profile checks, and industry classification. One is a policy decision the bank makes about itself rather than about this business: whether its accepted-industry list covers business-verification software sold to regulated institutions. Customer identification and screening are already complete, so none of the remaining work reopens them.",
+        "cites": ["adverse_media", "liens", "person_verification", "sos_domestic_sub_status", "website_url_discovery", "industry", "tin", "watchlist"]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Pull the adverse media source and read it, since a high risk score with no article behind it can be neither cleared nor acted on and it is the item most likely to change the decision.",
+      "cites": ["adverse_media"],
+      "closes": ["adverse_media_source"]
+    },
+    {
+      "text": "Obtain the lien filing — amount, secured party and what it secures — because one filed within the last three months bears on both the account decision and any later credit exposure.",
+      "cites": ["liens"],
+      "closes": ["lien_detail"]
+    },
+    {
+      "text": "Read the ten litigations for subject matter and for whether the business is plaintiff or defendant, and check whether any of them is the source behind the adverse media hit.",
+      "cites": ["litigations", "adverse_media"],
+      "closes": ["litigation_detail"]
+    },
+    {
+      "text": "Collect a signed beneficial-ownership certification naming every natural person owning 25 percent or more, then screen each of them against watchlists and PEP lists the way the matched officer already was.",
+      "cites": ["person_verification", "watchlist", "politically_exposed_persons"],
+      "closes": ["beneficial_ownership"]
+    },
+    {
+      "text": "Request a Certificate of Good Standing for the state of formation from the customer, which is the only evidence of standing available because the state publishes none.",
+      "cites": ["sos_domestic", "sos_domestic_sub_status"],
+      "closes": ["formation_standing"]
+    },
+    {
+      "text": "Order the website, domain and third-party profile checks so that operating status rests on more than registrations for a company whose product is delivered over the web.",
+      "cites": ["website_url_discovery", "profile_discovery"],
+      "closes": ["operating_evidence"]
+    },
+    {
+      "text": "Order industry classification and take the customer's stated expected activity — volumes, counterparties and payment types — then decide whether the line of work sits inside the accepted-industry policy.",
+      "cites": ["industry"],
+      "closes": ["expected_activity"]
+    },
+    {
+      "text": "Assemble the case file in stage order — identification evidence, the ownership certification, standing and operating documents, then the screening and adverse dispositions — and date-stamp each item so the next periodic review knows what was relied on and when."
+    },
+    {
+      "text": "Set the monitoring terms before the account funds: refresh liens, litigation and adverse media on a fixed cycle, and treat a change in registration status or a new officer as a trigger for re-review.",
+      "cites": ["liens", "litigations", "adverse_media", "sos_active"]
+    }
+  ]
+}

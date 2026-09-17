@@ -1,0 +1,222 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "website_status",
+    "website_url_discovery",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "profile_discovery",
+    "profile_status",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "location_frequency:high",
+    "web_person_verification",
+    "operating_as_claimed",
+    "web_phone_number_verification",
+    "watchlist",
+    "politically_exposed_persons",
+    "risky_keywords",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies",
+    "people_liens",
+    "people_litigations",
+    "people_bankruptcies",
+    "people_criminal_history",
+    "industry",
+    "entity_type",
+    "sos_active",
+    "sos_domestic"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Middesk sells business identity infrastructure to regulated financial institutions \u2014 banks, lenders and fintech platforms that have to verify a business customer before opening an account or extending credit. It pulls filings from state and federal registries behind an API, and sells verification, ongoing monitoring and agent-assisted state registration on top of that data. Revenue is subscription and per-verification fees from those institutions."
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "body": [
+        {
+          "text": "The business is operating and the web corroborates the application rather than merely repeating it. The submitted website was online when the record was ordered and the domain is held with high confidence by this business rather than pointing at a third party. Against that site three submitted details verified independently \u2014 the business name, the office address and the email address \u2014 and the third-party profiles submitted are all online.",
+          "cites": [
+            "website_status",
+            "website_url_discovery",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "profile_discovery",
+            "profile_status"
+          ]
+        },
+        {
+          "text": "The physical footprint reads as a company registering where it does business rather than as concentration. The submitted office address is deliverable and commercial; across the record three addresses are shared with twenty or fewer businesses, one with between twenty-one and a hundred, and five with more than a hundred \u2014 the signature of registered-agent offices in five states, not of a shared-address operation.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:low",
+            "location_frequency:moderate",
+            "location_frequency:high"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "purpose_person_on_web",
+          "point": "Why the submitted individual is not named on the company's own site",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The person matched an officer on the state filings but not the website, which is a question about the application rather than about the business.",
+          "cites": [
+            "web_person_verification"
+          ]
+        },
+        {
+          "id": "purpose_expected_activity",
+          "point": "What is expected to move through the account \u2014 volumes, counterparties, payment types",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Nothing in the record reaches expected activity; it comes from the customer.",
+          "cites": [
+            "operating_as_claimed"
+          ]
+        },
+        {
+          "id": "purpose_phone",
+          "point": "Whether the submitted phone number belongs to the business",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The web phone check is defined and returned nothing on this pull.",
+          "cites": [
+            "web_phone_number_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screening",
+      "body": [
+        {
+          "text": "The screening ran and three of its four checks cleared outright: no watchlist or sanctions hits against the business or the submitted individuals, no politically exposed persons among those individuals or their relatives and close associates, and no risky keywords. These are answers, not absent orders \u2014 the distinction matters because an unordered check and a clean one look identical in a summary.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons",
+            "risky_keywords"
+          ]
+        },
+        {
+          "text": "The fourth did not clear. Adverse media returned one or more high risk sources, and the record carries the score without the article behind it. That is the only screening result on this file that cannot be read.",
+          "cites": [
+            "adverse_media"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "screen_media_source",
+          "point": "What the high risk adverse media source says, and whether it names this business",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The score is held; the source is not. The article is what separates a name collision from a finding.",
+          "cites": [
+            "adverse_media"
+          ]
+        },
+        {
+          "id": "screen_owners",
+          "point": "Whether everyone who owns the business has been screened",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "The clearance covers the names the applicant submitted. Owners disclosed on a certification would have to be screened the same way.",
+          "cites": [
+            "politically_exposed_persons"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adverse",
+      "body": [
+        {
+          "text": "Read as filings rather than counts, most of what the totals imply dissolves. Ten UCC liens sit on the record: five Idaho state tax liens, all closed; a closed New Jersey filing by a finance company naming an unrelated auto dealer and an individual alongside this business; a closed Californian filing in which the business appears as both debtor and secured party. Two remain open \u2014 one filed in New Jersey in 2023 by a receivables firm with an unrelated property company as co-debtor, and one filed in Virginia within the past three months whose secured party is a brewing company. Neither open filing states collateral or an amount.",
+          "cites": [
+            "liens"
+          ]
+        },
+        {
+          "text": "The ten litigations read the same way. Nine are closed cases in one Georgia circuit court, four to six parties each, with the same individual recurring across them; the tenth is an open New York foreclosure in which this business is named among fifteen defendants alongside the city's transit, environmental and criminal courts \u2014 the standard practice of naming every possible interested party. None of the ten is a matter the business brought, and in none is it the principal defendant. There are no bankruptcy filings.",
+          "cites": [
+            "litigations",
+            "bankruptcies"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "adverse_open_liens",
+          "point": "What the two open UCC filings secure, and for how much",
+          "why": "not_published",
+          "wouldAnswer": "Neither filing office states collateral or a sum on the filing itself. The secured parties would, on request.",
+          "cites": [
+            "liens"
+          ]
+        },
+        {
+          "id": "adverse_people",
+          "point": "Whether the individuals behind the business carry liens, judgments or criminal history of their own",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The people-level checks are defined and none returned on this pull.",
+          "cites": [
+            "people_liens",
+            "people_litigations",
+            "people_bankruptcies",
+            "people_criminal_history"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identification",
+      "body": [
+        {
+          "text": "The line of work does not require a licence to operate. The classification returns a business that does not sit in a high risk industry, and software sold to financial institutions is not itself a regulated activity \u2014 the licensing burden sits with the banks buying it, not with the vendor. The entity form carries no professional-ownership requirement either: a corporation may be owned by anyone, unlike the professional forms that restrict ownership to licensed practitioners.",
+          "cites": [
+            "industry",
+            "entity_type"
+          ]
+        },
+        {
+          "text": "Registration standing is the part of regulatory fit the record does leave open. Two of five filings are active; the domestic one returns no status at all, because the state of formation does not publish one through this channel.",
+          "cites": [
+            "sos_active",
+            "sos_domestic"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "fit_policy",
+          "point": "Whether business-verification software sold to regulated institutions sits inside the accepted-industry policy",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "This is a decision the bank makes about itself. The record can say what the business does; it cannot say whether the bank banks it.",
+          "cites": [
+            "industry"
+          ]
+        },
+        {
+          "id": "fit_standing",
+          "point": "Whether the domestic registration is in good standing",
+          "why": "not_published",
+          "wouldAnswer": "The state of formation publishes neither a status nor a good-standing sub-status here. A Certificate of Good Standing from the customer is the only route.",
+          "cites": [
+            "sos_domestic"
+          ]
+        }
+      ]
+    }
+  ]
+}

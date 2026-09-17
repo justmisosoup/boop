@@ -72,14 +72,20 @@ const withoutRole = (value: string, role?: string) =>
  *
  * Each record carries its own state, status and identifiers, so one card per
  * type flattened several separate permits into a single unlabelled list.
+ *
+ * `Lien` is here because the filings themselves now arrive scoped — "Lien ·
+ * Virginia" — and an unscoped `Lien` card built from a name row's source ref
+ * sat beside them holding the same Virginia filing under a vaguer title.
  */
-const PER_JURISDICTION = new Set(['Tax permit', 'City registration'])
+const PER_JURISDICTION = new Set(['Tax permit', 'City registration', 'Lien'])
 
 const GOVERNMENT = new Set([
   'Tax permit',
   'City registration',
   'Form 5500',
   'Lien',
+  'Court record',
+  'Bankruptcy court',
   'SAM',
   'SOS document',
   'Tax exempt org'
@@ -94,12 +100,7 @@ const GOVERNMENT = new Set([
  * one filing read as that filing having supplied a number about its siblings.
  * A filing's own payload is already printed above.
  */
-const NOT_SUPPLIED = new Set<GroupId>([
-  'watchlist',
-  'politically_exposed_persons',
-  'adverse_media',
-  'sos'
-])
+const NOT_SUPPLIED = new Set<GroupId>(['screening', 'registration'])
 
 /**
  * Google's own card.
@@ -315,7 +316,11 @@ export const sourcesFor = (
   const band = (s: Source): Source['band'] => {
     if (s.id === 'src:submitted') return 'submitted'
     if (s.registration) return 'registration'
-    return GOVERNMENT.has(s.kind ?? s.label) ? 'government' : 'web'
+    // A jurisdiction-scoped source bands on its TYPE. "Lien · Virginia" and
+    // "Court record · Queens County Supreme Court" are a filing office and a
+    // court; matching the whole label put both in with the web pages.
+    const kind = (s.kind ?? s.label).split(' · ')[0]
+    return GOVERNMENT.has(kind) ? 'government' : 'web'
   }
 
   // Within the filings, oldest first: the order they were registered in is the

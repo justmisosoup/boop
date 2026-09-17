@@ -1,0 +1,607 @@
+{
+  "id": "1789589493860",
+  "requestedAt": "2026-09-16T20:11:33.860Z",
+  "businessId": "f89e994c-aab2-4367-855f-aa6ea0e2625f",
+  "business": {
+    "name": "Kairos Physical Therapy PLLC",
+    "entityType": "LLC",
+    "state": "NY",
+    "formed": "2022-06-13"
+  },
+  "kind": "report",
+  "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+  "insights": [
+    {
+      "id": "dba_name",
+      "statement": "Unable to identify a match to the submitted DBA name",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted DBA Name",
+      "evidence": [
+        "Submitted DBA: Kairos Physio",
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Unable to identify a match to the submitted person",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted person",
+      "evidence": [
+        "Submitted: Joshua Gee",
+        "Officers on state registrations: KAIROS PHYSICAL THERAPY PLLC",
+        "Requires Order package: identity, business_verification_qualify, business_verification_verify, international_business_verification"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "2 connections found",
+      "state": "result",
+      "because": "2 connections found",
+      "evidence": [
+        "Source value: Found",
+        "Requires Order package: business_verification_verify"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "2 addresses in the low band",
+      "state": "result",
+      "evidence": [
+        "21611 48th Ave Apt 3B, Bayside, NY 11364-1311 — 2 businesses at this location",
+        "40 Little Neck Rd # 1B, Little Neck, NY 11363-1332 — 2 businesses at this location",
+        "Requires Order package: identity"
+      ]
+    },
+    {
+      "id": "location_frequency:moderate",
+      "statement": "1 address in the moderate band",
+      "state": "result",
+      "evidence": [
+        "801 Madison Ave Fl 3, New York, NY 10065-5930 — 21 businesses at this location",
+        "Requires Order package: identity"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "The domestic sub-status is not provided by state.",
+      "state": "no_result",
+      "reason": "not_published",
+      "because": "The domestic sub-status is Not Provided by State.",
+      "evidence": [
+        "Registration state: NY",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "profile_status",
+      "statement": "At least one third party profile has an unknown status",
+      "state": "unknown",
+      "because": "At least one third party profile has an unknown status",
+      "evidence": [
+        "Source value: Unknown",
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "liens",
+      "statement": "No liens found",
+      "state": "result",
+      "because": "No Liens found",
+      "evidence": [
+        "Source value: No Liens",
+        "Requires Order package: liens, tax_liens, ucc_liens"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: identity, business_verification_qualify, business_verification_verify, international_business_verification"
+      ]
+    },
+    {
+      "id": "address_verification",
+      "statement": "Match identified to the submitted office address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: identity, business_verification_qualify, business_verification_verify, international_business_verification"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "The USPS is able to deliver mail to the submitted office address",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable",
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "Submitted office address is a commercial property",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial",
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "The business is active in the state of the submitted office address",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "1 of 1 filings are active",
+      "state": "result",
+      "because": "1 of 1 filings are Active",
+      "evidence": [
+        "Source value: Active",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Active domestic filing found",
+      "state": "result",
+      "because": "Active domestic filing found",
+      "evidence": [
+        "Source value: Domestic Active",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "No watchlist hits were identified",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits",
+        "Requires Order package: identity, business_verification_verify, enhanced_screenings, merchant_risk"
+      ]
+    },
+    {
+      "id": "industry",
+      "statement": "This business likely does not operate in a high risk industry",
+      "state": "result",
+      "because": "This business likely does not operate in a high risk industry",
+      "evidence": [
+        "Source value: No Hits",
+        "Requires Order package: industry_classification"
+      ]
+    },
+    {
+      "id": "website_status",
+      "statement": "Website was online when the business record was ordered",
+      "state": "result",
+      "because": "Website was Online when the business record was ordered",
+      "evidence": [
+        "Source value: Online",
+        "Requires Order package: identity, website, merchant_risk"
+      ]
+    },
+    {
+      "id": "website_url_domain_ownership",
+      "statement": "We have high confidence that the submitted website URL belongs to the business.",
+      "state": "result",
+      "because": "We have high confidence that the submitted website URL belongs to the business.",
+      "evidence": [
+        "Source value: High Confidence",
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "adverse_media",
+      "statement": "No adverse media was found",
+      "state": "result",
+      "because": "No adverse media was found",
+      "evidence": [
+        "Source value: Low risk",
+        "Requires Order package: adverse_media"
+      ]
+    },
+    {
+      "id": "bankruptcies",
+      "statement": "The business has no bankruptcy filings",
+      "state": "result",
+      "because": "The business has no bankruptcy filings",
+      "evidence": [
+        "Source value: None Found",
+        "Requires Order package: bankruptcies, identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type is a LLC",
+      "state": "result",
+      "because": "Entity type is a LLC",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "formation_state",
+      "statement": "Submitted formation state (NY) matches formation state found",
+      "state": "result",
+      "because": "Submitted formation state (NY) matches formation state found",
+      "evidence": [
+        "Source value: Found",
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "litigations",
+      "statement": "The business has no related litigations",
+      "state": "result",
+      "because": "The business has no related litigations",
+      "evidence": [
+        "Source value: None Found",
+        "Requires Order package: litigations"
+      ]
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "There were no hits on submitted individuals or their relatives and close associates",
+      "state": "result",
+      "because": "There were no hits on submitted individuals or their relatives and close associates",
+      "evidence": [
+        "Source value: No hits",
+        "Requires Order package: enhanced_screenings"
+      ]
+    },
+    {
+      "id": "profile_discovery",
+      "statement": "Third party profiles submitted",
+      "state": "result",
+      "because": "Third party profiles submitted",
+      "evidence": [
+        "Source value: Submitted",
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "risky_keywords",
+      "statement": "No risky keywords found.",
+      "state": "result",
+      "because": "No risky keywords found.",
+      "evidence": [
+        "Source value: None",
+        "Requires Order package: industry_classification"
+      ]
+    },
+    {
+      "id": "web_address_verification",
+      "statement": "Match identified to the submitted office address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_business_name_verification",
+      "statement": "Match identified to the submitted business name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_email_address_verification",
+      "statement": "Successfully verified the submitted email address",
+      "state": "result",
+      "because": "Successfully verified the submitted Email Address",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_phone_number_verification",
+      "statement": "Successfully verified the submitted phone number",
+      "state": "result",
+      "because": "Successfully verified the submitted Phone Number",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "website_url_discovery",
+      "statement": "Website URL was submitted",
+      "state": "result",
+      "because": "Website URL was submitted",
+      "evidence": [
+        "Source value: Submitted",
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "address_cmra",
+      "statement": "address cmra — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "address_registered_agent",
+      "statement": "address registered agent — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "complaint_themes",
+      "statement": "Complaint themes — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: merchant_risk"
+      ]
+    },
+    {
+      "id": "related_entities",
+      "statement": "Related entities — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: merchant_risk"
+      ]
+    },
+    {
+      "id": "entity_type_match",
+      "statement": "Entity type match — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "kyc_decision",
+      "statement": "KYC — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: kyc"
+      ]
+    },
+    {
+      "id": "web_litigation",
+      "statement": "Web litigations — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: merchant_risk"
+      ]
+    },
+    {
+      "id": "name_and_entity_type",
+      "statement": "Name entity type — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "operating_as_claimed",
+      "statement": "Operating as claimed — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: merchant_risk"
+      ]
+    },
+    {
+      "id": "people_bankruptcies",
+      "statement": "People bankruptcies — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: people_bankruptcies"
+      ]
+    },
+    {
+      "id": "people_criminal_history",
+      "statement": "People criminal history — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: people_criminal_history"
+      ]
+    },
+    {
+      "id": "people_liens",
+      "statement": "People liens — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: people_tax_liens, people_ucc_liens"
+      ]
+    },
+    {
+      "id": "people_litigations",
+      "statement": "People litigations — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: people_litigations"
+      ]
+    },
+    {
+      "id": "phone",
+      "statement": "Phone number — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity"
+      ]
+    },
+    {
+      "id": "ppp_loans",
+      "statement": "PPP loans — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "sos inactive — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "sos_not_found",
+      "statement": "sos not found — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "sos_status",
+      "statement": "sos status — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_qualify"
+      ]
+    },
+    {
+      "id": "sos_unknown",
+      "statement": "sos unknown — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "id": "registrations_not_found",
+      "statement": "Global registrations not found — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: international_business_verification"
+      ]
+    },
+    {
+      "id": "registrations_status",
+      "statement": "Global registration status — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: international_business_verification"
+      ]
+    },
+    {
+      "id": "submitted_registrations_match",
+      "statement": "Submitted global registration match — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: international_business_verification"
+      ]
+    },
+    {
+      "id": "tin",
+      "statement": "TIN match — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_verify, tin"
+      ]
+    },
+    {
+      "id": "tin_error",
+      "statement": "TIN error — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_verify, tin"
+      ]
+    },
+    {
+      "id": "tin_issued",
+      "statement": "TIN not issued — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_verify, tin"
+      ]
+    },
+    {
+      "id": "tin_type",
+      "statement": "TIN type — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_verify, tin"
+      ]
+    },
+    {
+      "id": "domain_redirect",
+      "statement": "Domain redirect — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "website_parked",
+      "statement": "website parked — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, website, merchant_risk"
+      ]
+    },
+    {
+      "id": "website_verification",
+      "statement": "website verification — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, website, merchant_risk"
+      ]
+    }
+  ],
+  "assessments": [
+    {
+      "id": "identity",
+      "name": "Business identity",
+      "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one.",
+      "version": 1
+    },
+    {
+      "id": "ownership",
+      "name": "Ownership",
+      "prompt": "Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach.",
+      "version": 1
+    },
+    {
+      "id": "activity",
+      "name": "Activity",
+      "prompt": "Whether it is actually operating — address, website, connections, the shape of the footprint.",
+      "version": 1
+    },
+    {
+      "id": "compliance",
+      "name": "Compliance and screening",
+      "prompt": "Watchlist, PEP, adverse media, liens, litigation, bankruptcy, industry.",
+      "version": 1
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": []
+}

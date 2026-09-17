@@ -1,0 +1,229 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "entity_type_foreign",
+    "entity_type_agreement",
+    "sos_active",
+    "sos_match",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "web_person_verification",
+    "business_connections",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:high",
+    "location_frequency:moderate",
+    "location_frequency:low",
+    "address_proximity",
+    "website_status",
+    "website_url_domain_ownership",
+    "website_url_discovery",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "profile_discovery",
+    "profile_status",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "industry",
+    "risky_keywords",
+    "bankruptcies",
+    "liens",
+    "litigations"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Middesk sells business identity infrastructure to regulated financial institutions \u2014 banks, lenders and fintech platforms that have to verify a business customer before opening an account or extending credit. It pulls filings from state and federal registries and other authoritative sources behind an API, and sells verification, ongoing monitoring and agent-assisted state registration on top of that data. Revenue is subscription and per-verification fees from those institutions.",
+          "sources": [
+            {
+              "title": "middesk.com \u2014 business identity and KYB platform",
+              "url": "https://www.middesk.com/"
+            },
+            {
+              "title": "docs.middesk.com \u2014 verify a business",
+              "url": "https://docs.middesk.com/verify-business"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "The submitted identity and the registered one are the same entity, and the record establishes that from more than one angle. The business name matches across all five state registrations, the submitted office address matches a state registration, and the entity type is confirmed against the domestic filing, the four foreign filings, and all five in agreement. There is no version of this business in the registries that the application does not already describe.",
+          "cites": [
+            "name",
+            "address_verification",
+            "entity_type",
+            "entity_type_foreign",
+            "entity_type_agreement"
+          ]
+        },
+        {
+          "text": "The status picture across those five registrations is mixed, and reads as ordinary for a company that registers where it does business rather than as decay. Two filings are active \u2014 including the one in the state of the submitted office address, which is where the business actually operates from \u2014 one is inactive, and two carry no status at all. A software company with a Delaware parent and foreign qualifications in the states it sells into accumulates registrations it later withdraws; an inactive filing among five is consistent with that, and is not on its own evidence of anything.",
+          "cites": [
+            "sos_active",
+            "sos_match",
+            "sos_inactive",
+            "sos_unknown"
+          ]
+        },
+        {
+          "text": "The one status that cannot be read is the one in the formation state. Delaware returns no domestic filing status through this channel and publishes no good-standing sub-status, so the registration a reviewer would most want confirmed is the registration the record is quietest about. That is a limit of the source rather than a finding about the business \u2014 Delaware behaves this way for every company incorporated there \u2014 but it leaves the parent registration unconfirmed on our side.",
+          "cites": [
+            "sos_domestic",
+            "sos_domestic_sub_status",
+            "sos_unknown"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "domestic_status",
+          "point": "Whether the Delaware registration is active and in good standing",
+          "why": "not_published",
+          "cites": [
+            "sos_domestic",
+            "sos_domestic_sub_status"
+          ]
+        },
+        {
+          "id": "inactive_registration",
+          "point": "Which of the five registrations is inactive, and whether it lapsed or was deliberately withdrawn",
+          "why": "not_held_or_unreachable",
+          "cites": [
+            "sos_inactive"
+          ],
+          "noAction": "The registration that bears on this relationship is the one in the state of the submitted office address, and it is active. A withdrawn foreign qualification in a state the business no longer sells into does not affect whether the entity exists or can contract."
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "A submitted person matches an officer named on the state registrations, so the record reaches a named individual attached to the entity rather than only to the filing.",
+          "cites": [
+            "person_verification"
+          ]
+        },
+        {
+          "text": "That match could not be corroborated against the company's own website, where the check returned no determination either way. Related businesses share officers, agents or addresses with this one, which is ordinary where founders sit across several entities and is not by itself a finding.",
+          "cites": [
+            "web_person_verification",
+            "business_connections"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "beneficial_ownership",
+          "point": "Who ultimately owns the company, as distinct from who is named as an officer",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Officers are published and matched here; beneficial ownership is a different question and nothing in the catalog speaks to it.",
+          "cites": [
+            "person_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "The operating footprint is real and it is where the application says it is. The submitted office address matches a state registration, the USPS delivers to it, and seven of the nine addresses on the record are commercial property. The address the business works from is shared with twenty-one others, which for a floor in a downtown San Francisco office building is what a tenant list looks like rather than a signal about the tenant.",
+          "cites": [
+            "address_verification",
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:moderate"
+          ]
+        },
+        {
+          "text": "Five further addresses are shared with more than a hundred businesses each, two of them with over a thousand and one with roughly ten thousand. Read in isolation those are the most alarming numbers on the record; read against an entity with a Delaware domestic filing and four foreign qualifications, they are the signature of commercial registered-agent offices, which exist to be the address of record for thousands of companies at once. The remaining three addresses are shared with one or two businesses, and the nine sit over a fifth of a mile apart \u2014 a distributed registration footprint, not one address wearing several names.",
+          "cites": [
+            "location_frequency:high",
+            "location_frequency:low",
+            "address_proximity",
+            "entity_type_foreign"
+          ]
+        },
+        {
+          "text": "The web presence corroborates the application on every axis the check reaches. The site was online when the record was ordered, and the domain registrant ties it to this business with high confidence \u2014 which matters because the URL was supplied by the customer, and a customer-supplied domain that the registrant record independently confirms is no longer merely a claim. The site also matches the submitted business name, office address and email address, and the customer-supplied third-party profile is reachable.",
+          "cites": [
+            "website_status",
+            "website_url_domain_ownership",
+            "website_url_discovery",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "profile_discovery",
+            "profile_status"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "agent_addresses",
+          "point": "Whether the five high-frequency addresses are registered-agent offices",
+          "why": "not_held_or_unreachable",
+          "cites": [
+            "location_frequency:high"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Screening is clean across every list that was run. Watchlist screening returned no hits, PEP screening returned none against the submitted individuals or their relatives and close associates, and adverse media returned nothing and scored low risk. No prohibited industry was identified and no risky keywords were found \u2014 consistent with a B2B software vendor, and the line of work carries no licensing question of its own.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons",
+            "adverse_media",
+            "industry",
+            "risky_keywords"
+          ]
+        },
+        {
+          "text": "Public-record financial distress is absent: no bankruptcy filings. One open lien is on the record, and ten related litigations. Neither count is characterised by the record \u2014 a single open lien on a company of this profile is most often a UCC-1 filed by an equipment or financing counterparty, which is a normal feature of a solvent balance sheet rather than a default, and ten litigations across a multi-state vendor with a large customer base covers everything from routine commercial disputes to matters that would bear on the decision. What separates those readings is the content of the filings, which these insights count but do not carry.",
+          "cites": [
+            "bankruptcies",
+            "liens",
+            "litigations"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "lien_detail",
+          "point": "What the open lien secures, its amount, and the secured party",
+          "why": "not_held_or_unreachable",
+          "cites": [
+            "liens"
+          ]
+        },
+        {
+          "id": "litigation_detail",
+          "point": "Whether the ten litigations are ordinary commercial matters, and whether the business is plaintiff or defendant",
+          "why": "not_held_or_unreachable",
+          "cites": [
+            "litigations"
+          ]
+        }
+      ]
+    }
+  ]
+}

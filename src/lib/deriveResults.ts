@@ -9,12 +9,40 @@
  * One check can yield MORE than one insight: address frequency yields one per
  * band, so `derive` returns a list.
  */
-import {
-  addressFrequencyInsights,
-  addressProximity,
-  entityTypeAgreement,
-  statementFor
-} from './statements'
+import catalog from '../data/catalog.json'
+import { addressFrequencyInsights, statementFor } from './statements'
+
+const CATALOG_SUBJECTS = (
+  catalog as {
+    subjects: Array<{
+      subject: string
+      checks: string[]
+      signals?: string[]
+      order_packages?: string[]
+    }>
+  }
+).subjects
+const CHECK_NAME = (catalog as { nameOf: Record<string, string> }).nameOf
+const CHECK_PACKAGES = (catalog as { packagesOf: Record<string, string> }).packagesOf
+
+/**
+ * What has to be ordered for a check to run at all.
+ *
+ * Carried as evidence on every insight, answered or blank. For a blank one it
+ * is the only actionable thing on the row — "order this" is what closes it. For
+ * an answered one it says what the answer cost, which is the part the API
+ * response does not carry.
+ *
+ * A signal needs no Order; the sheet says so in the same field, so the
+ * distinction is kept rather than flattened into a package list.
+ */
+const producedBy = (insightId: string): string | undefined => {
+  const packages = CHECK_PACKAGES[insightId.split(':')[0]]
+  if (!packages) return undefined
+  return /no Order required/i.test(packages)
+    ? 'Produced by a signal — POST /v1/signals, no Order required'
+    : `Requires Order package: ${packages}`
+}
 import type { InsightResult, NoResultReason } from '../types'
 
 export type ReviewTask = {
@@ -164,7 +192,60 @@ export type BusinessRecord = {
       }>
     }>
   } | null
+  /**
+   * Court records, lien filings and bankruptcy petitions, in full.
+   *
+   * Each carries the source that issued it — the court, the state filing office
+   * — because these are documents held by named institutions, not screening
+   * outputs. That is what lets them stand as sources beside the registries
+   * rather than as an unsourced count on a review task.
+   */
+  litigations?: Litigation[]
+  liens?: Lien[]
+  bankruptcies?: Bankruptcy[]
   reviewTasks: ReviewTask[]
+}
+
+export type Litigation = {
+  id: string
+  caseName: string | null
+  caseNumber: string | null
+  caseStatus: string | null
+  caseType: string | null
+  filingDate: string | null
+  court: string | null
+  courtState: string | null
+  /** Which side the business is on, where the court states it. */
+  partyType: string | null
+  parties: Array<{ name: string; role: string | null }>
+  judgments: Array<{ text: string | null; date: string | null; amountCents: number | null }>
+}
+
+export type Lien = {
+  id: string
+  type: string | null
+  fileNumber: string | null
+  state: string | null
+  status: string | null
+  filingDate: string | null
+  lapseDate: string | null
+  collateral: string | null
+  liabilityCents: number | null
+  loanPrincipalCents: number | null
+  /** The filing office's own page for this lien. */
+  url: string | null
+  debtors: Array<{ name: string; type: string | null }>
+  securedParties: Array<{ name: string; type: string | null }>
+}
+
+export type Bankruptcy = {
+  id: string
+  caseNumber: string | null
+  chapter: string | null
+  status: string | null
+  filingDate: string | null
+  court: string | null
+  courtState: string | null
 }
 
 /** DBA filings are not supported in these states (source doc 01). */
@@ -175,14 +256,18 @@ const DBA_UNSUPPORTED = new Set([
 /** Composites. Not insights — a grade over facts that are themselves insights. */
 const COMPOSITES = new Set(['address_risk', 'web_presence_quality'])
 
-export type Derived = InsightResult & { reasonUndetermined?: boolean }
+export type Derived = InsightResult & {
+  reasonUndetermined?: boolean
+  /** The catalog defines this check and the record did not report it. */
+  notReported?: boolean
+}
 
 const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
   if (COMPOSITES.has(task.key)) return []
 
   const base = {
     insightId: task.key,
-    statement: statementFor(task.key, task.subLabel, record),
+    statement: statementFor(task.key, task.subLabel, record, task.message),
     group: ''
   }
 
@@ -324,51 +409,83 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
  * review task. Kept separate from `derive` so it is obvious which insights are
  * the provider's and which are ours.
  */
-const derived = (record: BusinessRecord): Derived[] => {
-  const rows: Derived[] = []
+/**
+ * Nothing. Kept as a seam rather than deleted.
+ *
+ * This used to add three insights the prototype composed itself —
+ * `entity_type_foreign`, `entity_type_agreement` and `address_proximity`. They
+ * were hand-rolled: no review task or signal produces them, so they are our
+ * reading dressed as the product's. The insights are now the product's own
+ * review tasks and signals, and anything we invent beside them is an assessment
+ * wearing an insight's clothes.
+ */
+const derived = (_record: BusinessRecord): Derived[] => []
 
-  // Against every filing, and against the foreign ones alone. The provider
-  // checks only the domestic registration, and a qualification that disagrees
-  // with the formation record is a finding no review task reports.
-  // Domestic, foreign, all — narrowest first. The provider's own check covers
-  // the domestic filing, so these widen from it rather than restating it.
-  for (const [id, scope] of [
-    ['entity_type_foreign', 'foreign'],
-    ['entity_type_agreement', 'all']
-  ] as const) {
-    const agreement = entityTypeAgreement(record, scope)
-    if (agreement)
-      rows.push({ insightId: id, statement: agreement.statement, group: '', state: 'result' })
-  }
 
-  const proximity = addressProximity(record)
-  if (!proximity) return rows
+/**
+ * Every check the catalog defines, including the ones this record did not report.
+ *
+ * A business is evaluated against the whole insight set. Leaving out the checks
+ * that returned nothing makes a short list indistinguishable from a thin
+ * business — the reader cannot tell whether that is the company or the order.
+ *
+ * The state is `unknown`, NOT a no-result with a reason. Why a check is absent
+ * is unrecoverable from the response: not ordered, not held, not applicable, and
+ * ordered-and-found-nothing all look identical. `formation_state` is absent for
+ * a business whose formation state is plainly on the record, so "not ordered"
+ * would be a guess stated as a fact. `catalog/coverage.yaml` reaches the same
+ * conclusion: where the reason cannot be recovered, the honest result is unknown
+ * rather than a no-result with a reason invented for it.
+ *
+ * The order packages are carried as context — what would produce this check —
+ * not as a claim about why it is missing.
+ */
+const notReported = (ran: Set<string>): Derived[] =>
+  CATALOG_SUBJECTS.flatMap((subject) =>
+    subject.checks
+      .filter((id) => !ran.has(id))
+      .map((id) => ({
+        insightId: id,
+        // Say which check this is. A row reading only "no result" is unreadable
+        // — within a group every one of them looked identical.
+        statement: `${CHECK_NAME[id] ?? id.replace(/_/g, ' ')} — no result on this record`,
+        group: '',
+        state: 'unknown' as const,
+        notReported: true
+      }))
+  )
 
-  return [
-    ...rows,
-    {
-      insightId: 'address_proximity',
-      statement: proximity.statement,
+/**
+ * The signals, as insights.
+ *
+ * Half the catalog, and none of them fetched: `pull-records.ts` reads
+ * `/v1/businesses`, and signals are their own endpoint. So every one is listed
+ * and none has a result — worth showing rather than hiding, because most need no
+ * Order at all and are the cheapest evidence available.
+ *
+ * They restate the review tasks they came from, which is recorded rather than
+ * resolved — both are kept.
+ */
+const signalRows = (): Derived[] =>
+  CATALOG_SUBJECTS.flatMap((subject) =>
+    (subject.signals ?? []).map((text, i) => ({
+      insightId: `signal:${subject.subject}:${i}`,
+      statement: text,
       group: '',
-      // A result either way. The check ran and the distances are the finding —
-      // "every address is within the boundary" is something we established, not
-      // something we failed to.
-      state: 'result'
-    }
-  ]
-}
+      state: 'unknown' as const,
+      notReported: true,
+      evidence: ['Signal — POST /v1/signals, no Order required. Not fetched by this prototype.']
+    }))
+  )
 
-/** The categories of the checks we derive ourselves, since no task names them. */
-const DERIVED_CATEGORY: Record<string, string> = {
-  address_proximity: 'address',
-  entity_type_agreement: 'formation',
-  entity_type_foreign: 'formation'
+export const deriveResults = (record: BusinessRecord): Derived[] => {
+  const ran = record.reviewTasks.flatMap((t) => derive(t, record))
+  const ranKeys = new Set(ran.map((r) => r.insightId.split(':')[0]))
+  return [...ran, ...derived(record), ...notReported(ranKeys), ...signalRows()].map((d) => {
+    const origin = producedBy(d.insightId)
+    return origin ? { ...d, evidence: [...(d.evidence ?? []), origin] } : d
+  })
 }
-
-export const deriveResults = (record: BusinessRecord): Derived[] => [
-  ...record.reviewTasks.flatMap((t) => derive(t, record)),
-  ...derived(record)
-]
 
 /** The category Middesk assigns each check, keyed by task key. */
 export const categoriesOf = (record: BusinessRecord): Map<string, string> =>
@@ -376,7 +493,6 @@ export const categoriesOf = (record: BusinessRecord): Map<string, string> =>
     ...record.reviewTasks
       .filter((t) => t.category)
       .map((t) => [t.key, t.category as string] as [string, string]),
-    ...Object.entries(DERIVED_CATEGORY)
   ])
 
 export const droppedComposites = (record: BusinessRecord): string[] =>

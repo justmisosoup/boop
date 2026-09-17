@@ -1,0 +1,113 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "tin",
+    "entity_type",
+    "address_verification",
+    "sos_active",
+    "sos_match",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "business_connections",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "location_frequency:high",
+    "industry",
+    "website_url_discovery",
+    "profile_discovery",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "liens",
+    "litigations",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "answer",
+      "body": [
+        {
+          "text": "Customer identification. An account-opening file has to establish that a legal entity exists and that the applicant in front of the bank is that entity. This record does both from four directions: the submitted name matches the state registrations, the submitted office address matches an address carried on a registration, the entity type reads as a corporation against the domestic filing, and the IRS holds a record for the submitted TIN and business name together. A TIN that pairs with the name is the single strongest of the four, because it is the one handle the applicant cannot assert into existence.",
+          "cites": ["name", "address_verification", "entity_type", "tin"]
+        },
+        {
+          "text": "Registration standing is the part of identification that is not finished. Five filings sit on the record: two active — including the one in the state of the submitted office address — one inactive, and two that return no status at all. A bank that requires evidence of active standing in the state of formation will not find it here, because the domestic filing returns no status and the state publishes no good-standing sub-status through this channel. That is a documentation step, not an adverse finding.",
+          "cites": ["sos_active", "sos_match", "sos_inactive", "sos_unknown", "sos_domestic", "sos_domestic_sub_status"]
+        },
+        {
+          "text": "Ownership and control. The beneficial-ownership requirement asks for two different things — the natural persons who own 25 percent or more, and one person with significant control — and the record reaches only the second kind. A submitted person matches an officer named on the state registrations, which establishes a control person against a public filing rather than against the applicant's own word. Ownership itself is not published anywhere the record can read, so it arrives as a customer certification or it does not arrive. Twenty related businesses share officers, agents or addresses with this one; for a company registered in five states that is the shape of founders and registered agents sitting across several entities, and it is the list a reviewer would read before certifying ownership rather than after.",
+          "cites": ["person_verification", "business_connections"]
+        },
+        {
+          "text": "Nature and purpose of the account. This is where the file is thinnest. The submitted office address is deliverable and commercial, which is what a real place of business looks like, and the address footprint reads as registered-agent offices rather than as concentration: three addresses are shared with twenty or fewer businesses, one with between twenty-one and a hundred, and five with more than a hundred — the expected signature of registering in five states. What is absent is everything that would corroborate the business as trading. No website, domain or third-party profile check returned on this pull, and no industry classification returned either. For a company whose product is a web service sold to regulated institutions, that leaves the most direct operating evidence off the file, and it leaves the expected-activity question — what flows through the account, and whether the line of work is one the bank's policy accepts — resting on the application rather than on anything verified.",
+          "cites": ["address_deliverability", "address_property_type", "location_frequency:low", "location_frequency:moderate", "location_frequency:high"]
+        },
+        {
+          "text": "Sanctions and screening. This stage clears, and it clears completely rather than by absence of an order: no watchlist hits against the business or the submitted individuals, and no politically exposed persons among those individuals or their relatives and close associates. Of the five stages this is the only one that returns a finished answer.",
+          "cites": ["watchlist", "politically_exposed_persons"]
+        },
+        {
+          "text": "Adverse information and financial standing. Three things on this record point at the business rather than at the limits of the data, and none of them is characterised. Adverse media returned one or more high risk sources with no article behind it. A new lien was filed within the past three months, with no amount and no secured party. Ten related litigations sit alongside them, with no subject matter and no indication whether the business is plaintiff or defendant. Against that, there are no bankruptcy filings. For a company of this size litigation alone is unremarkable; a recent lien and a high risk media score are not things a file can carry unexplained into an account-opening decision, because the difference between a name collision and a genuine finding is exactly what is missing from each of them.",
+          "cites": ["adverse_media", "liens", "litigations", "bankruptcies"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "formation_standing",
+          "point": "Whether the domestic registration is active and in good standing",
+          "why": "not_published",
+          "wouldAnswer": "The state publishes neither a status nor a good-standing sub-status through this channel, so no order returns one. A Certificate of Good Standing obtained by the customer is the only route.",
+          "cites": ["sos_domestic", "sos_domestic_sub_status"]
+        },
+        {
+          "id": "beneficial_ownership",
+          "point": "The natural persons who own 25 percent or more of the entity, as distinct from the officer already matched",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Officers are published and matched; ownership percentages are not published anywhere the catalog reaches. A signed beneficial-ownership certification naming each owner, with identifying details screened the same way the submitted person was, is what closes it.",
+          "cites": ["person_verification"]
+        },
+        {
+          "id": "operating_evidence",
+          "point": "Whether the company's website and online presence corroborate the application",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The catalog defines website, domain and third-party profile checks and none returned on this pull. For a software vendor these are the most direct operating evidence available.",
+          "cites": ["website_url_discovery", "profile_discovery"]
+        },
+        {
+          "id": "expected_activity",
+          "point": "The line of work on record, and whether it falls inside the bank's accepted-industry policy",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "No industry classification returned on this pull. Classification plus the customer's stated expected volumes and counterparties is what a nature-and-purpose record is built from.",
+          "cites": ["industry"]
+        },
+        {
+          "id": "adverse_media_source",
+          "point": "What the high risk adverse media source says, and whether it concerns this business",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The record carries the score and not the source. The articles behind it are what decide whether this is a name collision or a finding.",
+          "cites": ["adverse_media"]
+        },
+        {
+          "id": "lien_detail",
+          "point": "What the new lien secures, its amount, and the secured party",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "A lien filed in the last three months is recent enough to bear on the decision, and the record carries its existence without its size.",
+          "cites": ["liens"]
+        },
+        {
+          "id": "litigation_detail",
+          "point": "Whether the ten litigations are ordinary commercial matters, and whether the business is plaintiff or defendant",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "Ten is a count, not a characterisation. Reading them is what separates routine contract disputes from anything connected to the adverse media.",
+          "cites": ["litigations"]
+        }
+      ]
+    }
+  ]
+}

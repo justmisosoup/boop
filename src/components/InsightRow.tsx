@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { ActionButton, MutedText, Tag, Text } from '@/core'
+import { ActionButton, MutedText, Tag, Text, MetaChip } from '@/core'
 
 import { attributesFor, type AttributeRow } from '../lib/attributes'
 import type { BusinessRecord } from '../lib/deriveResults'
@@ -83,10 +83,22 @@ export const InsightRow = ({
   // does not. On a no result the statement often already carries the reason.
   const norm = (t?: string) => (t ?? '').trim().replace(/[.\s]+$/, '').toLowerCase()
   const because = norm(result.because) === norm(result.statement) ? undefined : result.because
+  const isSignal = result.insightId.startsWith('signal:')
 
   // A single-line row centres in the card; once there is a line of sub-text the
   // row grows and everything aligns to the top instead.
   const hasSubtext = Boolean(!isResult && because)
+
+  /**
+   * The order requirement, lifted out of `evidence`.
+   *
+   * It is carried there so the assessment layer sees it too, but in the row it
+   * belongs at the end rather than interleaved with the attributes the check
+   * actually read.
+   */
+  const producedBy = (result.evidence ?? []).find(
+    (e) => e.startsWith('Requires Order package:') || e.startsWith('Produced by a signal')
+  )
 
   return (
     <div
@@ -145,6 +157,11 @@ export const InsightRow = ({
             hasSubtext ? 'self-start' : 'self-center'
           ].join(' ')}
         >
+          {/* A signal sits beside the review tasks it restates, so the row has
+              to say which it is. Here rather than in the sentence: what the
+              signal reports is the finding, and where it came from is not. */}
+          {isSignal && <MetaChip>Signal</MetaChip>}
+
           {onEdit && (
             <ActionButton
               aria-label="Edit this insight"
@@ -242,6 +259,13 @@ export const InsightRow = ({
                 ) : (
                   <Text size="xs">{a.value}</Text>
                 ))}
+              {/* A reading OF the value, immediately after it — a case's status
+                  and filing date, how a lien stands. Same placement as the
+                  Attributes tab. Without it ten court records read as ten
+                  identical rows when half are open and half are closed. */}
+              {a.qualifier && (
+                <MutedText className="text-caption">{a.qualifier}</MutedText>
+              )}
               {/* Whether the customer gave us this value or we found it. An
                   address list where seven are ours and two are theirs reads as
                   one undifferentiated list without it, and which is which is
@@ -286,6 +310,18 @@ export const InsightRow = ({
               />
             </li>
           ))}
+
+          {/* What had to be ordered for this check to run.
+              Last, and quiet: it is the same fact for every insight and says
+              nothing about this business — but for a check that returned
+              nothing it is the only actionable thing on the row, because
+              ordering the package is what closes it. */}
+          {producedBy && (
+            <li className="mt-2 flex flex-wrap items-baseline gap-x-2">
+              <MutedText className="text-caption font-semibold">Produced by</MutedText>
+              <MutedText className="text-caption">{producedBy}</MutedText>
+            </li>
+          )}
         </ul>
       )}
     </div>

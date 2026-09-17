@@ -1,0 +1,51 @@
+{
+  "headline": "Identity is answered more completely than before — the TIN now matches too. The decision turns on three things the record raises and does not characterise: a high risk adverse media source, a lien filed in the last three months, and ten litigations.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "The entity side is not in question. Name, submitted address, entity type and now the IRS TIN record all agree on the same company, which is four independent handles rather than three. A mixed registration picture across five states reads as a company registering where it operates, and the active filing includes the state of the submitted address.",
+        "cites": ["name", "address_verification", "entity_type", "tin", "sos_active", "sos_match"]
+      },
+      {
+        "text": "What has changed is the compliance picture. This record previously returned clean adverse media and no liens; it now returns a high risk media source and a lien filed within three months. Neither is described further, so neither can be weighed — and the difference between a name collision and a genuine finding is exactly what is missing. That is the work to do before this decision is made, not after.",
+        "cites": ["adverse_media", "liens"]
+      },
+      {
+        "text": "Read the shared addresses as agent offices rather than as concentration: five above a hundred businesses is what registering in five states produces. And note what is absent — no website, domain or profile check returned on this pull, so the most direct evidence that this software company is operating is not on the file at all.",
+        "cites": ["location_frequency:high", "address_property_type"]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Pull the adverse media source and read it. A high risk score with no article behind it cannot be cleared or acted on, and it is the single most consequential unknown here.",
+      "cites": ["adverse_media"],
+      "closes": ["adverse_media_detail"]
+    },
+    {
+      "text": "Get the lien detail — amount, secured party, and what it secures. Filed in the last three months makes it recent enough to matter.",
+      "cites": ["liens"],
+      "closes": ["lien_detail"]
+    },
+    {
+      "text": "Read the ten litigations for subject matter and whether the business is plaintiff or defendant, and check whether any connects to the adverse media above.",
+      "cites": ["litigations"],
+      "closes": ["litigation_detail"]
+    },
+    {
+      "text": "Order the website and profile checks. Eleven are defined and none returned, which for a company whose product is a web service leaves operating status resting on registrations alone.",
+      "closes": ["web_presence"]
+    },
+    {
+      "text": "Request a Certificate of Good Standing if standing is gating. Delaware publishes no sub-status, so no order returns one.",
+      "cites": ["sos_domestic_sub_status"],
+      "closes": ["domestic_standing"]
+    },
+    {
+      "text": "Take a beneficial-ownership declaration. The record reaches a named officer and stops.",
+      "cites": ["person_verification"],
+      "closes": ["beneficial_ownership"]
+    }
+  ]
+}

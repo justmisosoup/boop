@@ -1,0 +1,19 @@
+{
+  "section": {
+    "id": "identity",
+    "body": [
+      {
+        "text": "The submitted name matches the name on five state registrations, so the applicant resolves onto real filings rather than onto a single unconfirmed one.",
+        "cites": [
+          "name"
+        ]
+      },
+      {
+        "text": "Two of those five registrations are active. What the remaining three are is not established here.",
+        "cites": [
+          "sos_active"
+        ]
+      }
+    ]
+  }
+}

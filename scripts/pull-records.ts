@@ -271,6 +271,78 @@ const normalise = (b: Any) => ({
       }
     : null,
 
+  /**
+   * Court records, UCC and tax lien filings, bankruptcy petitions.
+   *
+   * The API returns all three in full on `GET /businesses/{id}` and this script
+   * was dropping them, so the review task's one-line message ("10 related
+   * litigations") was everything the prototype held. That made every one of
+   * them unreadable: a count cannot say whether the business is plaintiff or
+   * defendant, what a lien secures, or which court heard it — and the reports
+   * were writing those up as data we did not have when we had never asked for
+   * it.
+   *
+   * Each one names its own source: the court that heard the case, the state
+   * office the lien is filed with. That is what puts them in the Sources tab
+   * beside the registries rather than leaving them as assertions.
+   */
+  litigations: (b.litigations ?? []).map((l: Any) => ({
+    id: l.id,
+    caseName: l.case_name ?? null,
+    caseNumber: l.case_number ?? null,
+    caseStatus: l.case_status ?? null,
+    caseType: l.case_type ?? null,
+    filingDate: l.filing_date ?? null,
+    // The court is the source. `jurisdiction_state` alone would merge nine
+    // Georgia cases heard by one circuit court with anything else in Georgia.
+    court: l.jurisdiction ?? null,
+    courtState: l.jurisdiction_state ?? null,
+    // Which side the business is on. "Related litigation" covers being sued
+    // and suing, and the two are not the same finding.
+    partyType: l.party_type ?? null,
+    parties: (l.parties ?? []).map((x: Any) => ({ name: x.name, role: x.role ?? null })),
+    // Docket entries carrying a money judgment. Most carry none — a judgment
+    // line with a null amount is a filing, not a sum owed.
+    judgments: (l.judgments ?? []).map((j: Any) => ({
+      text: j.text ?? null,
+      date: j.docket_entry_date ?? null,
+      amountCents: typeof j.amount_cents === 'number' ? j.amount_cents : null
+    }))
+  })),
+
+  liens: (b.liens ?? []).map((l: Any) => ({
+    id: l.id,
+    type: l.type ?? null,
+    fileNumber: l.file_number ?? null,
+    state: l.state ?? null,
+    status: l.status ?? l.status_category ?? null,
+    filingDate: l.filing_date ?? null,
+    lapseDate: l.lapse_date ?? null,
+    collateral: l.collateral ?? null,
+    // What it secures, where the filing office states it. Null on most UCC-1s,
+    // which is a fact about the filing rather than a gap in the pull.
+    liabilityCents: typeof l.liability_cents === 'number' ? l.liability_cents : null,
+    loanPrincipalCents:
+      typeof l.loan_principal_amount_cents === 'number' ? l.loan_principal_amount_cents : null,
+    // The filing office's own page for this lien.
+    url: l.source ?? null,
+    debtors: (l.debtors ?? []).map((x: Any) => ({ name: x.name, type: x.type ?? null })),
+    securedParties: (l.secured_parties ?? []).map((x: Any) => ({
+      name: x.name,
+      type: x.type ?? null
+    }))
+  })),
+
+  bankruptcies: (b.bankruptcies ?? []).map((x: Any) => ({
+    id: x.id,
+    caseNumber: x.case_number ?? null,
+    chapter: x.chapter ?? null,
+    status: x.status ?? null,
+    filingDate: x.filing_date ?? null,
+    court: x.court ?? x.jurisdiction ?? null,
+    courtState: x.jurisdiction_state ?? null
+  })),
+
   // The insight surface. `status` (success/warning/failure) is deliberately NOT
   // carried across: it is a judgement, and the assessment layer is where
   // judgement belongs (catalog/decompositions.md).

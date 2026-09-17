@@ -386,7 +386,7 @@ const ROW_ORDER: Partial<Record<GroupId, string[]>> = {
   // left in producer order the rows arrive filing by filing and Status appears
   // four times, separated by file numbers. Ordered here, the statuses read as
   // the list they are and each names the filing it belongs to.
-  sos: ['Status', 'Sub status', 'Registration date'],
+  registration: ['Status', 'Sub status', 'Registration date'],
   // The agent's address is the agent's, not the company's. Interleaved by
   // whichever check happened to surface it first, four of them sat between the
   // addresses the business actually operates from.

@@ -1,0 +1,44 @@
+{
+  "recommended": [
+    {
+      "id": "sos_active",
+      "why": "Already read. Two of five filings active — the floor for \"operational\": at least one live registration."
+    },
+    {
+      "id": "sos_inactive",
+      "why": "The other half of that picture. Without it, \"two are active\" leaves three unaccounted for and the assessment cannot say whether the rest lapsed."
+    },
+    {
+      "id": "sos_unknown",
+      "why": "Two filings return no status at all. Reading it stops silence being mistaken for inactive."
+    },
+    {
+      "id": "sos_match",
+      "why": "Active specifically in the state of the submitted address — the registration that matters most for where the business says it operates."
+    },
+    {
+      "id": "sos_domestic",
+      "why": "Good standing is a question about the formation state, so the domestic filing's status is the one to read first."
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "why": "Already read. This is the good-standing answer itself, and here it is a no_result — Delaware publishes no sub-status, so the honest answer is that it cannot be established from the record."
+    },
+    {
+      "id": "entity_type_agreement",
+      "why": "Whether the entity type agrees across all five registrations. A company operating under a type that disagrees with its filings is an identity problem, not an activity one."
+    },
+    {
+      "id": "website_status",
+      "why": "\"Operational\" beyond the filings. A reachable site is evidence of trading that a registration cannot give you."
+    },
+    {
+      "id": "profile_status",
+      "why": "Corroboration of operating that does not depend on the company's own site being up."
+    },
+    {
+      "id": "industry",
+      "why": "Confirms nothing prohibited is being operated — relevant if \"operational\" is being asked as a gating question rather than a factual one."
+    }
+  ]
+}

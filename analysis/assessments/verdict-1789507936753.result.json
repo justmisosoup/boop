@@ -1,0 +1,29 @@
+{
+  "section": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "The identity assessment now rests on less than it did. It establishes that the submitted name matches five state registrations and that two of them are active, and it stops there — the status of the other three, the entity type agreement and the address match are no longer read. That is a narrower basis for the same decision, not a worse finding.",
+        "cites": ["name", "sos_active"]
+      },
+      {
+        "text": "Everything the decision actually turned on is unchanged. Ownership reaches a named officer but not a beneficial owner, the operating footprint is corroborated on every axis the checks reach, and screening is clean on every list that ran. The single open lien remains the one item whose weight cannot be judged from what is on the record.",
+        "cites": ["person_verification", "address_deliverability", "watchlist", "adverse_media", "liens"]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Read the remaining three registrations before relying on this assessment — the narrowed identity set no longer accounts for them.",
+      "cites": ["sos_active"]
+    },
+    {
+      "text": "Obtain a beneficial-ownership declaration. The record reaches officers and stops.",
+      "cites": ["person_verification"]
+    },
+    {
+      "text": "Pull the detail on the open lien — amount, secured party, and what it secures.",
+      "cites": ["liens"]
+    }
+  ]
+}

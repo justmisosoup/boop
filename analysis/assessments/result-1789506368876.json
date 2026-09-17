@@ -1,0 +1,31 @@
+{
+  "section": {
+    "id": "ownership",
+    "body": [
+      {
+        "text": "A submitted person matches an officer named on the state registrations, so the record reaches a named individual attached to the entity rather than only to the filing.",
+        "cites": [
+          "person_verification"
+        ]
+      },
+      {
+        "text": "That match could not be corroborated against the company website, and related businesses share officers, agents or addresses with this one.",
+        "cites": [
+          "web_person_verification",
+          "business_connections"
+        ]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "beneficial_ownership",
+        "point": "Who ultimately owns the company, as distinct from who is named as an officer",
+        "why": "no_insight_covers_it",
+        "wouldAnswer": "Officers are matched here; beneficial ownership is a different question nothing in the catalog speaks to.",
+        "cites": [
+          "person_verification"
+        ]
+      }
+    ]
+  }
+}

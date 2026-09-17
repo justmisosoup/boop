@@ -1,0 +1,17 @@
+{
+  "id": "1789509097459",
+  "requestedAt": "2026-09-15T21:51:37.460Z",
+  "assessmentId": "identity",
+  "definitionVersion": 5,
+  "name": "Business identity",
+  "prompt": "Is this company operational? Is it in good standing? Does the TIN resolve to it?",
+  "insightIds": [],
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "insights": []
+}

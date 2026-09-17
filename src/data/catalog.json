@@ -1,472 +1,712 @@
 {
-  "insights": {
-    "version": 0.1,
-    "scope": "review tasks only",
-    "status_grades_excluded": true,
-    "insights": [
-      {
-        "id": "business_name_verification",
-        "review_task_key": "name",
-        "name": "Business name",
-        "statement": "the submitted business name is verified against a registration",
-        "group": "Formation Identity",
-        "template": "verification",
-        "values": [
-          "Verified",
-          "Similar Match",
-          "Unverified"
-        ],
-        "attributes": [
-          "business.name",
-          "registrations.name",
-          "registrations.dbas",
-          "registrations.alternative_name"
-        ],
-        "sources": {
-          "default": [
-            "sos_registrations",
-            "global_registrations"
-          ],
-          "opt_in": [
-            "dba_registration",
-            "city_registration",
-            "jurisdiction_registration",
-            "st_permit",
-            "tax_exempt_organization",
-            "ptin_holder",
-            "professional_license",
-            "npi_record",
-            "fmcsa_registration",
-            "sba_entity_v2",
-            "sam_entity_extract",
-            "sec_filing",
-            "form_5500",
-            "lien",
-            "generic_verification_source",
-            "website",
-            "profile"
-          ]
-        },
-        "coverage": [
-          "DBA filings unsupported in 15 states (DOCUMENTED, doc 01)",
-          "previous_name exists on the SOS record but scraper coverage is limited (DOCUMENTED)"
-        ],
-        "notes": "\"Unverified\" was OBSERVED on records with formation=null and no registration — nothing to verify against, graded failure. Under this model that is a no_result, not a verification outcome. See templates.yaml: the enum deliberately excludes `unverified`.\n"
-      },
-      {
-        "id": "sos_registration_status",
-        "review_task_key": [
-          "sos_active",
-          "sos_inactive",
-          "sos_domestic",
-          "sos_match",
-          "sos_unknown",
-          "sos_not_found"
-        ],
-        "name": "Secretary of State registration status",
-        "statement": "the business holds registrations with these statuses in these states",
-        "group": "Formation Identity",
-        "template": "status",
-        "values": {
-          "sos_active": [
-            "Active"
-          ],
-          "sos_inactive": [
-            "Inactive",
-            "Partially Inactive"
-          ],
-          "sos_domestic": [
-            "Domestic Active",
-            "Domestic Inactive",
-            "Domestic Unknown"
-          ],
-          "sos_match": [
-            "Submitted Active",
-            "Submitted Inactive",
-            "Submitted Not Registered"
-          ],
-          "sos_unknown": [
-            "Partially Unknown"
-          ],
-          "sos_not_found": [
-            "Not Registered"
-          ]
-        },
-        "attributes": [
-          "registrations.status",
-          "registrations.sub_status",
-          "registrations.status_details",
-          "registrations.state",
-          "registrations.jurisdiction",
-          "registrations.file_number",
-          "registrations.registration_date",
-          "formation.state",
-          "formation.date"
-        ],
-        "sources": {
-          "default": [
-            "sos_registrations",
-            "global_registrations"
-          ]
-        },
-        "coverage": [
-          "7 states have no SOS ingestion at all — AK, AR, DC, HI, IA, RI, WV (DOCUMENTED, docs 04/07)"
-        ],
-        "open": [
-          "These six keys are facets of one multi-state picture, not six insights. One record OBSERVED carrying sos_active (Active), sos_inactive (Partially Inactive) and sos_unknown (Partially Unknown) simultaneously. Entered as one insight over a set of registrations; confirm before writing entries for the rest of the surface.\n"
-        ]
-      },
-      {
-        "id": "sos_good_standing",
-        "review_task_key": "sos_domestic_sub_status",
-        "name": "Good standing",
-        "statement": "the domestic registration's sub-status as the state reports it",
-        "group": "Formation Identity",
-        "template": "status",
-        "values": [
-          "Good Standing",
-          "Not Provided by State"
-        ],
-        "documented_values": [
-          "GOOD_STANDING",
-          "NOT_GOOD_STANDING",
-          "PENDING_ACTIVE",
-          "PENDING_INACTIVE",
-          "DISSOLVED",
-          "blank"
-        ],
-        "attributes": [
-          "registrations.sub_status",
-          "certificate_of_good_standing"
-        ],
-        "sources": {
-          "default": [
-            "sos_registrations"
-          ],
-          "opt_in": [
-            "certificate_of_good_standing"
-          ]
-        },
-        "coverage": [
-          "\"Not Provided by State\" is a no_result / not_published, OBSERVED today as a `warning`. This is the clearest live instance of the problem the concept exists to fix.\n"
-        ]
-      },
-      {
-        "id": "address_deliverability",
-        "review_task_key": "address_deliverability",
-        "name": "Address deliverability",
-        "statement": "USPS reports this address as deliverable, undeliverable, vacant or unknown",
-        "group": "Operating Identity",
-        "template": "status",
-        "values": [
-          "Deliverable"
-        ],
-        "documented_values": [
-          "deliverable",
-          "undeliverable",
-          "vacant",
-          "unknown"
-        ],
-        "attributes": [
-          "addresses.full_address",
-          "addresses.deliverability"
-        ],
-        "sources": {
-          "default": [
-            "usps"
-          ]
-        }
-      },
-      {
-        "id": "address_property_type",
-        "review_task_key": "address_property_type",
-        "name": "Address property type",
-        "statement": "USPS reports this address as commercial or residential",
-        "group": "Operating Identity",
-        "template": "status",
-        "values": [
-          "Commercial",
-          "Residential"
-        ],
-        "attributes": [
-          "addresses.property_type"
-        ],
-        "sources": {
-          "default": [
-            "usps"
-          ]
-        },
-        "notes": "PO boxes count as commercial (DOCUMENTED, doc 02)."
-      },
-      {
-        "id": "address_registered_agent",
-        "review_task_key": "address_registered_agent",
-        "name": "Registered agent address",
-        "statement": "this address belongs to a registered-agent firm",
-        "group": "Operating Identity",
-        "template": "discovery",
-        "values": [
-          "Registered Agent"
-        ],
-        "attributes": [
-          "addresses.labels",
-          "registrations.registered_agent.name"
-        ],
-        "sources": {
-          "default": [
-            "sos_registrations"
-          ]
-        },
-        "notes": "RA name match, RA-count threshold, or LLM classification (DOCUMENTED, doc 02)."
-      },
-      {
-        "id": "address_cmra",
-        "review_task_key": null,
-        "name": "CMRA address",
-        "statement": "this address is a commercial mail receiving agency",
-        "group": "Operating Identity",
-        "template": "discovery",
-        "attributes": [
-          "addresses.cmra"
-        ],
-        "sources": {
-          "default": [
-            "usps"
-          ]
-        },
-        "notes": "DOCUMENTED in doc 02; NOT OBSERVED in any review task across 13 records."
-      },
-      {
-        "id": "location_frequency",
-        "review_task_key": "location_frequency",
-        "name": "Location frequency",
-        "statement": "this address is shared with other businesses, in this band",
-        "group": "Operating Identity",
-        "template": "status",
-        "values": [
-          "Low frequency",
-          "Moderate frequency",
-          "High frequency"
-        ],
-        "bands": {
-          "low": 1,
-          "moderate": 21,
-          "high": 101
-        },
-        "attributes": [
-          "addresses.location_frequency"
-        ],
-        "open": [
-          "Banded, not counted. No number and no reachable list of the businesses sharing the address is returned. The count template as drafted does not fit this — it promises \"the count, and the items, each reachable\". Either the underlying count becomes reachable, or the template changes, or this is a status insight over bands. Entered as status pending that.\n"
-        ]
-      },
-      {
-        "id": "address_frequency_profile",
-        "review_task_key": [
-          "location_frequency",
-          "address_property_type"
-        ],
-        "name": "Address frequency and type",
-        "statement": "a high frequency commercial address was found",
-        "group": "Operating Identity",
-        "template": "status",
-        "attributes": [
-          "addresses.location_frequency",
-          "addresses.property_type"
-        ],
-        "status": "proposed — composed insight, confirm before extending the pattern",
-        "notes": "Worked example of composition, and of neutrality.\nTwo attributes, one statement. The same statement is neutral or notable depending on the business: a high-frequency COMMERCIAL address is an office building, which is ordinary. A high-frequency RESIDENTIAL address is the shell-company pattern. Neither reading belongs to the insight — it reports what was found, and the assessment decides what it means against entity type, industry and size.\nThis is why the pair is more useful composed than split: read separately, \"High frequency\" and \"Commercial\" each invite a judgement that only makes sense together. The source material makes the same point — \"a high-frequency commercial address is not as consequential as a high-frequency residential address\" (doc 02).\nStill holds: the band must keep its count reachable (101+ businesses at this address), or the statement asserts \"high\" against a threshold the reader cannot see. See the open item on `location_frequency`.\n"
-      },
-      {
-        "id": "submitted_registration_address_distance",
-        "review_task_key": null,
-        "name": "Distance between submitted and registration address",
-        "statement": "the submitted address is 0.6 mi from the registration address",
-        "group": "Operating Identity",
-        "template": "measurement",
-        "attributes": [
-          "addresses.latitude",
-          "addresses.longitude",
-          "addresses.sources",
-          "addresses.labels",
-          "business.submitted_address"
-        ],
-        "status": "proposed — needs a template decision",
-        "notes": "Second worked example, and a different shape from the first.\nComputable today. `addresses[]` carries `latitude` / `longitude` and `sources[].type: registration` (OBSERVED), so the distance between the submitted address and the registration-sourced address is derivable from data already returned. No new source needed.\nNeutral by construction. 0.6 mi is a measurement. It is ordinary for a business that moved suite or uses a nearby registered agent, and notable for one claiming a single fixed premises. The assessment decides; the insight states the distance.\nContrast with the existing review task: `address_verification` returns Verified / Unverified — a binary produced by thresholding something. The distance is the fact underneath it. Same relationship as `location_frequency`'s bands to its count.\n",
-        "template_gap": "No template in templates.yaml fits a measured quantity with a unit. This is not `count` (nothing is being counted), not `status` (not an enumerated state), not `verification` (not an agreement outcome).\nThe class is broader than this one insight: a distance in miles, an age in days (domain registered 14 days ago vs formation 10 years ago — named in doc 03), a duration, a ratio. All are neutral numbers with units whose meaning is the assessment's to decide.\nProposal: a `measurement` template — {value, unit, of, measured_between}. Do not add it to templates.yaml until deliverable 1 is confirmed against the API; recorded here so the gap is not lost.\n"
-      },
-      {
-        "id": "watchlist_screening",
-        "review_task_key": "watchlist",
-        "name": "Watchlist",
-        "statement": "screening the business against watchlist sources returned these hits",
-        "group": "Entity Screening",
-        "template": "screening_hits",
-        "values": [
-          "No Hits",
-          "Hits"
-        ],
-        "attributes": [
-          "business.names",
-          "account_watchlist_sources"
-        ],
-        "sources": {
-          "default": [
-            "OFAC SDN",
-            "OFAC SSI",
-            "OFAC FSE",
-            "NS-CMIC",
-            "NS-MBS",
-            "NS-ISA",
-            "PLC",
-            "CAP",
-            "BIS Entity List",
-            "DPL",
-            "UVL",
-            "MEU",
-            "State Dept ITAR Debarred",
-            "ISN"
-          ]
-        },
-        "coverage": [
-          "\"No Hits\" does not distinguish \"screened, found nothing\" from \"not screened\". A no_result is not expressible in this surface today.\n"
-        ]
-      },
-      {
-        "id": "adverse_media_screening",
-        "review_task_key": "adverse_media",
-        "name": "Adverse media",
-        "statement": "adverse media screening returned these hits, with their match scores and topics",
-        "group": "Entity Screening",
-        "template": "screening_hits",
-        "values": [
-          "No results",
-          "Low risk"
-        ],
-        "attributes": [
-          "adverse_media_screening_result.match_score",
-          "adverse_media_screening_result.status",
-          "adverse_media_screening_result.risk_scores"
-        ],
-        "risk_score_topics": [
-          "sanctions",
-          "terrorism",
-          "terror_funding",
-          "money_laundering",
-          "fraud_bribery_corruption",
-          "tax_evasion",
-          "insider_trading",
-          "organized_crime"
-        ],
-        "decompose": true,
-        "notes": "\"Low risk\" is a grade in the subLabel, and the review task takes the MAX of the per-topic risk_scores (≥0.66 fail, ≥0.33 warn) — a threshold rule, which is an assessment. The insight reports the hits, their match_score and their per-topic risk_scores. The max-and-threshold read moves to the assessment. `status: included / dismissed by analyst` is a RECORDED disposition — a fact, reportable (see templates.yaml screening_hits).\n"
-      },
-      {
-        "id": "bankruptcies_screening",
-        "review_task_key": "bankruptcies",
-        "name": "Bankruptcies",
-        "statement": "searching bankruptcy records returned these filings",
-        "group": "Entity Screening",
-        "template": "screening_hits",
-        "values": [
-          "None Found"
-        ],
-        "sources": {
-          "opt_in": [
-            "bankruptcies"
-          ]
-        }
-      },
-      {
-        "id": "litigations_screening",
-        "review_task_key": "litigations",
-        "name": "Litigations",
-        "statement": "searching litigation records returned these cases",
-        "group": "Entity Screening",
-        "template": "screening_hits",
-        "values": [
-          "None Found"
-        ],
-        "sources": {
-          "opt_in": [
-            "litigations"
-          ]
-        }
-      },
-      {
-        "id": "liens_screening",
-        "review_task_key": "liens",
-        "name": "Liens",
-        "statement": "searching lien records returned these liens",
-        "group": "Entity Screening",
-        "template": "screening_hits",
-        "values": [
-          "No Liens",
-          "Liens Found"
-        ],
-        "sources": {
-          "opt_in": [
-            "liens",
-            "tax_liens",
-            "ucc_liens"
-          ]
-        }
-      },
-      {
-        "id": "business_connections",
-        "review_task_key": "business_connections",
-        "name": "Connections",
-        "statement": "these related businesses share officers, agents or addresses with this business",
-        "group": "Network",
-        "template": "discovery",
-        "values": [
-          "Not Found",
-          "Found"
-        ],
-        "attributes": [
-          "related_businesses",
-          "related_business_connections",
-          "connection_type"
-        ],
-        "coverage": [
-          "Officers are the primary input and are unavailable in much of the country: 20 of 43 SOS-covered states return an empty officers array (CA, CO, DE, ID, IL, KS, MD, ME, MO, MT, ND, NJ, OH, OK, SC, SD, TN, WI, plus PA), and 7 states have no SOS ingestion at all (AK, AR, DC, HI, IA, RI, WV). (DOCUMENTED, docs 04/07 — see decisions/005 for count discrepancies.)\n",
-          "No UBO data. Ownership is implied from authoritative sources, not confirmed (DOCUMENTED, doc 08).\n"
-        ]
-      },
-      {
-        "id": "person_verification",
-        "review_task_key": "person_verification",
-        "name": "Person verification",
-        "statement": "the submitted person is verified against a registration officer record",
-        "group": "People Screening",
-        "template": "verification",
-        "values": [
-          "Verified"
-        ],
-        "attributes": [
-          "business.people.name",
-          "registrations.officers.name",
-          "registrations.officers.roles"
-        ],
-        "coverage": [
-          "Officer titles captured in 25 states; names only, no title, in 7 (DOCUMENTED)",
-          "20 of 43 SOS states return an empty officers array (DOCUMENTED)",
-          "7 states have no SOS ingestion at all (DOCUMENTED)"
-        ]
-      }
-    ],
-    "not_insights": [
-      {
-        "id": "address_risk",
-        "review_task_key": "address_risk",
-        "values": [
-          "Low",
-          "Moderate",
-          "High"
-        ],
-        "why": "A weighted composite that returns a grade. Decomposes into address_property_type, address_deliverability, address_cmra, address_registered_agent, location_frequency, plus VirtualAddress and GeographicalLocation which have no review task today. Full weights DOCUMENTED in doc 02. See decompositions.md.\n"
-      }
-    ]
+  "subjects": [
+    {
+      "subject": "address",
+      "informs": [
+        "address_risk"
+      ],
+      "checks": [
+        "location_frequency",
+        "address_cmra",
+        "address_deliverability",
+        "address_property_type",
+        "address_registered_agent",
+        "address_verification"
+      ],
+      "signals": [
+        "The submitted address belongs to the business",
+        "The submitted address does not belong to the business",
+        "Unable to verify the submitted address",
+        "Submitted address is associated with a commercial registered agent",
+        "Submitted address is associated with a coworking space",
+        "Submitted address is associated with a law firm",
+        "Submitted address associated with frequent changes in SOS history",
+        "One or more submitted addresses cannot be processed due to invalid or unrecognizable format",
+        "One or more submitted addresses are missing key numeric details such as suite or unit number",
+        "One or more submitted addresses are associated with a high-rise building",
+        "At least one submitted address is a residential address",
+        "At least one submitted address is a commercial address",
+        "At least one submitted address is a registered agent address",
+        "At least one submitted address is a CMRA",
+        "At least one submitted address is a private mailbox",
+        "At least one submitted address is unable to receive mail",
+        "At least one submitted address is a PO Box",
+        "At least one submitted address is a virtual address",
+        "One or more submitted business locations have been used by 1-20 other businesses",
+        "One or more submitted business locations have been used by 21-100 other businesses",
+        "One or more submitted business locations have been used by over 100 other businesses"
+      ],
+      "order_packages": [
+        "Signal model(s): verify (POST /v1/signals; no Order required)",
+        "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+        "identity, business_verification_verify"
+      ]
+    },
+    {
+      "subject": "bankruptcy",
+      "informs": [
+        "creditworthiness"
+      ],
+      "checks": [
+        "bankruptcies"
+      ],
+      "signals": [
+        "The business has never filed for bankruptcy",
+        "The business has filed for bankruptcy"
+      ],
+      "order_packages": [
+        "bankruptcies, identity, business_verification_verify"
+      ]
+    },
+    {
+      "subject": "complaints",
+      "informs": [],
+      "checks": [
+        "complaint_themes"
+      ],
+      "signals": [],
+      "order_packages": [
+        "merchant_risk"
+      ]
+    },
+    {
+      "subject": "connections",
+      "informs": [],
+      "checks": [
+        "business_connections",
+        "related_entities"
+      ],
+      "signals": [],
+      "order_packages": [
+        "business_verification_verify",
+        "merchant_risk"
+      ]
+    },
+    {
+      "subject": "formation",
+      "informs": [
+        "fraud",
+        "operating_status"
+      ],
+      "checks": [
+        "entity_type",
+        "entity_type_match",
+        "formation_state",
+        "sos_domestic",
+        "sos_domestic_sub_status"
+      ],
+      "signals": [
+        "The business is a corporation",
+        "The business is an LLC",
+        "The business is a nonprofit",
+        "The business is a partnership",
+        "The business is a trust",
+        "The domestic registration is active and in good standing",
+        "The business was formed more than 2 years ago",
+        "The business was formed in the last 2 years",
+        "The business was formed in the last month",
+        "The business was formed in the last year"
+      ],
+      "order_packages": [
+        "identity, business_verification_verify",
+        "identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
+      "subject": "industry",
+      "informs": [],
+      "checks": [
+        "risky_keywords",
+        "industry"
+      ],
+      "signals": [
+        "Business operates in Agriculture, Forestry, Fishing, and Hunting industry",
+        "Business operates in Mining industry",
+        "Business operates in Utilities industry",
+        "Business operates in Construction industry",
+        "Business operates in Manufacturing industry",
+        "Business operates in Wholesale Trade industry",
+        "Business operates in Retail Trade industry",
+        "Business operates in Transportation and Warehousing industry",
+        "Business operates in Information industry",
+        "Business operates in Finance and Insurance industry",
+        "Business operates in Real Estate and Rental and Leasing industry",
+        "Business operates in Professional, Scientific, and Technical Services industry",
+        "Business operates in Management of Companies and Enterprises industry",
+        "Business operates in Administrative and Support and Waste Management industry",
+        "Business operates in Educational Services industry",
+        "Business operates in Health Care and Social Assistance industry",
+        "Business operates in Arts, Entertainment, and Recreation industry",
+        "Business operates in Accommodation and Food Services industry",
+        "Business operates in Other Services (except Public Administration) industry",
+        "Business operates in Public Administration industry"
+      ],
+      "order_packages": [
+        "Signal model(s): verify (POST /v1/signals; no Order required)"
+      ]
+    },
+    {
+      "subject": "kyc",
+      "informs": [],
+      "checks": [
+        "kyc_decision"
+      ],
+      "signals": [],
+      "order_packages": [
+        "kyc"
+      ]
+    },
+    {
+      "subject": "liens",
+      "informs": [
+        "creditworthiness"
+      ],
+      "checks": [
+        "liens"
+      ],
+      "signals": [],
+      "order_packages": [
+        "liens, tax_liens, ucc_liens"
+      ]
+    },
+    {
+      "subject": "litigation",
+      "informs": [
+        "creditworthiness"
+      ],
+      "checks": [
+        "litigations",
+        "web_litigation"
+      ],
+      "signals": [],
+      "order_packages": [
+        "litigations",
+        "merchant_risk"
+      ]
+    },
+    {
+      "subject": "name",
+      "informs": [],
+      "checks": [
+        "dba_name",
+        "name",
+        "name_and_entity_type"
+      ],
+      "signals": [
+        "The submitted business name is correct",
+        "Unable to verify the submitted business name"
+      ],
+      "order_packages": [
+        "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+        "identity, business_verification_verify"
+      ]
+    },
+    {
+      "subject": "operating_as_claimed",
+      "informs": [],
+      "checks": [
+        "operating_as_claimed"
+      ],
+      "signals": [],
+      "order_packages": [
+        "merchant_risk"
+      ]
+    },
+    {
+      "subject": "people",
+      "informs": [
+        "creditworthiness"
+      ],
+      "checks": [
+        "people_bankruptcies",
+        "people_criminal_history",
+        "people_liens",
+        "people_litigations",
+        "person_verification"
+      ],
+      "signals": [
+        "All submitted people belong to the business",
+        "Some submitted people belong to the business",
+        "Additional people are known to belong to the business",
+        "None of the submitted people belong to the business",
+        "Unable to verify the submitted people"
+      ],
+      "order_packages": [
+        "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+        "people_bankruptcies",
+        "people_criminal_history",
+        "people_litigations",
+        "people_tax_liens, people_ucc_liens"
+      ]
+    },
+    {
+      "subject": "phone",
+      "informs": [],
+      "checks": [
+        "phone"
+      ],
+      "signals": [],
+      "order_packages": [
+        "identity"
+      ]
+    },
+    {
+      "subject": "ppp_loans",
+      "informs": [],
+      "checks": [
+        "ppp_loans"
+      ],
+      "signals": [],
+      "order_packages": [
+        "identity, business_verification_verify"
+      ]
+    },
+    {
+      "subject": "profiles",
+      "informs": [],
+      "checks": [
+        "profile_discovery",
+        "profile_status"
+      ],
+      "signals": [],
+      "order_packages": [
+        "website"
+      ]
+    },
+    {
+      "subject": "registration",
+      "informs": [
+        "operating_status"
+      ],
+      "checks": [
+        "sos_active",
+        "sos_inactive",
+        "sos_match",
+        "sos_not_found",
+        "sos_status",
+        "sos_unknown"
+      ],
+      "signals": [
+        "The business is registered in multiple states",
+        "The business is registered in only a single state",
+        "The business is registered in a common formation state",
+        "The business is not registered with any states",
+        "The SOS registration for all states is active and in good standing",
+        "The SOS registration for some states is active and in good standing",
+        "The SOS registration for all states is inactive or in bad standing",
+        "All SOS registrations for the submitted address(es) are active and in good standing"
+      ],
+      "order_packages": []
+    },
+    {
+      "subject": "international_registration",
+      "informs": [],
+      "checks": [
+        "registrations_not_found",
+        "registrations_status",
+        "submitted_registrations_match"
+      ],
+      "signals": [],
+      "order_packages": []
+    },
+    {
+      "subject": "screening",
+      "informs": [],
+      "checks": [
+        "adverse_media",
+        "politically_exposed_persons",
+        "watchlist"
+      ],
+      "signals": [
+        "There are no OFAC or sanctions results for the business",
+        "There are no OFAC or sanctions results for the people submitted",
+        "There are OFAC or sanctions results for the business",
+        "There are OFAC or sanctions results for the people submitted",
+        "There are OFAC or sanctions results for the people retrieved"
+      ],
+      "order_packages": [
+        "enhanced_screenings",
+        "identity, business_verification_verify, enhanced_screenings, merchant_risk"
+      ]
+    },
+    {
+      "subject": "tin",
+      "informs": [],
+      "checks": [
+        "tin",
+        "tin_error",
+        "tin_issued",
+        "tin_type"
+      ],
+      "signals": [
+        "The submitted tax ID belongs to the business",
+        "The submitted tax ID does not belong to the business",
+        "The submitted tax ID belongs to a submitted person",
+        "The submitted tax ID is not known to belong to the business"
+      ],
+      "order_packages": [
+        "business_verification_verify, tin"
+      ]
+    },
+    {
+      "subject": "website",
+      "informs": [],
+      "checks": [
+        "website_url_domain_ownership",
+        "domain_redirect",
+        "web_address_verification",
+        "web_business_name_verification",
+        "web_email_address_verification",
+        "web_person_verification",
+        "web_phone_number_verification",
+        "website_parked",
+        "website_status",
+        "website_url_discovery",
+        "website_verification"
+      ],
+      "signals": [
+        "The business's website is online",
+        "The business's website has been purchased but has no content",
+        "This business's website is offline",
+        "The submitted business name matches the name on the website",
+        "The submitted business name is similar to the name on the website",
+        "The submitted business name has material differences from the name on the website",
+        "Unable to verify the business name from the website",
+        "At least one submitted address matches an address from the website",
+        "At least one submitted address is similar to an address from the website",
+        "At least one submitted address has material differences from the website",
+        "Unable to verify the address from the website",
+        "The submitted people match the website",
+        "The website references people that were not submitted",
+        "Unable to verify the people from the website",
+        "Phone number is present on the website",
+        "Email address is present on the website"
+      ],
+      "order_packages": [
+        "identity, website, merchant_risk",
+        "website",
+        "website, merchant_risk"
+      ]
+    }
+  ],
+  "subjectOf": {
+    "location_frequency": "address",
+    "address_cmra": "address",
+    "address_deliverability": "address",
+    "address_property_type": "address",
+    "address_registered_agent": "address",
+    "address_verification": "address",
+    "bankruptcies": "bankruptcy",
+    "complaint_themes": "complaints",
+    "business_connections": "connections",
+    "related_entities": "connections",
+    "entity_type": "formation",
+    "entity_type_match": "formation",
+    "formation_state": "formation",
+    "sos_domestic": "formation",
+    "sos_domestic_sub_status": "formation",
+    "risky_keywords": "industry",
+    "industry": "industry",
+    "kyc_decision": "kyc",
+    "liens": "liens",
+    "litigations": "litigation",
+    "web_litigation": "litigation",
+    "dba_name": "name",
+    "name": "name",
+    "name_and_entity_type": "name",
+    "operating_as_claimed": "operating_as_claimed",
+    "people_bankruptcies": "people",
+    "people_criminal_history": "people",
+    "people_liens": "people",
+    "people_litigations": "people",
+    "person_verification": "people",
+    "phone": "phone",
+    "ppp_loans": "ppp_loans",
+    "profile_discovery": "profiles",
+    "profile_status": "profiles",
+    "sos_active": "registration",
+    "sos_inactive": "registration",
+    "sos_match": "registration",
+    "sos_not_found": "registration",
+    "sos_status": "registration",
+    "sos_unknown": "registration",
+    "registrations_not_found": "international_registration",
+    "registrations_status": "international_registration",
+    "submitted_registrations_match": "international_registration",
+    "adverse_media": "screening",
+    "politically_exposed_persons": "screening",
+    "watchlist": "screening",
+    "tin": "tin",
+    "tin_error": "tin",
+    "tin_issued": "tin",
+    "tin_type": "tin",
+    "website_url_domain_ownership": "website",
+    "domain_redirect": "website",
+    "web_address_verification": "website",
+    "web_business_name_verification": "website",
+    "web_email_address_verification": "website",
+    "web_person_verification": "website",
+    "web_phone_number_verification": "website",
+    "website_parked": "website",
+    "website_status": "website",
+    "website_url_discovery": "website",
+    "website_verification": "website"
+  },
+  "outcomeOf": {
+    "address_cmra|cmra": "Submitted Office Address is zoned by USPS as a Commercial Mail Receiving Agency",
+    "address_deliverability|vacant": "The submitted Office Address is flagged as vacant by the USPS",
+    "address_deliverability|deliverable": "The USPS is able to deliver mail to the submitted Office Address",
+    "address_deliverability|undeliverable": "The USPS is unable to deliver mail to the submitted Office Address",
+    "address_deliverability|unknown": "The USPS ability to deliver mail to the submitted Office Address is unknown.",
+    "address_property_type|residential": "Submitted Office Address is a Residential property",
+    "address_property_type|commercial": "Submitted Office Address is a Commercial property",
+    "address_registered_agent|registered_agent": "Submitted Office Address is associated with a known Registered Agent",
+    "address_verification|verified": "Match identified to the submitted Office Address",
+    "address_verification|approximate_match": "Identified an address within #{approximate_miles_radius} miles of the submitted Office Address",
+    "address_verification|similar_match": "Identified a similar address",
+    "address_verification|incomplete_match": "Identified a partial match with a submitted address that is incomplete",
+    "address_verification|unverified": "Unable to identify a match to the submitted Office Address",
+    "bankruptcies|found": "The business has #{pluralize(count, 'bankruptcy filing')}",
+    "bankruptcies|none_found": "The business has no bankruptcy filings",
+    "complaint_themes|found": "Complaint themes identified",
+    "complaint_themes|none": "No complaint themes identified",
+    "business_connections|not_found": "No connections found",
+    "business_connections|found": "#{pluralize(count, 'connection')} found",
+    "related_entities|risk_signals_found": "Related entities with risk signals found",
+    "related_entities|clear": "No related entity risk signals found",
+    "entity_type|verified": "Entity type is a #{formation.entity_type}",
+    "entity_type|unverified": "Entity type is unknown",
+    "entity_type_match|verified": "The submitted entity type matches the entity type found",
+    "entity_type_match|unverified": "Unable to verify entity type / The submitted entity type does not match the entity type found",
+    "formation_state|found": "Submitted formation state (%s) matches formation state found",
+    "formation_state|mismatch": "Submitted formation state (%s) does not match formation state found / No formation state found",
+    "sos_domestic|domestic_active": "A recent formation document reports an active domestic filing / Active domestic filing found",
+    "sos_domestic|domestic_inactive": "Inactive domestic filing found",
+    "sos_domestic|domestic_missing": "The business has no domestic filing",
+    "sos_domestic|domestic_unknown": "A domestic filing from an approved formation document has no current status / No domestic filing status provided",
+    "sos_domestic_sub_status|good_standing": "The domestic registration is in Good Standing. / A certificate issued by {state} on {date} reports the business in good standing. / A formation document filed in {state} on {date} indicates the business is in good standing.",
+    "sos_domestic_sub_status|dissolved": "The domestic registration is Dissolved.",
+    "sos_domestic_sub_status|not_in_good_standing": "The domestic registration is Not in Good Standing.",
+    "sos_domestic_sub_status|pending_active": "The domestic registration is Pending Active.",
+    "sos_domestic_sub_status|pending_inactive": "The domestic registration is Pending Inactive.",
+    "sos_domestic_sub_status|not_provided_by_state": "The domestic sub-status is Not Provided by State.",
+    "kyc_decision|accepted": "No risks were found with the associated people",
+    "kyc_decision|review": "The potential risk is unknown with at least one associated person",
+    "kyc_decision|rejected": "A potential risk was found with at least one associated person",
+    "kyc_decision|error": "An error occurred for at least one associated person",
+    "liens|no_liens": "No Liens found",
+    "liens|high_risk_liens_found": "We identified {n} State Tax Lien(s) / We identified {n} Federal Tax Lien(s) / We identified Negative Pledge collateral / We identified {n} new Lien(s) in the past 3 months",
+    "liens|open_liens_found": "We identified {n} {asset} Lien(s) / We found {n} Open Lien(s)",
+    "liens|liens_found": "We found #{all_liens.count} Lien(s)",
+    "litigations|found": "The business has #{pluralize(count, 'related litigation')}",
+    "litigations|none_found": "The business has no related litigations",
+    "web_litigation|found": "Web litigation records found",
+    "web_litigation|none": "No web litigation records found",
+    "dba_name|similar_dba_match": "Similar DBA Match identified to the submitted #{label}",
+    "name|": "uses name_base + agent verdict (agent_namespace)",
+    "name_and_entity_type|verified": "The submitted business name and entity type match the registration name",
+    "name_and_entity_type|unverified": "The submitted business name and entity type do not match the registration name",
+    "operating_as_claimed|verified": "Business claims are verified",
+    "operating_as_claimed|not_all_verified": "Not all business claims could be verified",
+    "people_bankruptcies|found": "The business has #{pluralize(count, 'related people bankruptcy')}",
+    "people_bankruptcies|none_found": "The business has no related people bankruptcies.",
+    "people_criminal_history|found": "Criminal record(s) found",
+    "people_criminal_history|none_found": "No criminal records found",
+    "people_liens|no_liens": "No People Liens found",
+    "people_liens|high_risk_liens_found": "(same lien message variants, 'People Lien(s)')",
+    "people_liens|open_liens_found": "(open lien message variants)",
+    "people_liens|liens_found": "We found #{all_liens.count} People Lien(s)",
+    "people_litigations|found": "The business has #{pluralize(count, 'related people litigation')}",
+    "people_litigations|none_found": "The business has no related people litigations",
+    "person_verification|verified": "Match identified to the submitted person",
+    "person_verification|unverified": "Unable to identify a match to the submitted person",
+    "phone|verified": "Successfully verified the submitted Phone Number",
+    "phone|unverified": "Unable to verify the submitted Phone Number",
+    "ppp_loans|found": "The Business has #{pluralize(count, 'PPP loan')}",
+    "ppp_loans|none_found": "The Business has no PPP loans",
+    "profile_discovery|submitted": "Third party profiles submitted",
+    "profile_discovery|found": "Third party profiles found",
+    "profile_discovery|not_found": "No third party profiles found",
+    "profile_status|online": "All third party profiles are online",
+    "profile_status|unknown": "At least one third party profile has an unknown status",
+    "profile_status|offline": "At least one third party profile is offline",
+    "sos_active|active": "{n} of {total} filings are Active",
+    "sos_inactive|inactive": "The business has no Active Secretary of State filings",
+    "sos_inactive|partially_inactive": "{n} of {total} filings are Inactive",
+    "sos_match|submitted_active": "{n} of {total} filings are Active / A recent formation document reports the business active in the state of the submitted Office Address",
+    "sos_match|submitted_inactive": "{n} of {total} filings are Inactive",
+    "sos_match|submitted_unknown": "(dynamic)",
+    "sos_match|submitted_not_registered": "The business is not registered in the state of the submitted Office Address",
+    "sos_not_found|not_registered": "The business has no Secretary of State filings",
+    "sos_status|active": "At least one SOS filing status is active. / A recent formation document reports the business in good standing.",
+    "sos_status|unknown": "All SOS filings are in states that do not share status.",
+    "sos_status|inactive": "The statuses of all SOS filings are either inactive or unknown.",
+    "sos_unknown|partially_unknown": "{n} of {total} filings have no status provided (; one filing comes from an approved formation document and has no current status)",
+    "registrations_not_found|not_registered": "The business has no registration in '{countries_missing_registration.join(', ')}'",
+    "registrations_status|active": "At least one registration status is active",
+    "registrations_status|unknown": "All registrations have an unknown status",
+    "registrations_status|inactive": "The statuses of all registrations are either inactive or unknown",
+    "submitted_registrations_match|found": "Submitted registration was found",
+    "submitted_registrations_match|not_found": "Some submitted registrations were not found",
+    "submitted_registrations_match|mismatch": "We believe some submitted registrations are associated with a different Business Name",
+    "politically_exposed_persons|no_hits": "There were no hits on submitted individuals or their relatives and close associates",
+    "politically_exposed_persons|hits": "There were hits on the submitted individuals",
+    "politically_exposed_persons|associate_hits": "There were hits on relatives and close associates of the submitted individuals",
+    "watchlist|no_hits": "No Watchlist hits were identified",
+    "watchlist|dismissed": "Not a valid match",
+    "watchlist|pending": "Watchlist is pending",
+    "watchlist|hits": "#{watchlist.included_results.count} Watchlists hit(s) have been identified",
+    "tin|found": "The IRS has a record for the submitted TIN and Business Name combination",
+    "tin|warning": "The IRS has a record for the submitted TIN and Person Name combination",
+    "tin|pending": "Tax ID verification is pending",
+    "tin|error": "TIN denylisted due to your account settings / {tin.error.humanize}",
+    "tin|not_found": "The IRS does not have a record for the submitted TIN and Business Name combination",
+    "tin|mismatch": "We believe the submitted TIN is associated with a different Business Name",
+    "tin_error|error": "{error.humanize} (dynamic)",
+    "tin_issued|not_issued": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+    "tin_type|verified": "The TIN submitted is #{TIN_TYPE_LABEL[submitted_tin_type]}.",
+    "tin_type|unverified": "The TIN submitted is a match, but it is not '#{TIN_TYPE_LABEL[submitted_tin_type]}.'",
+    "domain_redirect|short_link": "Domain uses a short link redirect",
+    "domain_redirect|redirected": "Domain redirects to {resolved_host or 'another URL'}",
+    "web_address_verification|verified": "Match identified to the submitted Office Address",
+    "web_address_verification|approximate_match": "Identified an address within #{approximate_miles_radius} miles of the submitted Office Address",
+    "web_address_verification|similar_match": "Identified a similar address",
+    "web_address_verification|incomplete_match": "Identified a partial match with a submitted address that is incomplete",
+    "web_address_verification|mismatch": "Identified an address we believe is different from the submitted Office Address",
+    "web_address_verification|unverified": "Unable to identify a match to the submitted Office Address",
+    "web_business_name_verification|verified": "Match identified to the submitted Business Name",
+    "web_business_name_verification|similar_match": "Similar match identified to the submitted Business Name",
+    "web_business_name_verification|mismatch": "We identified a name we believe is different from the submitted Business Name",
+    "web_business_name_verification|unverified": "Unable to identify a Business Name",
+    "web_email_address_verification|verified": "Successfully verified the submitted Email Address",
+    "web_email_address_verification|mismatch": "Identified email address we believe is different from the submitted email address",
+    "web_email_address_verification|unverified": "Unable to verify the submitted Email Address",
+    "web_person_verification|verified": "Match identified to the submitted person",
+    "web_person_verification|mismatch": "Identified people we believe are different from the submitted People",
+    "web_person_verification|unverified": "Unable to identify a match to the submitted person",
+    "web_phone_number_verification|verified": "Successfully verified the submitted Phone Number",
+    "web_phone_number_verification|mismatch": "Identified phone number we believe is different from the submitted phone number",
+    "web_phone_number_verification|unverified": "Unable to verify the submitted Phone Number",
+    "website_parked|parking_page": "The website has been purchased but has no content.",
+    "website_status|online": "Website was Online when the business record was ordered",
+    "website_status|unknown": "Website status could not be determined when the business record was ordered",
+    "website_status|offline": "Website was Offline when the business record was ordered",
+    "website_url_discovery|submitted": "Website URL was submitted",
+    "website_url_discovery|found": "Website URL was found",
+    "website_url_discovery|not_found": "Website URL was not found",
+    "website_verification|verified": "Successfully found entity details on the submitted Website",
+    "website_verification|unverified": "Unable to find entity details on the submitted Website"
+  },
+  "nameOf": {
+    "location_frequency": "Location frequency",
+    "bankruptcies": "Bankruptcies",
+    "complaint_themes": "Complaint themes",
+    "business_connections": "Connections",
+    "related_entities": "Related entities",
+    "entity_type": "Entity type",
+    "entity_type_match": "Entity type match",
+    "formation_state": "Formation state",
+    "sos_domestic_sub_status": "SOS domestic sub-status",
+    "risky_keywords": "Risky keywords",
+    "industry": "Industry",
+    "kyc_decision": "KYC",
+    "liens": "Liens",
+    "litigations": "Litigations",
+    "web_litigation": "Web litigations",
+    "dba_name": "DBA name",
+    "name": "Business name",
+    "name_and_entity_type": "Name entity type",
+    "operating_as_claimed": "Operating as claimed",
+    "people_bankruptcies": "People bankruptcies",
+    "people_criminal_history": "People criminal history",
+    "people_liens": "People liens",
+    "people_litigations": "People litigations",
+    "person_verification": "People",
+    "phone": "Phone number",
+    "ppp_loans": "PPP loans",
+    "profile_discovery": "Third party profiles",
+    "profile_status": "Third party profile status",
+    "registrations_not_found": "Global registrations not found",
+    "registrations_status": "Global registration status",
+    "submitted_registrations_match": "Submitted global registration match",
+    "adverse_media": "Adverse media",
+    "politically_exposed_persons": "Politically exposed persons",
+    "watchlist": "Watchlist",
+    "tin": "TIN match",
+    "tin_error": "TIN error",
+    "tin_issued": "TIN not issued",
+    "tin_type": "TIN type",
+    "website_url_domain_ownership": "Domain ownership",
+    "domain_redirect": "Domain redirect",
+    "web_address_verification": "Web - office address",
+    "web_business_name_verification": "Web - business name",
+    "web_email_address_verification": "Web - email address",
+    "web_person_verification": "Web - people",
+    "web_phone_number_verification": "Web - phone number",
+    "website_url_discovery": "Website"
+  },
+  "packagesOf": {
+    "location_frequency": "identity",
+    "address_cmra": "identity, business_verification_verify",
+    "address_deliverability": "identity, business_verification_verify",
+    "address_property_type": "identity, business_verification_verify",
+    "address_registered_agent": "identity, business_verification_verify",
+    "address_verification": "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+    "bankruptcies": "bankruptcies, identity, business_verification_verify",
+    "complaint_themes": "merchant_risk",
+    "business_connections": "business_verification_verify",
+    "related_entities": "merchant_risk",
+    "entity_type": "identity, business_verification_verify, merchant_risk",
+    "entity_type_match": "identity, business_verification_verify",
+    "formation_state": "identity, business_verification_verify",
+    "sos_domestic": "identity, business_verification_verify, merchant_risk",
+    "sos_domestic_sub_status": "identity, business_verification_verify, merchant_risk",
+    "risky_keywords": "industry_classification",
+    "industry": "industry_classification",
+    "kyc_decision": "kyc",
+    "liens": "liens, tax_liens, ucc_liens",
+    "litigations": "litigations",
+    "web_litigation": "merchant_risk",
+    "dba_name": "identity, business_verification_verify",
+    "name": "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+    "name_and_entity_type": "identity, business_verification_verify",
+    "operating_as_claimed": "merchant_risk",
+    "people_bankruptcies": "people_bankruptcies",
+    "people_criminal_history": "people_criminal_history",
+    "people_liens": "people_tax_liens, people_ucc_liens",
+    "people_litigations": "people_litigations",
+    "person_verification": "identity, business_verification_qualify, business_verification_verify, international_business_verification",
+    "phone": "identity",
+    "ppp_loans": "identity, business_verification_verify",
+    "profile_discovery": "website",
+    "profile_status": "website",
+    "sos_active": "identity, business_verification_verify, merchant_risk",
+    "sos_inactive": "identity, business_verification_verify, merchant_risk",
+    "sos_match": "identity, business_verification_verify, merchant_risk",
+    "sos_not_found": "identity, business_verification_verify, merchant_risk",
+    "sos_status": "business_verification_qualify",
+    "sos_unknown": "identity, business_verification_verify, merchant_risk",
+    "registrations_not_found": "international_business_verification",
+    "registrations_status": "international_business_verification",
+    "submitted_registrations_match": "international_business_verification",
+    "adverse_media": "adverse_media",
+    "politically_exposed_persons": "enhanced_screenings",
+    "watchlist": "identity, business_verification_verify, enhanced_screenings, merchant_risk",
+    "tin": "business_verification_verify, tin",
+    "tin_error": "business_verification_verify, tin",
+    "tin_issued": "business_verification_verify, tin",
+    "tin_type": "business_verification_verify, tin",
+    "website_url_domain_ownership": "website",
+    "domain_redirect": "website",
+    "web_address_verification": "website, merchant_risk",
+    "web_business_name_verification": "website, merchant_risk",
+    "web_email_address_verification": "website, merchant_risk",
+    "web_person_verification": "website, merchant_risk",
+    "web_phone_number_verification": "website, merchant_risk",
+    "website_parked": "identity, website, merchant_risk",
+    "website_status": "identity, website, merchant_risk",
+    "website_url_discovery": "website",
+    "website_verification": "identity, website, merchant_risk"
   },
   "templates": {
     "version": 0.5,
