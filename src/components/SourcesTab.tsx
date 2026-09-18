@@ -702,12 +702,12 @@ export const SourcesTab = ({
 
   return (
     <div className="grid gap-[var(--core-spacing-md)]">
-      {sections.map((section, si) => (
+      {sections.map((section) => (
         <PanelGroup
           key={section.key}
           label={section.label}
           count={section.items.length}
-          defaultOpen={si === 0}
+          defaultOpen
         >
           <div className="grid gap-[var(--core-spacing-sm)]">
           {section.items.map((s) => {

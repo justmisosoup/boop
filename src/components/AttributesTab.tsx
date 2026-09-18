@@ -513,12 +513,12 @@ export const AttributesTab = ({
 
   return (
     <>
-      {groups.map((group, gi) => (
+      {groups.map((group) => (
         <PanelGroup
           key={group.id}
           label={group.label}
           count={group.rows.length}
-          defaultOpen={gi === 0}
+          defaultOpen
         >
           <Surface variant="default" padding="none" className="overflow-hidden">
             <div className="divide-y divide-solid divide-border">
