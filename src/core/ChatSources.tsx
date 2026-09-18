@@ -1,4 +1,6 @@
-import type React from 'react'
+import React from 'react'
+
+import { ArrowUpRight } from 'lucide-react'
 
 import { middleEllipsis } from '@/utils/stringUtils'
 import { cn } from '@/utils/twUtils'
@@ -81,6 +83,24 @@ export type ChatSourceData = {
   /** Custom glyph (a favicon `<img>`, a product mark) sized by the consumer
    *  (12–16px reads best). Falls back to a deterministic letter tile. */
   icon?: React.ReactNode
+  /**
+   * A capture of the page this source is, shown in the preview in place of the
+   * headline — the citation's evidence rather than its address.
+   *
+   * `onOpen` makes the capture the trigger for the consumer's own full-size
+   * viewer. Give the source a `url` or `onSelect` as well — the HoverCard
+   * contract means a click inside the preview must never be the only way to
+   * something.
+   */
+  screenshot?: {
+    src: string
+    alt: string
+    /** When the page was captured, ISO-8601 — shown under the capture. A
+     *  screenshot with no date on it reads as the live page, which is the one
+     *  thing it is not. */
+    capturedAt?: string
+    onOpen?: () => void
+  }
 }
 
 // Same derivation as the BusinessHome source cards (which core cannot import)
@@ -158,10 +178,10 @@ const SourceGlyph = ({
 }
 
 // ---------------------------------------------------------------------------
-// SourcePreview — the hover-card body. Presentation only: the HoverCard
-// contract forbids interactive children (its body never reaches touch or
-// screen readers), so everything here is also reachable via the trigger's
-// destination or the source list.
+// SourcePreview — the hover-card body. A hover body reaches neither touch nor
+// a screen reader, so nothing here may be the ONLY home of what it holds: the
+// two actions in its foot duplicate routes the chip and the source list
+// already carry, and no information lives here alone.
 
 const SourceByline = ({ source }: { source: ChatSourceData }) => {
   const parts = [sourceDomain(source), source.annotation].filter(Boolean)
@@ -177,19 +197,140 @@ const SourceByline = ({ source }: { source: ChatSourceData }) => {
   )
 }
 
-const SourcePreview = ({ source }: { source: ChatSourceData }) => (
-  <div className='grid gap-1.5 p-3'>
-    <SourceByline source={source} />
-    <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
-      {source.title ?? source.label}
-    </div>
-    {source.snippet && (
-      <div className='line-clamp-3 text-caption text-[var(--core-color-text-secondary)]'>
-        {source.snippet}
-      </div>
-    )}
-  </div>
+const SCREENSHOT_CLASS = cn('block w-full rounded-control border border-border')
+
+const SourceScreenshot = ({
+  screenshot,
+  onError
+}: {
+  screenshot: NonNullable<ChatSourceData['screenshot']>
+  onError: () => void
+}) => {
+  const image = (
+    <img
+      alt={screenshot.alt}
+      className={SCREENSHOT_CLASS}
+      loading='lazy'
+      src={screenshot.src}
+      onError={onError}
+    />
+  )
+
+  if (!screenshot.onOpen) return image
+
+  return (
+    <button
+      aria-label={`View ${screenshot.alt} full size`}
+      className={cn(
+        'block w-full rounded-control',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+      )}
+      type='button'
+      onClick={screenshot.onOpen}
+    >
+      {image}
+    </button>
+  )
+}
+
+/** A plain ISO date is a machine's format; local parts keep '2026-09-14' from
+ *  rendering as the 13th west of UTC. */
+const capturedLabel = (iso: string): string | undefined => {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  const date = parts
+    ? new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]))
+    : new Date(iso)
+  if (Number.isNaN(date.getTime())) return undefined
+
+  return `Captured ${date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })}`
+}
+
+const ACTION_CLASS = cn(
+  'inline-flex items-center gap-0.5 rounded-control text-caption font-medium',
+  'text-[var(--core-color-text-secondary)] no-underline',
+  'transition-colors duration-fast motion-reduce:transition-none',
+  'hover:text-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 )
+
+// ---------------------------------------------------------------------------
+// SourceActions — the preview's foot: the two places a citation can take you.
+//
+// The page and the capture answer different questions — the site says what it
+// says now, the capture says what it said when we read it — so a preview that
+// holds both offers both, named rather than printed as a URL. A full address
+// wrapped over three lines and told the reader nothing they were asking.
+//
+// Both are pointer-only by nature (a hover body reaches neither touch nor a
+// screen reader), so neither may be the only route to what it opens: the chip
+// itself carries the `url`, and the capture stays reachable from the source's
+// own row in the Sources tab.
+
+const SourceActions = ({ source }: { source: ChatSourceData }) => {
+  const openCapture = source.screenshot?.onOpen
+  if (!source.url && !openCapture) return null
+
+  return (
+    <div className='flex items-center gap-3 pt-0.5'>
+      {source.url && (
+        <a
+          className={ACTION_CLASS}
+          href={source.url}
+          rel='noreferrer'
+          target='_blank'
+        >
+          View site
+          <ArrowUpRight className='size-3' />
+        </a>
+      )}
+      {openCapture && (
+        <button className={ACTION_CLASS} type='button' onClick={openCapture}>
+          View screenshot
+        </button>
+      )}
+    </div>
+  )
+}
+
+const SourcePreview = ({ source }: { source: ChatSourceData }) => {
+  // A capture that will not load falls back to the headline it replaced. The
+  // alternative is a preview showing a broken-image glyph where the evidence
+  // should be, which reads as evidence that failed rather than none held.
+  const [failed, setFailed] = React.useState(false)
+  const screenshot = failed ? undefined : source.screenshot
+  const captured = screenshot?.capturedAt && capturedLabel(screenshot.capturedAt)
+
+  return (
+    <div className='grid gap-1.5 p-3'>
+      <SourceByline source={source} />
+      {screenshot ? (
+        <SourceScreenshot
+          screenshot={screenshot}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
+          {source.title ?? source.label}
+        </div>
+      )}
+      {source.snippet && (
+        <div className='line-clamp-3 text-caption text-[var(--core-color-text-secondary)]'>
+          {source.snippet}
+        </div>
+      )}
+      {captured && (
+        <div className='text-caption text-[var(--core-color-text-muted)]'>
+          {captured}
+        </div>
+      )}
+      <SourceActions source={source} />
+    </div>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // SourceList — the accessible full list (the +N popover and the ChatSources
@@ -341,6 +482,8 @@ export const ChatSourceChip = ({
   sources,
   themeMode
 }: ChatSourceChipProps) => {
+  const [previewOpen, setPreviewOpen] = React.useState(false)
+
   if (sources.length === 0) return null
 
   const [first] = sources
@@ -370,6 +513,22 @@ export const ChatSourceChip = ({
   const face = <ChipFace source={first} />
   const name = `Source: ${first.title ?? first.label}`
 
+  // Opening the full-size viewer dismisses the preview that launched it. Left
+  // to its own close delay the card outlives the dialog it spawned and floats
+  // over it until the pointer happens to move.
+  const previewSource: ChatSourceData = first.screenshot?.onOpen
+    ? {
+        ...first,
+        screenshot: {
+          ...first.screenshot,
+          onOpen: () => {
+            setPreviewOpen(false)
+            first.screenshot?.onOpen?.()
+          }
+        }
+      }
+    : first
+
   const trigger = first.url ? (
     <a
       aria-label={name}
@@ -398,10 +557,16 @@ export const ChatSourceChip = ({
   }
 
   return (
-    <HoverCard>
+    <HoverCard onOpenChange={setPreviewOpen} open={previewOpen}>
       <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
-      <HoverCardContent className='w-72' side='top' themeMode={themeMode}>
-        <SourcePreview source={first} />
+      <HoverCardContent
+        // A capture is read, not glanced at; at the headline's width the crop
+        // that carries the evidence is a texture.
+        className={first.screenshot ? 'w-80' : 'w-72'}
+        side='top'
+        themeMode={themeMode}
+      >
+        <SourcePreview source={previewSource} />
       </HoverCardContent>
     </HoverCard>
   )

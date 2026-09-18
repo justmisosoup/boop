@@ -75,6 +75,14 @@ const describe = (r: BusinessRecord) =>
     : 'No formation record'
 
 
+/** The reference panel's width, in px: narrow enough that the report still has
+ *  a readable measure, wide enough that a source card is not a column two words
+ *  across. */
+const PANEL_MIN = 320
+const PANEL_MAX = 720
+const PANEL_DEFAULT = 428
+const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
+
 export default function App() {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<BusinessRecord>(ALL[0])
@@ -305,6 +313,54 @@ export default function App() {
    * tab in full. Following it out to the registry's own page left the reader to
    * find their way back to what we actually hold.
    */
+  /**
+   * How wide the reference panel is, and so how wide the report is.
+   *
+   * The two share one boundary: everything the report gives up, the panel
+   * takes. One number drives the page's right gutter, the panel's own width
+   * and the right edge of the white the report sits on, so they cannot drift
+   * apart. Kept per browser, because column width is a reading preference and
+   * not something about the business on screen.
+   */
+  const [panelW, setPanelW] = useState(() => {
+    try {
+      const held = Number(window.localStorage.getItem('panel-width'))
+      if (held >= PANEL_MIN && held <= PANEL_MAX) return held
+    } catch {
+      // Private windows throw on access. The default is fine.
+    }
+    return PANEL_DEFAULT
+  })
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('panel-width', String(panelW))
+    } catch {
+      // Not worth failing a render over.
+    }
+  }, [panelW])
+
+  /** Drag the boundary. Pointer capture, so leaving the 8px strip mid-drag does
+   *  not drop it — the pointer is nowhere near the handle by the second frame. */
+  const dragBoundary = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const el = e.currentTarget
+    el.setPointerCapture(e.pointerId)
+    document.body.style.cursor = 'col-resize'
+    // Text selects across the whole page while a drag is live otherwise.
+    document.body.style.userSelect = 'none'
+    const move = (ev: PointerEvent) =>
+      setPanelW(clampPanel(Math.round(window.innerWidth - ev.clientX - 24)))
+    const up = () => {
+      el.releasePointerCapture(e.pointerId)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+  }
+
   const [sourceFocus, setSourceFocus] = useState<string | null>(null)
   const jumpToSource = (cardId: string) => {
     setTab('sources')
@@ -329,7 +385,10 @@ export default function App() {
 
   return (
     <ScreenshotViewerProvider>
-    <div className="core-theme min-h-full lg:h-screen lg:overflow-hidden">
+    <div
+      className="core-theme min-h-full lg:h-screen lg:overflow-hidden"
+      style={{ '--panel-w': `${panelW}px` } as React.CSSProperties}
+    >
       {/* The tail clears the composer, which is fixed over the page: `pb-40` was
           shorter than the dock once it carried a token row, so the last
           paragraph of a report sat behind it and could not be scrolled to. */}
@@ -337,7 +396,7 @@ export default function App() {
           sits on top of the report at every width where both are visible. */}
       {/* Both rails are fixed to the window, so the page reserves the gutters
           they sit in. Nothing in the middle column has to know they exist. */}
-      <div className="mx-auto max-w-[1400px] px-6 pb-56 pt-20 lg:pl-[272px] lg:pr-[452px] lg:flex lg:h-screen lg:flex-col lg:pb-6">
+      <div className="mx-auto max-w-[1400px] px-6 pb-56 pt-20 lg:pl-[272px] lg:pr-[calc(var(--panel-w)+24px)] lg:flex lg:h-screen lg:flex-col lg:pb-6">
 
         {/*
           * The white the document sits on.
@@ -351,7 +410,7 @@ export default function App() {
           */}
         <div
           aria-hidden="true"
-          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[416px] lg:z-0 lg:block lg:bg-card"
+          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[calc(var(--panel-w)-12px)] lg:z-0 lg:block lg:bg-card"
         />
 
         {/*
@@ -517,7 +576,34 @@ export default function App() {
               catches, so the record moved while the report it belongs to moved
               — two things scrolling past each other. It holds still now, and
               scrolls inside itself. */}
-          <aside ref={panelRef} className="mt-10 min-w-0 lg:fixed lg:right-6 lg:top-20 lg:mt-0 lg:flex lg:w-[428px] lg:flex-col lg:bottom-6 lg:overflow-y-auto panel-scroll lg:px-4">
+          {/* The boundary between the report and the panel, as something you
+              can take hold of. An 8px strip to grab, a hairline to look at —
+              a visible 8px rule would be a third column of its own. */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Report width"
+            aria-valuenow={panelW}
+            aria-valuemin={PANEL_MIN}
+            aria-valuemax={PANEL_MAX}
+            tabIndex={0}
+            onPointerDown={dragBoundary}
+            onDoubleClick={() => setPanelW(PANEL_DEFAULT)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') setPanelW((w) => clampPanel(w + 16))
+              else if (e.key === 'ArrowRight') setPanelW((w) => clampPanel(w - 16))
+              else return
+              e.preventDefault()
+            }}
+            className="group hidden lg:fixed lg:bottom-6 lg:top-20 lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[calc(var(--panel-w)+24px)]"
+          >
+            <span
+              aria-hidden="true"
+              className="h-full w-px bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-[var(--core-color-focus-ring)]"
+            />
+          </div>
+
+          <aside ref={panelRef} className="mt-10 min-w-0 lg:fixed lg:right-6 lg:top-20 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:bottom-6 lg:overflow-y-auto panel-scroll lg:px-4">
             <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
               <TabsList className="sticky top-0 z-10 shrink-0 bg-background">
                 <TabsTrigger value="insights">

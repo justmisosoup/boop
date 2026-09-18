@@ -494,12 +494,10 @@ export const AnalysisDock = ({
   if (!open) {
     return (
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-floating pb-4">
-        {/* Same gutters as the page, so the composer sits over the column it
-            writes into. `inset-x-0` + `mx-auto` alone centred it on the WINDOW,
-            which is a different centre — the report is pushed right by the
-            contents rail and left by the reference panel, so a window-centred
-            composer reads as skewed against the text above it. */}
-        <div className="mx-auto max-w-[1400px] px-6 lg:pl-[272px] lg:pr-[452px] flex justify-center">
+        {/* Centred on the viewport, and the same width whatever the report is.
+            It used to mirror the page's gutters, which meant dragging the
+            report/panel boundary slid the composer sideways and resized it. */}
+        <div className="mx-auto flex w-full max-w-[676px] justify-center px-6">
         <span className="pointer-events-auto">
           <ActionButton variant="secondary" onClick={() => setOpen(true)}>
             {hasAnalysis ? 'Refine analysis' : 'Ask about this business'}
@@ -512,9 +510,9 @@ export const AnalysisDock = ({
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-floating pb-4">
-      {/* Mirrors the page's own container and gutters, so the composer is
-          exactly as wide as the report and lines up with it. */}
-      <div className="mx-auto max-w-[1400px] px-6 lg:pl-[272px] lg:pr-[452px]">
+      {/* Centred on the viewport at a fixed width — it is the same object
+          whatever width the report is dragged to. */}
+      <div className="mx-auto w-full max-w-[676px] px-6">
         {/* One box: the field and its controls live inside a single bordered
             surface, with submit as a round button in the bottom-right corner. */}
         <Surface
