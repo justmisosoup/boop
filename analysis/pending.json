@@ -1,6 +1,6 @@
 {
-  "id": "1789772426438",
-  "requestedAt": "2026-09-18T23:00:26.438Z",
+  "id": "1789775111833",
+  "requestedAt": "2026-09-18T23:45:11.833Z",
   "businessId": "13aaf63f-9184-42d5-a051-77cb18e4d8a5",
   "business": {
     "name": "KAIROS PHYSICAL THERAPY PLLC",
@@ -352,6 +352,43 @@
       "evidence": [
         "Source value: Submitted",
         "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "license:npi-1477211969",
+      "statement": "NPI Registry holds a Physical Therapist licence for JOSHUA Y GEE, DPT, status Active",
+      "state": "result",
+      "evidence": [
+        "Physical Therapist",
+        "taxonomy 225100000X",
+        "NY licence 048266",
+        "status Active",
+        "registry updated 2024-03-11",
+        "https://npiregistry.cms.hhs.gov/provider-view/1477211969"
+      ]
+    },
+    {
+      "id": "license_person_match:npi-1477211969",
+      "statement": "An NPI Registry record was found whose holder name matches the submitted person",
+      "state": "result",
+      "because": "Submitted JOSHUA GEE; NPI Registry holds 1477211969 under JOSHUA Y GEE",
+      "evidence": [
+        "Submitted person: JOSHUA GEE",
+        "Licence holder: JOSHUA Y GEE, DPT",
+        "NPI Registry 1477211969",
+        "Name match only. No filing on this record names a natural person, so this does not establish that the licence holder is a member, owner or the practising clinician of this entity."
+      ]
+    },
+    {
+      "id": "license_address_match:npi-1477211969",
+      "statement": "The NPI Registry record's practice address matches the submitted office address",
+      "state": "result",
+      "because": "NPI Registry lists 801 Madison Ave, New York, NY 10065-5930; the submitted office is 801 Madison Ave Fl 3, New York, NY 10065-5930",
+      "evidence": [
+        "Submitted office: 801 Madison Ave Fl 3, New York, NY 10065-5930",
+        "Licence practice address: 801 Madison Ave, New York, NY 10065-5930",
+        "Practice phone: 646-300-0954",
+        "Shared address only. It does not establish a relationship between the licence holder and this entity."
       ]
     },
     {

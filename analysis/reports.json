@@ -25,22 +25,35 @@
         "by": "claude-code-session",
         "used": [
           "name",
-          "address_verification",
           "sos_domestic",
           "sos_active",
           "sos_match",
-          "entity_type",
+          "address_verification",
           "tin",
-          "industry",
-          "website_url_domain_ownership",
-          "web_business_name_verification",
-          "profile_discovery",
-          "person_verification",
-          "business_connections",
-          "dba_name",
-          "formation_state",
-          "risky_keywords",
+          "entity_type",
+          "address_property_type",
+          "address_deliverability",
+          "location_frequency:moderate",
+          "location_frequency:low",
           "website_status",
+          "website_url_domain_ownership",
+          "website_url_discovery",
+          "web_address_verification",
+          "web_email_address_verification",
+          "web_phone_number_verification",
+          "profile_discovery",
+          "profile_status",
+          "web_business_name_verification",
+          "person_verification",
+          "web_person_verification",
+          "business_connections",
+          "sos_domestic_sub_status",
+          "address_registered_agent",
+          "industry",
+          "risky_keywords",
+          "license:npi-1477211969",
+          "license_person_match:npi-1477211969",
+          "license_address_match:npi-1477211969",
           "operating_as_claimed",
           "complaint_themes",
           "watchlist",
@@ -49,10 +62,7 @@
           "people_criminal_history",
           "people_litigations",
           "people_liens",
-          "people_bankruptcies",
-          "related_entities",
-          "location_frequency:moderate",
-          "address_registered_agent"
+          "people_bankruptcies"
         ],
         "headline": "Onboard subject to conditions.",
         "sections": [
@@ -60,66 +70,123 @@
             "id": "skill-kyb-identification",
             "body": [
               {
-                "text": "The entity exists and is the applicant. Name and office address both match a New York filing, the domestic registration is active, and 1 of 1 filings on the record is active. Entity type is a PLLC. The IRS holds a record for the submitted TIN and business name combination.",
+                "text": "KAIROS PHYSICAL THERAPY PLLC matches an active domestic New York filing, and the submitted office address matches that filing. One registration is on file and it is the only one, so there is no foreign qualification to reconcile. The IRS holds a record for the submitted TIN and business name combination.",
                 "cites": [
                   "name",
-                  "address_verification",
                   "sos_domestic",
                   "sos_active",
                   "sos_match",
-                  "entity_type",
+                  "address_verification",
                   "tin"
                 ]
               },
               {
-                "text": "The submitted website and third-party profiles both check out: the crawl attributes the domain to the business with high confidence, and the profiles are online. No DBA filing is on the record, and no registration outside New York appears.",
+                "text": "The entity is a PLLC, a licensed professional practice organised as an LLC. Membership is restricted by statute to individuals licensed in the profession practised, so the beneficial ownership certification on this file has to evidence each member's licence and not only their identity and percentage. A policy keyed on entity type alone will not ask for that.",
                 "cites": [
-                  "website_url_domain_ownership",
-                  "profile_status",
-                  "dba_name"
+                  "entity_type"
                 ]
               },
               {
-                "text": "One thing does not line up. The filing names no natural person, the only officer carried is the entity itself, so JOSHUA GEE, submitted as the individual, is not matched to it. The website trades as Kairos Physio, a shortened form of the registered name that no DBA filing covers; New York does not require one for that.",
+                "text": "The office at 801 Madison Ave Fl 3 is a commercial property and deliverable by USPS, and carries 21 businesses, which is what a shared clinical floor on Madison Avenue looks like. Two further addresses on the record, in Bayside and Little Neck, carry two businesses each.",
+                "cites": [
+                  "address_property_type",
+                  "address_deliverability",
+                  "location_frequency:moderate",
+                  "location_frequency:low"
+                ]
+              },
+              {
+                "text": "The submitted website was online when the record was ordered and the domain is held with high confidence by the business; the submitted address, email and phone each verify against it, and the submitted third-party profiles are all online. The name presented on the web differs from the submitted business name. The record returns the mismatch without the differing name, so it cannot be read as a trading name or as anything else.",
+                "cites": [
+                  "website_status",
+                  "website_url_domain_ownership",
+                  "website_url_discovery",
+                  "web_address_verification",
+                  "web_email_address_verification",
+                  "web_phone_number_verification",
+                  "profile_discovery",
+                  "profile_status",
+                  "web_business_name_verification"
+                ]
+              },
+              {
+                "text": "No natural person is named. The submitted person, JOSHUA GEE, could not be matched to the state registration, which lists only the entity itself, and the web check returned no match either. Two business connections are recorded without detail. The record therefore establishes the entity, its address and its tax identity, but not who stands behind it.",
                 "cites": [
                   "person_verification",
-                  "web_business_name_verification"
+                  "web_person_verification",
+                  "business_connections"
                 ]
               }
             ],
-            "gaps": []
+            "gaps": [
+              {
+                "id": "domestic_good_standing",
+                "point": "Whether the New York registration is in good standing, beyond being active",
+                "why": "not_published"
+              },
+              {
+                "id": "registered_agent",
+                "point": "Who the registered agent of record is, and whether the submitted office is a registered agent or CMRA address",
+                "why": "not_held_or_unreachable"
+              },
+              {
+                "id": "web_name_difference",
+                "point": "What name the website presents, so the mismatch can be read",
+                "why": "not_held_or_unreachable"
+              }
+            ]
           },
           {
             "id": "skill-kyb-activity",
             "body": [
               {
-                "text": "Not a prohibited or high-risk industry. NAICS 621340 classifies it as Offices of Physical, Occupational and Speech Therapists, and Audiologists, under Health and Social Services, with MCC 8049. Both score 1 and neither is flagged high risk; the prohibited-list check returns Other Non-Prohibited. The merchant screen surfaced no risky keywords.",
+                "text": "The industry screen returned no high-risk or prohibited hits, and the keyword screen returned none.",
                 "cites": [
                   "industry",
                   "risky_keywords"
                 ]
               },
               {
-                "text": "The entity form constrains the activity. A New York PLLC may only be formed to practise a licensed profession, so the business requires a licensed practitioner and its members must hold that licence. The website is online and attributed to the business, though it trades under a different name.",
+                "text": "The website was online when the record was ordered and is attributed to the business with high confidence, and the address on it matches the submitted office address. It trades under a shorter name, Kairos Physio, than the registered KAIROS PHYSICAL THERAPY PLLC. Nothing on the site or in the screens points to a second line of business.",
                 "cites": [
-                  "entity_type",
                   "website_status",
                   "website_url_domain_ownership",
-                  "web_business_name_verification"
+                  "web_address_verification",
+                  "web_business_name_verification",
+                  "risky_keywords"
                 ]
               },
               {
-                "text": "No licence check ran. The record carries no professional licence insight for the practice or for any individual, so the licence the entity form requires is neither confirmed nor linked to a person. The operating-as-claimed check and complaint themes were not ordered.",
+                "text": "A licence record is on file. The NPI Registry holds an Active Physical Therapist licence for JOSHUA Y GEE, DPT (NY licence 048266, taxonomy 225100000X), last updated 2024-03-11.",
                 "cites": [
-                  "operating_as_claimed",
-                  "complaint_themes"
+                  "license:npi-1477211969"
+                ]
+              },
+              {
+                "text": "That record matches on two things: the holder's name matches the submitted person, and the registry's practice address, 801 Madison Ave, matches the submitted office address. Both are matches only. No filing on this record names a natural person (state registrations list KAIROS PHYSICAL THERAPY PLLC as its own officer), and the website check did not match the submitted person either, so nothing here establishes that the licence holder is a member of this entity, an owner of it, or the clinician practising through it.",
+                "cites": [
+                  "license_person_match:npi-1477211969",
+                  "license_address_match:npi-1477211969",
+                  "person_verification",
+                  "web_person_verification"
+                ]
+              },
+              {
+                "text": "The entity form is what makes that link load-bearing. A New York PLLC may be formed only to practise a licensed profession, and statute restricts membership to individuals licensed in that profession, so the licence is a condition of the activity rather than a credential worth noting. The entity_type field buckets this as LLC, so a policy keyed on that field will not ask for licence evidence on its own.",
+                "cites": [
+                  "entity_type"
                 ]
               }
             ],
             "gaps": [
               {
-                "id": "act_licence",
-                "point": "Whether a current New York physical therapy licence stands behind the practice, and which member holds it",
+                "id": "act_licence_link",
+                "point": "Whether the NPI licence holder is a member of this PLLC or the clinician practising through it, and whether every member holds a New York physical therapy licence",
+                "why": "not_held_or_unreachable"
+              },
+              {
+                "id": "act_operating_as_claimed",
+                "point": "Whether the business is operating as it claims, and whether any complaint themes attach to it",
                 "why": "not_held_or_unreachable"
               }
             ]
@@ -128,7 +195,7 @@
             "id": "skill-kyb-3",
             "body": [
               {
-                "text": "No hits. Watchlist and sanctions screening returned nothing against the business, adverse media returned nothing, and PEP screening returned no hits on submitted individuals or their relatives and close associates.",
+                "text": "Nothing screened returned a hit. Watchlist and sanctions screening against the submitted business name returned No Hits, adverse media returned Low risk with nothing found, and PEP screening returned no hits on the submitted individual or on their relatives and close associates.",
                 "cites": [
                   "watchlist",
                   "adverse_media",
@@ -136,9 +203,15 @@
                 ]
               },
               {
-                "text": "The screen covered the entity and the one individual submitted with the application. Because the filing names no natural person and none was retrieved from it, no additional owner or officer was put through screening. People-level criminal history, litigation, liens and bankruptcies were not ordered.",
+                "text": "Coverage is the entity and JOSHUA GEE, the only person submitted. He is not matched to the New York filing, whose sole listed officer is the entity itself, so no further individual was retrieved to put through screening; nobody else connected to the business has been screened for sanctions, PEP or adverse media. The two connected entities on the record were not screened either.",
                 "cites": [
                   "person_verification",
+                  "business_connections"
+                ]
+              },
+              {
+                "text": "Person-level searches beyond screening were not ordered: criminal history, litigation, liens and bankruptcies carry no result for any individual.",
+                "cites": [
                   "people_criminal_history",
                   "people_litigations",
                   "people_liens",
@@ -149,7 +222,7 @@
             "gaps": [
               {
                 "id": "comp_unscreened_owners",
-                "point": "Whether anyone holding or controlling the business beyond the submitted individual has been screened",
+                "point": "Whether anyone who holds or controls the business, beyond JOSHUA GEE, is on a sanctions, PEP or adverse media list",
                 "why": "not_held_or_unreachable"
               }
             ]
@@ -158,36 +231,45 @@
             "id": "skill-1789767328449",
             "body": [
               {
-                "text": "No owner is established. The New York filing carries no natural person, the only officer listed is the entity itself, so JOSHUA GEE, submitted as the individual, is not matched to the registration. The website check did not match him either.",
+                "text": "The New York filing names no natural person. The only officer carried on the registration is the entity itself, for service of process, so JOSHUA GEE, submitted as the individual behind the business, is not matched to it, and the web check did not match him either. Ownership and control are unestablished on the record.",
                 "cites": [
-                  "person_verification"
+                  "person_verification",
+                  "web_person_verification"
                 ]
               },
               {
-                "text": "The record shows 2 connections and the connections check names them: KAIROS 801 LLC (confidence 0.96) and J.L.W. INVESTORS, LTD. (confidence 0.88). Neither is another business on this account. Both link by address only, not by any shared person: J.L.W. shares the practice address at 801 Madison Ave Fl 3, and KAIROS 801 LLC shares that address and also 21611 48th Ave Apt 3B in Bayside, which is on this business's own registration.",
+                "text": "There is a lead, and it does not close the question. An active New York physical therapy licence is held by JOSHUA Y GEE, DPT, whose name matches the submitted person and whose practice address matches the submitted office. A matching name at a matching address is consistent with the application; it is not evidence of membership, and nothing on the record makes him a member, owner or officer of this entity.",
                 "cites": [
-                  "business_connections",
-                  "location_frequency:moderate"
+                  "license_person_match:npi-1477211969",
+                  "license_address_match:npi-1477211969"
                 ]
               },
               {
-                "text": "Membership is constrained but not evidenced. A PLLC is restricted by statute to licensed practitioners, so the set of people who may lawfully hold this entity is narrower than for an ordinary LLC, but no certification naming members, their percentages or their licences has been collected. The registered office, 801 Madison Ave Fl 3, is shared with 21 businesses, and the registered-agent check on it returned nothing.",
+                "text": "The form narrows who may lawfully hold it. A PLLC is restricted by statute to individuals licensed in the profession practised, so the beneficial ownership certification here has to evidence each member's licence alongside identity and percentage. None has been collected. The registered office at 801 Madison Ave Fl 3 is shared with 21 businesses, and the registered-agent check on that address returned nothing.",
                 "cites": [
                   "entity_type",
                   "location_frequency:moderate",
                   "address_registered_agent"
+                ]
+              },
+              {
+                "text": "Two connected entities sit on the record, KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link by shared address only, with no shared person: J.L.W. at the practice address, and KAIROS 801 LLC at both that address and 21611 48th Ave Apt 3B in Bayside, which this business's own registration carries. Who holds either is not on the record, so neither confirms nor contradicts a common owner.",
+                "cites": [
+                  "business_connections",
+                  "location_frequency:moderate",
+                  "location_frequency:low"
                 ]
               }
             ],
             "gaps": [
               {
                 "id": "own_beneficial_owners",
-                "point": "Who holds 25 percent or more, and who exercises control",
-                "why": "not_published"
+                "point": "Who holds 25 percent or more and who exercises control, whether JOSHUA GEE is among them, and the licence standing behind each member",
+                "why": "not_held_or_unreachable"
               },
               {
                 "id": "own_connected_entities",
-                "point": "Who owns or controls KAIROS 801 LLC and J.L.W. INVESTORS, LTD.",
+                "point": "Who owns or controls KAIROS 801 LLC and J.L.W. INVESTORS, LTD",
                 "why": "not_held_or_unreachable"
               }
             ]
@@ -196,45 +278,98 @@
             "id": "recommendation",
             "body": [
               {
-                "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
+                "text": "The entity is established and clean. It matches an active New York filing, the IRS holds the TIN and name pair, and everything screened so far, the business and JOSHUA GEE, returned no hits.",
+                "cites": [
+                  "sos_active",
+                  "sos_match",
+                  "tin",
+                  "watchlist",
+                  "adverse_media",
+                  "politically_exposed_persons"
+                ]
+              },
+              {
+                "text": "The decision turns on one thing: nobody is on the file. No filing names a natural person, so the entity is its own officer of record and JOSHUA GEE is not tied to it by anything we hold. An active New York physical therapy licence for JOSHUA Y GEE, DPT sits at the submitted office address, which is a strong lead and not a link. The entity is a PLLC, so membership is restricted by statute to licensed practitioners, which makes that link a condition of the account rather than a detail.",
+                "cites": [
+                  "person_verification",
+                  "license_person_match:npi-1477211969",
+                  "license_address_match:npi-1477211969",
+                  "entity_type"
+                ]
               }
             ]
           }
         ],
         "followUps": [
           {
-            "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
+            "text": "Collect a beneficial ownership certification naming every member holding 25 percent or more and every controlling person, each with their New York physical therapy licence number. This is what ties a person to the entity; nothing on the record does.",
+            "cites": [
+              "person_verification",
+              "entity_type"
+            ],
             "closes": [
-              "act_licence",
-              "own_beneficial_owners"
+              "own_beneficial_owners",
+              "act_licence_link"
             ]
           },
           {
-            "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
-            "closes": [
-              "act_licence"
-            ]
+            "text": "Do not re-run the NPI search. The registry record is already on file: JOSHUA Y GEE, DPT, New York licence 048266, Active, at 801 Madison Ave. What it does not carry is his relationship to the entity, so confirm on the certification that he is a member, and check the New York Office of the Professions for any member the certification names who is not already covered.",
+            "cites": [
+              "license:npi-1477211969",
+              "license_person_match:npi-1477211969"
+            ],
+            "closes": []
           },
           {
-            "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
+            "text": "Screen each member the certification names. Coverage today is the entity and JOSHUA GEE only, so anyone else who holds or controls the business is unscreened.",
+            "cites": [
+              "watchlist",
+              "politically_exposed_persons",
+              "adverse_media"
+            ],
             "closes": [
               "comp_unscreened_owners"
             ]
           },
           {
-            "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
+            "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared address only, and KAIROS 801 LLC sits at the Bayside address this registration also carries, so a common owner is plausible and not on the record.",
+            "cites": [
+              "business_connections",
+              "location_frequency:low"
+            ],
             "closes": [
               "own_connected_entities"
+            ]
+          },
+          {
+            "text": "Ask the customer for the trading name and confirm it against the site. The record reports that the web-presented name differs from KAIROS PHYSICAL THERAPY PLLC without returning what it is, and the site is otherwise attributed to the business with high confidence.",
+            "cites": [
+              "web_business_name_verification",
+              "website_status"
             ],
-            "entities": [
-              {
-                "name": "KAIROS 801 LLC",
-                "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
-              },
-              {
-                "name": "J.L.W. INVESTORS, LTD.",
-                "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
-              }
+            "closes": [
+              "web_name_difference"
+            ]
+          },
+          {
+            "text": "Order the registered agent of record for the New York registration, and an operating-as-claimed check. Neither is held, and the submitted office is a commercial floor shared with 21 other businesses, so the agent question is not answered by the address alone.",
+            "cites": [
+              "address_registered_agent",
+              "address_property_type",
+              "location_frequency:moderate"
+            ],
+            "closes": [
+              "registered_agent",
+              "act_operating_as_claimed"
+            ]
+          },
+          {
+            "text": "Good standing beyond active is not published by New York, so treat the active registration as the available answer and do not hold the file for it.",
+            "cites": [
+              "sos_active"
+            ],
+            "closes": [
+              "domestic_good_standing"
             ]
           }
         ]
