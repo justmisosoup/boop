@@ -254,10 +254,10 @@ export const AssessmentIndex = ({
   return (
     <nav
       aria-label="Assessment contents"
-      /* Aligned to the page column, not the window. The page is 1400px centred,
-         so a fixed `left-6` only agreed with it at one width — wider than that
-         and the rail drifted away from the report it indexes. */
-      style={{ left: 'max(1.5rem, calc((100vw - 1400px) / 2))' }}
+      /* The page runs the full width of the window, so the rail sits on the
+         page's own left margin. It used to be aligned to a centred 1400px
+         column, which no longer exists. */
+      style={{ left: '1.5rem' }}
       className={cn(
         // Fixed to the window, not part of the flow: it takes no space, so it
         // cannot squeeze the report or wrap the panel beside it.

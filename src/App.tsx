@@ -79,12 +79,12 @@ const describe = (r: BusinessRecord) =>
  *  a readable measure, wide enough that a source card is not a column two words
  *  across. */
 const PANEL_MIN = 392
-const PANEL_MAX = 720
+const PANEL_MAX = 900
 const PANEL_DEFAULT = 428
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** The same number as the `--page-gutter` custom property: how far the page's
  *  content column ends from the right of the window. */
-const pageGutter = () => Math.max(0, (window.innerWidth - 1400) / 2) + 24
+const pageGutter = () => 24
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -395,13 +395,10 @@ export default function App() {
       style={
         {
           '--panel-w': `${panelW}px`,
-          // Where the page's content column ends, measured from the right of
-          // the window. The column is centred and capped, the panel is fixed to
-          // the window, and without this the panel hung off the window's edge
-          // instead of the column's: on a wide monitor that left several
-          // hundred px of nothing between the report and the panel, and the
-          // report squeezed into what was left.
-          '--page-gutter': 'calc(max(0px, (100vw - 1400px) / 2) + 24px)'
+          // The page's own right margin. The layout is full bleed — a capped,
+          // centred column left the panel stranded a few hundred px short of
+          // the window's edge with nothing but grey beyond it.
+          '--page-gutter': '24px'
         } as React.CSSProperties
       }
     >
@@ -412,7 +409,7 @@ export default function App() {
           sits on top of the report at every width where both are visible. */}
       {/* Both rails are fixed to the window, so the page reserves the gutters
           they sit in. Nothing in the middle column has to know they exist. */}
-      <div className="mx-auto max-w-[1400px] px-6 pb-56 pt-20 lg:pl-[272px] lg:pr-[calc(var(--panel-w)+24px)] lg:flex lg:h-screen lg:flex-col lg:pb-6">
+      <div className="mx-auto px-6 pb-56 pt-20 lg:pl-[272px] lg:pr-[calc(var(--panel-w)+24px)] lg:flex lg:h-screen lg:flex-col lg:pb-6">
 
         {/*
           * The white the document sits on.
@@ -439,7 +436,7 @@ export default function App() {
           * fixed to the top of it.
           */}
         <header className="fixed inset-x-0 top-0 z-floating border-b border-solid border-border bg-card">
-          <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-6 py-2">
+          <div className="mx-auto flex items-center gap-4 px-6 py-2">
             <div className="flex min-w-0 items-baseline gap-3">
               <Text size="sm" className="shrink-0 truncate font-medium">
                 {selected.name}
