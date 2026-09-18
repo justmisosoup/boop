@@ -1,23 +1,57 @@
 {
   "by": "claude-code-session",
   "used": [
-    "name", "entity_type", "sos_active", "sos_match", "sos_domestic", "sos_inactive",
-    "sos_unknown", "sos_domestic_sub_status", "address_verification",
-    "address_deliverability", "address_property_type", "location_frequency:high",
-    "person_verification", "website_status", "website_url_domain_ownership",
-    "web_business_name_verification", "web_address_verification", "web_person_verification",
-    "watchlist", "politically_exposed_persons", "adverse_media", "industry",
-    "liens", "litigations", "bankruptcies", "business_connections"
+    "name",
+    "entity_type",
+    "sos_active",
+    "sos_match",
+    "sos_domestic",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic_sub_status",
+    "address_verification",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:high",
+    "person_verification",
+    "website_status",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_person_verification",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "industry",
+    "liens",
+    "litigations",
+    "bankruptcies",
+    "business_connections"
   ],
-  "headline": "A real, established Delaware corporation, well corroborated on identity and operations — the open items are liens and litigation, not who this is.",
+  "headline": "Onboard subject to conditions.",
   "confirmed": [
-    { "text": "The entity is confirmed on every identity axis available: name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address." },
-    { "text": "It is operating. The address is commercial and deliverable, the website is reachable with the domain registrant corroborating the business at high confidence, and the website independently matches the submitted name and address. Formed 2018 — not newly stood up." },
-    { "text": "A submitted person matches an officer on a state registration. That is the strongest control-person evidence registry data can give, and it is frequently unavailable." },
-    { "text": "Screening is clear across watchlist, PEP, and prohibited industry. No bankruptcy filings." },
-    { "text": "Open liens were found, and litigation records were returned.", "adverse": true },
-    { "text": "Adverse media screening returned hits, which the provider itself scored low." },
-    { "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses." }
+    {
+      "text": "The entity is confirmed on every identity axis available: name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address."
+    },
+    {
+      "text": "It is operating. The address is commercial and deliverable, the website is reachable with the domain registrant corroborating the business at high confidence, and the website independently matches the submitted name and address. Formed 2018 — not newly stood up."
+    },
+    {
+      "text": "A submitted person matches an officer on a state registration. That is the strongest control-person evidence registry data can give, and it is frequently unavailable."
+    },
+    {
+      "text": "Screening is clear across watchlist, PEP, and prohibited industry. No bankruptcy filings."
+    },
+    {
+      "text": "Open liens were found, and litigation records were returned.",
+      "adverse": true
+    },
+    {
+      "text": "Adverse media screening returned hits, which the provider itself scored low."
+    },
+    {
+      "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses."
+    }
   ],
   "couldNotConfirm": [
     {

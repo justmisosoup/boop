@@ -1,0 +1,186 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "dba_name",
+    "formation_state",
+    "entity_type",
+    "entity_type_agreement",
+    "address_verification",
+    "sos_active",
+    "sos_domestic",
+    "sos_match",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "web_person_verification",
+    "business_connections",
+    "address_deliverability",
+    "address_property_type",
+    "address_proximity",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "website_status",
+    "website_url_discovery",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "web_phone_number_verification",
+    "profile_discovery",
+    "profile_status",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "risky_keywords",
+    "industry",
+    "liens",
+    "litigations",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Kairos Physical Therapy is a single-location physical therapy practice in New York, treating patients directly rather than through a hospital system. It is organised as a PLLC — New York's professional limited liability company, a form restricted to licensed practitioners, which is the one fact about its structure that bears on the review."
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "A legally registered entity exists and the submitted identity is the same one. The name matches the single state registration, the submitted office address matches an address on that filing, the submitted formation state matches the one found, and the entity type agrees across the registration. For a business with one filing rather than five, that is as complete as agreement gets.",
+          "cites": [
+            "name",
+            "address_verification",
+            "formation_state",
+            "entity_type",
+            "entity_type_agreement"
+          ]
+        },
+        {
+          "text": "It is active, and active in the state that matters. The one filing on record is active, it is the domestic filing in the formation state, and it is the state of the submitted office address — three descriptions of the same registration, which is what a single-state practice should look like.",
+          "cites": ["sos_active", "sos_domestic", "sos_match"]
+        },
+        {
+          "text": "A DBA name was submitted and no matching DBA filing was found. The registration itself is unaffected — the entity is registered under its own name — but the trading name the customer gave does not resolve to a filing.",
+          "cites": ["dba_name"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "domestic_standing",
+          "point": "Whether the New York registration is in good standing",
+          "why": "not_published",
+          "wouldAnswer": "The state does not publish a good-standing sub-status, so no order returns one. A Certificate of Good Standing from the customer is the only route.",
+          "cites": ["sos_domestic_sub_status"]
+        },
+        {
+          "id": "dba_filing",
+          "point": "Whether the submitted DBA is filed somewhere the default search does not reach",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "DBA, city and county registration searches are opt-in and were not ordered. A trading name filed at county level would not appear here.",
+          "cites": ["dba_name"]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "The submitted person does not match an officer on the state registration, but does match the person named on the company's own website. Read together those are not in conflict: a New York PLLC filing need not publish its members, so the absence is most likely the registry's silence rather than a contradiction, and the website is the only place the person appears at all.",
+          "cites": ["person_verification", "web_person_verification"]
+        },
+        {
+          "text": "Two related businesses share officers, agents or addresses with this one — an ordinary number for a practitioner who has held more than one entity, and not a finding on its own.",
+          "cites": ["business_connections"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "officer_record",
+          "point": "Whether any officer or member is published for this registration at all",
+          "why": "not_published",
+          "wouldAnswer": "Confirming the state returns no members for a PLLC would settle whether the failed officer match is an absence of data or an absence of the person. Until then the match sits on the website alone.",
+          "cites": ["person_verification"]
+        },
+        {
+          "id": "control_persons",
+          "point": "Who ultimately owns and controls the practice",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Nothing in the catalog reaches beneficial ownership. A submitted ownership structure would answer it.",
+          "cites": ["person_verification"]
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "This is an operating practice, and the web evidence is unusually complete. The site was reachable when the record was ordered, the domain registrant corroborates the business with high confidence, and the business name, office address, email address, phone number and the submitted person all match what the site carries. Five independent details agreeing is a stronger signal than any one of them.",
+          "cites": [
+            "website_status",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "web_phone_number_verification",
+            "web_person_verification"
+          ]
+        },
+        {
+          "text": "The physical footprint is small and consistent with one clinic. The submitted address is deliverable and commercial, two addresses are shared with twenty or fewer businesses and one with between twenty-one and a hundred, and two sit more than a fifth of a mile from the submitted address. Nothing here suggests a mail-drop or an address held in common with hundreds of others.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:low",
+            "location_frequency:moderate",
+            "address_proximity"
+          ]
+        },
+        {
+          "text": "The website was supplied by the customer rather than discovered independently, which is worth holding in mind: the corroboration above is strong, but it begins from a URL the applicant chose.",
+          "cites": ["website_url_discovery"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "third_party_profile",
+          "point": "Whether the third-party profile the customer supplied is live",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "At least one submitted profile returned an unknown status. Re-running the profile check would resolve it; it is the one piece of operating evidence here that did not land.",
+          "cites": ["profile_discovery", "profile_status"]
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Screening is clean on every list that ran. No watchlist hits, no politically exposed persons among the submitted individuals or their relatives and close associates, no adverse media at low risk score, and no risky keywords. The industry classifier identifies nothing prohibited.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons",
+            "adverse_media",
+            "risky_keywords",
+            "industry"
+          ]
+        },
+        {
+          "text": "Public-record financial distress is absent outright: no liens, no litigation, no bankruptcy filings. For a practice formed in 2022 that is what an unremarkable record looks like rather than an unusually good one.",
+          "cites": ["liens", "litigations", "bankruptcies"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "professional_licensure",
+          "point": "Whether the practitioner behind the PLLC holds a current New York physical therapy licence",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "A PLLC is restricted to licensed professionals, so licensure is the condition the entity form rests on. The professional-licence source is opt-in and was not ordered; nothing else on the record speaks to it.",
+          "cites": ["industry", "entity_type"]
+        }
+      ]
+    }
+  ]
+}

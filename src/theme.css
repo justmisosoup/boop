@@ -44,3 +44,65 @@ body,
   background-color: var(--core-color-surface-canvas);
   color: var(--core-color-text-primary);
 }
+
+/* The shimmer the run label wears while it is working.
+ *
+ * A light sweeps across the letters — the convention assistant interfaces use
+ * to mean "this is being produced rather than finished". The gradient is
+ * painted onto the text itself (`background-clip: text` over a transparent
+ * fill), which no utility class can express, so it lives here.
+ *
+ * Muted at rest, full strength in the travelling band, so the sentence stays
+ * readable the whole way through rather than pulsing in and out.
+ *
+ * The whole effect sits behind one media query: a reader who asked for reduced
+ * motion gets ordinary text, not transparent text with nothing moving to reveal
+ * it. Paint and motion must live or die together.
+ */
+@keyframes shimmer-text {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shimmer-text {
+    background-image: linear-gradient(
+      90deg,
+      var(--core-color-text-secondary) 0%,
+      var(--core-color-text-secondary) 40%,
+      var(--core-color-text-primary) 50%,
+      var(--core-color-text-secondary) 60%,
+      var(--core-color-text-secondary) 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer-text 2.2s linear infinite;
+  }
+}
+
+/**
+ * Columns that scroll without saying so.
+ *
+ * The report and the reference panel each scroll themselves, which meant two
+ * vertical bars on screen for two regions that move independently — and every
+ * one of them took 11-15px of real layout width out of the column it was in,
+ * which is what kept knocking the panel's margins off centre.
+ *
+ * Neither column needs one. The report has a contents list in the margin that
+ * says where you are and how much is left, and the panel's own group headings
+ * do the same. Scrolling, wheel, trackpad, keyboard and `scrollIntoView` all
+ * work exactly as before; only the bar is gone.
+ */
+.panel-scroll {
+  scrollbar-width: none;
+}
+
+.panel-scroll::-webkit-scrollbar {
+  display: none;
+}

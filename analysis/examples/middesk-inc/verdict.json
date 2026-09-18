@@ -1,0 +1,69 @@
+{
+  "headline": "Open the account, subject to beneficial ownership certification from the customer and a read of the ten litigation matters \u2014 the entity verifies cleanly and nothing screens adversely.",
+  "recommendation": {
+    "id": "recommendation",
+    "body": [
+      {
+        "text": "Nothing on this record argues against the relationship, and the numbers that look worst on their face are accounted for below rather than left standing: the ten-thousand-business address and the seventeen connections are read in Activity and Ownership as the ordinary shape of a Delaware corporation carrying four foreign qualifications. What is open falls into three kinds. One is a requirement this record cannot satisfy at any price \u2014 beneficial ownership is outside what an order returns, so the certification has to be collected from the customer, and for an account opening that is the item that actually gates the file. One is a document request with a known answer: Delaware publishes no domestic status or good-standing sub-status through this channel, so a certificate from the customer is the only route to the gap named in Identity. The rest are orders against filings the record counts but does not carry \u2014 the open lien in Compliance, and the ten litigation matters beside it, which are the one open item capable of changing the answer above rather than merely documenting it.",
+        "cites": [
+          "location_frequency:high",
+          "business_connections",
+          "entity_type_foreign",
+          "sos_domestic_sub_status",
+          "liens",
+          "litigations"
+        ]
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "text": "Collect a beneficial ownership certification from the customer, naming every individual at or above the policy's control and equity thresholds.",
+      "cites": [
+        "person_verification"
+      ],
+      "closes": [
+        "beneficial_ownership"
+      ]
+    },
+    {
+      "text": "Pull the ten litigation dockets and confirm they are ordinary commercial matters rather than allegations bearing on the conduct of the business.",
+      "cites": [
+        "litigations"
+      ],
+      "closes": [
+        "litigation_detail"
+      ]
+    },
+    {
+      "text": "Request a Delaware Certificate of Good Standing, since no order will return the domestic status.",
+      "cites": [
+        "sos_domestic",
+        "sos_domestic_sub_status"
+      ],
+      "closes": [
+        "domestic_status"
+      ]
+    },
+    {
+      "text": "Pull the open lien filing to establish the secured party, the amount and what it secures.",
+      "cites": [
+        "liens"
+      ],
+      "closes": [
+        "lien_detail"
+      ]
+    },
+    {
+      "text": "Identify which of the nine addresses are registered-agent offices, which separates the seventeen connections into agent overlap and genuine affiliates.",
+      "cites": [
+        "location_frequency:high",
+        "business_connections"
+      ],
+      "closes": [
+        "agent_addresses",
+        "connection_detail"
+      ]
+    }
+  ]
+}

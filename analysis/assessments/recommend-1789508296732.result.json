@@ -1,0 +1,44 @@
+{
+  "recommended": [
+    {
+      "id": "website_status",
+      "why": "The most direct answer to \"trading today\" — whether the storefront was reachable when the record was ordered."
+    },
+    {
+      "id": "website_url_domain_ownership",
+      "why": "You asked for the domain. This is the one that ties the registrant back to this business rather than to a reseller or a parked holder."
+    },
+    {
+      "id": "website_url_discovery",
+      "why": "Says whether the domain came from the customer or was found independently — a supplied URL proves less than a discovered one."
+    },
+    {
+      "id": "web_address_verification",
+      "why": "Connects the storefront to the premises: the address on the site matching the submitted one is what makes the two the same operation."
+    },
+    {
+      "id": "web_business_name_verification",
+      "why": "The site naming this business, rather than a different trading entity behind the same domain."
+    },
+    {
+      "id": "location_frequency:high",
+      "why": "Your mailbox question, answered most sharply. Five addresses shared with 101 or more businesses is the signature of a registered-agent or mail-forwarding address."
+    },
+    {
+      "id": "location_frequency:low",
+      "why": "The counterweight: addresses shared with only a handful of businesses read as genuinely occupied premises."
+    },
+    {
+      "id": "address_property_type",
+      "why": "Commercial versus residential — a mailbox is commercial too, so this narrows rather than settles it, and is worth reading beside the frequency bands."
+    },
+    {
+      "id": "address_verification",
+      "why": "Not currently read by this assessment. The submitted address matching an address on a state registration is the strongest non-web evidence that the premises is the one the business filed under."
+    },
+    {
+      "id": "profile_status",
+      "why": "A reachable third-party profile is corroboration of trading that does not depend on the company's own website being up."
+    }
+  ]
+}

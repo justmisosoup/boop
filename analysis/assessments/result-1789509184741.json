@@ -1,0 +1,49 @@
+{
+  "section": {
+    "id": "identity",
+    "body": [
+      {
+        "text": "A legally registered entity exists and the submitted identity is the same one. The submitted name matches across all five state registrations, the submitted office address matches an address on a registration, and the entity type is consistent against the domestic filing, the four foreign filings, and all five read together. Three independent handles on the same company agree.",
+        "cites": [
+          "name",
+          "address_verification",
+          "entity_type",
+          "entity_type_foreign",
+          "entity_type_agreement"
+        ]
+      },
+      {
+        "text": "It is active where it says it operates. Two of the five filings are active, one is inactive, and two return no status at all — a spread that reads as a company registering where it does business rather than as decay, because the active one includes the state of the submitted office address.",
+        "cites": ["sos_active", "sos_inactive", "sos_unknown", "sos_match"]
+      },
+      {
+        "text": "The one status that cannot be read is the formation state's. Delaware returns no status for the domestic filing and publishes no good-standing sub-status, so the registration a reader would most want confirmed is the one the record cannot speak to.",
+        "cites": ["sos_domestic", "sos_domestic_sub_status"]
+      },
+      {
+        "text": "The company's own website corroborates the submitted identity independently of the registries — the business name, the office address and the submitted email address all match what the site carries.",
+        "cites": [
+          "web_business_name_verification",
+          "web_address_verification",
+          "web_email_address_verification"
+        ]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "domestic_standing",
+        "point": "Whether the Delaware domestic registration is active and in good standing",
+        "why": "not_published",
+        "wouldAnswer": "Delaware publishes neither a status nor a good-standing sub-status through this channel, so no order returns one. A Certificate of Good Standing obtained from the customer is the only route.",
+        "cites": ["sos_domestic", "sos_domestic_sub_status"]
+      },
+      {
+        "id": "unresolved_filings",
+        "point": "Which two filings return no status, and whether either has lapsed",
+        "why": "not_held_or_unreachable",
+        "wouldAnswer": "Two of the five states returned no status. Re-running the registration search would resolve them; until then \"two active\" is a floor rather than a full count.",
+        "cites": ["sos_unknown", "sos_active"]
+      }
+    ]
+  }
+}

@@ -1,4 +1,12 @@
 node_modules
 dist
 .env.local
-src/data/records.json
+
+# Per-run scratch from the analysis handoff. The report that survives a re-pull
+# lives in analysis/reports.json, which IS tracked.
+analysis/request-*.json
+analysis/result-*.json
+analysis/result-*.assessments/
+analysis/replay-*.json
+analysis/lede-*.json
+analysis/pending.json

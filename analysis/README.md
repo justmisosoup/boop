@@ -5,39 +5,79 @@ is the spec the session writes against — it is load-bearing, not documentation
 
 - `pending.json` — the latest request, written when the user hits Run.
 - `request-<id>.json` — kept per request, so a refinement can be read in context.
-- `result-<id>.assessments.json` — **stage one**, written first: the lede and the
-  four assessments. No recommendation.
-- `result-<id>.json` — **stage two**, written after: the verdict. The endpoint
-  refuses to serve it unless stage one is already on disk.
+  Its `assessments` array is the **manifest**: what this run is composed of.
+- `result-<id>.assessments/<assessmentId>.json` — one file per assessment. Written
+  concurrently, in any order.
+- `result-<id>.json` — the verdict, written **after every assessment has landed**.
 
-## Two stages, in that order
+## Work the assessments at the same time
 
-A report is written as **two files**, and the order is enforced rather than assumed.
+The assessments are independent of each other. None of them reads another's
+output, each has its own brief and its own scoped insights, and the report is
+laid out by the manifest rather than by the order they finish in. So they are
+**not** written one after another — that was six minutes of waiting for work that
+had no reason to queue.
 
-1. Write `result-<id>.assessments.json` — `{ by, used, sections }` covering
-   `description` and the four assessments. A `recommendation` section here is
-   rejected. The UI renders these immediately, with the recommendation step still
-   spinning: the reader watches the argument land before the conclusion.
+**Fan out. One subagent per assessment, all dispatched together.** Give each one
+the shared brief in `prompt`, its own `instructions` from the manifest, and the
+insights. It writes exactly one file:
 
-   **Write it one section at a time**, rewriting the file with each new section
-   appended. The thinking steps tick over from what is on disk, so writing all
-   five at once shows nothing happening and then everything at once. Incremental
-   writing is not decoration — it is the only reason the progress shown is real.
-2. Then write `result-<id>.json` — `{ headline, recommendation, followUps }`.
+```
+analysis/result-<id>.assessments/<assessmentId>.json
+```
+
+```json
+{
+  "by": "claude-code-session",
+  "assessmentId": "skill-kyb-3",
+  "name": "Sanctions and PEP screening",
+  "used": ["watchlist", "politically_exposed_persons"],
+  "section": { "id": "skill-kyb-3", "body": [ ... ], "gaps": [ ... ] }
+}
+```
+
+`assessmentId` and `section.id` must both be the manifest's id — that is how the
+file is matched to the assessment that asked for it, and a mismatch is rejected
+naming both. `used` is unioned across the files; `name` becomes the heading.
+
+Each one appears on screen the moment it lands, and its own step goes green. A
+slow assessment holds only its own row. The progress you watch is not a
+presentation of the order you chose — it is which files exist.
+
+Writing a file is not atomic and the UI polls every 1.2 seconds, so it **will**
+sometimes read one mid-flush. That is treated as "not here yet" and waited out,
+not as an error. Do not try to avoid it.
+
+## Then, and only then, the verdict
+
+Once **every** assessment on the manifest is on disk, read what you actually
+wrote and write `result-<id>.json` — `{ headline, recommendation, followUps }`.
 
 Two checks hold you to it:
 
-- Stage two alone returns nothing. Without stage one there is no report.
+- **A verdict with an assessment still missing is refused, naming it.** Not
+  "written early" — refused. A recommendation resting on a file that is quietly
+  short a section is the failure this product exists to prevent.
 - **Every insight the verdict cites must already appear in an assessment**, in
   `recommendation` and in every `followUp`. A conclusion reaching past its own
   argument is a 422 naming the ids, not a rendered report. Sequence alone would
   prove little — you could write the verdict off the record and merely save it
   second. This is what makes the recommendation a reading *of* the assessments.
 
-Write them in that order for real. Do the assessments, read what you wrote, then
-decide. If the verdict you reach is not supported by the assessments you wrote,
-the assessments were wrong — go back and fix them, rather than widening the
-verdict's citations to fit.
+Read them before you decide. If the verdict you reach is not supported by the
+assessments you wrote, the assessments were wrong — go back and fix them, rather
+than widening the verdict's citations to fit.
+
+## The lede is not part of this
+
+`analysis/lede-<businessId>.json` is authored once per business and served from
+`/api/lede`. It is keyed on the business, not the run, so **a re-run does not
+rewrite it** — the same business reads the same way every time.
+
+It waits on nothing and nothing waits on it. When the console asks for one, write
+it alongside the assessments rather than after them. An assessment cannot reach
+it, which is the point: an instruction added to one ("say HELLO at the top") used
+to rewrite the first paragraph of the page.
 
 ## The job
 
@@ -54,9 +94,14 @@ financial institution opening a business bank account**.
 It reads in three movements: **what the business is**, **what we think**, then
 **why we think it**. The recommendation sits second, above the assessments it rests
 on — an analyst wants the call before the working, and reads the assessments when
-they want to disagree with it. Between them the assessments must cover whether a
-legally registered entity exists and is active, whether it is actually operating,
-who is behind it, and whether anything screens adversely.
+they want to disagree with it.
+
+The assessments are **the stages an account-opening file is actually built from**,
+not the shape of the record we happen to hold: customer identification, beneficial
+ownership and control, the nature and purpose of the account, sanctions and
+screening, and adverse information and financial standing. Written in that order the
+report is the file, in the sequence a reviewer works it — which is the point of
+structuring it this way rather than by where the data came from.
 
 The headline is the account-opening answer, not a summary of the record. It is
 printed as the first line of `recommendation`, which the reader reaches second. Do
@@ -70,55 +115,81 @@ Attachments, when present, are listed in `attachments[]` with a `path` — read 
 off disk. They are evidence, not insights: say when something comes from a document
 rather than from the record.
 
-## The result shape
+## The shapes
+
+One assessment — `result-<id>.assessments/<assessmentId>.json`:
 
 ```json
 {
   "by": "claude-code-session",
-  "used": ["name", "sos_domestic", "location_frequency:moderate"],
+  "assessmentId": "skill-kyb-identification",
+  "name": "Customer identification",
+  "used": ["name", "entity_type", "sos_domestic"],
+  "section": {
+    "id": "skill-kyb-identification",
+    "body": [
+      { "text": "What the record establishes about the entity.", "cites": ["name"] },
+      { "text": "An expected filing was searched for and not found." }
+    ],
+    "gaps": [
+      { "id": "domestic_standing", "point": "Whether it is in good standing", "why": "not_published" }
+    ]
+  }
+}
+```
+
+The verdict — `result-<id>.json`, written once every assessment has landed:
+
+```json
+{
   "headline": "One sentence answering the question asked — printed as the first line of `recommendation`.",
-  "sections": [
-    {
-      "id": "description",
-      "body": [{ "text": "What this business is, in plain terms.", "cites": ["name"] }]
-    },
-    {
-      "id": "identity",
-      "body": [
-        { "text": "What the record establishes about the entity." },
-        { "text": "An expected filing was searched for and not found." }
-      ],
-      "gaps": [{ "point": "Whether it is in good standing", "why": "not_published" }]
-    }
-  ],
+  "recommendation": {
+    "id": "recommendation",
+    "body": [{ "text": "What the call rests on.", "cites": ["sos_domestic"] }]
+  },
   "followUps": [
-    { "text": "The thing that most needs doing.", "cites": ["liens"] },
+    { "text": "The thing that most needs doing.", "cites": ["liens"], "closes": ["lien_detail"] },
     { "text": "The next thing." }
   ]
 }
 ```
 
-### The six sections
+### The sections
 
-A `report` is written as the same six sections every time, so two businesses can be
-read against each other and an analyst knows where to look. Write them under these
-ids; the UI supplies the headings and fixes the order — description, recommendation,
-then the four assessments — so the order you write them in does not matter. **Omit a section you have nothing for** — an empty one is worse
-than none.
+**The sections are the manifest.** A report contains one section per assessment
+the customer composed, under that assessment's id, plus the `recommendation`.
+There is no fixed list any more: the report's shape is whatever they built, in the
+order they built it, so an assessment they wrote renders instead of having to be
+folded into a standing heading that half fits.
+
+The UI supplies the headings, from the assessment's `name`, and fixes the order
+from the manifest — so the order they *finish* in does not matter, which is what
+lets them run at once. **Omit nothing.** Every assessment on the manifest must
+produce a file; one that has nothing to say says that, in prose, and the run is
+refused if it never lands at all.
+
+Two ids are the runner's and no assessment may claim them:
 
 | `id` | What goes in it |
 |---|---|
-| `description` | **The lede.** Renders with no heading, above everything. **What the business does or is — nothing else.** Line of work, who it serves, roughly how big, how long it has been going. See the ban list below. |
-| `recommendation` | **Second, above the assessments.** The decision and what it rests on. `headline` is printed as its first line, so the prose here must carry the argument rather than restate that sentence; `followUps` render beneath it as a bulleted list. |
-| `identity` | Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one. |
-| `ownership` | Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach. |
-| `activity` | Whether it is actually operating — address, website, connections, the shape of the footprint. |
-| `compliance` | Watchlist, PEP, adverse media, liens, litigation, bankruptcy, industry. |
+| `recommendation` | **Last, where it is reached.** Whether to onboard, and what that rests on. `headline` is printed as its first line, so the prose here must carry the argument rather than restate that sentence; `followUps` render beneath it as a bulleted list. Written after every assessment has landed. |
+| `answer` | A typed follow-up, answered on its own terms. Renders with no heading, beneath the headline. |
+
+`description` is **gone**. The lede is not a section of a run — it is authored per
+business and served from `/api/lede`, and a `description` section written here
+renders nowhere at all.
+
+**Write each stage as a stage of the file, not a category of data.** The question a
+stage answers is "is this part of the onboarding file complete, and what is it
+missing" — so a stage that is satisfied says so, and a stage that is waiting on a
+document or an order says which. That is what makes the report handable to a reviewer
+as it stands. The judging still belongs to `recommendation`: a stage says what is
+present and what is outstanding, not whether the outcome is acceptable.
 
 A `question` does **not** use these. Answer it on its own terms in one section with
 `"id": "answer"` — it renders with no heading, beneath the headline, which leads
 because there is no recommendation for it to land in. Forcing a follow-up through six
-standing headings is filing, not answering.
+the workflow's headings is filing, not answering.
 
 `used` ids must round-trip **exactly**, including the `location_frequency:<band>`
 fan-out. An id that matches no row is dropped from the sources roll-up and reported
@@ -158,6 +229,26 @@ was asked.
 
 **Absence is not a finding.** Three of the four reasons above are gaps in our data or
 facts about the world. Never treat them as evidence against the business.
+
+**This is the lede.** Write to it.
+
+> Kairos Physio is a boutique concierge physical therapy studio on Madison Avenue in
+> NYC's Upper East Side. Founded by Dr. Joshua Gee, it blends orthopedic rehab with
+> strength training in one-on-one sessions led entirely by Doctors of Physical
+> Therapy, and also offers clinician-led personal training at premium pricing.
+
+A short, plain description of what the business is. Written for someone who has never
+heard of it, in the words they would use — not for a reviewer, and not against a
+policy. Two or three sentences.
+
+It leads with the **registered business identity name, in full, exactly as it appears on
+the filing** — not a trading name, not a shortened form. A trading name may follow if the
+business is known by a different one. Then: what kind of business it is and where, who
+founded it, and what it actually sells and who for. Nothing in it is there to support a
+decision; it is there so the reader knows what company they are looking at.
+
+Plain language throughout. No compliance framing, no risk vocabulary, and nothing about
+revenue models or customer funds.
 
 **The lede describes the business, not the file.** It answers "what is this
 company?" for someone who has never heard of it, so that everything below has
@@ -214,6 +305,32 @@ writing from memory. Three rules hold absolutely:
 - Nothing outside the lede may carry `sources`. An assessment cites insights, or it
   says nothing.
 
+**Name the entity as it is registered.** The entity type in the report is the one the filing
+carries, not the one the `entity_type` field buckets it into. `KAIROS PHYSICAL THERAPY PLLC` is a
+PLLC; the field reads `LLC` because the API's taxonomy has no narrower value, and that is the
+taxonomy's granularity rather than a second account of what the business is. Write PLLC.
+
+Do **not** file the difference as a discrepancy, a gap, or a follow-up telling anyone to go and
+resolve it. There is nothing to resolve: the name is the entity's own legal name. Narrating the
+field at the reader is worse than useless — they do not need the plumbing, and it reads as doubt
+about a fact that is not in doubt.
+
+**A PLLC is a licensed professional practice organised as an LLC** — a physician or clinician
+practice, most often. That carries consequences a plain LLC does not, and they belong in the report
+because the form itself establishes them:
+
+- Membership is restricted by statute to individuals licensed in the profession practised, so the
+  set of people who may lawfully own it is narrower than for an ordinary LLC.
+- The beneficial ownership certification therefore has to evidence each member's **licence**, not
+  only their identity and percentage.
+- The line of work is licensed activity, which is a fact about the form and not an inference about
+  the company.
+
+This matters beyond the prose. A policy keyed on `entity_type` sees `LLC` and will never route a
+professional practice down a licensed-ownership path — the only thing carrying the distinction is
+the name suffix. Where the form bears on what the policy should ask for, say so in the assessment
+that owns it.
+
 **Do not invent facts.** Everywhere else, work only from the insights in the request. If something the
 question asked about is not covered, that is a `no_insight_covers_it` entry naming the
 check that would answer it — not a guess.
@@ -227,12 +344,17 @@ is a legitimate finding. Silently ignoring one is the failure mode.
 for a sole proprietor; a registered-agent address is ordinary for a Delaware
 corporation.
 
-**Keep the recommendation to one paragraph.** The four assessments below carry the
+**Keep the recommendation to one paragraph.** The assessments above carry the
 evidence. Re-stating what the registries, the officer match and the website each
 showed says the same thing twice, at length, in the section least able to act on it.
 
-The paragraph has one job: name what is still open **against the customer's policy**,
-and frame the steps that close it. **Point at the assessments rather than repeat
+The paragraph has one job: say **whether to onboard**, name what is still open
+**against the customer's policy**, and frame the steps that close it. The decision is
+one of three — onboard, onboard subject to named conditions, or do not onboard — and
+the headline states which. Sort the open items by what kind of thing each is: an
+order, a document to collect from the customer, a finding to read before anyone can
+weigh it, or a policy decision the bank makes about itself rather than about this
+record. **Point at the assessments rather than repeat
 them** — "the unsized liens in Compliance" tells a reader where to look and costs six
 words; re-arguing the finding costs four sentences and adds nothing they cannot
 already see. Say what kind of thing each open item is: an order, a decision about

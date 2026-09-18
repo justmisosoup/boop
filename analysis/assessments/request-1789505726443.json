@@ -1,0 +1,44 @@
+{
+  "id": "1789505726443",
+  "requestedAt": "2026-09-15T20:55:26.443Z",
+  "assessmentId": "ownership",
+  "definitionVersion": 1,
+  "name": "Ownership",
+  "prompt": "Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach.",
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "insights": [
+    {
+      "id": "web_person_verification",
+      "statement": "Website match for submitted person could not be determined",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted person",
+      "evidence": [
+        "Registrations on file: 5"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "Related businesses share officers, agents or addresses",
+      "state": "result",
+      "because": "17 connections found",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Officer match for submitted person on state registrations",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    }
+  ]
+}

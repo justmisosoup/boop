@@ -1,37 +1,48 @@
 {
-  "headline": "Identity, control and operating status are answered. The file turns on two open items: the unsized liens, and whether a beneficial-ownership determination is required at all.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "Two things are open against the policy: the unsized liens and litigation in Compliance, and the beneficial-ownership determination in Ownership that this record cannot produce at any price. The steps below close the file — the first is an order, the second a decision about what the policy will accept, and nothing else is blocking.",
-        "cites": ["liens", "person_verification"]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Order the lien and litigation detail — amounts, dates, and whether satisfied.",
-      "cites": ["liens", "litigations"],
-      "closes": ["lien_detail"]
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
+      "closes": [
+        "act_licence",
+        "own_beneficial_owners"
+      ]
     },
     {
-      "text": "Settle whether the policy's beneficial-ownership requirement can be waived; no order will answer it.",
-      "closes": ["ownership"]
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
+      "closes": [
+        "act_licence"
+      ]
     },
     {
-      "text": "Note the adverse-media matches as dismissed name collisions so a later reviewer does not re-open them as hits.",
-      "cites": ["adverse_media"]
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
+      "closes": [
+        "comp_unscreened_owners"
+      ]
     },
     {
-      "text": "If good standing is gating, request the certificate — Delaware publishes no sub-status.",
-      "cites": ["sos_domestic_sub_status"],
-      "closes": ["good_standing"]
-    },
-    {
-      "text": "Re-run the registration search to clear the Delaware and New Jersey filings that returned no status.",
-      "cites": ["sos_domestic", "sos_unknown"],
-      "closes": ["unresolved_filings"]
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
+      "closes": [
+        "own_connected_entities"
+      ],
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
+      ]
     }
   ]
 }

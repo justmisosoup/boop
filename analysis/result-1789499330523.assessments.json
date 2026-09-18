@@ -1,0 +1,101 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "address_deliverability",
+    "address_property_type",
+    "address_proximity",
+    "location_frequency:high",
+    "location_frequency:low",
+    "sos_match",
+    "sos_active",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "entity_type_agreement",
+    "business_connections",
+    "watchlist"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "The Mala Market is a small direct-to-consumer retailer of Chinese pantry ingredients — Sichuan peppercorns, chilli broad bean paste, vinegars and oils — sold online to home cooks in the United States. Revenue comes from retail orders rather than wholesale or contract, so the business takes consumer card payments and holds imported inventory. It has been registered in Tennessee since 2017."
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "body": [
+        {
+          "text": "A Tennessee limited liability company exists, is active, and is in good standing. The state publishes a good-standing sub-status and it is affirmative, which is more than most states return.",
+          "cites": ["sos_active", "sos_domestic", "sos_domestic_sub_status", "sos_match"]
+        },
+        {
+          "text": "The entity type on the filing agrees with the one submitted, across the single registration on file.",
+          "cites": ["entity_type_agreement"]
+        },
+        {
+          "text": "Neither the submitted name nor the submitted address resolves cleanly onto that filing. The name is a similar match rather than an exact one, and the submitted office address does not match an address on any state registration. Both are findings about the submitted details, not about whether the company is registered — the registration itself is unambiguous.",
+          "cites": ["name", "address_verification"]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "Nothing in this record reaches a control person. No officer or beneficial-owner check ran against it, so the file is silent on who is behind the company rather than saying the question was asked and came back empty."
+        }
+      ],
+      "gaps": [
+        {
+          "id": "control_persons",
+          "point": "Who controls The Mala Market",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "An officers pull from the Tennessee filing, or a submitted control person to verify against. Tennessee publishes officers for an LLC; we do not hold them for this record.",
+          "cites": ["sos_domestic"]
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "body": [
+        {
+          "text": "The submitted address is deliverable and is a commercial property; two of the three addresses on the record are commercial. Two sit more than a fifth of a mile from the submitted address, so the footprint is spread across several locations rather than concentrated at one.",
+          "cites": ["address_deliverability", "address_property_type", "address_proximity"]
+        },
+        {
+          "text": "One of those addresses is shared with 101 or more other businesses; the other two are shared with between one and twenty. One related business shares officers, agents or an address with this one.",
+          "cites": ["location_frequency:high", "location_frequency:low", "business_connections"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "web_presence",
+          "point": "Whether the storefront the business actually trades through is live",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "No website, domain or online-profile check ran against this record. For a business whose revenue is online retail, that is the most direct evidence of operating that could be obtained."
+        }
+      ]
+    },
+    {
+      "id": "compliance",
+      "body": [
+        {
+          "text": "Watchlist screening ran and returned no hits.",
+          "cites": ["watchlist"]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "screening_scope",
+          "point": "Adverse media, politically exposed persons, liens, litigation and bankruptcy",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "Only the watchlist check ran. The others were not ordered for this record, so their silence carries no information either way."
+        }
+      ]
+    }
+  ]
+}

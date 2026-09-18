@@ -1,68 +1,47 @@
 {
-  "headline": "Open the account, subject to beneficial ownership certification from the customer and a read of the ten litigation matters \u2014 the entity verifies cleanly and nothing screens adversely.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "Nothing on this record argues against the relationship, and the numbers that look worst on their face are accounted for below rather than left standing: the ten-thousand-business address and the seventeen connections are read in Activity and Ownership as the ordinary shape of a Delaware corporation carrying four foreign qualifications. What is open falls into three kinds. One is a requirement this record cannot satisfy at any price \u2014 beneficial ownership is outside what an order returns, so the certification has to be collected from the customer, and for an account opening that is the item that actually gates the file. One is a document request with a known answer: Delaware publishes no domestic status or good-standing sub-status through this channel, so a certificate from the customer is the only route to the gap named in Identity. The rest are orders against filings the record counts but does not carry \u2014 the open lien in Compliance, and the ten litigation matters beside it, which are the one open item capable of changing the answer above rather than merely documenting it.",
-        "cites": [
-          "location_frequency:high",
-          "business_connections",
-          "entity_type_foreign",
-          "sos_domestic_sub_status",
-          "liens",
-          "litigations"
-        ]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Collect a beneficial ownership certification from the customer, naming every individual at or above the policy's control and equity thresholds.",
-      "cites": [
-        "person_verification"
-      ],
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
       "closes": [
-        "beneficial_ownership"
+        "act_licence",
+        "own_beneficial_owners"
       ]
     },
     {
-      "text": "Pull the ten litigation dockets and confirm they are ordinary commercial matters rather than allegations bearing on the conduct of the business.",
-      "cites": [
-        "litigations"
-      ],
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
       "closes": [
-        "litigation_detail"
+        "act_licence"
       ]
     },
     {
-      "text": "Request a Delaware Certificate of Good Standing, since no order will return the domestic status.",
-      "cites": [
-        "sos_domestic",
-        "sos_domestic_sub_status"
-      ],
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
       "closes": [
-        "domestic_status"
+        "comp_unscreened_owners"
       ]
     },
     {
-      "text": "Pull the open lien filing to establish the secured party, the amount and what it secures.",
-      "cites": [
-        "liens"
-      ],
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
       "closes": [
-        "lien_detail"
-      ]
-    },
-    {
-      "text": "Identify which of the nine addresses are registered-agent offices, which separates the seventeen connections into agent overlap and genuine affiliates.",
-      "cites": [
-        "location_frequency:high",
-        "business_connections"
+        "own_connected_entities"
       ],
-      "closes": [
-        "agent_addresses",
-        "connection_detail"
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
       ]
     }
   ]

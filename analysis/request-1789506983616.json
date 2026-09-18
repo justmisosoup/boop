@@ -1,0 +1,14 @@
+{
+  "id": "1789506983616",
+  "requestedAt": "2026-09-15T21:16:23.616Z",
+  "kind": "report",
+  "derivedFrom": "1789506908947",
+  "replacedSection": "identity",
+  "definitionVersion": 4,
+  "business": {
+    "name": "Middesk Inc"
+  },
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "prompt": "Report re-derived after an assessment was edited.",
+  "insights": []
+}

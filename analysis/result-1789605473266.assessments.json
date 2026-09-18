@@ -1,0 +1,199 @@
+{
+  "by": "claude-code-session",
+  "used": [
+    "name",
+    "address_verification",
+    "entity_type",
+    "tin",
+    "sos_active",
+    "sos_match",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic",
+    "sos_domestic_sub_status",
+    "person_verification",
+    "business_connections",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:low",
+    "location_frequency:moderate",
+    "location_frequency:high",
+    "website_status",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "web_email_address_verification",
+    "profile_discovery",
+    "profile_status",
+    "industry",
+    "risky_keywords",
+    "web_person_verification",
+    "watchlist",
+    "politically_exposed_persons",
+    "liens",
+    "litigations",
+    "adverse_media",
+    "bankruptcies"
+  ],
+  "sections": [
+    {
+      "id": "description",
+      "body": [
+        {
+          "text": "Middesk sells business identity infrastructure to regulated financial institutions \u2014 banks, lenders and fintech platforms that have to verify a business customer before opening an account or extending credit. It pulls filings from state and federal registries behind an API, and sells verification, ongoing monitoring and agent-assisted state registration on top of that data. Revenue is subscription and per-verification fees from those institutions."
+        }
+      ]
+    },
+    {
+      "id": "identification",
+      "body": [
+        {
+          "text": "This stage is satisfied, and from four directions rather than three. The submitted name matches the state registrations, the submitted office address matches an address carried on a registration, the entity type reads as a corporation against the domestic filing, and the IRS holds a record for the submitted TIN and business name together. The TIN pairing is the strongest of the four, because it is the one handle an applicant cannot assert into existence.",
+          "cites": [
+            "name",
+            "address_verification",
+            "entity_type",
+            "tin"
+          ]
+        },
+        {
+          "text": "Registration standing is the part still open, and it is open because of what the states publish rather than anything on the record. Five filings sit here: two active \u2014 including the one in the state of the submitted office address \u2014 one inactive, and two returning no status. For a company that registers where it does business a mixed picture across five states is ordinary. The filing that cannot be read is the domestic one: the state of formation returns no status and publishes no good-standing sub-status, so the registration a reviewer would most want evidenced is the one no order produces.",
+          "cites": [
+            "sos_active",
+            "sos_match",
+            "sos_inactive",
+            "sos_unknown",
+            "sos_domestic",
+            "sos_domestic_sub_status"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "formation_standing",
+          "point": "Whether the domestic registration is active and in good standing",
+          "why": "not_published",
+          "wouldAnswer": "The state publishes neither a status nor a good-standing sub-status through this channel. A Certificate of Good Standing from the customer is the only route.",
+          "cites": [
+            "sos_domestic",
+            "sos_domestic_sub_status"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "body": [
+        {
+          "text": "The rule asks for two kinds of person \u2014 the natural persons owning 25 percent or more, and at least one with significant control \u2014 and the record reaches only the second. A submitted person matches an officer named on the state registrations, which establishes a control person against a public filing rather than against the applicant's own word. Ownership percentages are published nowhere the record can read, so they arrive as a customer certification or not at all.",
+          "cites": [
+            "person_verification"
+          ]
+        },
+        {
+          "text": "Twenty related businesses share officers, agents or addresses with this one. For a company registered in five states that is the footprint of founders and registered agents across several entities rather than a finding in itself, but it is the list to read before a certification is accepted rather than after.",
+          "cites": [
+            "business_connections"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "beneficial_ownership",
+          "point": "The natural persons who own 25 percent or more, as distinct from the officer already matched",
+          "why": "no_insight_covers_it",
+          "wouldAnswer": "Officers are published and matched; ownership percentages are not published anywhere the catalog reaches. A signed certification naming each owner, screened as the submitted person was, closes it.",
+          "cites": [
+            "person_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "body": [
+        {
+          "text": "The physical side holds and the web side now corroborates it. The submitted office address is deliverable and commercial, and the address footprint reads as registered-agent offices rather than concentration: three addresses shared with twenty or fewer businesses, one with twenty-one to a hundred, five with more than a hundred \u2014 the signature of registering in five states. The submitted website was online when the record was ordered and the domain is held with high confidence by this business; against that site the submitted business name, office address and email address were each verified, and the third-party profiles submitted are all online.",
+          "cites": [
+            "address_deliverability",
+            "address_property_type",
+            "location_frequency:low",
+            "location_frequency:moderate",
+            "location_frequency:high",
+            "website_status",
+            "website_url_domain_ownership",
+            "web_business_name_verification",
+            "web_address_verification",
+            "web_email_address_verification",
+            "profile_discovery",
+            "profile_status"
+          ]
+        },
+        {
+          "text": "The line of work classifies as one that does not carry elevated risk and no risky keywords were found, which for business-verification software sold to regulated institutions is what a reviewer would expect. What the web checks did not corroborate is the person: the submitted individual matched an officer on the filings but not the business's own site.",
+          "cites": [
+            "industry",
+            "risky_keywords",
+            "web_person_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screening",
+      "body": [
+        {
+          "text": "The stage runs and clears: no watchlist hits, and no politically exposed persons among the submitted individuals or their relatives and close associates. It will need re-running against whoever the ownership certification discloses, since it has so far covered the people the applicant named rather than everyone who owns the company.",
+          "cites": [
+            "watchlist",
+            "politically_exposed_persons"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adverse",
+      "body": [
+        {
+          "text": "The lien picture is now readable in full, and most of it is closed. Ten UCC filings sit on the record: five Idaho state tax liens, all closed; two further closed filings in New Jersey and one in California where the business appears as both debtor and secured party. Two remain open \u2014 one filed in New Jersey in 2023 by a receivables firm, naming an unrelated property company as co-debtor, and one filed in Virginia within the past three months whose secured party is a brewing company. Neither open filing states an amount or collateral.",
+          "cites": [
+            "liens"
+          ]
+        },
+        {
+          "text": "The ten litigations read the same way once the documents are in hand. Nine are closed cases in a single Georgia circuit court, each with four to six parties and a recurring individual across them; one is an open New York foreclosure in which the business is named among fifteen defendants alongside the city's transit, environmental and criminal courts. None of the ten is a matter the business brought or one in which it is the principal defendant.",
+          "cites": [
+            "litigations"
+          ]
+        },
+        {
+          "text": "Adverse media returned one or more high risk sources. That is the one item here the record scores without characterising, and it is the only one of the three that has not been resolved by reading the underlying filings. There are no bankruptcy filings.",
+          "cites": [
+            "adverse_media",
+            "bankruptcies"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "adverse_media_source",
+          "point": "What the high risk adverse media source says, and whether it concerns this business",
+          "why": "not_held_or_unreachable",
+          "wouldAnswer": "The record carries the score and not the article. The source is what decides whether this is a name collision of the kind the liens and litigation turned out to be.",
+          "cites": [
+            "adverse_media"
+          ]
+        },
+        {
+          "id": "open_lien_terms",
+          "point": "What the two open UCC filings secure, and their amounts",
+          "why": "not_published",
+          "wouldAnswer": "Neither filing office states collateral or a sum on the filing itself. The secured parties would, on request.",
+          "cites": [
+            "liens"
+          ]
+        }
+      ]
+    }
+  ]
+}

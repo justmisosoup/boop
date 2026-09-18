@@ -43,7 +43,26 @@ export type AnalysisRequest = {
    * first thing on the screen. `question` is a follow-up the user typed.
    */
   kind: 'report' | 'question'
+  /**
+   * The workflow's own brief, the context it is read against, and anything the
+   * user typed. NOT the assessments — those are `assessments` below, one item
+   * each, so they can be worked at the same time rather than read out of one
+   * flattened string.
+   */
   prompt: string
+  /**
+   * Every assessment this run is composed of, in the order the customer composed
+   * them. One work unit each: they are independent, they are worked concurrently,
+   * and each writes its own file.
+   *
+   * This is also the manifest the run is judged complete against. Without it the
+   * endpoint cannot tell "still working" from "never wrote it", and a
+   * recommendation could be served against a report missing a section nobody
+   * noticed was absent.
+   *
+   * Empty for a `question`, which is answered as one `answer` section.
+   */
+  assessments: Array<{ id: string; name: string; instructions: string }>
   /**
    * EVERY insight on the record. The session picks from these — it cannot pick
    * what it was not given.
@@ -81,24 +100,25 @@ export type CouldNotConfirmReason =
   | 'no_insight_covers_it' // nothing in the catalog speaks to it
 
 /**
- * The standing report's shape. The assessment is not one prose blob: it is the
- * same six sections every time, so two businesses can be read against each other
- * and a reader knows where to look. `answer` is the exception — a follow-up
- * question is answered on its own terms, not forced through six headings.
+ * A section id is the id of the assessment that wrote it.
  *
- * `description` is the lede, not a peer: it renders without a heading, above
- * everything, and it does not judge — it says what the business is so the four
- * assessments beneath it have something to be about. `recommendation` is where
- * the judging happens, and where the headline is stated.
+ * It used to be a closed union of six standing ids, which meant the report could
+ * only ever contain what was compiled into it — an assessment the customer wrote
+ * had nowhere to land, and `Licensing and regulatory fit` rendered nowhere. The
+ * report's shape is now the workflow's: whatever the customer composed, in the
+ * order they composed it.
+ *
+ * Two ids are reserved and never belong to an assessment:
+ *
+ * - `recommendation` — stage two, the only part that judges, written after every
+ *   assessment has landed.
+ * - `answer` — a typed follow-up, answered on its own terms rather than forced
+ *   through the workflow's headings.
  */
-export type AssessmentSectionId =
-  | 'description'
-  | 'identity'
-  | 'ownership'
-  | 'activity'
-  | 'compliance'
-  | 'recommendation'
-  | 'answer'
+export type AssessmentSectionId = string
+
+/** Ids the runner owns. An assessment may not claim one. */
+export const RESERVED_SECTION_IDS = ['recommendation', 'answer'] as const
 
 export type AssessmentSection = {
   id: AssessmentSectionId
@@ -157,14 +177,32 @@ export type AssessmentSection = {
 }
 
 /**
- * Stage one: the assessments, written before any verdict exists.
+ * One assessment, on its own, as it is written to disk.
  *
- * This is a separate file on disk, and the endpoint will not serve a
- * recommendation until it is there. That is what makes "assessments, then
- * recommendation" a fact about the run rather than a claim in a progress list —
- * the two cannot be written in the other order, and the UI renders the
- * assessments while the recommendation is still outstanding, so a reader sees
- * the sequence happen.
+ * One file per assessment — `result-<id>.assessments/<assessmentId>.json` — so
+ * that several can be written at the same time. They used to share a single file
+ * rewritten whole on each append, which meant two writers clobbered each other
+ * and a reader could catch it mid-write.
+ */
+export type AssessmentFile = {
+  by: 'claude-code-session'
+  assessmentId: string
+  /** The assessment's name at the time it ran, used as the section heading. */
+  name: string
+  /** Insight ids this assessment rests on. Unioned across all of them. */
+  used: string[]
+  section: AssessmentSection
+}
+
+/**
+ * Stage one: every assessment, merged.
+ *
+ * Assembled by the endpoint from the per-assessment files rather than written as
+ * one thing. The endpoint will not serve a recommendation until every assessment
+ * on the request's manifest has landed — that is what makes "assessments, then
+ * recommendation" a fact about the run rather than a claim in a progress list.
+ * The UI renders them as they arrive, so a reader watches the argument land
+ * before the conclusion.
  *
  * It never contains a `recommendation` section. That is stage two.
  */
@@ -201,6 +239,15 @@ export type AnalysisVerdict = {
     cites?: string[]
     /** Gap ids this step closes. Validated against the assessments. */
     closes?: string[]
+    /**
+     * Named things the step acts on — the entities to run it against.
+     *
+     * A follow-up that says "establish who is behind the connected businesses"
+     * is not actionable until it names them. These come from a source the
+     * assessments do not carry (the connections endpoint names what the review
+     * task only counts), so they ride on the step rather than being cited.
+     */
+    entities?: Array<{ name: string; note?: string }>
   }>
 }
 

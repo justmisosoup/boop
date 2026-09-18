@@ -1,54 +1,47 @@
 {
-  "headline": "Clean file with one thing to clear: the practice trades as Kairos Physio without a matching DBA filing, and control rests on the website rather than the registry.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "Two things are open against the policy: the unregistered trading name in Business identity, and control evidence that Ownership can only take as far as a website match, because New York publishes no members for a PLLC. Neither is adverse — screening is clean and the entity is active — but both are name-and-control checks a KYB policy usually gates on, and the steps below close them with the customer rather than with an order.",
-        "cites": [
-          "dba_name",
-          "person_verification"
-        ]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Ask the customer for the assumed-name filing for \"Kairos Physio\", or confirm they trade only under the legal name.",
-      "cites": [
-        "dba_name"
-      ]
-    },
-    {
-      "text": "Establish who owns the practice from the customer directly — New York publishes no members for a PLLC, so no order reaches it, and the control person named on the website is not necessarily an owner.",
-      "cites": [
-        "person_verification",
-        "web_person_verification"
-      ],
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
       "closes": [
-        "ownership"
+        "act_licence",
+        "own_beneficial_owners"
       ]
     },
     {
-      "text": "Verify the control person against a document rather than the website.",
-      "cites": [
-        "person_verification",
-        "web_person_verification"
-      ]
-    },
-    {
-      "text": "Decide whether professional licensure needs checking separately; this record does not cover it.",
-      "cites": [
-        "industry"
-      ]
-    },
-    {
-      "text": "If good standing is gating, request the certificate — New York publishes no sub-status.",
-      "cites": [
-        "sos_domestic_sub_status"
-      ],
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
       "closes": [
-        "good_standing"
+        "act_licence"
+      ]
+    },
+    {
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
+      "closes": [
+        "comp_unscreened_owners"
+      ]
+    },
+    {
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
+      "closes": [
+        "own_connected_entities"
+      ],
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
       ]
     }
   ]

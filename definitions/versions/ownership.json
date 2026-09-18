@@ -1,0 +1,34 @@
+{
+  "_comment": "The 5 most recent versions of this assessment. Older ones were deleted and are not recoverable.",
+  "versions": [
+    {
+      "runId": "1789508072559",
+      "assessmentId": "ownership",
+      "at": "2026-09-15T21:34:32.559Z",
+      "name": "Ownership",
+      "prompt": "Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach.",
+      "insightIds": [
+        "person_verification",
+        "web_person_verification",
+        "business_connections",
+        "politically_exposed_persons",
+        "adverse_media",
+        "watchlist"
+      ],
+      "definitionVersion": 1
+    },
+    {
+      "runId": "1789507930532",
+      "assessmentId": "ownership",
+      "at": "2026-09-15T21:32:10.532Z",
+      "name": "Ownership",
+      "prompt": "Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach.",
+      "insightIds": [
+        "person_verification",
+        "web_person_verification",
+        "business_connections"
+      ],
+      "definitionVersion": 1
+    }
+  ]
+}

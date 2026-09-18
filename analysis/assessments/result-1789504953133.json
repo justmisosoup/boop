@@ -1,0 +1,32 @@
+{
+  "section": {
+    "id": "identity",
+    "body": [
+      {
+        "text": "The submitted name matches the name on five state registrations, and the submitted address matches an address on a state registration. The applicant resolves onto real filings on both counts.",
+        "cites": ["name", "address_verification"]
+      },
+      {
+        "text": "Those five filings do not agree with each other. Two are active, one is inactive, and two carry no status at all. The filing in the state of the submitted address is among the active ones, which is the registration that most directly supports where the business says it operates.",
+        "cites": ["sos_active", "sos_inactive", "sos_unknown", "sos_match"]
+      },
+      {
+        "text": "Entity type is consistent wherever it can be read — against the domestic registration, against the four foreign registrations, and across all five together. Nothing in the filings contradicts the entity type submitted.",
+        "cites": ["entity_type", "entity_type_foreign", "entity_type_agreement"]
+      },
+      {
+        "text": "The formation state returns no status for the domestic filing, and publishes no good-standing sub-status either. That is Delaware declining to publish rather than a filing that could not be found.",
+        "cites": ["sos_domestic", "sos_domestic_sub_status"]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "domestic_standing",
+        "point": "Whether the Delaware domestic registration is in good standing",
+        "why": "not_published",
+        "wouldAnswer": "Delaware publishes neither a status nor a good-standing sub-status for the domestic filing, so no order returns one. A Certificate of Good Standing obtained from the customer is the only route.",
+        "cites": ["sos_domestic", "sos_domestic_sub_status"]
+      }
+    ]
+  }
+}

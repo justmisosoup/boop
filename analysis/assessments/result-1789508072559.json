@@ -1,0 +1,28 @@
+{
+  "section": {
+    "id": "ownership",
+    "body": [
+      {
+        "text": "A submitted person matches an officer named on the state registrations, so the record reaches a named individual attached to the entity rather than only to the filing.",
+        "cites": ["person_verification"]
+      },
+      {
+        "text": "That match could not be corroborated against the company's own website, where the check returned no determination either way. Seventeen related businesses share officers, agents or addresses with this one — a number that reflects founders and registered agents sitting across several entities, and is not by itself a finding.",
+        "cites": ["web_person_verification", "business_connections"]
+      },
+      {
+        "text": "The people the record does reach screen clean. No watchlist hits, no politically exposed persons among the submitted individuals or their relatives and close associates, and no adverse media, scored low risk. That is a statement about the officers identified, not about whoever sits behind them.",
+        "cites": ["watchlist", "politically_exposed_persons", "adverse_media"]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "beneficial_ownership",
+        "point": "Who ultimately owns the company, as distinct from who is named as an officer",
+        "why": "no_insight_covers_it",
+        "wouldAnswer": "Officers are published and matched here, and screened. Beneficial ownership is a different question and nothing in the catalog speaks to it — which also means the clean screening above cannot be read as covering the owners.",
+        "cites": ["person_verification", "politically_exposed_persons"]
+      }
+    ]
+  }
+}

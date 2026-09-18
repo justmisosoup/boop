@@ -1,0 +1,47 @@
+{
+  "_comment": "The 5 most recent versions of this assessment. Older ones were deleted and are not recoverable.",
+  "versions": [
+    {
+      "runId": "1789509184741",
+      "assessmentId": "identity",
+      "at": "2026-09-15T21:53:04.741Z",
+      "name": "Business identity",
+      "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one.",
+      "definitionVersion": 1
+    },
+    {
+      "runId": "1789509097459",
+      "assessmentId": "identity",
+      "at": "2026-09-15T21:51:37.460Z",
+      "name": "Business identity",
+      "prompt": "Is this company operational? Is it in good standing? Does the TIN resolve to it?",
+      "insightIds": [],
+      "definitionVersion": 5
+    },
+    {
+      "runId": "1789507903665",
+      "assessmentId": "identity",
+      "at": "2026-09-15T21:31:43.665Z",
+      "name": "Business identity",
+      "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one. If there is a non result for domestic sub status flag that and recommend asking for a Certificate of Good Standing.\n\nIf ",
+      "insightIds": [
+        "name",
+        "sos_active",
+        "sos_domestic_sub_status"
+      ],
+      "definitionVersion": 4
+    },
+    {
+      "runId": "1789507779603",
+      "assessmentId": "identity",
+      "at": "2026-09-15T21:29:39.603Z",
+      "name": "Business identity",
+      "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one. If there is a non result for domestic sub status flag that and recommend asking for a Certificate of Good Standing.",
+      "insightIds": [
+        "name",
+        "sos_active"
+      ],
+      "definitionVersion": 4
+    }
+  ]
+}

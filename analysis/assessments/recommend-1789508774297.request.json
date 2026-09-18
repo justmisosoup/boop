@@ -1,0 +1,226 @@
+{
+  "id": "1789508774297",
+  "requestedAt": "2026-09-15T21:46:14.297Z",
+  "assessmentId": "identity",
+  "name": "Business identity",
+  "prompt": "Is this company operational? Is it in good standing? Does the TIN resolve to it?",
+  "selected": [],
+  "candidates": [
+    {
+      "id": "web_person_verification",
+      "statement": "Website match for submitted person could not be determined",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "business_connections",
+      "statement": "Related businesses share officers, agents or addresses",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "litigations",
+      "statement": "Litigation records found",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "liens",
+      "statement": "Open liens found",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "location_frequency:high",
+      "statement": "5 addresses shared with 101 or more businesses",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "location_frequency:moderate",
+      "statement": "2 addresses shared with 21–100 businesses",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "3 addresses shared with 1–20 businesses",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "Registration status inactive in 1 state",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "sos_unknown",
+      "statement": "Registration status unknown in 2 states",
+      "group": "",
+      "state": "unknown"
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Good-standing sub-status not published by the state",
+      "group": "",
+      "state": "no_result"
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "Registration status unknown in formation state",
+      "group": "",
+      "state": "unknown"
+    },
+    {
+      "id": "name",
+      "statement": "Submitted business name matches 5 state registrations",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "address_verification",
+      "statement": "State registration match for submitted address",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "Submitted address is deliverable",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "address_property_type",
+      "statement": "7 of 9 addresses are commercial properties",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "person_verification",
+      "statement": "Officer match for submitted person on state registrations",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "sos_match",
+      "statement": "Registration status active in the submitted address state",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "sos_active",
+      "statement": "Registration status active in 2 states",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "watchlist",
+      "statement": "Watchlist screening returned no hits",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "industry",
+      "statement": "No prohibited industry identified",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "website_status",
+      "statement": "Website is reachable",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "website_url_domain_ownership",
+      "statement": "Domain registrant corroborates the business — high confidence",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "adverse_media",
+      "statement": "Adverse media screening returned no hits, scored low risk",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "bankruptcies",
+      "statement": "No bankruptcy filings found",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type classified against domestic registration",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "PEP screening returned no hits",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "profile_discovery",
+      "statement": "Third-party profile supplied by the customer",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "profile_status",
+      "statement": "Third-party profile is reachable",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "risky_keywords",
+      "statement": "No risky keywords found",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "web_address_verification",
+      "statement": "Website match for submitted address",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "web_business_name_verification",
+      "statement": "Website match for business name",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "web_email_address_verification",
+      "statement": "Website match for submitted email address",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "website_url_discovery",
+      "statement": "Website supplied by the customer",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "entity_type_foreign",
+      "statement": "Entity type classified against 4 foreign registrations",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "entity_type_agreement",
+      "statement": "Entity type classified against all 5 registrations",
+      "group": "",
+      "state": "result"
+    },
+    {
+      "id": "address_proximity",
+      "statement": "7 addresses found are over 0.2 mi from the submitted address",
+      "group": "",
+      "state": "result"
+    }
+  ]
+}

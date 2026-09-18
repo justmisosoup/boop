@@ -1,0 +1,50 @@
+{
+  "id": "1789507903665",
+  "requestedAt": "2026-09-15T21:31:43.665Z",
+  "assessmentId": "identity",
+  "definitionVersion": 4,
+  "name": "Business identity",
+  "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one. If there is a non result for domestic sub status flag that and recommend asking for a Certificate of Good Standing.\n\nIf ",
+  "insightIds": [
+    "name",
+    "sos_active",
+    "sos_domestic_sub_status"
+  ],
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "insights": [
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "Good-standing sub-status not published by the state",
+      "state": "no_result",
+      "reason": "not_published",
+      "because": "The domestic sub-status is Not Provided by State.",
+      "evidence": [
+        "Registration state: DE"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "Submitted business name matches 5 state registrations",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "Registration status active in 2 states",
+      "state": "result",
+      "because": "2 of 5 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    }
+  ]
+}

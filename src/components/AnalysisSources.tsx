@@ -16,23 +16,30 @@ import { makeGroupFor, THEME, type GroupId } from '../lib/groups'
  * the customer told us about themselves.
  */
 const AUTHORITY: Record<GroupId, number> = {
-  sos: 0,
-  registrations: 0,
+  registration: 0,
+  international_registration: 0,
   // The filing that constitutes the entity outranks the ones that qualify it.
   formation: 0,
   name: 1,
   address: 1,
   people: 1,
+  tin: 1,
+  // A federal registry stating a practitioner's credential — a government
+  // record about a person, ranked with the other public filings.
+  licenses: 1,
   liens: 2,
-  litigations: 2,
-  bankruptcies: 2,
-  watchlist: 3,
-  politically_exposed_persons: 3,
-  adverse_media: 3,
+  litigation: 2,
+  bankruptcy: 2,
+  ppp_loans: 2,
+  screening: 3,
   industry: 3,
+  complaints: 3,
+  kyc: 3,
+  operating_as_claimed: 3,
+  phone: 4,
   website: 4,
-  web: 4,
-  business_connections: 4,
+  profiles: 4,
+  connections: 4,
   other: 5
 }
 

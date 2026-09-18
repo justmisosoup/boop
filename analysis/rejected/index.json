@@ -1,0 +1,11 @@
+{
+  "_comment": "The 5 most recent rejected reports. Anything older was deleted and is not recoverable.",
+  "rejected": [
+    {
+      "id": "1789506386075",
+      "rejectedAt": "2026-09-15T21:07:05.522Z",
+      "derivedFrom": "1789431806771",
+      "replacedSection": "ownership"
+    }
+  ]
+}

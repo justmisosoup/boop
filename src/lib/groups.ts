@@ -1,41 +1,50 @@
 /**
- * Grouping, as Middesk already groups.
+ * Grouping, by subject.
  *
- * Every review task carries a `category` — name, address, sos, registrations,
- * formation, people, web, website, watchlist, liens, litigations, bankruptcies,
- * adverse_media, politically_exposed_persons, business_connections, industry.
- * That is the product's own grouping, so the prototype uses it rather than an
- * invented taxonomy sitting beside it.
+ * The catalog groups insights by what a fact is ABOUT: an address is an address
+ * whether the check was verification, CMRA, deliverability or frequency, and
+ * those are how it was found rather than what it is. The Insights tab reads the
+ * same grouping from `catalog/insights.yaml` rather than restating one here.
+ *
+ * This replaces grouping by the review task's own `category`. That column mixed
+ * two axes — `industry` and `location_frequency` are subjects, while `fraud`,
+ * `creditworthiness`, `address_risk` and `operating_status` are what a fact
+ * feeds. The second kind lives on `informs` in the catalog and never groups
+ * anything here.
  *
  * Grouping is navigational only — it helps a reader find things and nothing
  * rests on it (00-MASTER-PLAN.md, standing rule 3).
  */
+import catalog from '../data/catalog.json'
 
-/** Display order, and the label for each of Middesk's categories. */
+const SUBJECT_OF = (catalog as { subjectOf: Record<string, string> }).subjectOf
+
+/** Display order and label. Identity first, then what it does, then screening. */
 export const GROUPS = [
-  // Names, then formation. They were merged when formation held three fields
-  // off a summary object; now that it carries the domestic filing in full the
-  // two answer different questions — what the business is called, and what it
-  // legally is.
   { id: 'name', label: 'Names' },
   { id: 'formation', label: 'Formation' },
-  // The domestic filing lives under Formation; these are the qualifications —
-  // which is what the heading above them already implies, so it does not repeat
-  // the word foreign on every row beneath it.
-  { id: 'sos', label: 'Registrations' },
-  { id: 'registrations', label: 'Registrations' },
+  { id: 'registration', label: 'Registrations' },
+  // Separate from the US filings above. These answer the same questions about
+  // countries rather than states, and read together they were one
+  // undifferentiated list.
+  { id: 'international_registration', label: 'Global registrations' },
+  { id: 'tin', label: 'Tax ID' },
   { id: 'people', label: 'People' },
   { id: 'address', label: 'Addresses' },
-  { id: 'business_connections', label: 'Connections' },
+  { id: 'connections', label: 'Connections' },
   { id: 'website', label: 'Website' },
-  { id: 'web', label: 'Web presence' },
-  { id: 'industry', label: 'Industry classification' },
-  { id: 'watchlist', label: 'Watchlist' },
-  { id: 'politically_exposed_persons', label: 'Politically exposed persons' },
-  { id: 'adverse_media', label: 'Adverse media' },
+  { id: 'profiles', label: 'Third-party profiles' },
+  { id: 'phone', label: 'Phone' },
+  { id: 'industry', label: 'Industry' },
+  { id: 'licenses', label: 'Licenses' },
+  { id: 'operating_as_claimed', label: 'Operating as claimed' },
+  { id: 'screening', label: 'Screening' },
   { id: 'liens', label: 'Liens' },
-  { id: 'litigations', label: 'Litigations' },
-  { id: 'bankruptcies', label: 'Bankruptcies' },
+  { id: 'litigation', label: 'Litigation' },
+  { id: 'bankruptcy', label: 'Bankruptcy' },
+  { id: 'ppp_loans', label: 'PPP loans' },
+  { id: 'complaints', label: 'Complaints' },
+  { id: 'kyc', label: 'KYC' },
   { id: 'other', label: 'Other' }
 ] as const
 
@@ -46,59 +55,62 @@ export type GroupId = (typeof GROUPS)[number]['id']
 export const THEME: Record<GroupId, string> = {
   name: 'Names',
   formation: 'Formation',
-  sos: 'Registrations',
-  registrations: 'Registrations',
-  address: 'Addresses',
+  registration: 'Registrations',
+  international_registration: 'Global registrations',
+  tin: 'Tax ID',
   people: 'People',
-  business_connections: 'Connections',
+  address: 'Addresses',
+  connections: 'Connections',
   website: 'Website',
-  web: 'Web presence',
+  profiles: 'Profiles',
+  phone: 'Phone',
   industry: 'Industry',
-  watchlist: 'Watchlist',
-  politically_exposed_persons: 'PEP',
-  adverse_media: 'Adverse media',
+  licenses: 'Licenses',
+  operating_as_claimed: 'Operating',
+  screening: 'Screening',
   liens: 'Liens',
-  litigations: 'Litigations',
-  bankruptcies: 'Bankruptcies',
+  litigation: 'Litigation',
+  bankruptcy: 'Bankruptcy',
+  ppp_loans: 'PPP loans',
+  complaints: 'Complaints',
+  kyc: 'KYC',
   other: 'Other'
 }
 
 const KNOWN = new Set<string>(GROUPS.map((g) => g.id))
 
 /**
- * Categories that read as one heading.
+ * Checks the runtime emits that the sheet's Factual rows do not name.
  *
- * Middesk splits `website` from `web`, but as insights the split does not hold:
- * "Website is reachable" and "Third-party profile is reachable" are the same
- * question asked of two pages, and as two headings the first held a single row.
- * The Attributes tab keeps them apart — there the website's own scrape and the
- * profiles found elsewhere are different bodies of data.
+ * `industry` and `location_frequency` appear there only as signal categories,
+ * never as checks, though the API returns both as review tasks. The other three
+ * are absent entirely and are most likely on the Opinionated sheet — adverse
+ * media carries a risk score, risky keywords a flag, domain ownership a
+ * confidence. All five are real; the sheet just does not define them as facts.
  */
-const INSIGHT_ALIAS: Record<string, GroupId> = { website: 'web' }
-
-/**
- * Checks whose own key places them better than their category does.
- *
- * Middesk files every `sos_*` check under one category, from before this
- * prototype split the domestic registration out as Formation. Anything about
- * the domestic filing belongs to Formation — that filing IS the formation
- * record — and their evidence rows are already stamped `formation`, so under a
- * heading reading Foreign filings they contradicted the rows beneath them.
- */
-const INSIGHT_GROUP: Record<string, GroupId> = {
-  sos_domestic: 'formation',
-  sos_domestic_sub_status: 'formation'
+const UNDEFINED_SUBJECT: Record<string, GroupId> = {
+  industry: 'industry',
+  location_frequency: 'address',
+  adverse_media: 'screening',
+  risky_keywords: 'industry',
+  website_url_domain_ownership: 'website'
 }
 
 /**
- * The category comes from the record itself. Ids fan out
- * (`location_frequency:high`), so the lookup is on the base key.
+ * The subject comes from the catalog. Ids fan out (`location_frequency:high`),
+ * so the lookup is on the base key.
+ *
+ * Kept as a factory taking the record's category map so the call sites do not
+ * change, but the map is no longer consulted: the catalog decides.
  */
-export const makeGroupFor = (categoryByKey: Map<string, string>) => (insightId: string): GroupId => {
-  const key = insightId.split(':')[0]
-  if (INSIGHT_GROUP[key]) return INSIGHT_GROUP[key]
+export const makeGroupFor = (_categoryByKey: Map<string, string>) => (insightId: string): GroupId => {
+  // Signals are keyed `signal:<subject>:<n>` — the subject is already in the id.
+  if (insightId.startsWith('signal:')) {
+    const subject = insightId.split(':')[1]
+    return KNOWN.has(subject) ? (subject as GroupId) : 'other'
+  }
 
-  const category = categoryByKey.get(key)
-  if (!category) return 'other'
-  return INSIGHT_ALIAS[category] ?? (KNOWN.has(category) ? (category as GroupId) : 'other')
+  const key = insightId.split(':')[0]
+  const subject = SUBJECT_OF[key] ?? UNDEFINED_SUBJECT[key]
+  return subject && KNOWN.has(subject) ? (subject as GroupId) : 'other'
 }

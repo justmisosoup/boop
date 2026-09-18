@@ -10,9 +10,15 @@
  * to the insight, from the insight to its attributes, and from an attribute to
  * the source that supplied it.
  */
-import type { BusinessRecord, SourceRef } from './deriveResults'
+import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
+import { stateName } from './states'
 import { frequencyBand } from './statements'
+
+/** Cents as the filing states them. Whole dollars: a lien is never filed for
+ *  $4,500.37 and the cents column is noise beside a case number. */
+const money = (cents: number) =>
+  `$${Math.round(cents / 100).toLocaleString('en-US')}`
 
 export type AttributeRow = {
   label: string
@@ -468,7 +474,7 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       : []
 
   return [
-    ...field('Entity type', domestic?.entityType ?? record.formation.entityType),
+    ...field('Entity type', trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
     ...field('Formation state', record.formation.state),
     // The same date the domestic filing carries as its registration date; they
     // dedup to one row rather than stating it twice.
@@ -895,7 +901,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const rows = registrationRowsFor(filings.filter((r) => !domestic.includes(r)), record)
 
     return inGroup(
-      'sos',
+      'registration',
       STATUS_KEYS.has(key)
         ? rows.filter((r) => r.label === 'Status' || r.label === 'Sub status')
         : rows
@@ -1182,8 +1188,107 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     ]
   }
 
-  if (['bankruptcies', 'litigations', 'liens'].includes(key))
-    return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+  /**
+   * Court records, lien filings and bankruptcy petitions.
+   *
+   * These used to return the business name and nothing else, because the pull
+   * dropped the documents themselves — so "10 related litigations" was the
+   * whole of what the record held and there was nothing for a reader to read.
+   * Each row is now one document, carrying the source that issued it: the court
+   * that heard the case, the state office the lien is filed with. That is what
+   * puts them in the Sources tab beside the registries.
+   *
+   * The rows state what the filing says and stop there. Whether a foreclosure
+   * naming the business among fifteen defendants bears on the account is the
+   * assessment's call, not a label here.
+   */
+  if (key === 'litigations') {
+    const cases = record.litigations ?? []
+    if (cases.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+
+    return cases.map((c) => {
+      // The court is the source. Without it nine Georgia cases and one in
+      // Queens read as one undifferentiated pile of litigation.
+      const court = c.court ?? (c.courtState ? `${c.courtState} courts` : 'Court record')
+      const source = `Court record · ${court}`
+      // Money actually awarded, where a docket entry carries an amount. Most
+      // carry none, and a judgment line with no sum is a filing rather than a
+      // debt.
+      const awarded = c.judgments.reduce((n, j) => n + (j.amountCents ?? 0), 0)
+
+      return {
+        group: 'litigation' as const,
+        // The court's own "UNKNOWN" is not a case type; printed as the label it
+        // read as the finding, eight rows deep.
+        label: c.caseType && c.caseType.toUpperCase() !== 'UNKNOWN' ? c.caseType : 'Case',
+        // The side the business is on, beside the case rather than buried in a
+        // party list fifteen names long.
+        lead: c.caseNumber ?? undefined,
+        value: c.caseName ?? 'Unnamed case',
+        qualifier: [c.caseStatus, c.filingDate].filter(Boolean).join(' · ') || undefined,
+        evidenceNote: [
+          c.partyType && c.partyType !== 'UNKNOWN' ? `Business is ${c.partyType.toLowerCase()}` : undefined,
+          c.parties.length > 1 ? `${c.parties.length} parties` : undefined,
+          awarded > 0 ? `${money(awarded)} awarded` : undefined
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined,
+        source,
+        sources: [source]
+      }
+    })
+  }
+
+  if (key === 'liens') {
+    const filings = record.liens ?? []
+    if (filings.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+
+    return filings.map((l) => {
+      // The filing office, per state: a UCC-1 in Idaho and one in New Jersey
+      // are held by different offices and searched separately.
+      const source = `Lien · ${l.state ? stateName(l.state) : 'Unknown state'}`
+      const amount = l.liabilityCents ?? l.loanPrincipalCents
+
+      return {
+        group: 'liens' as const,
+        label: l.type ? l.type.toUpperCase() : 'Lien',
+        lead: l.fileNumber ?? undefined,
+        // The secured party is the readable identity of a lien — "THREE NOTCH'D
+        // BREWING COMPANY LLC" says more than a file number does.
+        value: l.securedParties.map((p) => p.name).join(', ') || 'Secured party not stated',
+        qualifier: [l.status, l.filingDate].filter(Boolean).join(' · ') || undefined,
+        evidenceNote: [
+          l.collateral ?? undefined,
+          amount ? money(amount) : undefined,
+          l.lapseDate ? `lapses ${l.lapseDate}` : undefined
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined,
+        // The filing office's own page for this lien.
+        href: l.url ?? undefined,
+        source,
+        sources: [source]
+      }
+    })
+  }
+
+  if (key === 'bankruptcies') {
+    const filings = record.bankruptcies ?? []
+    if (filings.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+
+    return filings.map((b) => {
+      const court = b.court ?? (b.courtState ? `${b.courtState} courts` : 'Bankruptcy court')
+      const source = `Bankruptcy court · ${court}`
+      return {
+        group: 'bankruptcy' as const,
+        label: b.chapter ? `Chapter ${b.chapter}` : 'Petition',
+        lead: b.caseNumber ?? undefined,
+        value: [b.status, b.filingDate].filter(Boolean).join(' · ') || 'Filed',
+        source,
+        sources: [source]
+      }
+    })
+  }
 
   // --- Web and profiles ----------------------------------------------------
   if (key.startsWith('web') || key === 'website_status' || key === 'website_url_discovery' || key === 'website_url_domain_ownership') {
@@ -1445,6 +1550,46 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   if (key === 'tin') return [tinRow(record), nameRow]
 
   return [nameRow]
+}
+
+/**
+ * Professional licences, from the registry that holds them.
+ *
+ * Not produced by an insight, because no review task reaches a licence. A
+ * professional entity's members must be licensed in the profession it
+ * practises — the entity form says so — and until the catalog has a check for
+ * it, the registry record is the evidence, carried here so it is readable in
+ * both tabs and citable as a source like any other.
+ */
+export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
+  const rows: AttributeRow[] = []
+
+  for (const l of record.licenses ?? []) {
+    const refs = [{ id: l.id, type: 'npi_registry', metadata: { url: l.sourceUrl ?? '' } }]
+    const base = {
+      group: 'licenses' as GroupId,
+      source: l.registry,
+      sources: [l.registry],
+      refs,
+      href: l.sourceUrl ?? undefined
+    }
+
+    rows.push({ ...base, label: 'Licence holder',
+      value: l.credential ? `${l.holder}, ${l.credential}` : l.holder, matchValue: l.holder })
+    rows.push({ ...base, label: 'Profession',
+      value: l.taxonomyCode ? `${l.profession} (${l.taxonomyCode})` : l.profession })
+    if (l.licenseState && l.licenseNumber)
+      rows.push({ ...base, label: 'State licence',
+        value: `${l.licenseState} ${l.licenseNumber}`, matchValue: l.licenseNumber })
+    rows.push({ ...base, label: `${l.registry} number`, value: l.number, matchValue: l.number })
+    rows.push({ ...base, label: 'Licence status', value: l.status })
+    if (l.enumeratedAt) rows.push({ ...base, label: 'Enumerated', value: l.enumeratedAt })
+    if (l.lastUpdated) rows.push({ ...base, label: 'Registry last updated', value: l.lastUpdated })
+    if (l.address) rows.push({ ...base, label: 'Practice address', value: l.address, matchValue: l.address })
+    if (l.phone) rows.push({ ...base, label: 'Practice phone', value: l.phone, matchValue: l.phone })
+  }
+
+  return rows
 }
 
 export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] =>

@@ -1,0 +1,28 @@
+{
+  "section": {
+    "id": "identity",
+    "body": [
+      {
+        "text": "The submitted name matches the name on five state registrations, so the applicant resolves onto real filings rather than onto a single unconfirmed one.",
+        "cites": ["name"]
+      },
+      {
+        "text": "Two of those five are active. What the remaining three are is not established here.",
+        "cites": ["sos_active"]
+      },
+      {
+        "text": "The formation state publishes no good-standing sub-status. That is the state declining to publish rather than a filing that was searched for and not found, so the standing of the domestic registration is not something this record can carry either way.",
+        "cites": ["sos_domestic_sub_status"]
+      }
+    ],
+    "gaps": [
+      {
+        "id": "domestic_good_standing",
+        "point": "Whether the domestic registration is in good standing",
+        "why": "not_published",
+        "wouldAnswer": "A Certificate of Good Standing obtained from the customer. The state publishes no sub-status through this channel, so no order returns one and the certificate is the only route.",
+        "cites": ["sos_domestic_sub_status"]
+      }
+    ]
+  }
+}

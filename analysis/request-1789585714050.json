@@ -1,0 +1,556 @@
+{
+  "id": "1789585714050",
+  "requestedAt": "2026-09-16T19:08:34.050Z",
+  "businessId": "f98e4710-5b75-41e9-97b7-80cfc7519b84",
+  "business": {
+    "name": "Middesk Inc",
+    "entityType": "CORPORATION",
+    "state": "DE",
+    "formed": "2018-03-05"
+  },
+  "kind": "report",
+  "prompt": "Core KYB for a financial institution opening a business bank account. Cover, in this order: whether a legally registered entity exists and is active; whether it is actually operating; who is behind it and whether that can be established; whether anything screens adversely; and what would block or delay account opening.",
+  "insights": [
+    {
+      "id": "web_person_verification",
+      "statement": "Unable to identify a match to the submitted person",
+      "state": "result",
+      "because": "Unable to identify a match to the submitted person",
+      "evidence": [
+        "Registrations on file: 5"
+      ]
+    },
+    {
+      "id": "business_connections",
+      "statement": "17 connections found",
+      "state": "result",
+      "because": "17 connections found",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "litigations",
+      "statement": "The business has 10 related litigations",
+      "state": "result",
+      "because": "The business has 10 related litigations",
+      "evidence": [
+        "Source value: Found"
+      ]
+    },
+    {
+      "id": "liens",
+      "statement": "We found 1 Open Lien(s)",
+      "state": "result",
+      "because": "We found 1 Open Lien(s)",
+      "evidence": [
+        "Source value: Open Liens Found"
+      ]
+    },
+    {
+      "id": "location_frequency:low",
+      "statement": "3 addresses in the low band",
+      "state": "result",
+      "evidence": [
+        "1818 11th St Ste 101, Sacramento, CA 95811-6515 — 2 businesses at this location",
+        "2101 Bryant St, San Francisco, CA 94110-2138 — 2 businesses at this location",
+        "82ND S — 1 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:moderate",
+      "statement": "2 addresses in the moderate band",
+      "state": "result",
+      "evidence": [
+        "85 2nd St, San Francisco, CA 94105-3459 — 21 businesses at this location",
+        "85 2nd St Ste 710, San Francisco, CA 94105-3465 — 21 businesses at this location"
+      ]
+    },
+    {
+      "id": "location_frequency:high",
+      "statement": "5 addresses in the high band",
+      "state": "result",
+      "evidence": [
+        "56 Broad St Ste 14028, Boston, MA 02109-4301 — 1001 businesses at this location",
+        "10020 W Fairview Ave Ste 104, Boise, ID 83704-8570 — 10001 businesses at this location",
+        "14 Scenic Dr, Dayton, NJ 08810-1495 — 1001 businesses at this location",
+        "2035 Sunset Lake Rd, Newark, DE 19702-2600 — 10001 businesses at this location",
+        "524 S 2nd St Ste 505, Springfield, IL 62701-1749 — 1001 businesses at this location"
+      ]
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "1 of 5 filings are Inactive",
+      "state": "result",
+      "because": "1 of 5 filings are Inactive",
+      "evidence": [
+        "Source value: Partially Inactive"
+      ]
+    },
+    {
+      "id": "sos_unknown",
+      "statement": "2 of 5 filings have no status provided",
+      "state": "unknown",
+      "because": "2 of 5 filings have no status provided",
+      "evidence": [
+        "Source value: Partially Unknown"
+      ]
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "The domestic sub-status is Not Provided by State.",
+      "state": "no_result",
+      "reason": "not_published",
+      "because": "The domestic sub-status is Not Provided by State.",
+      "evidence": [
+        "Registration state: DE"
+      ]
+    },
+    {
+      "id": "sos_domestic",
+      "statement": "No domestic filing status provided",
+      "state": "unknown",
+      "because": "No domestic filing status provided",
+      "evidence": [
+        "Source value: Domestic Unknown"
+      ]
+    },
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_verification",
+      "statement": "Match identified to the submitted Office Address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "address_deliverability",
+      "statement": "The USPS is able to deliver mail to the submitted Office Address",
+      "state": "result",
+      "because": "The USPS is able to deliver mail to the submitted Office Address",
+      "evidence": [
+        "Source value: Deliverable"
+      ]
+    },
+    {
+      "id": "address_property_type",
+      "statement": "Submitted Office Address is a Commercial property",
+      "state": "result",
+      "because": "Submitted Office Address is a Commercial property",
+      "evidence": [
+        "Source value: Commercial"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "sos_match",
+      "statement": "The business is Active in the state of the submitted Office Address",
+      "state": "result",
+      "because": "The business is Active in the state of the submitted Office Address",
+      "evidence": [
+        "Source value: Submitted Active"
+      ]
+    },
+    {
+      "id": "sos_active",
+      "statement": "2 of 5 filings are Active",
+      "state": "result",
+      "because": "2 of 5 filings are Active",
+      "evidence": [
+        "Source value: Active"
+      ]
+    },
+    {
+      "id": "watchlist",
+      "statement": "No Watchlist hits were identified",
+      "state": "result",
+      "because": "No Watchlist hits were identified",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "industry",
+      "statement": "This business likely does not operate in a high risk industry",
+      "state": "result",
+      "because": "This business likely does not operate in a high risk industry",
+      "evidence": [
+        "Source value: No Hits"
+      ]
+    },
+    {
+      "id": "website_status",
+      "statement": "Website was Online when the business record was ordered",
+      "state": "result",
+      "because": "Website was Online when the business record was ordered",
+      "evidence": [
+        "Source value: Online"
+      ]
+    },
+    {
+      "id": "website_url_domain_ownership",
+      "statement": "We have high confidence that the submitted website URL belongs to the business.",
+      "state": "result",
+      "because": "We have high confidence that the submitted website URL belongs to the business.",
+      "evidence": [
+        "Source value: High Confidence"
+      ]
+    },
+    {
+      "id": "adverse_media",
+      "statement": "No adverse media was found",
+      "state": "result",
+      "because": "No adverse media was found",
+      "evidence": [
+        "Source value: Low risk"
+      ]
+    },
+    {
+      "id": "bankruptcies",
+      "statement": "The business has no bankruptcy filings",
+      "state": "result",
+      "because": "The business has no bankruptcy filings",
+      "evidence": [
+        "Source value: None Found"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type is a CORPORATION",
+      "state": "result",
+      "because": "Entity type is a CORPORATION",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "There were no hits on submitted individuals or their relatives and close associates",
+      "state": "result",
+      "because": "There were no hits on submitted individuals or their relatives and close associates",
+      "evidence": [
+        "Source value: No hits"
+      ]
+    },
+    {
+      "id": "profile_discovery",
+      "statement": "Third party profiles submitted",
+      "state": "result",
+      "because": "Third party profiles submitted",
+      "evidence": [
+        "Source value: Submitted"
+      ]
+    },
+    {
+      "id": "profile_status",
+      "statement": "All third party profiles are online",
+      "state": "result",
+      "because": "All third party profiles are online",
+      "evidence": [
+        "Source value: Online"
+      ]
+    },
+    {
+      "id": "risky_keywords",
+      "statement": "No risky keywords found.",
+      "state": "result",
+      "because": "No risky keywords found.",
+      "evidence": [
+        "Source value: None"
+      ]
+    },
+    {
+      "id": "web_address_verification",
+      "statement": "Match identified to the submitted Office Address",
+      "state": "result",
+      "because": "Match identified to the submitted Office Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "web_business_name_verification",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result",
+      "because": "Match identified to the submitted Business Name",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "web_email_address_verification",
+      "statement": "Successfully verified the submitted Email Address",
+      "state": "result",
+      "because": "Successfully verified the submitted Email Address",
+      "evidence": [
+        "Source value: Verified"
+      ]
+    },
+    {
+      "id": "website_url_discovery",
+      "statement": "Website URL was submitted",
+      "state": "result",
+      "because": "Website URL was submitted",
+      "evidence": [
+        "Source value: Submitted"
+      ]
+    },
+    {
+      "id": "address_cmra",
+      "statement": "address cmra — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: Signal model(s): verify (POST /v1/signals; no Order required); identity, business_verification_qualify, business_verification_verify, international_business_verification; identity, business_verification_verify"
+    },
+    {
+      "id": "address_registered_agent",
+      "statement": "address registered agent — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: Signal model(s): verify (POST /v1/signals; no Order required); identity, business_verification_qualify, business_verification_verify, international_business_verification; identity, business_verification_verify"
+    },
+    {
+      "id": "complaint_themes",
+      "statement": "complaint themes — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: merchant_risk"
+    },
+    {
+      "id": "related_entities",
+      "statement": "related entities — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_verify; merchant_risk"
+    },
+    {
+      "id": "entity_type_match",
+      "statement": "entity type match — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_verify; identity, business_verification_verify, merchant_risk"
+    },
+    {
+      "id": "formation_state",
+      "statement": "formation state — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_verify; identity, business_verification_verify, merchant_risk"
+    },
+    {
+      "id": "kyc_decision",
+      "statement": "kyc decision — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: kyc"
+    },
+    {
+      "id": "web_litigation",
+      "statement": "web litigation — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: litigations; merchant_risk"
+    },
+    {
+      "id": "dba_name",
+      "statement": "dba name — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; identity, business_verification_verify"
+    },
+    {
+      "id": "name_and_entity_type",
+      "statement": "name and entity type — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; identity, business_verification_verify"
+    },
+    {
+      "id": "operating_as_claimed",
+      "statement": "operating as claimed — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: merchant_risk"
+    },
+    {
+      "id": "people_bankruptcies",
+      "statement": "people bankruptcies — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; people_bankruptcies; people_criminal_history; people_litigations; people_tax_liens, people_ucc_liens"
+    },
+    {
+      "id": "people_criminal_history",
+      "statement": "people criminal history — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; people_bankruptcies; people_criminal_history; people_litigations; people_tax_liens, people_ucc_liens"
+    },
+    {
+      "id": "people_liens",
+      "statement": "people liens — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; people_bankruptcies; people_criminal_history; people_litigations; people_tax_liens, people_ucc_liens"
+    },
+    {
+      "id": "people_litigations",
+      "statement": "people litigations — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_qualify, business_verification_verify, international_business_verification; people_bankruptcies; people_criminal_history; people_litigations; people_tax_liens, people_ucc_liens"
+    },
+    {
+      "id": "phone",
+      "statement": "phone — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity"
+    },
+    {
+      "id": "ppp_loans",
+      "statement": "ppp loans — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, business_verification_verify"
+    },
+    {
+      "id": "registrations_not_found",
+      "statement": "registrations not found — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_qualify; identity, business_verification_verify, merchant_risk; international_business_verification"
+    },
+    {
+      "id": "registrations_status",
+      "statement": "registrations status — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_qualify; identity, business_verification_verify, merchant_risk; international_business_verification"
+    },
+    {
+      "id": "sos_not_found",
+      "statement": "sos not found — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_qualify; identity, business_verification_verify, merchant_risk; international_business_verification"
+    },
+    {
+      "id": "sos_status",
+      "statement": "sos status — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_qualify; identity, business_verification_verify, merchant_risk; international_business_verification"
+    },
+    {
+      "id": "submitted_registrations_match",
+      "statement": "submitted registrations match — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_qualify; identity, business_verification_verify, merchant_risk; international_business_verification"
+    },
+    {
+      "id": "tin",
+      "statement": "tin — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_verify, tin"
+    },
+    {
+      "id": "tin_error",
+      "statement": "tin error — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_verify, tin"
+    },
+    {
+      "id": "tin_issued",
+      "statement": "tin issued — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_verify, tin"
+    },
+    {
+      "id": "tin_type",
+      "statement": "tin type — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: business_verification_verify, tin"
+    },
+    {
+      "id": "domain_redirect",
+      "statement": "domain redirect — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, website, merchant_risk; website; website, merchant_risk"
+    },
+    {
+      "id": "web_phone_number_verification",
+      "statement": "web phone number verification — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, website, merchant_risk; website; website, merchant_risk"
+    },
+    {
+      "id": "website_parked",
+      "statement": "website parked — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, website, merchant_risk; website; website, merchant_risk"
+    },
+    {
+      "id": "website_verification",
+      "statement": "website verification — not ordered for this business",
+      "state": "no_result",
+      "reason": "not_held_or_unreachable",
+      "because": "Produced by: identity, website, merchant_risk; website; website, merchant_risk"
+    }
+  ],
+  "assessments": [
+    {
+      "id": "identity",
+      "name": "Business identity",
+      "prompt": "Does a legally registered entity exist, is it active, and is the submitted identity the same one as the registered one.",
+      "version": 1
+    },
+    {
+      "id": "ownership",
+      "name": "Ownership",
+      "prompt": "Who is behind it, and whether that can be established at all. Officers, control persons, submitted people, and what the record cannot reach.",
+      "version": 1
+    },
+    {
+      "id": "activity",
+      "name": "Activity",
+      "prompt": "Whether it is actually operating — address, website, connections, the shape of the footprint.",
+      "version": 1
+    },
+    {
+      "id": "compliance",
+      "name": "Compliance and screening",
+      "prompt": "Watchlist, PEP, adverse media, liens, litigation, bankruptcy, industry.",
+      "version": 1
+    }
+  ],
+  "pinned": [],
+  "attachments": [],
+  "history": []
+}
