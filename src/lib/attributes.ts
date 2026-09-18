@@ -1328,36 +1328,15 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       submitted: w.submitted
     }
 
-    // Reachability: the URL and what the crawl got back, plus the pages it
-    // actually read — the only evidence that the site is real and responding.
-    if (key === 'website_status')
-      return [
-        url,
-        ...site('HTTP status', w.httpStatusCode ? String(w.httpStatusCode) : null),
-        ...site('Title', w.title),
-        ...(w.pages ?? [])
-          .filter((pg) => pg.url)
-          .map((pg) => ({
-            group: 'website' as const,
-            label: pg.category
-              ? `${pg.category.charAt(0).toUpperCase()}${pg.category.slice(1)} page`
-              : 'Page',
-            value: pg.url as string,
-            href: pg.url as string,
-            source: 'Website',
-            sources: ['Website']
-          }))
-      ]
+    // Reachability: the URL and what the site calls itself. The individual page
+    // URLs the crawl walked are the same domain with a path on the end — they
+    // restate the URL above them rather than adding to it.
+    if (key === 'website_status') return [url, ...site('Title', w.title)]
 
-    // Who owns the domain, and since when.
-    if (key === 'website_url_domain_ownership')
-      return [
-        ...site('Domain', w.domain),
-        ...site('Registrar', w.registrar),
-        ...site('Domain registered', w.domainCreated?.slice(0, 10)),
-        ...site('Domain expires', w.domainExpires?.slice(0, 10)),
-        ...site('Domain ID', w.domainId)
-      ]
+    // Who owns the domain. The registrar, the WHOIS dates and the registry's
+    // own domain id are plumbing — they say who sold the name and when the
+    // record was minted, which is not a fact about this business.
+    if (key === 'website_url_domain_ownership') return [...site('Domain', w.domain)]
 
     // Where the URL came from.
     if (key === 'website_url_discovery') return [url]

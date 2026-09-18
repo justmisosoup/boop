@@ -111,6 +111,11 @@ export const makeGroupFor = (_categoryByKey: Map<string, string>) => (insightId:
   }
 
   const key = insightId.split(':')[0]
+  // `license:<id>`, `license_person_match:<id>`, `license_address_match:<id>` —
+  // derived here rather than defined by the catalog, so `SUBJECT_OF` has no
+  // entry and they all fell into "Other".
+  if (key.startsWith('license')) return 'licenses'
+
   const subject = SUBJECT_OF[key] ?? UNDEFINED_SUBJECT[key]
   return subject && KNOWN.has(subject) ? (subject as GroupId) : 'other'
 }

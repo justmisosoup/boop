@@ -122,17 +122,7 @@ const faviconFor = (href: string) => {
  * reader could see at the URL. Shown under a capture of the home page, each
  * would claim the page had stated it, so these say what they are instead.
  */
-export const WEBSITE_METADATA = new Set([
-  'HTTP status',
-  'Title',
-  'Domain',
-  'Domain ID',
-  'Registrar',
-  'Domain registered',
-  'Domain expires',
-  'Platform',
-  'Category'
-])
+export const WEBSITE_METADATA = new Set(['Title', 'Domain', 'Platform', 'Category'])
 
 /** Nothing corroborates it. Said in the same shape as a source, because that
  *  is the slot a reader scans — an empty one reads as "not loaded yet". */

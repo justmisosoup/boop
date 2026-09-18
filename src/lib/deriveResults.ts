@@ -479,7 +479,127 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
  * review tasks and signals, and anything we invent beside them is an assessment
  * wearing an insight's clothes.
  */
-const derived = (_record: BusinessRecord): Derived[] => []
+/**
+ * The professional licences, and what they line up with.
+ *
+ * What is derived here is exactly what the registry supports and no more: that
+ * an NPI record exists, that its holder's name matches the submitted person,
+ * and that its practice address matches the submitted office.
+ *
+ * It does NOT establish that the person is a member, owner or practitioner OF
+ * this entity. The New York filing names no natural person, so nothing on the
+ * record ties the two together — a name and an address in common is a strong
+ * lead, not a relationship. Each match row says so in its own evidence, so a
+ * session reading these cannot quietly promote a lead into a fact.
+ *
+ * Without this the licence reached the Attributes and Sources tabs and nothing
+ * else — `useAnalysis` builds the assessment request out of `insights` alone,
+ * so a run could not see it and wrote "search the NPI registry" about a record
+ * that already held the answer.
+ */
+const licenseInsights = (record: BusinessRecord): Derived[] => {
+  const licenses = record.licenses ?? []
+  if (licenses.length === 0) return []
+
+  const submittedPeople = record.people.filter((p) => p.submitted)
+  const submittedAddresses = record.addresses.filter((a) => a.submitted)
+
+  /** Words, upper case, punctuation dropped. */
+  const words = (s: string) => s.toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(Boolean)
+  /**
+   * The street line and the ZIP5. A floor or suite is the same address, so the
+   * designator AND the number after it both go — keeping the number left
+   * "801 MADISON AVE FL 3" as "801 MADISON AVE 3", which matched nothing.
+   */
+  const place = (s: string) => {
+    const w = words(s.split(',')[0] ?? '')
+    const street: string[] = []
+    for (let i = 0; i < w.length; i++) {
+      if (/^(FL|FLOOR|STE|SUITE|APT|UNIT|RM|ROOM|NO)$/.test(w[i])) {
+        i++ // and the number it labels
+        continue
+      }
+      street.push(w[i])
+    }
+    return { street: street.join(' '), zip: (s.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] }
+  }
+
+  return licenses.flatMap((l): Derived[] => {
+    const holder = words(l.holder)
+    // Every word of the submitted name appears in the holder's: "JOSHUA GEE"
+    // is "JOSHUA Y GEE" with the middle initial left off, which is a match.
+    // The reverse is not true, so the direction matters.
+    const person = submittedPeople.find((p) => {
+      const sub = words(p.name)
+      return sub.length > 1 && sub.every((t) => holder.includes(t))
+    })
+
+    const lic = place(l.address ?? '')
+    const office = l.address
+      ? submittedAddresses.find((a) => {
+          const sub = place(a.fullAddress)
+          return Boolean(sub.street) && sub.street === lic.street && Boolean(sub.zip) && sub.zip === lic.zip
+        })
+      : undefined
+
+    const held = [
+      l.profession,
+      l.taxonomyCode ? `taxonomy ${l.taxonomyCode}` : undefined,
+      l.licenseState && l.licenseNumber
+        ? `${l.licenseState} licence ${l.licenseNumber}`
+        : undefined,
+      `status ${l.status}`,
+      l.lastUpdated ? `registry updated ${l.lastUpdated}` : undefined,
+      l.sourceUrl ?? undefined
+    ].filter(Boolean) as string[]
+
+    const rows: Derived[] = [
+      {
+        insightId: `license:${l.id}`,
+        statement: `${l.registry} holds a ${l.profession} licence for ${l.holder}${l.credential ? `, ${l.credential}` : ''}, status ${l.status}`,
+        group: '',
+        state: 'result',
+        evidence: held
+      }
+    ]
+
+    if (person) {
+      rows.push({
+        insightId: `license_person_match:${l.id}`,
+        statement: `An ${l.registry} record was found whose holder name matches the submitted person`,
+        group: '',
+        state: 'result',
+        because: `Submitted ${person.name}; ${l.registry} holds ${l.number} under ${l.holder}`,
+        evidence: [
+          `Submitted person: ${person.name}`,
+          `Licence holder: ${l.holder}${l.credential ? `, ${l.credential}` : ''}`,
+          `${l.registry} ${l.number}`,
+          'Name match only. No filing on this record names a natural person, so this does not establish that the licence holder is a member, owner or the practising clinician of this entity.'
+        ]
+      })
+    }
+
+    if (office) {
+      rows.push({
+        insightId: `license_address_match:${l.id}`,
+        statement: `The ${l.registry} record's practice address matches the submitted office address`,
+        group: '',
+        state: 'result',
+        because: `${l.registry} lists ${l.address}; the submitted office is ${office.fullAddress}`,
+        evidence: [
+          `Submitted office: ${office.fullAddress}`,
+          `Licence practice address: ${l.address}`,
+          l.phone ? `Practice phone: ${l.phone}` : '',
+          'Shared address only. It does not establish a relationship between the licence holder and this entity.'
+        ].filter(Boolean)
+      })
+    }
+
+    return rows
+  })
+}
+
+const derived = (record: BusinessRecord): Derived[] => licenseInsights(record)
 
 
 /**
