@@ -78,10 +78,13 @@ const describe = (r: BusinessRecord) =>
 /** The reference panel's width, in px: narrow enough that the report still has
  *  a readable measure, wide enough that a source card is not a column two words
  *  across. */
-const PANEL_MIN = 320
+const PANEL_MIN = 392
 const PANEL_MAX = 720
 const PANEL_DEFAULT = 428
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
+/** The same number as the `--page-gutter` custom property: how far the page's
+ *  content column ends from the right of the window. */
+const pageGutter = () => Math.max(0, (window.innerWidth - 1400) / 2) + 24
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -349,7 +352,9 @@ export default function App() {
     // Text selects across the whole page while a drag is live otherwise.
     document.body.style.userSelect = 'none'
     const move = (ev: PointerEvent) =>
-      setPanelW(clampPanel(Math.round(window.innerWidth - ev.clientX - 24)))
+      // Measured from where the page's column ends, which is what the panel is
+      // hung off — not from the window's edge.
+      setPanelW(clampPanel(Math.round(window.innerWidth - pageGutter() - ev.clientX)))
     const up = () => {
       el.releasePointerCapture(e.pointerId)
       el.removeEventListener('pointermove', move)
@@ -387,7 +392,18 @@ export default function App() {
     <ScreenshotViewerProvider>
     <div
       className="core-theme min-h-full lg:h-screen lg:overflow-hidden"
-      style={{ '--panel-w': `${panelW}px` } as React.CSSProperties}
+      style={
+        {
+          '--panel-w': `${panelW}px`,
+          // Where the page's content column ends, measured from the right of
+          // the window. The column is centred and capped, the panel is fixed to
+          // the window, and without this the panel hung off the window's edge
+          // instead of the column's: on a wide monitor that left several
+          // hundred px of nothing between the report and the panel, and the
+          // report squeezed into what was left.
+          '--page-gutter': 'calc(max(0px, (100vw - 1400px) / 2) + 24px)'
+        } as React.CSSProperties
+      }
     >
       {/* The tail clears the composer, which is fixed over the page: `pb-40` was
           shorter than the dock once it carried a token row, so the last
@@ -410,7 +426,7 @@ export default function App() {
           */}
         <div
           aria-hidden="true"
-          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[calc(var(--panel-w)-12px)] lg:z-0 lg:block lg:bg-card"
+          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[calc(var(--page-gutter)+var(--panel-w)-36px)] lg:z-0 lg:block lg:bg-card"
         />
 
         {/*
@@ -595,7 +611,7 @@ export default function App() {
               else return
               e.preventDefault()
             }}
-            className="group hidden lg:fixed lg:bottom-6 lg:top-20 lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[calc(var(--panel-w)+24px)]"
+            className="group hidden lg:fixed lg:bottom-6 lg:top-20 lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[calc(var(--page-gutter)+var(--panel-w))]"
           >
             <span
               aria-hidden="true"
@@ -603,7 +619,7 @@ export default function App() {
             />
           </div>
 
-          <aside ref={panelRef} className="mt-10 min-w-0 lg:fixed lg:right-6 lg:top-20 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:bottom-6 lg:overflow-y-auto panel-scroll lg:px-4">
+          <aside ref={panelRef} className="mt-10 min-w-0 lg:fixed lg:right-[var(--page-gutter)] lg:top-20 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:bottom-6 lg:overflow-y-auto panel-scroll lg:px-4">
             <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
               <TabsList className="sticky top-0 z-10 shrink-0 bg-background">
                 <TabsTrigger value="insights">
