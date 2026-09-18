@@ -664,18 +664,6 @@ export default function App() {
                         result={r}
                         record={selected}
                         reveal={revealed.includes(r.insightId)}
-                        // Only where there is a finding to add. A row that
-                        // returned nothing has nothing to feed the analysis, so
-                        // offering it read as an action that would do something
-                        // and then silently did not.
-                        onAddToAnalysis={
-                          analysis.active &&
-                          !r.notReported &&
-                          !used.has(r.insightId) &&
-                          !analysis.waiting
-                            ? () => analysis.addAndRerun(r.insightId)
-                            : undefined
-                        }
                         onJumpToSource={jumpToSource}
                       />
                     ))}

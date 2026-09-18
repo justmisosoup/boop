@@ -31,7 +31,6 @@ const RISK_TONE: Record<string, 'subtle' | 'warning' | 'danger'> = {
 export const InsightRow = ({
   result,
   record,
-  onAddToAnalysis,
   onJumpToSource,
   reveal,
   attributes: attributesOverride,
@@ -48,7 +47,6 @@ export const InsightRow = ({
   onEdit?: () => void
   onRemove?: () => void
   /** Offered once an analysis exists, on rows it did not use. */
-  onAddToAnalysis?: () => void
   /** Follow an evidence row's source chip to that source's card in Sources.
    *  Without it a single-source chip has no destination and renders as static
    *  text — the same chip is clickable in the Attributes tab and was not here. */
@@ -182,15 +180,15 @@ export const InsightRow = ({
           {/*
             * The row's actions, which take no width until you want them.
             *
-            * "Add to analysis" is ~110px of permanent furniture on every
-            * unused row; beside a Signal chip it left the statement about
-            * 150px to wrap into, which is how a one-sentence row reached four
-            * lines. Hiding them outright would take them off the keyboard, so
+            * A button is ~110px of permanent furniture on every row; beside a
+            * Signal chip it left the statement about 150px to wrap into, which
+            * is how a one-sentence row reached four lines. Hiding them outright
+            * would take them off the keyboard, so
             * the track they sit in is collapsed to zero instead: the buttons
             * stay in the DOM and stay focusable, and `group-focus-within`
             * opens the track when tabbing reaches them.
             */}
-          {(onEdit || onRemove || onAddToAnalysis) && (
+          {(onEdit || onRemove) && (
             <div
               className={[
                 'grid grid-cols-[0fr] transition-[grid-template-columns] duration-200',
@@ -225,16 +223,6 @@ export const InsightRow = ({
                       className="!h-6 !min-h-0"
                     >
                       Remove
-                    </ActionButton>
-                  )}
-                  {onAddToAnalysis && (
-                    <ActionButton
-                      variant="quiet"
-                      size="compact"
-                      onClick={onAddToAnalysis}
-                      className="!h-6 !min-h-0"
-                    >
-                      Add to analysis
                     </ActionButton>
                   )}
                 </div>

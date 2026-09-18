@@ -533,16 +533,25 @@ export const AttributesTab = ({
 
                 return (
                 <div key={`${a.label}-${i}`} className="px-4 py-2.5">
-                  <div className="flex items-baseline gap-2">
+                  {/* Wraps. The provenance cluster is `shrink-0` and ran to
+                      179px on an industry row, which left the value 0px of a
+                      325px row — the name of the industry set one character per
+                      line, 1560px tall. Given a floor to sit on, the value
+                      keeps the first line and the chips drop to the second. */}
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     {columned ? (
                       <>
-                        <MutedText className="w-24 shrink-0 text-body font-semibold">
+                        <MutedText className="w-20 shrink-0 text-body font-semibold">
                           {repeated ? '' : a.label}
                         </MutedText>
-                        <Text size="md" className="w-44 shrink-0 break-words tabular-nums">
+                        {/* Wide enough to line the codes up with each other,
+                            and no wider. At `w-44` a six-digit NAICS code held
+                            176px of a 428px panel, which left the industry it
+                            names wrapping one word per line beside it. */}
+                        <Text size="md" className="w-16 shrink-0 break-words tabular-nums">
                           {a.lead ?? ''}
                         </Text>
-                        <Text size="md" className="min-w-0 flex-1 break-words">
+                        <Text size="md" className="min-w-[8rem] flex-1 break-words">
                           {a.value}
                           {a.qualifier && (
                             <MutedText className="ml-2 text-body">{a.qualifier}</MutedText>
