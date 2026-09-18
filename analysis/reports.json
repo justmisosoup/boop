@@ -122,17 +122,20 @@
               {
                 "id": "domestic_good_standing",
                 "point": "Whether the New York registration is in good standing, beyond being active",
-                "why": "not_published"
+                "why": "not_published",
+                "noAction": true
               },
               {
                 "id": "registered_agent",
                 "point": "Who the registered agent of record is, and whether the submitted office is a registered agent or CMRA address",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               },
               {
                 "id": "web_name_difference",
                 "point": "What name the website presents, so the mismatch can be read",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               }
             ]
           },
@@ -182,12 +185,14 @@
               {
                 "id": "act_licence_link",
                 "point": "Whether the NPI licence holder is a member of this PLLC or the clinician practising through it, and whether every member holds a New York physical therapy licence",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               },
               {
                 "id": "act_operating_as_claimed",
                 "point": "Whether the business is operating as it claims, and whether any complaint themes attach to it",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               }
             ]
           },
@@ -223,7 +228,8 @@
               {
                 "id": "comp_unscreened_owners",
                 "point": "Whether anyone who holds or controls the business, beyond JOSHUA GEE, is on a sanctions, PEP or adverse media list",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               }
             ]
           },
@@ -265,7 +271,8 @@
               {
                 "id": "own_beneficial_owners",
                 "point": "Who holds 25 percent or more and who exercises control, whether JOSHUA GEE is among them, and the licence standing behind each member",
-                "why": "not_held_or_unreachable"
+                "why": "not_held_or_unreachable",
+                "noAction": true
               },
               {
                 "id": "own_connected_entities",
@@ -302,28 +309,6 @@
         ],
         "followUps": [
           {
-            "text": "Collect a beneficial ownership certification naming every member holding 25 percent or more and every controlling person, each with their New York physical therapy licence number. This is what ties a person to the entity; nothing on the record does.",
-            "cites": [
-              "person_verification",
-              "entity_type"
-            ],
-            "closes": [
-              "own_beneficial_owners",
-              "act_licence_link"
-            ]
-          },
-          {
-            "text": "Screen each member the certification names. Coverage today is the entity and JOSHUA GEE only, so anyone else who holds or controls the business is unscreened.",
-            "cites": [
-              "watchlist",
-              "politically_exposed_persons",
-              "adverse_media"
-            ],
-            "closes": [
-              "comp_unscreened_owners"
-            ]
-          },
-          {
             "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared address only, and KAIROS 801 LLC sits at the Bayside address this registration also carries, so a common owner is plausible and not on the record.",
             "cites": [
               "business_connections",
@@ -331,37 +316,6 @@
             ],
             "closes": [
               "own_connected_entities"
-            ]
-          },
-          {
-            "text": "Ask the customer for the trading name and confirm it against the site. The record reports that the web-presented name differs from KAIROS PHYSICAL THERAPY PLLC without returning what it is, and the site is otherwise attributed to the business with high confidence.",
-            "cites": [
-              "web_business_name_verification",
-              "website_status"
-            ],
-            "closes": [
-              "web_name_difference"
-            ]
-          },
-          {
-            "text": "Order the registered agent of record for the New York registration, and an operating-as-claimed check. Neither is held, and the submitted office is a commercial floor shared with 21 other businesses, so the agent question is not answered by the address alone.",
-            "cites": [
-              "address_registered_agent",
-              "address_property_type",
-              "location_frequency:moderate"
-            ],
-            "closes": [
-              "registered_agent",
-              "act_operating_as_claimed"
-            ]
-          },
-          {
-            "text": "Good standing beyond active is not published by New York, so treat the active registration as the available answer and do not hold the file for it.",
-            "cites": [
-              "sos_active"
-            ],
-            "closes": [
-              "domestic_good_standing"
             ]
           }
         ]
