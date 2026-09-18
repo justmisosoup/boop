@@ -79,12 +79,9 @@ const describe = (r: BusinessRecord) =>
  *  a readable measure, wide enough that a source card is not a column two words
  *  across. */
 const PANEL_MIN = 392
-const PANEL_MAX = 900
+const PANEL_MAX = 600
 const PANEL_DEFAULT = 428
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
-/** The same number as the `--page-gutter` custom property: how far the page's
- *  content column ends from the right of the window. */
-const pageGutter = () => 24
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -352,9 +349,7 @@ export default function App() {
     // Text selects across the whole page while a drag is live otherwise.
     document.body.style.userSelect = 'none'
     const move = (ev: PointerEvent) =>
-      // Measured from where the page's column ends, which is what the panel is
-      // hung off — not from the window's edge.
-      setPanelW(clampPanel(Math.round(window.innerWidth - pageGutter() - ev.clientX)))
+      setPanelW(clampPanel(Math.round(window.innerWidth - ev.clientX)))
     const up = () => {
       el.releasePointerCapture(e.pointerId)
       el.removeEventListener('pointermove', move)
@@ -394,11 +389,7 @@ export default function App() {
       className="core-theme min-h-full lg:h-screen lg:overflow-hidden"
       style={
         {
-          '--panel-w': `${panelW}px`,
-          // The page's own right margin. The layout is full bleed — a capped,
-          // centred column left the panel stranded a few hundred px short of
-          // the window's edge with nothing but grey beyond it.
-          '--page-gutter': '24px'
+          '--panel-w': `${panelW}px`
         } as React.CSSProperties
       }
     >
@@ -423,7 +414,7 @@ export default function App() {
           */}
         <div
           aria-hidden="true"
-          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[calc(var(--page-gutter)+var(--panel-w)-36px)] lg:z-0 lg:block lg:bg-card"
+          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[var(--panel-w)] lg:z-0 lg:block lg:bg-card"
         />
 
         {/*
@@ -608,7 +599,7 @@ export default function App() {
               else return
               e.preventDefault()
             }}
-            className="group hidden lg:fixed lg:bottom-6 lg:top-20 lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[calc(var(--page-gutter)+var(--panel-w))]"
+            className="group hidden lg:fixed lg:bottom-0 lg:top-[57px] lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[var(--panel-w)]"
           >
             <span
               aria-hidden="true"
@@ -616,9 +607,18 @@ export default function App() {
             />
           </div>
 
-          <aside ref={panelRef} className="mt-10 min-w-0 lg:fixed lg:right-[var(--page-gutter)] lg:top-20 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:bottom-6 lg:overflow-y-auto panel-scroll lg:px-4">
+          <aside
+            ref={panelRef}
+            // A docked side panel, not a column floating over the page: flush
+            // to the window's right edge, running from under the fixed bar to
+            // the bottom, on its own surface with a left border that IS the
+            // boundary between the record and the report. The horizontal inset
+            // is NOT here — it is on the tab strip and each tab's contents, so
+            // the pinned strip spans the panel's full width instead of stopping
+            // 16px short of each edge.
+            className="mt-10 min-w-0 lg:fixed lg:right-0 lg:top-[57px] lg:bottom-0 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:overflow-y-auto lg:border-l lg:border-solid lg:border-border lg:bg-background panel-scroll">
             <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
-              <TabsList className="sticky top-0 z-10 shrink-0 bg-background">
+              <TabsList className="sticky top-0 z-10 shrink-0 bg-background px-4">
                 <TabsTrigger value="insights">
                   Insights
                   <TabsCount>{reported.length}</TabsCount>
@@ -632,7 +632,7 @@ export default function App() {
                   <TabsCount>{sourceCount}</TabsCount>
                 </TabsTrigger>
               </TabsList>
-          <TabsContent value="insights" className="space-y-4 pt-4">
+          <TabsContent value="insights" className="space-y-4 px-4 pt-4">
             {/* The Found/Not found/All control is gone from the panel.
                 The filter it drove is still applied — `filter` is held at
                 `found`, so what shows is what the record establishes — but it
@@ -686,7 +686,7 @@ export default function App() {
 
           </TabsContent>
 
-          <TabsContent value="attributes" className="space-y-6 pt-4">
+          <TabsContent value="attributes" className="space-y-6 px-4 pt-4">
             <AttributesTab
               record={selected}
               results={results}
@@ -695,7 +695,7 @@ export default function App() {
             />
           </TabsContent>
 
-          <TabsContent value="sources" className="space-y-4 pt-4">
+          <TabsContent value="sources" className="space-y-4 px-4 pt-4">
             <SourcesTab
               record={selected}
               results={results}
