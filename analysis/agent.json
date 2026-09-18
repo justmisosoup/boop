@@ -4,8 +4,8 @@
   "skills": [
     {
       "id": "smb-account-opening",
-      "name": "SMB account opening",
-      "instructions": "Core KYB for a financial institution opening a business bank account. Work the stages an onboarding file is built from, in this order\n\n- customer identification, whether a legally registered entity exists, is active, and is the applicant\n- beneficial ownership and control, including what can only come from the customer\n- the nature and purpose of the account, meaning whether the business is actually operating and what is expected to flow through it\n- sanctions, PEP and watchlist screening\n- adverse information and financial standing\n\nEach assessment should have a bullet point of things it cant confirm instead of \"not established\"\n\nThen recommend whether to onboard, and name the steps that complete the case file.\n\nThis file is being built to decide whether to open a business bank account, and it will be read by a compliance analyst and re-read at the next periodic review.\n\nWork the assessments below in order and keep them separate: each says what the record establishes and what is still outstanding for that part of the file. Do not judge inside them — whether an outcome is acceptable is the recommendation's job, and a stage that reads as a verdict makes the recommendation unfalsifiable.\n\nRead the documents, not the counts. A number of liens or litigations is not a finding until the filings behind it have been read, and a risk score with no source behind it cannot be cleared or acted on.\n\nDistinguish three things that look alike and are not: something the record establishes, something a source does not publish, and something we did not order. Only the first is evidence about the business.\n\nThen recommend onboard, onboard subject to conditions, or do not onboard, and sort what remains by what kind of thing it is — an order, a document to collect, a finding to read, or a policy decision the bank makes about itself.",
+      "name": "Onboarding General",
+      "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nThe recommendation should be clear with clear follow up steps.\n\nThe recommendation is the call and the reasons for it, nothing else. Do not summarise the assessments or repeat what they established; the reader has just read them. State only the facts the decision actually turns on, and let the follow-ups carry what to do about them.",
       "kind": "workflow",
       "createdBy": "Sara Menefee",
       "createdAt": "2026-09-17T00:39:29.869Z",
@@ -29,28 +29,116 @@
         {
           "at": "2026-09-17T01:08:10.816Z",
           "by": "Sara Menefee"
-        }
-      ],
-      "editedAt": "2026-09-17T01:08:10.816Z"
-    },
-    {
-      "id": "skill-kyb-2",
-      "name": "Nature and purpose of the account",
-      "instructions": "Establish that the business is operating and say what is expected to move through the account. Weigh the physical footprint — deliverability, property type, how many businesses share each address — against what is ordinary for this kind of company, and separate registered-agent addresses from concentration. Weigh the web evidence the same way: whether the site is live, whether the domain belongs to the business, and which submitted details it corroborates. Say when operating status rests on registrations alone.",
-      "kind": "assessment",
-      "createdBy": "Sara Menefee",
-      "createdAt": "2026-09-17T00:59:54.491980Z",
-      "history": [
+        },
         {
-          "at": "2026-09-17T00:59:54.491980Z",
+          "at": "2026-09-17T18:30:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:05:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T22:42:42.633Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T23:55:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T00:29:30.903Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:36:56.520Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:37:07.899Z",
           "by": "Sara Menefee"
         }
-      ]
+      ],
+      "editedAt": "2026-09-18T21:37:07.899Z"
+    },
+    {
+      "id": "skill-kyb-identification",
+      "name": "Identity",
+      "instructions": "Identity should answer: Is this a real business, and is it the one it claims to be?\n\nAlways:\n- Verify the submitted business name matches a state filing\n- Verify the submitted address matches a state filing\n- Identify Secretary of State filings (domestic and foreign)\n- Identify Certificate of Good Standing or Secretary of State filings sub status is in good standing\n- Identify unsubmitted entity classification type\n- Identify unsubmitted industry classification \n- Identify unsubmitted web presence and third-party profiles\n- Identify unsubmitted officers or people associated\n- Identify unsubmitted business entities listed as owners / officers \n- Identify unsubmitted registered agents listed as owners / officers\n- Identify complexity of ownership structure for the business entity\n\nIf submitted:\n- Verify that the TIN belongs to a name associated with the business entity. If a TIN is not submitted do not elevate\n- Verify DBA names, this is not a requirement, if the DBA is not submitted you literally dont have to mention it\n- Verify entity classification type for the business entity\n- Verify third-party profiles for the business entity\n- Verify website presence for the business entity\n- Verify email for the business entity\n- Verify phone for the business entity",
+      "kind": "assessment",
+      "createdBy": "Sara Menefee",
+      "createdAt": "2026-09-17T18:30:00.000Z",
+      "history": [
+        {
+          "at": "2026-09-17T18:30:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T19:40:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:05:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:40:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:45:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:50:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:54:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:31:05.511Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:34:47.967Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:43:50.397Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:57:36.990Z",
+          "by": "Sara Menefee"
+        }
+      ],
+      "editedAt": "2026-09-18T21:57:36.990Z"
+    },
+    {
+      "id": "skill-kyb-activity",
+      "name": "Activity",
+      "instructions": "What does this business actually do, and is it allowed to do it?\n\nAlways:\n- Identify whether the industry is a high-risk or prohibited industry\n- Identify whether there is evidence of other industry activity not detected that point to high-risk or prohibited industries\n- Identify presence and status of licenses required of the industry + jurisdiction. \n- Identify license link to officer / owner / person or business entity.",
+      "kind": "assessment",
+      "createdBy": "Sara Menefee",
+      "createdAt": "2026-09-17T21:15:00.000Z",
+      "history": [
+        {
+          "at": "2026-09-17T21:15:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:32:51.165Z",
+          "by": "Sara Menefee"
+        }
+      ],
+      "editedAt": "2026-09-18T21:32:51.165Z"
     },
     {
       "id": "skill-kyb-3",
-      "name": "Sanctions and PEP screening",
-      "instructions": "Report what the screening actually returned, and distinguish a check that ran and cleared from one that never ran. Cover watchlist and sanctions hits against the business and the submitted individuals, and politically exposed persons among those individuals and their relatives and close associates. Say who was screened, because a clearance covers the names it was given and not everyone who owns the company — and name who still has to be screened once ownership is established.",
+      "name": "Compliance",
+      "instructions": "Is this business, or anyone behind it, someone we're prohibited or restricted from doing business with?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits",
       "kind": "assessment",
       "createdBy": "Sara Menefee",
       "createdAt": "2026-09-17T00:59:54.491981Z",
@@ -58,50 +146,40 @@
         {
           "at": "2026-09-17T00:59:54.491981Z",
           "by": "Sara Menefee"
-        }
-      ]
-    },
-    {
-      "id": "skill-kyb-4",
-      "name": "Financial standing",
-      "instructions": "Read the lien, litigation and bankruptcy filings themselves, not their counts. For each lien give the secured party, status, filing date and what it secures, and separate open filings from closed ones. For each case give the court, status, and which side the business is on; a defendant named among fifteen in a foreclosure is not the same finding as a case brought against the business. Say where a filing looks like a debtor-name collision and what establishes that. A count is not a characterisation.",
-      "kind": "assessment",
-      "createdBy": "Sara Menefee",
-      "createdAt": "2026-09-17T00:59:54.491982Z",
-      "history": [
+        },
         {
-          "at": "2026-09-17T00:59:54.491982Z",
+          "at": "2026-09-17T20:05:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T22:40:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:34:19.224Z",
           "by": "Sara Menefee"
         }
-      ]
+      ],
+      "editedAt": "2026-09-18T21:34:19.224Z"
     },
     {
-      "id": "skill-kyb-5",
-      "name": "Licensing and regulatory fit",
-      "instructions": "Say whether the line of work requires a licence or registration to operate lawfully, and whether the record reaches it. Where the entity form implies licensed ownership — a professional entity, a money transmitter, a lender — say what that implies about who may own it. Then say whether the line of work sits inside the bank's accepted-industry policy, and be explicit that this is a decision the bank makes about itself rather than a finding about the business.",
+      "id": "skill-1789767328449",
+      "name": "Ownership",
+      "instructions": "Who actually controls and benefits from this business?\n\nAlways:\n- Identify unsubmitted officers or people associated\n- Identify unsubmitted business entities listed as owners / officers\n- Identify unsubmitted registered agents listed as owners / officers\n- Identify complexity of ownership structure for the business entity\n\nWhen submitted:\n- Verify business entities listed as owners / officers\n- Verify people listed as owners / officers\n- Verify registered agents listed as owners / officers",
       "kind": "assessment",
       "createdBy": "Sara Menefee",
-      "createdAt": "2026-09-17T00:59:54.491983Z",
+      "createdAt": "2026-09-18T21:35:28.449Z",
       "history": [
         {
-          "at": "2026-09-17T00:59:54.491983Z",
+          "at": "2026-09-18T21:35:28.449Z",
           "by": "Sara Menefee"
-        }
-      ]
-    },
-    {
-      "id": "skill-1789608074979",
-      "name": "Say \"Hello\"",
-      "instructions": "Also say \"HELLO\" At the top",
-      "kind": "assessment",
-      "createdBy": "Sara Menefee",
-      "createdAt": "2026-09-17T01:21:14.979Z",
-      "history": [
+        },
         {
-          "at": "2026-09-17T01:21:14.979Z",
+          "at": "2026-09-18T21:35:43.687Z",
           "by": "Sara Menefee"
         }
-      ]
+      ],
+      "editedAt": "2026-09-18T21:35:43.687Z"
     }
   ]
 }

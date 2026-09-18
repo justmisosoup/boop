@@ -10,7 +10,7 @@
  * to the insight, from the insight to its attributes, and from an attribute to
  * the source that supplied it.
  */
-import type { BusinessRecord, SourceRef } from './deriveResults'
+import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
 import { stateName } from './states'
 import { frequencyBand } from './statements'
@@ -474,7 +474,7 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       : []
 
   return [
-    ...field('Entity type', domestic?.entityType ?? record.formation.entityType),
+    ...field('Entity type', trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
     ...field('Formation state', record.formation.state),
     // The same date the domestic filing carries as its registration date; they
     // dedup to one row rather than stating it twice.
@@ -1550,6 +1550,46 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   if (key === 'tin') return [tinRow(record), nameRow]
 
   return [nameRow]
+}
+
+/**
+ * Professional licences, from the registry that holds them.
+ *
+ * Not produced by an insight, because no review task reaches a licence. A
+ * professional entity's members must be licensed in the profession it
+ * practises — the entity form says so — and until the catalog has a check for
+ * it, the registry record is the evidence, carried here so it is readable in
+ * both tabs and citable as a source like any other.
+ */
+export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
+  const rows: AttributeRow[] = []
+
+  for (const l of record.licenses ?? []) {
+    const refs = [{ id: l.id, type: 'npi_registry', metadata: { url: l.sourceUrl ?? '' } }]
+    const base = {
+      group: 'licenses' as GroupId,
+      source: l.registry,
+      sources: [l.registry],
+      refs,
+      href: l.sourceUrl ?? undefined
+    }
+
+    rows.push({ ...base, label: 'Licence holder',
+      value: l.credential ? `${l.holder}, ${l.credential}` : l.holder, matchValue: l.holder })
+    rows.push({ ...base, label: 'Profession',
+      value: l.taxonomyCode ? `${l.profession} (${l.taxonomyCode})` : l.profession })
+    if (l.licenseState && l.licenseNumber)
+      rows.push({ ...base, label: 'State licence',
+        value: `${l.licenseState} ${l.licenseNumber}`, matchValue: l.licenseNumber })
+    rows.push({ ...base, label: `${l.registry} number`, value: l.number, matchValue: l.number })
+    rows.push({ ...base, label: 'Licence status', value: l.status })
+    if (l.enumeratedAt) rows.push({ ...base, label: 'Enumerated', value: l.enumeratedAt })
+    if (l.lastUpdated) rows.push({ ...base, label: 'Registry last updated', value: l.lastUpdated })
+    if (l.address) rows.push({ ...base, label: 'Practice address', value: l.address, matchValue: l.address })
+    if (l.phone) rows.push({ ...base, label: 'Practice phone', value: l.phone, matchValue: l.phone })
+  }
+
+  return rows
 }
 
 export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] =>

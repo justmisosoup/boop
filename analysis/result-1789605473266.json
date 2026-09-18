@@ -1,46 +1,48 @@
 {
-  "headline": "Onboard subject to conditions: identification, operating evidence and screening are all complete, and the liens and litigation that looked adverse resolve on reading — what remains is the adverse media source, the ownership certification and a standing certificate.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "This file is in better shape than its headline counts suggested. Reading the actual filings in Adverse information turned eight of the ten liens and all ten litigations into other companies' business: closed state tax liens, a foreclosure naming fifteen defendants, a run of Georgia cases sharing one party. What is genuinely outstanding is three things of three different kinds. One is a finding nobody has read — the high risk adverse media source, and it is now the only uncharacterised item in the file. One is a document only the customer can supply: the beneficial-ownership certification, since nothing publishes owners. One is a certificate the state of formation will not publish and the customer must obtain. The two open UCC filings are worth a question to the secured parties rather than a condition, since neither states a sum and one names an unrelated co-debtor.",
-        "cites": ["liens", "litigations", "adverse_media", "person_verification", "sos_domestic_sub_status", "tin", "watchlist"]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Pull the adverse media source and read it, since it is now the only finding on the file carrying a score without an article behind it.",
-      "cites": ["adverse_media"],
-      "closes": ["adverse_media_source"]
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
+      "closes": [
+        "act_licence",
+        "own_beneficial_owners"
+      ]
     },
     {
-      "text": "Collect a signed beneficial-ownership certification naming every natural person owning 25 percent or more, then screen each against watchlists and PEP lists as the matched officer already was.",
-      "cites": ["person_verification", "watchlist", "politically_exposed_persons"],
-      "closes": ["beneficial_ownership"]
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
+      "closes": [
+        "act_licence"
+      ]
     },
     {
-      "text": "Request a Certificate of Good Standing for the state of formation from the customer, which is the only evidence of standing available because the state publishes none.",
-      "cites": ["sos_domestic", "sos_domestic_sub_status"],
-      "closes": ["formation_standing"]
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
+      "closes": [
+        "comp_unscreened_owners"
+      ]
     },
     {
-      "text": "Ask the two secured parties on the open UCC filings what they secure and for how much, and confirm the Virginia filing is not a debtor-name collision given the secured party's line of work.",
-      "cites": ["liens"],
-      "closes": ["open_lien_terms"]
-    },
-    {
-      "text": "Ask the customer why the submitted individual is not named on the company's own website when the state filings list them as an officer — a question about the application rather than about the business.",
-      "cites": ["web_person_verification", "person_verification"]
-    },
-    {
-      "text": "Assemble the case file in stage order — identification, the ownership certification, the standing and operating evidence, then the screening and adverse dispositions with the lien and litigation readings attached — and date-stamp each item for the next periodic review.",
-      "cites": ["litigations", "liens"]
-    },
-    {
-      "text": "Set the monitoring terms before the account funds: refresh liens, litigation and adverse media on a fixed cycle, and treat a change in registration status or a new officer as a trigger for re-review.",
-      "cites": ["liens", "litigations", "adverse_media", "sos_active"]
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
+      "closes": [
+        "own_connected_entities"
+      ],
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
+      ]
     }
   ]
 }

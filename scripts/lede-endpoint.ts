@@ -23,6 +23,23 @@ import type { Plugin } from 'vite'
  */
 const DIR = join(process.cwd(), 'analysis')
 
+/** Ledes that survive a re-pull, keyed by business name. */
+const STORE = join(DIR, 'ledes.json')
+
+const ledeKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim()
+
+const ledeByName = (name: string): { text: string; sources?: unknown } | null => {
+  if (!name || !existsSync(STORE)) return null
+  try {
+    const { ledes } = JSON.parse(readFileSync(STORE, 'utf8')) as {
+      ledes?: Record<string, { text: string; sources?: unknown }>
+    }
+    return ledes?.[ledeKey(name)] ?? null
+  } catch {
+    return null
+  }
+}
+
 export const ledePlugin = (): Plugin => ({
   name: 'business-lede',
   configureServer(server) {
@@ -36,6 +53,7 @@ export const ledePlugin = (): Plugin => ({
       const businessId = new URL(url, 'http://localhost').searchParams.get('businessId')
       if (!businessId) return res.end(JSON.stringify({ text: null }))
 
+      const name = new URL(url, 'http://localhost').searchParams.get('name') ?? ''
       const path = join(DIR, `lede-${businessId}.json`)
 
       if (existsSync(path)) {
@@ -46,10 +64,29 @@ export const ledePlugin = (): Plugin => ({
         }
       }
 
+      /**
+       * A lede outlives the business id it was written for.
+       *
+       * Re-ordering the same company mints a new business id, and keyed on the
+       * id alone the lede came back empty for a business that already had one —
+       * so the page asked for it again, and the skeleton reappeared on a record
+       * nothing had changed about. The store is keyed by name, which is what
+       * stays the same. A hit is copied to the id file so the fast path serves
+       * it from then on.
+       */
+      const stored = ledeByName(name)
+      if (stored) {
+        try {
+          writeFileSync(path, JSON.stringify(stored, null, 2))
+        } catch {
+          // Serving it matters; caching it does not.
+        }
+        return res.end(JSON.stringify(stored))
+      }
+
       // Ask for it once, then keep answering `pending` until it lands.
       const asked = join(DIR, `lede-request-${businessId}.json`)
       if (!existsSync(asked)) {
-        const name = new URL(url, 'http://localhost').searchParams.get('name') ?? ''
         writeFileSync(asked, JSON.stringify({ businessId, name, askedAt: new Date().toISOString() }, null, 2))
         server.config.logger.info(
           `\n  ▶ lede requested — ${name || businessId}\n    write prototype/analysis/lede-${businessId}.json\n`

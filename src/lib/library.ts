@@ -43,33 +43,21 @@ export type Workflow = LibraryItem & {
   contexts: string[]
 }
 
+export const MIDDESK_CONTEXTS: LibraryItem[] = []
+
 /**
- * Middesk's context. Selectable, not editable.
+ * No Middesk context ships any more.
  *
- * One, not three. The split into Entities, Jurisdictions and Industries
- * described how the data is produced rather than anything a reader chooses
- * between — nobody grounds an answer in the filings but not the entity — so
- * three rows asked a question with no useful wrong answer.
+ * It was a standing block of instructions prepended to every run — how to read
+ * the record, what the filings mean, what is ordinary for a business of its age.
+ * The assessments now carry that themselves: each one says what it owns and how
+ * to read it, and a customer editing an assessment could not see or change the
+ * paragraph that ran ahead of it. A default nobody can read, edit or switch off
+ * is not context, it is a hidden prompt.
+ *
+ * The array stays so the composer and editor keep their shape if a default is
+ * ever added back.
  */
-export const MIDDESK_CONTEXTS: LibraryItem[] = [
-  {
-    id: 'middesk-context',
-    name: 'Middesk Context',
-    description: 'What the record holds, and how to read it',
-    instructions:
-      'Ground the answer in what the record establishes about the entity: its legal and trade ' +
-      'names, entity type, tax identification, the people attached to it, its addresses, and the ' +
-      'businesses it is connected to. Read the filings for what they say and what they withhold — ' +
-      'which jurisdictions the business is registered in, the status of each filing, which is ' +
-      'domestic — and say when a question cannot be answered because a state does not publish it. ' +
-      'Read all of it against the line of work and against how long the business has been going: ' +
-      'what is ordinary for a business of this kind and this age rather than for a business in ' +
-      'general.',
-    editable: false,
-    version: '0.12',
-    covers: ['Industries', 'Entities', 'Jurisdictions', 'Age of Business']
-  }
-]
 
 /**
  * The workflow a new customer starts with.
@@ -111,12 +99,17 @@ export const versionLine = (item: { version?: string }) =>
 
 
 /**
- * The full brief a complex assessment sends.
+ * What a complex assessment sends: a shared brief, and its parts kept apart.
  *
- * An assessment layered out of others is not its own text alone — the parts
- * under it are what it is built from, and a run that sent only the top-level
- * brief was running something the editor does not show. Order: the context it
- * is read against, then the assessment itself, then each part.
+ * The parts used to be flattened into the brief as one string. That made them
+ * unaddressable — there was no way to say "this one is done" or "this one never
+ * arrived", and no way to work two of them at once. They are independent of each
+ * other, so they are sent as a list and worked at the same time; only the
+ * recommendation reads all of them.
+ *
+ * `prompt` is what every assessment is read against — the Middesk context and
+ * the workflow's own brief. `assessments` is the manifest: one work unit each,
+ * in the order the customer composed them, which is the order they render in.
  *
  * Switched-off parts and context are left out, which is what the toggle means.
  */
@@ -129,12 +122,12 @@ export const composeAssessment = (
     .map((c) => c.instructions)
     .join('\n\n')
 
-  const layered = parts
+  const assessments = parts
     .filter((x) => x.id !== assessment.id && x.kind !== 'workflow' && !disabled.includes(x.id))
-    // Named, because the report is written in sections and the names are what
-    // the sections are.
-    .map((x) => `${x.name}\n${x.instructions}`)
-    .join('\n\n')
+    .map((x) => ({ id: x.id, name: x.name, instructions: x.instructions }))
 
-  return [context, assessment.instructions, layered].filter(Boolean).join('\n\n')
+  return {
+    prompt: [context, assessment.instructions].filter(Boolean).join('\n\n'),
+    assessments
+  }
 }

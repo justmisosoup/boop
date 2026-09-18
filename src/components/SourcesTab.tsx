@@ -2,6 +2,8 @@ import { useState } from 'react'
 
 import { Heading, MutedText, Surface, Tag, Text } from '@/core'
 
+import { PanelGroup } from './PanelGroup'
+
 import type { AttributeRow } from '../lib/attributes'
 import type { BusinessRecord, Derived, SourceRef } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
@@ -700,9 +702,14 @@ export const SourcesTab = ({
 
   return (
     <div className="grid gap-[var(--core-spacing-md)]">
-      {sections.map((section) => (
-        <section key={section.key} className="grid gap-[var(--core-spacing-sm)]">
-          <Heading level={3}>{section.label}</Heading>
+      {sections.map((section, si) => (
+        <PanelGroup
+          key={section.key}
+          label={section.label}
+          count={section.items.length}
+          defaultOpen={si === 0}
+        >
+          <div className="grid gap-[var(--core-spacing-sm)]">
           {section.items.map((s) => {
         const groups = [...s.supplied.entries()].sort(
           (a, b) => order.indexOf(a[0]) - order.indexOf(b[0])
@@ -830,7 +837,8 @@ export const SourcesTab = ({
           </Surface>
             )
           })}
-        </section>
+          </div>
+        </PanelGroup>
       ))}
     </div>
   )

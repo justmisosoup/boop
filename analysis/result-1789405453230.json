@@ -22,15 +22,30 @@
     "bankruptcies",
     "business_connections"
   ],
-  "headline": "A real, established Delaware corporation with a verified name, address and officer — the open items are liens and litigation, not identity.",
+  "headline": "Onboard subject to conditions.",
   "confirmed": [
-    { "text": "The entity exists and is confirmed: the submitted name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address." },
-    { "text": "It is operating from a real commercial address — deliverable, commercial, and matching what the registry holds. Formed 2018, so it is not a newly stood-up entity." },
-    { "text": "A submitted person matches an officer on a state registration, which is the strongest form of control-person evidence available from registry data and is often unavailable." },
-    { "text": "Sanctions, watchlist and PEP screening are all clear, and no bankruptcy filings were found." },
-    { "text": "Liens were found, and litigation records were returned.", "adverse": true },
-    { "text": "Adverse media screening returned hits, which the provider itself scored low." },
-    { "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses." }
+    {
+      "text": "The entity exists and is confirmed: the submitted name and address both match state registrations, entity type is confirmed against a registration, and it holds an active registration in at least one state including the state of the submitted address."
+    },
+    {
+      "text": "It is operating from a real commercial address — deliverable, commercial, and matching what the registry holds. Formed 2018, so it is not a newly stood-up entity."
+    },
+    {
+      "text": "A submitted person matches an officer on a state registration, which is the strongest form of control-person evidence available from registry data and is often unavailable."
+    },
+    {
+      "text": "Sanctions, watchlist and PEP screening are all clear, and no bankruptcy filings were found."
+    },
+    {
+      "text": "Liens were found, and litigation records were returned.",
+      "adverse": true
+    },
+    {
+      "text": "Adverse media screening returned hits, which the provider itself scored low."
+    },
+    {
+      "text": "Registration status is mixed across states — active in some, inactive in others — and five addresses on the record are each shared with 101 or more businesses."
+    }
   ],
   "couldNotConfirm": [
     {

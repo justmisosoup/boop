@@ -1,6 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import reportStore from '../../analysis/reports.json'
+
 import type { AnalysisDraft, AnalysisResult } from '../types'
+
+/**
+ * The reports written for this prototype, bundled.
+ *
+ * `/api/analyse` is dev-server middleware: it does not exist in a `vite build`,
+ * so a deployed copy cannot ask a Claude Code session for a report. It carries
+ * the ones already written instead, keyed by business name because a re-pull
+ * mints new business ids.
+ *
+ * In dev this changes nothing — the endpoint answers first and the live run
+ * replaces it. Deployed, it is the whole of what the page can show.
+ */
+const BUNDLED_REPORTS: Record<
+  string,
+  { report: AnalysisResult; policy?: Array<{ id: string; name: string }> }
+> = (reportStore as { reports?: Record<string, { report: AnalysisResult; policy?: Array<{ id: string; name: string }> }> })
+  .reports ?? {}
+
+const bundledReport = (name: string) =>
+  BUNDLED_REPORTS[name.toLowerCase().replace(/\s+/g, ' ').trim()] ?? null
 import type { BusinessRecord, Derived } from './deriveResults'
 
 /** One run. Re-running produces another, so a reading can be compared with the
@@ -14,8 +36,8 @@ export type AnalysisVersion = {
   skills?: string[]
   /** What the reader typed, if anything — the prompt minus the skills. */
   typed?: string
-  /** The assessments it ran through, so the settled turn lists them too. */
-  policy?: string[]
+  /** The assessments it ran, so the settled turn lists them too. */
+  policy?: Array<{ id: string; name: string }>
   /** How long the session took, so the thinking block persists with the turn. */
   durationMs: number
   insightCount: number
@@ -32,33 +54,43 @@ export const POLICY = {
   name: 'SMB account opening'
 }
 
-/**
- * The standing brief. The analysis opens as a report rather than an empty box:
- * an analyst arriving at a business already knows why they are here, and making
- * them type it is the same mistake as making them pick the insights.
- */
-export const KYB_BRIEF =
-  'Core KYB for a financial institution opening a business bank account. ' +
-  'Work the stages an onboarding file is built from, in this order: customer ' +
-  'identification, whether a legally registered entity exists, is active, and is the ' +
-  'applicant; beneficial ownership and control, including what can only come from the ' +
-  'customer; the nature and purpose of the account, meaning whether the business is ' +
-  'actually operating and what is expected to flow through it; sanctions, PEP and ' +
-  'watchlist screening; and adverse information and financial standing. ' +
-  'Then recommend whether to onboard, and name the steps that complete the case file.'
+/** The report kept for a business, as the one version to show. Static: it is on
+ *  screen from the first paint rather than arriving after a round trip. */
+const heldVersions = (name: string, insightCount: number): AnalysisVersion[] => {
+  const held = bundledReport(name)
+  if (!held) return []
+  return [
+    {
+      id: `held:${name}`,
+      kind: 'report',
+      prompt: '',
+      skills: [],
+      typed: '',
+      policy: held.policy ?? [],
+      result: held.report,
+      pinned: [],
+      durationMs: 0,
+      insightCount,
+      at: new Date().toISOString()
+    }
+  ]
+}
 
 export const useAnalysis = (
   record: BusinessRecord,
-  results: Derived[],
-  /** The standing assessment workflow. Editable, so it is passed in rather
-   *  than read from the constant — see useWorkflow. */
-  workflow: string = KYB_BRIEF,
-  /** False while the saved workflow is still being read from disk. The first
-   *  report must not be queued against the shipped default and then be wrong
-   *  the moment the edited one arrives. */
-  workflowReady = true
+  results: Derived[]
 ) => {
-  const [versions, setVersions] = useState<AnalysisVersion[]>([])
+  /**
+   * The bundled report is on screen from the first paint.
+   *
+   * It used to seed behind a `fetch` probe, so the report arrived a round trip
+   * after the page did and visibly dropped in. It is held state, so a live run
+   * still replaces it.
+   */
+  const [versions, setVersions] = useState<AnalysisVersion[]>(() =>
+    heldVersions(record.name, results.length)
+  )
+
   /**
    * Reports a re-run replaced, newest first.
    *
@@ -75,6 +107,15 @@ export const useAnalysis = (
    *  screen before the verdict exists, which is the point of writing them in
    *  two passes rather than one. */
   const [draft, setDraft] = useState<AnalysisDraft | null>(null)
+  /**
+   * Which assessments have landed, by id.
+   *
+   * Progress used to be `draft.sections.length` matched positionally against the
+   * assessment list — fine while they were written in order, wrong the moment
+   * they are worked at the same time, because the third to finish would light
+   * the first row. Keyed by id, a slow assessment holds only its own row.
+   */
+  const [arrived, setArrived] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   /** The server has the request — the first poll came back. Real, not a timer. */
   const [acknowledged, setAcknowledged] = useState(false)
@@ -89,7 +130,7 @@ export const useAnalysis = (
     asked: string
     skills?: string[]
     typed?: string
-    policy?: string[]
+    policy?: Array<{ id: string; name: string }>
     kind: 'report' | 'question'
     pinnedIds: string[]
     startedAt: number
@@ -99,9 +140,19 @@ export const useAnalysis = (
   const giveUpTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const waiting = pending !== null
 
+  /**
+   * Nothing is restored on arrival.
+   *
+   * The report IS kept — the endpoint files the last one per business — but a
+   * refresh starts blank on purpose: opening a record should not look like a
+   * run just happened. Pressing send brings it back, replayed section by
+   * section, unless a brief has been edited since, in which case it is written
+   * afresh. See `analysis/reports.json`.
+   */
+
   // A different business is a different analysis.
   useEffect(() => {
-    setVersions([])
+    setVersions(heldVersions(record.name, results.length))
     setSuperseded([])
     setCurrent(0)
     setPinned([])
@@ -109,6 +160,7 @@ export const useAnalysis = (
     setPending(null)
     setSlow(false)
     setDraft(null)
+    setArrived([])
     setAcknowledged(false)
   }, [record.id])
 
@@ -121,13 +173,14 @@ export const useAnalysis = (
       setPending(null)
       setSlow(false)
       setDraft(null)
+      setArrived([])
       setError('This run was not answered. Send it again to retry.')
     }, 600_000)
 
     const tick = async () => {
       let data:
         | { pending: true }
-        | { stage: 'assessments'; draft: AnalysisDraft }
+        | { stage: 'assessments'; draft: AnalysisDraft; arrived: string[] }
         | { error: string }
         | AnalysisResult
       try {
@@ -142,8 +195,11 @@ export const useAnalysis = (
       }
 
       if ('stage' in data) {
-        if (pending.recordId === record.id) setDraft(data.draft)
-        return // keep polling for the verdict
+        if (pending.recordId === record.id) {
+          setDraft(data.draft)
+          setArrived(data.arrived ?? [])
+        }
+        return // keep polling for the rest, then the verdict
       }
 
       // Abandoned if the user moved on.
@@ -186,6 +242,7 @@ export const useAnalysis = (
       setPending(null)
       setSlow(false)
       setDraft(null)
+      setArrived([])
     }
 
     const interval = setInterval(tick, 1200)
@@ -207,8 +264,16 @@ export const useAnalysis = (
       /** The skills that composed the prompt, for the transcript. */
       skills?: string[],
       typed?: string,
-      /** The assessments inside the one being run, in order. */
-      policy?: string[]
+      /**
+       * The assessments this run is composed of, in order — the manifest.
+       *
+       * Sent to the server, not just held for the transcript: it is what tells
+       * the run when it is complete. Without it there is no difference between
+       * an assessment still being worked and one that was never written, and a
+       * recommendation could be served against a report quietly missing a
+       * section.
+       */
+      policy?: Array<{ id: string; name: string; instructions: string }>
     ) => {
       const asked = prompt.trim()
       if (!asked) return
@@ -227,6 +292,7 @@ export const useAnalysis = (
           },
           kind,
           prompt: asked,
+          assessments: policy ?? [],
           // Every insight, with its id — the session picks from these.
           insights: results.map((r) => ({
             id: r.insightId,
@@ -249,7 +315,7 @@ export const useAnalysis = (
             asked,
             skills,
             typed,
-            policy,
+            policy: policy?.map(({ id, name }) => ({ id, name })),
             kind,
             pinnedIds,
             startedAt: Date.now()
@@ -309,6 +375,10 @@ export const useAnalysis = (
 
   return {
     draft,
+    /** Assessment ids already on disk — what lights each step. */
+    arrived,
+    /** The assessments this run is composed of, in order. */
+    waitingPolicy: pending?.policy ?? [],
     waitingKind: pending?.kind ?? null,
     /** What was sent, so the turn can be on screen before the answer is. */
     acknowledged,

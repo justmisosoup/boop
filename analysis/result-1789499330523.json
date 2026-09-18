@@ -1,44 +1,48 @@
 {
-  "headline": "The company is real, active and in good standing. What is unsettled is whether the name and address on the application belong to it — and three quarters of the standard file was never ordered.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "The registration side of this is as clean as Tennessee gets: one active domestic filing, an affirmative good-standing sub-status that most states do not publish at all, and an entity type that agrees with what was submitted. Nothing about the company's existence is in question.",
-        "cites": ["sos_active", "sos_domestic", "sos_domestic_sub_status", "entity_type_agreement"]
-      },
-      {
-        "text": "The decision turns instead on the two places the application and the filing fail to meet. The name is a similar match, not an exact one, and the submitted office address matches no address on any registration. Either can be innocuous — a trading name, a new premises — but both are unresolved at once, and they are the only findings here that bear on whether the applicant is the registered company.",
-        "cites": ["name", "address_verification"]
-      },
-      {
-        "text": "Weigh the rest of the file as thin rather than clean. Watchlist came back with no hits, and that is the only screening that ran; ownership and web presence were not checked at all. For a business whose revenue is online retail, the absence of a storefront check is a gap in what was ordered, not a fact about the company. Nothing in this record counts against it.",
-        "cites": ["watchlist"]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Reconcile the submitted name and office address against the Tennessee filing before opening. Ask which is the registered name and whether the premises changed — one explanation likely covers both.",
-      "cites": ["name", "address_verification"]
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
+      "closes": [
+        "act_licence",
+        "own_beneficial_owners"
+      ]
     },
     {
-      "text": "Order officers from the Tennessee filing, or take a submitted control person to verify against. Tennessee publishes them for an LLC.",
-      "cites": ["sos_domestic"],
-      "closes": ["control_persons"]
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
+      "closes": [
+        "act_licence"
+      ]
     },
     {
-      "text": "Order the remaining screening — adverse media, PEP, liens, litigation, bankruptcy. Only the watchlist ran, so the file currently reads quiet for a reason that has nothing to do with the business.",
-      "cites": ["watchlist"],
-      "closes": ["screening_scope"]
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
+      "closes": [
+        "comp_unscreened_owners"
+      ]
     },
     {
-      "text": "Order a website and online-profile check. For a direct-to-consumer retailer this is the most direct evidence of operating available, and it is missing entirely.",
-      "closes": ["web_presence"]
-    },
-    {
-      "text": "Note, without acting on it, that one address is shared with 101 or more businesses and one related business shares officers, agents or an address. Commonplace for a small retailer using a fulfilment or registered-agent address; worth a second look only if the name and address questions above resolve badly.",
-      "cites": ["location_frequency:high", "business_connections"]
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
+      "closes": [
+        "own_connected_entities"
+      ],
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
+      ]
     }
   ]
 }

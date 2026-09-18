@@ -24,13 +24,24 @@
     "sos_domestic_sub_status",
     "beneficial_ownership_check"
   ],
-  "headline": "Yes — this is a real, operating New York practice with unusually good corroboration, and nothing here should stop an SMB account approval.",
+  "headline": "Onboard subject to conditions.",
   "confirmed": [
-    { "text": "The submitted name and address both match an active New York registration, and that registration is active in both the formation state and the submitted address state." },
-    { "text": "The website is reachable and independently corroborates the business on three axes — name, address and person — with the domain registrant matching at high confidence. For an SMB applicant that is stronger third-party corroboration than most files carry." },
-    { "text": "The submitted address is commercial, deliverable, and shared with 21–100 other businesses, which is ordinary for a clinical suite at a Manhattan medical address." },
-    { "text": "Screening is clean across watchlist, liens, litigation and bankruptcy. Adverse media returned hits that the provider itself scored low." },
-    { "text": "No DBA filing was found matching the submitted DBA \"Kairos Physio\". New York does support DBA filings, so this is an established absence rather than a coverage gap — the trading name is in use without a registered fictitious-name filing behind it.", "adverse": true }
+    {
+      "text": "The submitted name and address both match an active New York registration, and that registration is active in both the formation state and the submitted address state."
+    },
+    {
+      "text": "The website is reachable and independently corroborates the business on three axes — name, address and person — with the domain registrant matching at high confidence. For an SMB applicant that is stronger third-party corroboration than most files carry."
+    },
+    {
+      "text": "The submitted address is commercial, deliverable, and shared with 21–100 other businesses, which is ordinary for a clinical suite at a Manhattan medical address."
+    },
+    {
+      "text": "Screening is clean across watchlist, liens, litigation and bankruptcy. Adverse media returned hits that the provider itself scored low."
+    },
+    {
+      "text": "No DBA filing was found matching the submitted DBA \"Kairos Physio\". New York does support DBA filings, so this is an established absence rather than a coverage gap — the trading name is in use without a registered fictitious-name filing behind it.",
+      "adverse": true
+    }
   ],
   "couldNotConfirm": [
     {

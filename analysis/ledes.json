@@ -1,0 +1,40 @@
+{
+  "_comment": "Ledes that survive a re-pull. Keyed by business name, not business id — re-ordering the same company mints a new id every time, and an id-keyed lede comes back empty for a business that already had one. FORMAT: lead with the registered business identity name, in full, as it appears on the filing — not a trading or shortened name. A trading name may follow if it differs. Say what kind of business it is with the adjectives that actually characterise it, and where, specifically. Name who founded or runs it. Then what it actually does and sells, in its own terms, including how it is priced or positioned. Two or three sentences. No revenue-model or customer-funds boilerplate — that is compliance filler, not a description of a company.",
+  "ledes": {
+    "kairos physical therapy pllc": {
+      "text": "KAIROS PHYSICAL THERAPY PLLC is a boutique concierge physical therapy studio on Madison Avenue in NYC's Upper East Side. Founded by Dr. Joshua Gee, it blends orthopedic rehab with strength training in one-on-one sessions led entirely by Doctors of Physical Therapy, and also offers clinician-led personal training at premium pricing.",
+      "sources": [
+        {
+          "title": "kairosphysio.com — Concierge Physical Therapy & Personal Training, Upper East Side",
+          "url": "https://www.kairosphysio.com"
+        },
+        {
+          "title": "NPPES NPI Registry — Joshua Y Gee DPT, Physical Therapist, 801 Madison Ave",
+          "url": "https://npiregistry.cms.hhs.gov/provider-view/1477211969"
+        }
+      ]
+    },
+    "andytown llc": {
+      "text": "Andytown Coffee Roasters is a specialty coffee roaster and café group in San Francisco's Outer Sunset. Founded in 2014 by Lauren Crabbe and Michael McCrory, it roasts in-house and sells through its own cafés — several in the Sunset and one downtown — alongside pastries baked on site, and supplies wholesale accounts across the city.",
+      "sources": [
+        {
+          "title": "andytownsf.com — Andytown Coffee Roasters",
+          "url": "https://www.andytownsf.com/"
+        },
+        {
+          "title": "Fresh Cup — Do You Know Andytown?",
+          "url": "https://freshcup.com/do-you-know-andytown/"
+        }
+      ]
+    },
+    "middesk inc": {
+      "text": "Middesk is a business identity platform in San Francisco selling verification infrastructure to banks, lenders and fintechs. It pulls filings from state and federal registries behind an API, and sells KYB verification, ongoing monitoring and agent-assisted state registration on top of that data.",
+      "sources": [
+        {
+          "title": "middesk.com — business identity and KYB platform",
+          "url": "https://www.middesk.com/"
+        }
+      ]
+    }
+  }
+}

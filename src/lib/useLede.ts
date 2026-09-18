@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react'
 
+import ledeStore from '../../analysis/ledes.json'
+
+/**
+ * The ledes written for this prototype, bundled.
+ *
+ * `/api/lede` is dev-server middleware and does not exist in a build, so a
+ * deployed copy has to carry what was written rather than ask for it. The store
+ * is keyed by business name because a re-pull mints new business ids.
+ */
+const BUNDLED: Record<string, { text?: string }> =
+  (ledeStore as { ledes?: Record<string, { text?: string }> }).ledes ?? {}
+
+const bundledLede = (name: string) =>
+  BUNDLED[name.toLowerCase().replace(/\s+/g, ' ').trim()]?.text ?? null
+
 /**
  * The business's own description, authored separately from any run.
  *
@@ -12,7 +27,10 @@ export const useLede = (businessId: string, name: string) => {
 
   useEffect(() => {
     let live = true
-    setText(null)
+    // What was written for this business, if anything. A deployed build has no
+    // endpoint to ask, so this is the whole answer there; in dev it just means
+    // the lede is on screen before the first poll returns.
+    setText(bundledLede(name))
 
     // Arriving asks for one; the poll keeps asking until it is written.
     const ask = () =>

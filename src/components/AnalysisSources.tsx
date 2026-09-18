@@ -24,6 +24,9 @@ const AUTHORITY: Record<GroupId, number> = {
   address: 1,
   people: 1,
   tin: 1,
+  // A federal registry stating a practitioner's credential — a government
+  // record about a person, ranked with the other public filings.
+  licenses: 1,
   liens: 2,
   litigation: 2,
   bankruptcy: 2,

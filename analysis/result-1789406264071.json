@@ -1,35 +1,80 @@
 {
   "by": "claude-code-session",
   "used": [
-    "name", "entity_type", "sos_active", "sos_match", "sos_domestic", "sos_inactive",
-    "sos_unknown", "sos_domestic_sub_status", "address_verification", "address_deliverability",
-    "address_property_type", "location_frequency:high", "person_verification",
-    "website_status", "website_url_domain_ownership", "web_business_name_verification",
-    "web_address_verification", "watchlist", "politically_exposed_persons", "adverse_media",
-    "industry", "liens", "litigations", "bankruptcies", "business_connections"
+    "name",
+    "entity_type",
+    "sos_active",
+    "sos_match",
+    "sos_domestic",
+    "sos_inactive",
+    "sos_unknown",
+    "sos_domestic_sub_status",
+    "address_verification",
+    "address_deliverability",
+    "address_property_type",
+    "location_frequency:high",
+    "person_verification",
+    "website_status",
+    "website_url_domain_ownership",
+    "web_business_name_verification",
+    "web_address_verification",
+    "watchlist",
+    "politically_exposed_persons",
+    "adverse_media",
+    "industry",
+    "liens",
+    "litigations",
+    "bankruptcies",
+    "business_connections"
   ],
-  "headline": "Middesk Inc clears the identity and operating tests for SMB account opening comfortably. The decision rests on open liens and litigation, which this record establishes exist but cannot size.",
+  "headline": "Onboard subject to conditions.",
   "confirmed": [
     {
       "text": "Identity is settled on every axis the registries can speak to. The submitted name and address both match state registrations, entity type is confirmed against a filing, and the company holds an active registration in at least one state including the state it gave as its address. Formed in 2018, it is not a recently stood-up entity, and a submitted person matches an officer on a state registration — the strongest control-person evidence registry data produces, and frequently unavailable for LLCs and professional entities.",
-      "cites": ["name", "entity_type", "sos_active", "sos_match", "person_verification"]
+      "cites": [
+        "name",
+        "entity_type",
+        "sos_active",
+        "sos_match",
+        "person_verification"
+      ]
     },
     {
       "text": "It is visibly operating rather than merely registered. The address is commercial and deliverable, the website is reachable, and the domain registrant corroborates the business at high confidence — with the site's own name and address matching what was submitted. For account opening that combination does most of the work: registry data proves an entity exists, and this is what shows someone is running it.",
-      "cites": ["address_deliverability", "address_property_type", "website_status", "website_url_domain_ownership", "web_business_name_verification", "web_address_verification"]
+      "cites": [
+        "address_deliverability",
+        "address_property_type",
+        "website_status",
+        "website_url_domain_ownership",
+        "web_business_name_verification",
+        "web_address_verification"
+      ]
     },
     {
       "text": "Screening is clean where it matters most. Watchlist and PEP both returned no hits, no prohibited industry was identified, and there are no bankruptcy filings. Adverse media returned hits that the provider itself scored low, which is worth an analyst's glance rather than an escalation.",
-      "cites": ["watchlist", "politically_exposed_persons", "industry", "bankruptcies", "adverse_media"]
+      "cites": [
+        "watchlist",
+        "politically_exposed_persons",
+        "industry",
+        "bankruptcies",
+        "adverse_media"
+      ]
     },
     {
       "text": "Open liens were found and litigation records were returned. This is the only thing on the record that points at the business rather than at the limits of the data, and it is what the decision should turn on.",
       "adverse": true,
-      "cites": ["liens", "litigations"]
+      "cites": [
+        "liens",
+        "litigations"
+      ]
     },
     {
       "text": "Two things look irregular and are not. Registration status is mixed — active in some states, inactive in others — which is ordinary housekeeping for a company registered across many states rather than a sign of lapse. And five addresses on the record are each shared with more than a hundred businesses, which is the expected shape of registered-agent addresses, not a shell pattern.",
-      "cites": ["sos_inactive", "location_frequency:high", "business_connections"]
+      "cites": [
+        "sos_inactive",
+        "location_frequency:high",
+        "business_connections"
+      ]
     }
   ],
   "couldNotConfirm": [
@@ -37,13 +82,20 @@
       "point": "Standing in Delaware, and the status of several registrations that returned nothing at all",
       "why": "not_published",
       "wouldAnswer": "Delaware publishes no good-standing sub-status for any company, so no order will produce it — a Certificate of Good Standing from the customer is the only route. Separately, the formation-state status and several others came back unresolved rather than negative, which a re-run of the registration search may clear.",
-      "cites": ["sos_domestic_sub_status", "sos_domestic", "sos_unknown"]
+      "cites": [
+        "sos_domestic_sub_status",
+        "sos_domestic",
+        "sos_unknown"
+      ]
     },
     {
       "point": "What the liens and litigation actually are",
       "why": "no_insight_covers_it",
       "wouldAnswer": "The record establishes that they exist and stops there — no amounts, no dates, no indication of whether they are satisfied. Ordering the lien and litigation detail is the single thing standing between this file and a decision.",
-      "cites": ["liens", "litigations"]
+      "cites": [
+        "liens",
+        "litigations"
+      ]
     },
     {
       "point": "Who ultimately owns or benefits from the business",

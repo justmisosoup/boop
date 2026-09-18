@@ -1,6 +1,8 @@
-import { ChatSourceChip, Heading, MutedText, Surface, Text, type ChatSourceData } from '@/core'
+import { ChatSourceChip, MutedText, Surface, Text, type ChatSourceData } from '@/core'
 
-import { attributesFor, type AttributeRow } from '../lib/attributes'
+import { PanelGroup } from './PanelGroup'
+
+import { attributesFor, licenseRows, type AttributeRow } from '../lib/attributes'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
@@ -416,6 +418,14 @@ export const attributeRowsByGroup = (
 ): Map<GroupId, Map<string, AttributeRow>> => {
   const byGroup = new Map<GroupId, Map<string, AttributeRow>>()
 
+  // Licences are not produced by any insight — no review task reaches one — so
+  // they are added directly rather than waiting for a check that does not exist.
+  for (const a of licenseRows(record)) {
+    const rows = byGroup.get('licenses') ?? new Map<string, AttributeRow>()
+    rows.set(a.matchValue ?? `${a.label}::${a.value}`, a)
+    byGroup.set('licenses', rows)
+  }
+
   for (const r of results) {
     const asked = groupFor(r.insightId)
     for (const a of attributesFor(r.insightId, record)) {
@@ -503,13 +513,13 @@ export const AttributesTab = ({
 
   return (
     <>
-      {groups.map((group) => (
-        <section key={group.id} className="grid gap-[var(--core-spacing-sm)]">
-          <div className="flex items-baseline gap-2">
-            <Heading level={3}>{group.label}</Heading>
-            <MutedText className="text-caption">{group.rows.length}</MutedText>
-          </div>
-
+      {groups.map((group, gi) => (
+        <PanelGroup
+          key={group.id}
+          label={group.label}
+          count={group.rows.length}
+          defaultOpen={gi === 0}
+        >
           <Surface variant="default" padding="none" className="overflow-hidden">
             <div className="divide-y divide-solid divide-border">
               {group.rows.map((a, i) => {
@@ -592,7 +602,7 @@ export const AttributesTab = ({
               })}
             </div>
           </Surface>
-        </section>
+        </PanelGroup>
       ))}
     </>
   )

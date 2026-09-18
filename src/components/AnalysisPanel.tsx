@@ -8,7 +8,9 @@ import {
   ChatSources,
   ChatThinking,
   Heading,
+  MutedText,
   Spinner,
+  Surface,
   Tag,
   Text,
   type ChatThinkingStep
@@ -43,56 +45,11 @@ const RunLabel = ({ busy, children }: { busy: boolean; children: React.ReactNode
 )
 
 
-/**
- * The user's turn: the skills that were sent, and anything typed with them.
- *
- * The tokens come from what the composer recorded, not from matching the
- * prompt text back to a skill — the prompt is now several skills' instructions
- * concatenated, so a text match fails and the whole composed brief printed
- * itself into the transcript. What a skill SAYS is read by opening it, not by
- * reading the turn.
- */
-const SkillTurn = ({
-  skills = [],
-  typed = ''
-}: {
-  skills?: string[]
-  typed?: string
-}) => {
-  if (skills.length === 0 && !typed) return null
-
-  return (
-    // Fixed at the top while the answer scrolls under it: a report runs to
-    // several screens, and what was asked is the thing a reader loses first.
-    <div className="sticky top-0 z-nav -mx-1 bg-background px-1 py-1">
-    <ChatMessage role="user">
-      {skills.length > 0 && (
-        <span className="flex flex-wrap items-center gap-1.5">
-          {skills.map((name) => (
-            // The same glyph the composer's token carries. Dropping it here
-            // made the sent turn a different object from the thing that was
-            // sent.
-            <Tag
-              key={name}
-              tone="subtle"
-              size="compact"
-              icon={<CubeIcon aria-hidden="true" className="size-3" />}
-            >
-              {name}
-            </Tag>
-          ))}
-        </span>
-      )}
-      {typed && <span className={skills.length > 0 ? 'mt-1.5 block' : undefined}>{typed}</span>}
-    </ChatMessage>
-    </div>
-  )
-}
 
 import { POLICY } from '../lib/useAnalysis'
 
 
-import type { Derived } from '../lib/deriveResults'
+import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type { AnalysisVersion } from '../lib/useAnalysis'
 import type {
   AnalysisDraft,
@@ -102,6 +59,9 @@ import type {
   CouldNotConfirmReason
 } from '../types'
 import { AnalysisSources } from './AnalysisSources'
+import { attributesFor } from '../lib/attributes'
+import { StateMark } from './StateMark'
+import { makeGroupFor } from '../lib/groups'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 
 /**
@@ -129,34 +89,16 @@ import { ROLLUP_NO_GLYPH } from './chipStyles'
  * The headings do not repeat the word "assessment" — the tab is already called
  * that, and five headings ending in it read as filing labels rather than prose.
  */
-const SECTIONS: Array<{ id: AssessmentSectionId; heading: string }> = [
-  { id: 'identification', heading: 'Customer identification' },
-  { id: 'ownership', heading: 'Beneficial ownership and control' },
-  { id: 'purpose', heading: 'Nature and purpose of the account' },
-  { id: 'screening', heading: 'Sanctions and screening' },
-  { id: 'adverse', heading: 'Adverse information and financial standing' },
-  // Last, where it is reached: the turn, then the run, then the assessments it
-  // worked through, then what they come to. Sitting first it was a conclusion
-  // the reader met before any of the work it rests on.
-  { id: 'recommendation', heading: 'Recommendation' }
-]
-
-/** The assessments proper — everything the policy runs, minus the conclusion. */
-const ASSESSMENTS = SECTIONS.filter((s) => s.id !== 'recommendation')
-
 /**
- * The steps a run works through.
+ * The report's shape is the manifest, not a fixed list.
  *
- * Taken from the assessment that was sent, not from a fixed list: the policy is
- * whatever the customer built `SMB account opening` out of, and naming five
- * standing stages while six of theirs ran said the wrong thing about work the
- * reader can watch happening. Falls back to the standing sections only when
- * nothing was passed — a question, or a run from before parts existed.
+ * `recommendation` leads: it is the call, and an analyst wants the call before
+ * the working. It still RUNS last, because it reads every assessment.
  */
-const stepsOf = (policy: string[]) =>
-  policy.length > 0
-    ? policy.map((name, i) => ({ id: `policy:${i}`, heading: name }))
-    : ASSESSMENTS
+const sectionsOf = (policy: Array<{ id: string; name: string }>) => [
+  { id: 'recommendation', heading: 'Recommendation' },
+  ...policy.map(({ id, name }) => ({ id, heading: name }))
+]
 
 /**
  * What is actually happening while the analysis is being written, in the order
@@ -170,83 +112,61 @@ const stepsOf = (policy: string[]) =>
  * ones the customer actually put inside the one that was sent — a fixed list of
  * standing stages named work that was not happening.
  */
+export const WHY: Record<CouldNotConfirmReason, string> = {
+  not_published: 'the state does not publish it',
+  not_held_or_unreachable: 'we do not hold it',
+  not_required: 'not required for this kind of business',
+  no_insight_covers_it: 'no insight covers it'
+}
+
 const thinkingSteps = (
   insightCount: number,
   {
     slow = false,
     done = false,
     used = 0,
-    written = 0,
     started = false,
     acknowledged = false,
+    arrived = [],
     policy = []
   }: {
     slow?: boolean
     done?: boolean
     used?: number
-    /** The session has begun writing — the first section is on disk. */
     started?: boolean
-    /** The server has the request. Until then nothing is under way and the
-     *  summary says only that the assessment is running. */
     acknowledged?: boolean
-    /** How many assessments are on disk right now. */
-    written?: number
-    /** The assessments inside the one that runs, in order. */
-    policy?: string[]
+    /** Assessment ids on disk right now, in whatever order they finished. */
+    arrived?: string[]
+    policy?: Array<{ id: string; name: string }>
   } = {}
 ): ChatThinkingStep[] => {
-  const allWritten = done || written >= policy.length
-  const status = (i: number): ChatThinkingStep['status'] =>
-    done || written > i ? 'complete' : written === i && started ? 'active' : 'pending'
+  const landed = new Set(arrived)
+  const written = policy.filter((a) => landed.has(a.id)).length
+  const allWritten = done || (policy.length > 0 && written >= policy.length)
+  /** Once the request is in, every assessment is under way at the same time. */
+  const status = (id: string): ChatThinkingStep['status'] =>
+    done || landed.has(id) ? 'complete' : acknowledged ? 'active' : 'pending'
 
   return [
-    /**
-     * The first two steps tick over on real events, not on arrival.
-     *
-     * Marked complete from the first paint they were never seen happening, and
-     * the run appeared to begin at step three — which is what made it read as a
-     * decoration rather than an account of the work. Reading is finished when
-     * the session's first write lands; selecting is finished when the first
-     * assessment does.
-     */
     {
       id: 'read',
       label: done || started ? 'Read the business identity record' : 'Reading the business identity record',
-      description: done
-        ? `${used} of ${insightCount} insights used`
-        : `${insightCount} insights available`,
-      status: (done || started
-        ? 'complete'
-        : acknowledged
-          ? 'active'
-          : 'pending') as ChatThinkingStep['status']
+      description: done ? `${used} of ${insightCount} insights used` : `${insightCount} insights available`,
+      status: (done || started ? 'complete' : acknowledged ? 'active' : 'pending') as ChatThinkingStep['status']
     },
     {
       id: 'select',
       label: done || written > 0 ? 'Assembled assessments' : 'Assemble assessments',
-      // Counts up as they land: "5 assessments" sat unchanged through the one
-      // part of the run a reader can actually watch progress.
       description: done
         ? `${policy.length} assessment${policy.length === 1 ? '' : 's'}`
         : `${Math.min(written, policy.length)} of ${policy.length} assessments`,
-      status: (done || written > 0
-        ? 'complete'
-        : started
-          ? 'active'
-          : 'pending') as ChatThinkingStep['status']
+      status: (done || policy.length > 0 ? 'complete' : acknowledged ? 'active' : 'pending') as ChatThinkingStep['status']
     },
-
-    // One per assessment, because the assessments are what is being run.
-    // Indented under the step that assembled them: they are its contents, and
-    // flat they read as peers of "read the record" rather than as the list it
-    // just put together. `ChatThinkingStep` has no depth, so the indent is in
-    // the label.
-    ...policy.map((name, i) => ({
-      id: `assess:${i}`,
+    ...policy.map(({ id, name }) => ({
+      id: `assess:${id}`,
       label: `\u00a0\u00a0\u00a0\u00a0${name}`,
-      status: status(i)
+      status: status(id)
     })),
-
     {
       id: 'context',
       label: done ? 'Considered context' : 'Consider context',
@@ -257,44 +177,99 @@ const thinkingSteps = (
       label: done ? 'Built a recommendation' : 'Build a recommendation',
       status: (done ? 'complete' : 'pending') as ChatThinkingStep['status']
     },
-
-    ...(slow && !done
-      ? [
-          {
-            id: 'slow',
-            label: 'Still waiting on the session',
-            status: 'active' as const
-          }
-        ]
-      : [])
+    ...(slow && !done ? [{ id: 'slow', label: 'Still waiting on the session', status: 'active' as const }] : [])
   ]
 }
 
-export const WHY: Record<CouldNotConfirmReason, string> = {
-  not_published: 'the state does not publish it',
-  not_held_or_unreachable: 'we do not hold it',
-  not_required: 'not required for this kind of business',
-  no_insight_covers_it: 'no insight covers it'
+/**
+ * The checks a sentence rests on, under the sentence.
+ *
+ * The chip alone said "Insights · 5" and opened a popover of categories, which
+ * sent the reader to the reference panel and away from the argument. What a
+ * citation is asked is "which checks say this" — a short list that belongs
+ * directly beneath the claim.
+ */
+const CiteList = ({
+  cited,
+  categories,
+  record,
+  onJumpToGroup
+}: {
+  cited: Derived[]
+  categories: Map<string, string>
+  record?: BusinessRecord
+  /** A run is being written, so sections not yet here are coming. */
+  stream?: boolean
+  onJumpToGroup: (groupId: string, insightIds: string[]) => void
+}) => {
+  const groupOf = makeGroupFor(categories)
+
+  /**
+   * The attributes, not the insights.
+   *
+   * An insight is a reading of a value — "we identified a name we believe is
+   * different from the submitted business name" — and the reading was already
+   * made in the sentence above. What the sentence cannot carry is the value
+   * itself, which is the thing a reviewer writes down: Kairos Physio, 801
+   * Madison Ave Fl 3, the TIN. So the card is the attribute, labelled, and the
+   * insight is only what selects it and where it jumps to.
+   *
+   * Deduplicated on label and value: several checks read the same attribute,
+   * and the business name would otherwise appear four times.
+   */
+  const seen = new Set<string>()
+  const rows = cited.flatMap((r) =>
+    (record ? attributesFor(r.insightId, record) : [])
+      .filter((a) => a.value && a.label)
+      .map((a) => ({ label: a.label, value: a.value as string, from: r }))
+      .filter((a) => {
+        const key = `${a.label}\u0000${a.value}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  )
+
+  if (rows.length === 0) return null
+
+  return (
+    <Surface variant="default" padding="none" className="mt-2 overflow-hidden">
+      {/* A single attribute runs full width; the split starts at two. */}
+      <div className={`-mb-px -mr-px grid${rows.length > 1 ? ' sm:grid-cols-2' : ''}`}>
+        {rows.map((a) => (
+          <button
+            key={`${a.label}-${a.value}`}
+            type="button"
+            onClick={() => onJumpToGroup(groupOf(a.from.insightId), [a.from.insightId])}
+            className="border-b border-r border-solid border-border px-3 py-2 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)]"
+          >
+            <MutedText className="block text-caption leading-snug">{a.label}</MutedText>
+            <span className="mt-0.5 block text-sm leading-snug">{a.value}</span>
+          </button>
+        ))}
+      </div>
+    </Surface>
+  )
 }
 
-/**
- * A paragraph of the analysis.
- *
- * The section it belongs to is a bold lead-in on the first paragraph rather
- * than a heading above a stack — a heading plus one-line items reads as a
- * checklist, and this is an argument being made to an analyst.
- *
- * Findings are not marked or coloured, including the ones that count against the
- * business. An assessment states what the record shows; what to DO about it is
- * the recommendation's job, and it is the only part of the report that should
- * read as actionable.
- */
+/** Cited checks, resolved. A check that never ran is dropped: it is not in the
+ *  Insights tab either, so citing it promises evidence nobody can look at. Two
+ *  checks reaching the same sentence collapse to one. */
+const useCited = (cites: string[] | undefined, results: Derived[]) => {
+  const found = (cites ?? [])
+    .map((id) => results.find((r) => r.insightId === id))
+    .filter((r): r is Derived => Boolean(r) && !r!.notReported)
+  const seen = new Set<string>()
+  return found.filter((r) => !seen.has(r.statement) && seen.add(r.statement))
+}
+
 export const Para = ({
   lead,
   sources,
   cites,
   results,
   categories,
+  record,
   onJumpToGroup,
   children
 }: {
@@ -303,9 +278,12 @@ export const Para = ({
   cites?: string[]
   results: Derived[]
   categories: Map<string, string>
+  record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   children: React.ReactNode
 }) => {
+  const cited = useCited(cites, results)
+
   const body = (
     <Text>
       {lead && <span className="font-semibold">{lead} </span>}
@@ -328,21 +306,17 @@ export const Para = ({
           />
         </span>
       )}
-      {cites && cites.length > 0 && (
-        <span className="ml-1.5 align-middle">
-          <AnalysisSources
-            used={cites}
-            results={results}
-            categories={categories}
-            onSelect={onJumpToGroup}
-            inline
-          />
-        </span>
-      )}
     </Text>
   )
 
-  return <div className="mt-3">{body}</div>
+  return (
+    <div className="mt-3">
+      {body}
+      {cited.length > 0 && (
+        <CiteList cited={cited} categories={categories} record={record} onJumpToGroup={onJumpToGroup} />
+      )}
+    </div>
+  )
 }
 
 /**
@@ -356,11 +330,13 @@ export const SectionBody = ({
   section,
   results,
   categories,
+  record,
   onJumpToGroup
 }: {
   section: AssessmentSection
   results: Derived[]
   categories: Map<string, string>
+  record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
 }) => (
   <>
@@ -371,6 +347,7 @@ export const SectionBody = ({
         cites={b.cites}
         results={results}
         categories={categories}
+        record={record}
         onJumpToGroup={onJumpToGroup}
       >
         {b.text}
@@ -384,6 +361,7 @@ export const SectionBody = ({
         cites={g.cites}
         results={results}
         categories={categories}
+        record={record}
         onJumpToGroup={onJumpToGroup}
       >
         {g.point}{' '}
@@ -407,80 +385,67 @@ export const SectionBody = ({
  * bulleted and the ranking is carried by the order alone.
  */
 const FollowUps = ({
-  items,
-  results,
-  categories,
-  onJumpToGroup
+  items
 }: {
   items: NonNullable<AnalysisResult['followUps']>
-  results: Derived[]
-  categories: Map<string, string>
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
 }) => (
-  <ul className="mt-3 list-disc space-y-2 pl-5 marker:text-[var(--core-color-text-muted)]">
+  /*
+   * No citations here.
+   *
+   * A follow-up is an instruction, and the finding behind it has already been
+   * made and evidenced in the assessment above. Repeating the evidence on the
+   * action attached it to a sentence that is not claiming anything.
+   */
+  <ul className="mt-3 list-disc space-y-3 pl-5 marker:text-[var(--core-color-text-muted)]">
     {items.map((f) => (
       <li key={f.text}>
-        <Text>
-          {f.text}
-          {f.cites && f.cites.length > 0 && (
-            <span className="ml-1.5 align-middle">
-              <AnalysisSources
-                used={f.cites}
-                results={results}
-                categories={categories}
-                onSelect={onJumpToGroup}
-                inline
-              />
-            </span>
-          )}
-        </Text>
+        <Text>{f.text}</Text>
+        {/* The things the step acts on, named. A step that says "establish who
+            is behind the connected businesses" is not actionable until the
+            businesses are on screen. */}
+        {f.entities && f.entities.length > 0 && (
+          <Surface variant="default" padding="none" className="mt-2 overflow-hidden">
+            <div
+              className={`-mb-px -mr-px grid${f.entities.length > 1 ? ' sm:grid-cols-2' : ''}`}
+            >
+              {f.entities.map((e) => (
+                <div
+                  key={e.name}
+                  className="border-b border-r border-solid border-border px-3 py-2"
+                >
+                  <span className="block text-sm leading-snug">{e.name}</span>
+                  {e.note && (
+                    <MutedText className="mt-0.5 block text-caption leading-snug">
+                      {e.note}
+                    </MutedText>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Surface>
+        )}
       </li>
     ))}
   </ul>
 )
 
-/**
- * What each assessment came out with, for its thinking step. Counted off the
- * result rather than asserted: a step claiming work that produced nothing is
- * the same lie as an empty disclosure.
- */
-const assessmentCounts = (result: AnalysisResult | AnalysisDraft) => {
-  const counts = new Map(
-    result.sections.map((s) => {
-      const gaps = s.gaps?.length ?? 0
-      return [
-        s.id as string,
-        [
-          `${s.body.length} finding${s.body.length === 1 ? '' : 's'}`,
-          ...(gaps > 0 ? [`${gaps} gap${gaps === 1 ? '' : 's'}`] : [])
-        ].join(' · ')
-      ]
-    })
-  )
-
-  if ('followUps' in result) {
-    const followUps = result.followUps?.length ?? 0
-    counts.set('recommendation', `${followUps} follow-up${followUps === 1 ? '' : 's'}, ranked`)
-  }
-  return counts
-}
-
-/**
- * The report itself, from either stage.
- *
- * A draft has assessments and no verdict; a settled result has both. The same
- * component renders each, so what a reader sees mid-run is literally the
- * finished report minus the part that has not been written.
- */
 const ReportBody = ({
   result,
   results,
   categories,
+  policy,
+  record,
+  stream = false,
   onJumpToGroup
 }: {
   result: AnalysisResult | AnalysisDraft
   results: Derived[]
   categories: Map<string, string>
+  /** The assessments this run was composed of — the report's layout. */
+  policy: Array<{ id: string; name: string }>
+  record?: BusinessRecord
+  /** A run is being written, so sections not yet here are coming. */
+  stream?: boolean
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
 }) => {
   const verdict = 'headline' in result ? result : null
@@ -492,7 +457,7 @@ const ReportBody = ({
    *  if one does, and must not also lead the message. */
   const hasRecommendation = byId.has('recommendation') || hasRecs
 
-  const pass = { results, categories, onJumpToGroup }
+  const pass = { results, categories, record, onJumpToGroup }
 
   return (
     <>
@@ -508,16 +473,39 @@ const ReportBody = ({
           the standing headings would be filing, not answering. */}
       {answer && <SectionBody section={answer} {...pass} />}
 
-      {SECTIONS.map(({ id, heading }) => {
+      {sectionsOf(policy)
+        .filter(({ id }) => byId.has(id) || (id === 'recommendation' && hasRecs))
+        .map(({ id, heading }, i) => {
         const section = byId.get(id)
         // The recommendation lists are the tail of their section, so that
         // heading stands even when the session wrote no prose above them.
         const tail = id === 'recommendation' && hasRecs
-        if (!section && !tail) return null
-
+        /*
+         * Not here yet, but on its way, and the report should say so.
+         *
+         * A section that had not landed rendered nothing at all, so a run in
+         * progress was blank space that intermittently produced a finished
+         * section. The headings are known the moment the run is composed, so
+         * they stand from the start and the prose fills in beneath them.
+         */
         return (
-          <div key={id} className="mt-7">
-            <Heading level={3}>{heading}</Heading>
+          <div
+            key={id}
+            // The contents list jumps here.
+            id={`section-${id}`}
+            className={[
+              // A rule between sections, counted over the sections that actually
+              // rendered rather than over the manifest. Keyed to manifest
+              // position, a first section that had not landed yet left the
+              // second one drawing a divider against nothing: an empty band and
+              // a rule at the very top of the report.
+              i > 0 ? 'mt-7 border-t border-solid border-border pt-7' : '',
+              'scroll-mt-6'
+            ].join(' ')}
+          >
+            {/* Body size, bold. `Heading level={3}` sets these at 18px, which made
+               five section titles compete with the report they label. */}
+            <Text className="block font-semibold">{heading}</Text>
             {/* The verdict sentence is the recommendation's first line, where
                 the conclusion is drawn — not floating above the whole message
                 unattached to the section that argues it. */}
@@ -525,7 +513,7 @@ const ReportBody = ({
               <Text className="mt-3">{verdict.headline}</Text>
             )}
             {section && <SectionBody section={section} {...pass} />}
-            {tail && <FollowUps items={followUps} {...pass} />}
+            {tail && <FollowUps items={followUps} />}
           </div>
         )
       })}
@@ -537,11 +525,13 @@ const Answer = ({
   version,
   results,
   categories,
+  record,
   onJumpToGroup,
   wrapRun
 }: {
   version: AnalysisVersion
   results: Derived[]
+  record?: BusinessRecord
   categories: Map<string, string>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   /** Puts the workflow disclosure on the run's summary line. Only on the report
@@ -563,28 +553,16 @@ const Answer = ({
         />
       }
     >
-      {/* First child of the turn, per the primitive's contract: collapsed it is
-          one muted "Thought for 4s" line, and it stays in the transcript for
-          scroll-back. Duration is milliseconds; the primitive runs no timer. */}
-      {(() => {
-        const run = (
-          <ChatThinking
-            label={<RunLabel busy={false}>Thought for {duration(version.durationMs)}</RunLabel>}
-            steps={thinkingSteps(version.insightCount, {
-              done: true,
-              started: true,
-              used: result.used.length,
-              policy: version.policy ?? []
-            })}
-          />
-        )
-        return wrapRun ? wrapRun(run) : run
-      })()}
+      {/* No "Thought for 5s" here. The run's account of itself is in the left
+          rail, beside the contents it produced; printing it over the report as
+          well was the same line twice. */}
 
       <ReportBody
         result={result}
         results={results}
         categories={categories}
+        record={record}
+        policy={version.policy ?? []}
         onJumpToGroup={onJumpToGroup}
       />
     </ChatMessage>
@@ -602,6 +580,10 @@ export const AnalysisPanel = ({
   versions,
   results,
   categories,
+  record,
+  arrived = [],
+  business,
+  entityLine,
   waiting,
   waitingKind,
   waitingSkills,
@@ -618,6 +600,12 @@ export const AnalysisPanel = ({
   versions: AnalysisVersion[]
   results: Derived[]
   categories: Map<string, string>
+  /** The record itself, so a cited check can show the value behind it. */
+  record?: BusinessRecord
+  /** Assessment ids on disk right now. */
+  arrived?: string[]
+  business?: string
+  entityLine?: string
   waiting: boolean
   /** Stage one, on screen while the verdict is still being written. */
   draft: AnalysisDraft | null
@@ -627,7 +615,7 @@ export const AnalysisPanel = ({
   waitingSkills: string[]
   waitingTyped: string
   /** The assessments inside the one that runs, named in the order they run. */
-  policy: string[]
+  policy: Array<{ id: string; name: string }>
   /** The server has the request. */
   acknowledged: boolean
   /** Insights this business actually has — the Insights tab's own count. */
@@ -657,16 +645,11 @@ export const AnalysisPanel = ({
     <div className="space-y-1">
       {versions.map((v) => (
         <div key={v.id}>
-          {/* The standing report has no user turn above it — it opens the
-              transcript, so a marker announcing it is just a line to scroll past. */}
-          <SkillTurn
-            skills={v.skills}
-            typed={v.typed ?? (v.skills?.length ? '' : v.prompt)}
-          />
           <Answer
             version={v}
             results={results}
             categories={categories}
+            record={record}
             onJumpToGroup={onJumpToGroup}
           />
         </div>
@@ -674,61 +657,11 @@ export const AnalysisPanel = ({
 
       {waiting && (
         <>
-          {/* The turn appears on submit, not when the answer lands — what was
-              sent is the first thing a reader looks for after sending it. */}
-          <SkillTurn skills={waitingSkills} typed={waitingTyped} />
           <ChatMessage role="assistant" busy>
-          {(() => {
-            const steps = thinkingSteps(insightCount, {
-              slow,
-              policy,
-              // Counted, not keyed: a customer's assessment names do not map to
-              // the report's standing section ids.
-              started: draft !== null,
-              acknowledged,
-              written: (draft?.sections ?? []).filter((x) => x.id !== 'description').length,
-              used: draft?.used.length ?? 0
-            })
-
-            /**
-             * The summary says what is happening right now, not what was
-             * started.
-             *
-             * A fixed "Running …" line sat unchanged for the length of a run
-             * while six steps came and went underneath it, so the one line a
-             * reader sees collapsed was the one line that never told them
-             * anything. Expanded, every step is still there.
-             */
-            const active = steps.find((x) => x.status === 'active')
-
-            const run = (
-              <ChatThinking
-                active
-                /**
-                 * Open, but only as far as the work has got.
-                 *
-                 * Collapsed, the one line on screen changed every few seconds
-                 * and nothing was kept. Fully expanded, nine steps appeared at
-                 * once before any of them had happened. Showing the stages that
-                 * have started — and leaving them there — is the difference
-                 * between a progress indicator and an account of the work.
-                 */
-                open
-                onOpenChange={setStepsOpen}
-                label={
-                  <RunLabel busy>
-                    {(active?.label ??
-                      (kind === 'report'
-                        ? 'Running assessment'
-                        : 'Answering against the record')
-                    ).trim()}
-                  </RunLabel>
-                }
-                steps={steps.filter((x) => x.status !== 'pending')}
-              />
-            )
-            return run
-          })()}
+          {/* Nothing here while it runs. The left rail carries the run's state
+              and each section's progress; a "Running assessment" block over the
+              report said the same thing a second time, in the column meant for
+              the report. */}
 
           {/* The assessments, already written, while the verdict is not. This
               is the whole point of two stages: the reader watches the argument
@@ -738,6 +671,9 @@ export const AnalysisPanel = ({
               result={draft}
               results={results}
               categories={categories}
+              record={record}
+              policy={policy}
+              stream
               onJumpToGroup={onJumpToGroup}
             />
           )}

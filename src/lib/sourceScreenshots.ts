@@ -115,6 +115,11 @@ const CAPTURES: Record<string, SourceScreenshot> = {
     alt: 'middesk.com product release hub',
     capturedAt: '2026-09-14'
   },
+  'npiregistry.cms.hhs.gov/provider-view/1477211969': {
+    src: '/screenshots/npi-joshua-gee.png',
+    alt: 'NPPES NPI Registry record for Dr. Joshua Y Gee DPT, NPI 1477211969',
+    capturedAt: '2026-09-17'
+  },
   'help.middesk.com/en': {
     src: '/screenshots/middesk-help.jpg',
     alt: 'Middesk help centre',

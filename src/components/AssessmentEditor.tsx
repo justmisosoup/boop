@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { CubeIcon } from '@radix-ui/react-icons'
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, Maximize2, Minimize2, Plus, Trash2 } from 'lucide-react'
 
 import {
   ActionButton,
@@ -17,13 +17,11 @@ import {
   Surface,
   Text,
   Textarea,
-  Toggle
 } from '@/core'
 
-import { MIDDESK_CONTEXTS } from '../lib/library'
+import { cn } from '../utils/twUtils'
 import type { CustomerSkill } from '../lib/useAgent'
 import { authorLine } from '../lib/user'
-import { MiddeskMark } from './MiddeskMark'
 
 /**
  * One assessment, in one modal.
@@ -45,12 +43,10 @@ export const AssessmentEditor = ({
   onClose,
   workflow,
   skills,
-  disabled,
   onRenameWorkflow,
   onCreateSkill,
   onUpdateSkill,
   onDeleteSkill,
-  onSetEnabled
 }: {
   open: boolean
   /** 'new' to write one, an id to open one, 'list' for the top-level. */
@@ -60,18 +56,19 @@ export const AssessmentEditor = ({
   workflow?: CustomerSkill
   skills: CustomerSkill[]
   /** Ids switched off. */
-  disabled: string[]
   onRenameWorkflow: (id: string, name: string) => void
   onCreateSkill: (name: string, instructions: string) => void
   onUpdateSkill: (id: string, name: string, instructions: string, combines?: string[]) => void
   onDeleteSkill: (id: string) => void
-  onSetEnabled: (id: string, on: boolean) => void
 }) => {
   /** null = the top-level assessment, 'new' = writing one, else its id. */
   const [editing, setEditing] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [brief, setBrief] = useState('')
   const [combines, setCombines] = useState<string[]>([])
+  /** The brief, filling the dialog. Collapsed by default so the assessments
+   *  under it are the first thing seen. */
+  const [briefOpen, setBriefOpen] = useState(false)
 
   const target = editing && editing !== 'new' ? skills.find((s) => s.id === editing) : undefined
   const isTop = editing === null
@@ -92,9 +89,9 @@ export const AssessmentEditor = ({
   /**
    * What the open assessment is built from.
    *
-   * The top-level one is built from every assessment written under it plus
-   * Middesk's context. A sub-assessment is built from the ones it names, which
-   * is what lets a complex one be layered out of simple ones.
+   * The top-level one is built from every assessment written under it. A
+   * sub-assessment is built from the ones it names, which is what lets a
+   * complex one be layered out of simple ones.
    */
   const parts = isTop
     ? skills.filter((s) => s.id !== workflow?.id)
@@ -147,24 +144,34 @@ export const AssessmentEditor = ({
   return (
     <Dialog
       isOpen={open}
-      onClose={onClose}
+      // Dismissed only by Cancel or Save. The dialog closed on any click
+      // outside it and on Escape, which meant a stray click while writing a
+      // brief threw the whole edit away with no warning and nothing to undo.
+      onClose={() => {}}
       size="lg"
       showHeader={false}
       title={current?.name ?? 'New assessment'}
     >
-      <div className="grid gap-[var(--core-spacing-md)]">
-        {/* Anything opened from the parent carries its name: a part of it, or
-            a new one being written under it. */}
-        {!isTop && workflow && (
-          <button
-            type="button"
-            onClick={() => setEditing(null)}
-            className="flex items-center gap-1 text-caption text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft aria-hidden="true" className="size-3" />
-            {workflow?.name ?? 'Assessment'}
-          </button>
+      {/*
+        * As tall as its content needs, and never taller than the window.
+        *
+        * A fixed height padded a short brief with empty space and a tall one
+        * still overflowed. `max-h` lets the dialog take the height its content
+        * asks for and stop there; past that the body scrolls and the foot bar
+        * stays put, so the dialog always fits the viewport it opened in.
+        */}
+      <div
+        className={cn(
+          'flex flex-col gap-[var(--core-spacing-md)]',
+          // Expanded, the dialog takes the frame so the brief has something to
+          // fill; otherwise it is sized by its content and capped at the window.
+          briefOpen ? 'h-[min(82vh,760px)]' : 'max-h-[min(82vh,760px)]'
         )}
+      >
+        {/* A flex column, not a grid: `content-start` packs rows to the top and
+            refuses to stretch any of them, so the expanded brief had nothing to
+            grow into and sat three lines tall above an empty dialog. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-[var(--core-spacing-md)] overflow-y-auto">
 
         <div>
           <Input
@@ -183,20 +190,83 @@ export const AssessmentEditor = ({
           {current && <MutedText className="block text-caption">{authorLine(current)}</MutedText>}
         </div>
 
-        <Textarea
-          value={brief}
-          onChange={(e) => setBrief(e.target.value)}
-          placeholder="What this assessment works out, and how…"
-          aria-label="Brief"
-          rows={7}
-          className="min-h-40"
-        />
+        {/*
+          * The brief expands to fill the dialog, rather than being dragged.
+          *
+          * A resize handle put the reader in charge of a dimension they should
+          * not have to think about, and a brief long enough to need it was
+          * edited through a seven-line slot. Expanded it takes the whole frame;
+          * collapsed it steps back so the assessments below are reachable. The
+          * two states are the only two anyone wanted.
+          */}
+        <div className={cn('group/field relative flex min-h-0 flex-col', briefOpen && 'flex-1')}>
+          <Textarea
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+            placeholder="What this assessment works out, and how…"
+            aria-label="Brief"
+            rows={briefOpen ? undefined : 7}
+            // Room at the foot for the control sitting over it, so a long brief
+            // does not run underneath the icon.
+            className={cn('resize-none pb-9', briefOpen ? 'min-h-0 flex-1' : 'min-h-40')}
+          />
+          {/*
+            * Expand/collapse, sitting in the corner of the field.
+            *
+            * The icon alone says nothing until it has been pressed once, so the
+            * label unfurls from it on hover and lies over the text rather than
+            * taking a row of its own. Built here rather than with `ButtonIcon`
+            * because that renders at `min-content` with no padding and cannot
+            * hold a label that grows — the border, radius and surface are the
+            * same tokens it uses, so the two still read as one control.
+            *
+            * The label animates on grid columns, 0fr to 1fr, which transitions
+            * to the text's natural width without anyone having to measure it.
+            */}
+          <button
+            type="button"
+            onClick={() => setBriefOpen((v) => !v)}
+            aria-expanded={briefOpen}
+            aria-label={briefOpen ? 'Collapse brief' : 'Expand brief'}
+            className={cn(
+              // A fixed height, so the pill grows sideways for its label and
+              // never downwards: the label's line-height is taller than the
+              // icon, which made the button tall enough to look like a mistake.
+              'group/expand absolute bottom-2 right-2 flex h-7 items-center rounded-full',
+              'border border-border bg-background px-2 shadow-sm',
+              'text-muted-foreground transition hover:text-foreground',
+              // Two gates, one per group. The field's hover decides whether the
+              // control is there at all; the button's own decides whether it is
+              // wearing its label. Focus opens both, so the keyboard reaches it.
+              'opacity-0 group-hover/field:opacity-100 group-focus-within/field:opacity-100',
+              'focus-visible:opacity-100'
+            )}
+          >
+            <span
+              className={cn(
+                'grid grid-cols-[0fr] transition-[grid-template-columns] duration-200 ease-out',
+                'group-hover/expand:grid-cols-[1fr] group-focus-visible/expand:grid-cols-[1fr]'
+              )}
+            >
+              <span className="overflow-hidden">
+                <span className="block whitespace-nowrap pr-1.5 text-body leading-none">
+                  {briefOpen ? 'Collapse' : 'Expand'}
+                </span>
+              </span>
+            </span>
+            {briefOpen ? (
+              <Minimize2 aria-hidden="true" className="size-3.5 shrink-0" />
+            ) : (
+              <Maximize2 aria-hidden="true" className="size-3.5 shrink-0" />
+            )}
+          </button>
+        </div>
 
         {/* Top level only. Assessments layer one deep: the complex assessment
             is built from simple ones, and a simple one is not built from
             anything — letting a part contain parts makes "which brief ran" a
             question with no readable answer. */}
-        {isTop && (
+        {isTop && !briefOpen && (
           <section className="grid gap-[var(--core-spacing-xs)]">
             <Heading level={4}>Assessments</Heading>
 
@@ -260,50 +330,33 @@ export const AssessmentEditor = ({
         </section>
         )}
 
-        {/* Context is not an assessment. It says how to read the record rather
-            than what to work out from it, so it is its own list — Middesk's
-            only for now, switched off rather than removed, because it is not
-            the customer's to delete. */}
-        {/* Top level only, like the assessments above it. A part is shallow by
-            design: a name and a brief, and nothing that could nest further. */}
-        {isTop && (
-          <section className="grid gap-[var(--core-spacing-xs)]">
-            <Heading level={4}>Context</Heading>
-            <Surface variant="default" padding="none" className="overflow-hidden">
-              <div className="divide-y divide-solid divide-border">
-                {MIDDESK_CONTEXTS.map((c) => (
-                  <div key={c.id} className="flex items-center gap-2 px-3 py-2">
-                    <MiddeskMark className="h-[7px] w-3 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
-                      <Text size="sm">{c.name}</Text>
-                      <MutedText className="block text-caption">
-                        {[c.version && `v${c.version}`, c.covers?.join(', ')]
-                          .filter(Boolean)
-                          .join(' ')}
-                      </MutedText>
-                    </div>
-                    {/* `Toggle`, not `Switch`: the latter is the legacy
-                        styled-components control with hardcoded colours and no
-                        `--core-*` tokens, so it does not theme. */}
-                    <Toggle
-                      aria-label={`Use ${c.name}`}
-                      checked={!disabled.includes(c.id)}
-                      onCheckedChange={(on) => onSetEnabled(c.id, on)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </Surface>
-          </section>
-        )}
+        </div>
 
-        <div className="flex justify-end gap-2">
-          <ActionButton variant="secondary" onClick={onClose}>
-            Cancel
-          </ActionButton>
-          <ActionButton disabled={!dirty || !name.trim() || !brief.trim()} onClick={save}>
-            {editing === 'new' ? 'Create' : 'Save'}
-          </ActionButton>
+        {/* One bar at the foot: where the dialog came from on the left, what
+            to do with it on the right. The trail sat above the name it leads
+            back from, which put navigation before the thing being edited. */}
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          {!isTop && workflow ? (
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="flex items-center gap-1 text-caption text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft aria-hidden="true" className="size-3" />
+              {workflow?.name ?? 'Assessment'}
+            </button>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex shrink-0 gap-2">
+            <ActionButton variant="secondary" onClick={onClose}>
+              Cancel
+            </ActionButton>
+            <ActionButton disabled={!dirty || !name.trim() || !brief.trim()} onClick={save}>
+              {editing === 'new' ? 'Create' : 'Save'}
+            </ActionButton>
+          </div>
         </div>
       </div>
     </Dialog>

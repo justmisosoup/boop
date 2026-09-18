@@ -1,96 +1,47 @@
 {
-  "headline": "HELLO. Onboard subject to conditions: the business verifies from its own web presence and its financial record clears once the filings are read, leaving the adverse media source as the only unread finding and two documents to collect.",
+  "headline": "Onboard subject to conditions.",
   "recommendation": {
     "id": "recommendation",
     "body": [
       {
-        "text": "Read as filings rather than counts, this file is in better shape than its totals suggest \u2014 eight of ten liens closed, nine of ten litigations another company's business in a Georgia circuit court, and the tenth a foreclosure naming fifteen defendants. What is actually outstanding is three things of three kinds. One is a finding nobody has read: the high risk adverse media source, now the only item on the file carrying a score without an article behind it. One is a document only the customer can supply: a Certificate of Good Standing, because the state of formation publishes no status here. One is a policy decision the bank makes about itself, not about this business \u2014 whether business-verification software sold to regulated institutions sits inside the accepted-industry list. The two open UCC filings warrant a question to the secured parties rather than a condition, since neither states a sum and one names an unrelated co-debtor.",
-        "cites": [
-          "adverse_media",
-          "liens",
-          "litigations",
-          "sos_domestic",
-          "industry",
-          "watchlist"
-        ]
+        "text": "The entity checks out. What is missing is who owns it: the filing names no natural person, so ownership is unverified and the screening covers only the entity and JOSHUA GEE. A PLLC also requires a licensed practitioner, and no licence has been checked."
       }
     ]
   },
   "followUps": [
     {
-      "text": "Pull the adverse media source and read it, since it is the only finding on the file carrying a risk score with nothing behind it.",
-      "cites": [
-        "adverse_media"
-      ],
+      "text": "Collect a beneficial ownership certification from KAIROS PHYSICAL THERAPY PLLC naming every member holding 25 percent or more and every controlling person, with each member's New York physical therapy licence number.",
       "closes": [
-        "screen_media_source"
+        "act_licence",
+        "own_beneficial_owners"
       ]
     },
     {
-      "text": "Ask the two secured parties on the open UCC filings what they secure and for how much, and confirm the Virginia filing is not a debtor-name collision given the secured party's line of work.",
-      "cites": [
-        "liens"
-      ],
+      "text": "Search the NPI registry for JOSHUA GEE and confirm the record is a Physical Therapist at 801 Madison Ave, then check the same name against the New York Office of the Professions for a current licence. Repeat for every further member the certification names.",
       "closes": [
-        "adverse_open_liens"
+        "act_licence"
       ]
     },
     {
-      "text": "Request a Certificate of Good Standing for the state of formation from the customer, which is the only evidence of standing available because the state publishes none.",
-      "cites": [
-        "sos_domestic"
-      ],
+      "text": "Screen each member named on the certification through watchlist, sanctions, PEP and adverse media. Only JOSHUA GEE and the entity itself have been screened so far.",
       "closes": [
-        "fit_standing"
+        "comp_unscreened_owners"
       ]
     },
     {
-      "text": "Take a beneficial-ownership certification and screen every owner it names against watchlists and PEP lists, since the clearance so far covers only the individuals the applicant submitted.",
-      "cites": [
-        "politically_exposed_persons",
-        "watchlist"
-      ],
+      "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared mailing address only, and KAIROS 801 LLC shares the Bayside address as well as the practice, so a common owner is likely but not on the record.",
       "closes": [
-        "screen_owners"
-      ]
-    },
-    {
-      "text": "Decide whether business-verification software sold to regulated institutions sits inside the accepted-industry policy \u2014 a judgement about the bank's own appetite, not about this record.",
-      "cites": [
-        "industry"
+        "own_connected_entities"
       ],
-      "closes": [
-        "fit_policy"
-      ]
-    },
-    {
-      "text": "Take the customer's stated expected activity \u2014 volumes, counterparties and payment types \u2014 since nothing in the record reaches it.",
-      "cites": [
-        "operating_as_claimed"
-      ],
-      "closes": [
-        "purpose_expected_activity"
-      ]
-    },
-    {
-      "text": "Order the people-level lien, litigation, bankruptcy and criminal checks, which are defined and returned nothing on this pull.",
-      "cites": [
-        "people_liens",
-        "people_criminal_history"
-      ],
-      "closes": [
-        "adverse_people"
-      ]
-    },
-    {
-      "text": "Ask the customer why the submitted individual is not named on the company's own site when the state filings list them as an officer, and re-run the web phone check.",
-      "cites": [
-        "web_person_verification",
-        "web_phone_number_verification"
-      ],
-      "closes": [
-        "purpose_person_on_web",
-        "purpose_phone"
+      "entities": [
+        {
+          "name": "KAIROS 801 LLC",
+          "note": "0.96 confidence · shares 801 Madison Ave Fl 3 and 21611 48th Ave Apt 3B"
+        },
+        {
+          "name": "J.L.W. INVESTORS, LTD.",
+          "note": "0.88 confidence · shares 801 Madison Ave Fl 3"
+        }
       ]
     }
   ]

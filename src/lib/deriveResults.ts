@@ -60,6 +60,41 @@ export type ReviewTask = {
  */
 export type SourceRef = { id: string; type: string; metadata: Record<string, unknown> }
 
+/**
+ * The entity type the filings actually carry.
+ *
+ * The provider's `entity_type` is a bucket, not the entity's form: its taxonomy
+ * has no value for a professional entity, so `KAIROS PHYSICAL THERAPY PLLC` is
+ * returned as `LLC`. The legal name on the registration is the entity's own
+ * name, and where it carries a professional suffix that IS the form — the
+ * platform's coarser label does not overrule it.
+ *
+ * This is not cosmetic. A PLLC is a licensed professional practice organised as
+ * an LLC, and its membership is restricted by statute to licensed practitioners
+ * of the profession — so a policy keyed on entity type must see `PLLC` to ask
+ * for licensure with the beneficial ownership certification. Reported as `LLC`,
+ * a professional practice is routed as an ordinary company and never asked.
+ */
+const NAME_SUFFIXES: Array<[RegExp, string]> = [
+  [/\bP\.?L\.?L\.?C\.?$/i, 'PLLC'],
+  [/\bP\.?L\.?L\.?P\.?$/i, 'PLLP'],
+  [/\bP\.?C\.?$/i, 'PC']
+]
+
+export const trueEntityType = (record: BusinessRecord): string | null => {
+  const names = [
+    ...record.registrations.map((r) => r.name),
+    ...record.names.filter((n) => n.type === 'legal').map((n) => n.name),
+    record.name
+  ].filter(Boolean)
+
+  for (const name of names) {
+    const trimmed = name.trim().replace(/[.,]+$/, '')
+    for (const [pattern, form] of NAME_SUFFIXES) if (pattern.test(trimmed)) return form
+  }
+  return record.formation?.entityType ?? null
+}
+
 export type BusinessRecord = {
   id: string
   name: string
@@ -72,6 +107,31 @@ export type BusinessRecord = {
     sourceRefs?: SourceRef[]
   }>
   formation: { date: string; entityType: string; state: string } | null
+  /**
+   * Professional licences held by the people behind the business.
+   *
+   * A professional entity's members must be licensed in the profession it
+   * practises, and no check in the catalog reaches that. The NPI registry is
+   * the public source for healthcare providers; a state board is the
+   * equivalent elsewhere.
+   */
+  licenses?: Array<{
+    id: string
+    registry: string
+    number: string
+    holder: string
+    credential?: string | null
+    profession: string
+    taxonomyCode?: string | null
+    licenseState?: string | null
+    licenseNumber?: string | null
+    status: string
+    enumeratedAt?: string | null
+    lastUpdated?: string | null
+    address?: string | null
+    phone?: string | null
+    sourceUrl?: string | null
+  }>
   addresses: Array<{
     fullAddress: string
     state: string | null

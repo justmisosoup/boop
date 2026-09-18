@@ -13,7 +13,7 @@
  * invented sentence.
  */
 import catalog from '../data/catalog.json'
-import type { BusinessRecord } from './deriveResults'
+import { trueEntityType, type BusinessRecord } from './deriveResults'
 
 const OUTCOME = (catalog as { outcomeOf: Record<string, string> }).outcomeOf
 
@@ -61,9 +61,24 @@ export const sentenceCase = (text: string): string =>
 export const statementFor = (
   key: string,
   subLabel: string,
-  _record: BusinessRecord,
+  record: BusinessRecord,
   message?: string | null
 ): string => {
+  /**
+   * The one place the product's own sentence is corrected rather than repeated.
+   *
+   * `entity_type` reports the provider's bucket, and its taxonomy has no value
+   * for a professional entity — so a PLLC arrives as "Entity type is a LLC".
+   * The registered name is the entity's own, and it says PLLC. Saying LLC here
+   * is not a softer way of saying the same thing: it loses the fact that
+   * membership is restricted to licensed practitioners, which is what a policy
+   * reading this row needs in order to ask for licensure at all.
+   */
+  if (key === 'entity_type') {
+    const form = trueEntityType(record)
+    if (form && form !== record.formation?.entityType) return `Entity type is a ${form}`
+  }
+
   if (message) return sentenceCase(message)
 
   const fromCatalog =

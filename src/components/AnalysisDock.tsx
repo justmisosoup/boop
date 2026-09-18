@@ -207,7 +207,7 @@ const LibraryPicker = ({
         leadingIcon={<MiddeskMark className="h-[7px] w-3" />}
         trailingIcon={<ChevronDown aria-hidden="true" />}
       >
-        Assessments
+        Workflow
       </ActionButton>
     </MenuTrigger>
     {/* `z-popover` over core's default `z-50`: the dock is `z-floating` (1050)
@@ -293,6 +293,14 @@ export const AnalysisDock = ({
    *  made them, and whether it is a report or a question. */
   onSend: (run: {
     prompt: string
+    /**
+     * The assessments in the box, each on its own — the manifest.
+     *
+     * They used to be folded into `prompt` as one string, which made them
+     * unaddressable: there was no way to work two at once, and no way to say
+     * which one had landed. Empty for a question, which is answered whole.
+     */
+    assessments: Array<{ id: string; name: string; instructions: string }>
     attachments: Attachment[]
     skills: string[]
     typed: string
@@ -441,10 +449,14 @@ export const AnalysisDock = ({
      * run from the workflow alone and must be sent as one.
      */
     // A workflow sends everything it is built from — its own brief, the parts
-    // under it, and the context it is read against.
+    // under it, and the context it is read against. The parts travel as a list
+    // rather than folded into the text: they are worked at the same time, and
+    // each one has to be nameable for that.
+    const composed = chosenWorkflow ? composeAssessment(chosenWorkflow, custom, disabled) : null
+
     const parts = [
       ...chosenContexts.map((c) => c.instructions),
-      ...(chosenWorkflow ? [composeAssessment(chosenWorkflow, custom, disabled)] : []),
+      ...(composed ? [composed.prompt] : []),
       ...(prompt.trim() ? [prompt.trim()] : [])
     ]
 
@@ -455,12 +467,17 @@ export const AnalysisDock = ({
 
     // A workflow with nothing typed is a report; anything typed is a question
     // about this business, whatever else is in the box with it.
+    const kind = chosenWorkflow && !prompt.trim() ? 'report' : 'question'
+
     onSend({
       prompt: parts.join('\n\n'),
+      // A question is answered on its own terms, in one section — it does not
+      // fan out across the workflow's assessments.
+      assessments: kind === 'report' ? (composed?.assessments ?? []) : [],
       attachments,
       skills: names,
       typed: prompt.trim(),
-      kind: chosenWorkflow && !prompt.trim() ? 'report' : 'question'
+      kind
     })
 
     setPrompt('')
@@ -476,19 +493,28 @@ export const AnalysisDock = ({
 
   if (!open) {
     return (
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-floating flex justify-center p-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-floating pb-4">
+        {/* Same gutters as the page, so the composer sits over the column it
+            writes into. `inset-x-0` + `mx-auto` alone centred it on the WINDOW,
+            which is a different centre — the report is pushed right by the
+            contents rail and left by the reference panel, so a window-centred
+            composer reads as skewed against the text above it. */}
+        <div className="mx-auto max-w-[1400px] px-6 lg:pl-[272px] lg:pr-[452px] flex justify-center">
         <span className="pointer-events-auto">
           <ActionButton variant="secondary" onClick={() => setOpen(true)}>
             {hasAnalysis ? 'Refine analysis' : 'Ask about this business'}
           </ActionButton>
         </span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-floating p-4">
-      <div className="mx-auto max-w-[880px]">
+    <div className="fixed inset-x-0 bottom-0 z-floating pb-4">
+      {/* Mirrors the page's own container and gutters, so the composer is
+          exactly as wide as the report and lines up with it. */}
+      <div className="mx-auto max-w-[1400px] px-6 lg:pl-[272px] lg:pr-[452px]">
         {/* One box: the field and its controls live inside a single bordered
             surface, with submit as a round button in the bottom-right corner. */}
         <Surface
