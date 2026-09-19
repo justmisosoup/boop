@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import agentStore from '../../analysis/agent.json'
+
 import { SEED_WORKFLOW } from './library'
 import { CURRENT_USER } from './user'
 
@@ -54,8 +56,27 @@ type Agent = {
  * selectable and not editable. This holds only what the customer owns, which is
  * why everything in it can be changed and nothing in `library.ts` can.
  */
+/**
+ * The workflow and its assessments, as written to disk.
+ *
+ * `/api/agent` is dev-server middleware, so a built copy has no endpoint to ask
+ * and the fetch below fails into its own catch. That left a deployed prototype
+ * with NO skills at all: no workflow on the composer, no assessment
+ * instructions, and `standing` undefined, so the page could not say what it had
+ * been analysed with. The file is the record; it is bundled as well as served.
+ */
+const BUNDLED_AGENT: Agent = {
+  seeded: (agentStore as Agent).seeded,
+  skills: ((agentStore as Agent).skills ?? []).map((x) =>
+    x.kind === 'context' ? { ...x, kind: 'assessment' as const } : x
+  ),
+  disabled: (agentStore as Agent).disabled ?? []
+}
+
 export const useAgent = () => {
-  const [agent, setAgent] = useState<Agent>({ skills: [], disabled: [] })
+  // On screen from the first paint, and replaced by the endpoint's copy
+  // wherever there is one to ask.
+  const [agent, setAgent] = useState<Agent>(BUNDLED_AGENT)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
