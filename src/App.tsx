@@ -528,7 +528,7 @@ export default function App() {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:bg-card">
+        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:justify-center lg:bg-card lg:px-6">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
@@ -541,7 +541,12 @@ export default function App() {
           running={analysis.waiting}
         />
 
-        <div className="min-w-0 lg:ml-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        {/* The report's measure: 800 wanted, 1000 at most.
+            `min-w-[800px]` was a hard floor, so at a narrow window with the
+            panel dragged out the report ran past the white and under the
+            panel. A basis is a preference: it holds 800 wherever 800 fits,
+            grows to 1000, and gives way rather than overlap. */}
+        <div className="min-w-0 lg:ml-6 lg:flex lg:min-h-0 lg:max-w-[1000px] lg:shrink lg:grow lg:basis-[800px] lg:flex-col">
           {/*
             * The report scrolls itself.
             *

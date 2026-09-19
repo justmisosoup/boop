@@ -272,7 +272,7 @@ export const AssessmentIndex = ({
         // `pt-7` matches the report card's own top padding, so the rail's first
         // line sits on the same baseline as the report's rather than 28px
         // above it.
-        'lg:ml-6 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:gap-y-1 lg:overflow-y-auto lg:pt-[51px] panel-scroll'
+        'lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:gap-y-1 lg:overflow-y-auto lg:pt-[51px] panel-scroll'
       )}
     >
       {/* What the business actually does, kept in view while working down a
