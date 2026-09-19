@@ -254,10 +254,6 @@ export const AssessmentIndex = ({
   return (
     <nav
       aria-label="Assessment contents"
-      /* The page runs the full width of the window, so the rail sits on the
-         page's own left margin. It used to be aligned to a centred 1400px
-         column, which no longer exists. */
-      style={{ left: '1.5rem' }}
       className={cn(
         // Fixed to the window, not part of the flow: it takes no space, so it
         // cannot squeeze the report or wrap the panel beside it.
@@ -276,7 +272,7 @@ export const AssessmentIndex = ({
         // `pt-7` matches the report card's own top padding, so the rail's first
         // line sits on the same baseline as the report's rather than 28px
         // above it.
-        'lg:fixed lg:top-20 lg:z-10 lg:flex lg:w-56 lg:flex-col lg:gap-y-1 lg:pt-7'
+        'lg:ml-6 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:gap-y-1 lg:overflow-y-auto lg:pt-7 panel-scroll'
       )}
     >
       {/* What the business actually does, kept in view while working down a

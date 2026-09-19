@@ -400,22 +400,8 @@ export default function App() {
           sits on top of the report at every width where both are visible. */}
       {/* Both rails are fixed to the window, so the page reserves the gutters
           they sit in. Nothing in the middle column has to know they exist. */}
-      <div className="mx-auto px-6 pb-56 pt-20 lg:pl-[272px] lg:pr-[calc(var(--panel-w)+24px)] lg:flex lg:h-screen lg:flex-col lg:pb-6">
+      <div className="mx-auto px-6 pb-56 pt-20 lg:flex lg:h-screen lg:flex-col lg:pb-6">
 
-        {/*
-          * The white the document sits on.
-          *
-          * The report used to be a white card floating on the grey page, which
-          * left the contents list stranded outside it on the grey — two parts
-          * of one document, on two different surfaces. The ground now runs from
-          * the left edge of the window to where the reference panel's column
-          * starts, so the margin and the report read as one page and the grey
-          * is what separates the document from the record beside it.
-          */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none hidden lg:fixed lg:inset-y-0 lg:left-0 lg:right-[var(--panel-w)] lg:z-0 lg:block lg:bg-card"
-        />
 
         {/*
           * Who this whole screen is about, and it never leaves.
@@ -525,6 +511,24 @@ export default function App() {
           * what they always were — an argument and its sources.
           */}
 
+        {/*
+          * The document: its description, its contents and its prose, on one
+          * surface.
+          *
+          * These were three unrelated elements that happened to line up: a
+          * fixed `aria-hidden` div painting the white, a separately fixed rail
+          * carrying an inline `left`, and a report placed by padding on the
+          * page container. The rail's left edge, the report's left edge and the
+          * white's right edge were three numbers agreeing by coincidence, so
+          * every layout change knocked one of them out of line with the other
+          * two. One element holds all three now, and it IS the white.
+          *
+          * `top-[57px]` is the fixed header's own bottom edge, so the white
+          * starts below the bar rather than running underneath it, and
+          * `pt-[23px]` keeps the rail and the report on the baseline they
+          * already sit on.
+          */}
+        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:bg-card lg:pt-[23px]">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
@@ -537,7 +541,7 @@ export default function App() {
           running={analysis.waiting}
         />
 
-        <div className="min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="min-w-0 lg:ml-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
           {/*
             * The report scrolls itself.
             *
@@ -575,6 +579,7 @@ export default function App() {
               superseded={analysis.superseded}
             />
           </div>
+        </div>
 
           {/* Fixed, not sticky: sticky still travels with the page until it
               catches, so the record moved while the report it belongs to moved
