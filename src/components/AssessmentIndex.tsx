@@ -255,16 +255,11 @@ export const AssessmentIndex = ({
     <nav
       aria-label="Assessment contents"
       className={cn(
-        // Fixed to the window, not part of the flow: it takes no space, so it
-        // cannot squeeze the report or wrap the panel beside it.
-        //
-        // Shown only where the page is genuinely narrower than the window, so
-        // there is empty margin for it to sit in. Below that it would overlap
-        // the prose, and a contents list on top of the text it indexes is worse
-        // than no contents list.
-        // `lg`, not `2xl`: gated at 1536px this never appeared in a window
-        // anyone actually has. The page reserves the gutter it sits in, so it
-        // does not depend on there happening to be spare margin.
+        // A column of the document, shown only at `desk` (1576px), which is
+        // the width at which the rail, an 800px report and the reference panel
+        // all fit. It used to appear at `lg`, where all three were present and
+        // the report paid for it, down to 224px of prose. Below `desk` the page
+        // stacks and this is not rendered at all.
         'hidden',
         // No ground of its own. It is margin furniture, not a panel — a white
         // card here made it compete with the report for the same reading, and
@@ -272,7 +267,7 @@ export const AssessmentIndex = ({
         // `pt-7` matches the report card's own top padding, so the rail's first
         // line sits on the same baseline as the report's rather than 28px
         // above it.
-        'lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:gap-y-1 lg:overflow-y-auto lg:pt-[51px] panel-scroll'
+        'desk:flex desk:w-56 desk:shrink-0 desk:flex-col desk:gap-y-1 desk:overflow-y-auto desk:pt-[51px] panel-scroll'
       )}
     >
       {/* What the business actually does, kept in view while working down a

@@ -11,6 +11,17 @@ module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      /**
+       * The width the three-column page needs before it is worth having.
+       *
+       * 48 of page padding + 224 of contents rail + 24 of gap + 800 of report
+       * + 480 of reference panel. Below this the columns are all present and
+       * the report is the one that pays: at `lg` (1024) it crushed to 224px,
+       * which is a column of prose nobody can read. The page stacks instead.
+       */
+      screens: {
+        desk: '1576px'
+      },
       fontFamily: {
         suisse: ["'Suisse Intl'", 'sans-serif']
       },

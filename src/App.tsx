@@ -340,7 +340,7 @@ export default function App() {
   return (
     <ScreenshotViewerProvider>
     <div
-      className="core-theme min-h-full lg:h-screen lg:overflow-hidden"
+      className="core-theme min-h-full desk:h-screen desk:overflow-hidden"
       style={
         {
           '--panel-w': `${PANEL_W}px`
@@ -354,7 +354,7 @@ export default function App() {
           sits on top of the report at every width where both are visible. */}
       {/* Both rails are fixed to the window, so the page reserves the gutters
           they sit in. Nothing in the middle column has to know they exist. */}
-      <div className="mx-auto px-6 pb-56 pt-20 lg:flex lg:h-screen lg:flex-col lg:pb-6">
+      <div className="mx-auto max-w-[1048px] px-6 pb-56 pt-20 desk:flex desk:h-screen desk:max-w-none desk:flex-col desk:pb-6">
 
 
         {/*
@@ -451,9 +451,9 @@ export default function App() {
           */}
         {/* Only the lede. The name and the entity line are in the fixed bar at
             every width now, and printing them again 60px below it was the same
-            fact twice. The rail that carries the lede is `lg:`-gated, so this
+            fact twice. The rail that carries the lede is `desk:`-gated, so this
             is the one thing the narrow layout would otherwise lose. */}
-        <header className="mb-5 lg:hidden">
+        <header className="mb-5 desk:hidden">
           <BusinessLede text={lede} />
         </header>
 
@@ -482,7 +482,7 @@ export default function App() {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:justify-center lg:bg-card lg:px-6">
+        <div className="contents desk:fixed desk:left-0 desk:top-[57px] desk:bottom-0 desk:right-[var(--panel-w)] desk:z-0 desk:flex desk:justify-center desk:bg-card desk:px-6">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
@@ -500,7 +500,7 @@ export default function App() {
             panel dragged out the report ran past the white and under the
             panel. A basis is a preference: it holds 800 wherever 800 fits,
             grows to 1000, and gives way rather than overlap. */}
-        <div className="min-w-0 lg:ml-6 lg:flex lg:min-h-0 lg:max-w-[1000px] lg:shrink lg:grow lg:basis-[800px] lg:flex-col">
+        <div className="min-w-0 desk:ml-6 desk:flex desk:min-h-0 desk:max-w-[1000px] desk:shrink desk:grow desk:basis-[800px] desk:flex-col">
           {/*
             * The report scrolls itself.
             *
@@ -511,7 +511,7 @@ export default function App() {
             * all. `pb-40` is the composer's clearance, now inside the thing the
             * composer sits over.
             */}
-          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 lg:min-h-0 lg:flex-1 lg:rounded-none lg:bg-transparent lg:px-8 lg:pb-40 lg:pt-[51px] lg:overflow-y-auto panel-scroll">
+          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 desk:min-h-0 desk:flex-1 desk:rounded-none desk:bg-transparent desk:px-8 desk:pb-40 desk:pt-[51px] desk:overflow-y-auto panel-scroll">
             <AnalysisPanel
               versions={analysis.versions}
               business={selected.name}
@@ -554,7 +554,7 @@ export default function App() {
             // is NOT here — it is on the tab strip and each tab's contents, so
             // the pinned strip spans the panel's full width instead of stopping
             // 16px short of each edge.
-            className="mt-10 min-w-0 lg:fixed lg:right-0 lg:top-[57px] lg:bottom-0 lg:mt-0 lg:flex lg:w-[var(--panel-w)] lg:flex-col lg:overflow-y-auto lg:border-l lg:border-solid lg:border-border lg:bg-background panel-scroll">
+            className="mt-10 min-w-0 desk:fixed desk:right-0 desk:top-[57px] desk:bottom-0 desk:mt-0 desk:flex desk:w-[var(--panel-w)] desk:flex-col desk:overflow-y-auto desk:border-l desk:border-solid desk:border-border desk:bg-background panel-scroll">
             <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
               <TabsList className="sticky top-0 z-10 shrink-0 bg-background px-4">
                 <TabsTrigger value="insights">
