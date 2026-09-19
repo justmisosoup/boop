@@ -528,7 +528,7 @@ export default function App() {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:bg-card lg:pt-[23px]">
+        <div className="contents lg:fixed lg:left-0 lg:top-[57px] lg:bottom-0 lg:right-[var(--panel-w)] lg:z-0 lg:flex lg:bg-card">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
@@ -552,7 +552,7 @@ export default function App() {
             * all. `pb-40` is the composer's clearance, now inside the thing the
             * composer sits over.
             */}
-          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 lg:min-h-0 lg:flex-1 lg:rounded-none lg:bg-transparent lg:px-8 lg:pb-40 lg:overflow-y-auto panel-scroll">
+          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 lg:min-h-0 lg:flex-1 lg:rounded-none lg:bg-transparent lg:px-8 lg:pb-40 lg:pt-[51px] lg:overflow-y-auto panel-scroll">
             <AnalysisPanel
               versions={analysis.versions}
               business={selected.name}
