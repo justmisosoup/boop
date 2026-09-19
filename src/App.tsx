@@ -340,7 +340,7 @@ export default function App() {
   return (
     <ScreenshotViewerProvider>
     <div
-      className="core-theme min-h-full desk:h-screen desk:overflow-hidden"
+      className="core-theme min-h-full wide:h-screen wide:overflow-hidden"
       style={
         {
           '--panel-w': `${PANEL_W}px`
@@ -354,7 +354,7 @@ export default function App() {
           sits on top of the report at every width where both are visible. */}
       {/* Both rails are fixed to the window, so the page reserves the gutters
           they sit in. Nothing in the middle column has to know they exist. */}
-      <div className="mx-auto max-w-[1048px] px-6 pb-56 pt-20 desk:flex desk:h-screen desk:max-w-none desk:flex-col desk:pb-6">
+      <div className="mx-auto max-w-[1048px] px-6 pb-56 pt-20 wide:flex wide:h-screen wide:max-w-none wide:flex-col wide:pb-6">
 
 
         {/*
@@ -449,14 +449,6 @@ export default function App() {
           * stays put while the report scrolls, which is the job it was added
           * for. Kept here only below the breakpoint, where there is no rail.
           */}
-        {/* Only the lede. The name and the entity line are in the fixed bar at
-            every width now, and printing them again 60px below it was the same
-            fact twice. The rail that carries the lede is `desk:`-gated, so this
-            is the one thing the narrow layout would otherwise lose. */}
-        <header className="mb-5 desk:hidden">
-          <BusinessLede text={lede} />
-        </header>
-
         {/*
           * Two columns: the assessment, and the record it was written from.
           *
@@ -482,7 +474,7 @@ export default function App() {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents desk:fixed desk:left-0 desk:top-[57px] desk:bottom-0 desk:right-[var(--panel-w)] desk:z-0 desk:flex desk:justify-center desk:bg-card desk:px-6">
+        <div className="contents wide:fixed wide:left-0 wide:top-[57px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
@@ -500,7 +492,7 @@ export default function App() {
             panel dragged out the report ran past the white and under the
             panel. A basis is a preference: it holds 800 wherever 800 fits,
             grows to 1000, and gives way rather than overlap. */}
-        <div className="min-w-0 desk:ml-6 desk:flex desk:min-h-0 desk:max-w-[1000px] desk:shrink desk:grow desk:basis-[800px] desk:flex-col">
+        <div className="min-w-0 desk:ml-6 wide:flex wide:min-h-0 wide:max-w-[1000px] wide:shrink wide:grow wide:basis-[800px] wide:flex-col">
           {/*
             * The report scrolls itself.
             *
@@ -511,7 +503,22 @@ export default function App() {
             * all. `pb-40` is the composer's clearance, now inside the thing the
             * composer sits over.
             */}
-          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 desk:min-h-0 desk:flex-1 desk:rounded-none desk:bg-transparent desk:px-8 desk:pb-40 desk:pt-[51px] desk:overflow-y-auto panel-scroll">
+          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:px-8 wide:pb-40 wide:pt-[51px] wide:overflow-y-auto panel-scroll">
+            {/*
+              * The lede, wherever the rail is not carrying it.
+              *
+              * It used to sit above the document container as a sibling. At
+              * `wide` that container is `fixed`, so the lede rendered into the
+              * flow underneath it and was covered by the white: present in the
+              * DOM, never on screen. Inside the report it leads the prose, which
+              * is where a reader looks for it when the rail is gone.
+              *
+              * The name and the entity line are in the fixed bar at every width,
+              * so only the lede is repeated here.
+              */}
+            <header className="mb-5 desk:hidden">
+              <BusinessLede text={lede} />
+            </header>
             <AnalysisPanel
               versions={analysis.versions}
               // Named on the recommendation, as what the call was read from.
@@ -557,7 +564,7 @@ export default function App() {
             // is NOT here — it is on the tab strip and each tab's contents, so
             // the pinned strip spans the panel's full width instead of stopping
             // 16px short of each edge.
-            className="mt-10 min-w-0 desk:fixed desk:right-0 desk:top-[57px] desk:bottom-0 desk:mt-0 desk:flex desk:w-[var(--panel-w)] desk:flex-col desk:overflow-y-auto desk:border-l desk:border-solid desk:border-border desk:bg-background panel-scroll">
+            className="mt-10 min-w-0 wide:fixed wide:right-0 wide:top-[57px] wide:bottom-0 wide:mt-0 wide:flex wide:w-[var(--panel-w)] wide:flex-col wide:overflow-y-auto wide:border-l wide:border-solid wide:border-border wide:bg-background panel-scroll">
             <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
               <TabsList className="sticky top-0 z-10 shrink-0 bg-background px-4">
                 <TabsTrigger value="insights">

@@ -14,13 +14,35 @@ module.exports = {
       /**
        * The width the three-column page needs before it is worth having.
        *
-       * 48 of page padding + 224 of contents rail + 24 of gap + 800 of report
-       * + 480 of reference panel. Below this the columns are all present and
-       * the report is the one that pays: at `lg` (1024) it crushed to 224px,
-       * which is a column of prose nobody can read. The page stacks instead.
+       * 48 of page padding + 224 of contents rail + 24 of gap + 480 of
+       * reference panel is 776, so at 1280 the report still gets 504: a
+       * readable measure, and the report grows from there toward its preferred
+       * 800. Below this the page stacks.
+       *
+       * It was 1576, which is the width at which the report gets its full 800.
+       * That treated a preference as a requirement and sent common laptop
+       * widths to the stacked page for no reason. `lg` (1024) is the other
+       * error: all three columns fitted and the report crushed to 224.
        */
       screens: {
-        desk: '1576px'
+        /**
+         * The panel docks. 48 of page padding + 480 of panel is 528, so the
+         * report gets 352 here and grows from there: narrow, but the record
+         * beside the report is worth more than the extra measure. Below this
+         * the panel goes under the report instead.
+         */
+        wide: '880px',
+        /**
+         * The contents rail joins it. It costs 224 plus a 24 gap, which the
+         * report can only afford once there is 1280 to share: 48 + 224 + 24 +
+         * 480 leaves it 504.
+         *
+         * One breakpoint for both was the error. At 1576 ordinary laptops got
+         * the stacked page; at 1280 a 1064px window still lost the panel
+         * entirely, when all it could not afford was the rail. The rail is
+         * margin furniture, so it is what goes first.
+         */
+        desk: '1280px'
       },
       fontFamily: {
         suisse: ["'Suisse Intl'", 'sans-serif']
