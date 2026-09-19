@@ -75,13 +75,15 @@ const describe = (r: BusinessRecord) =>
     : 'No formation record'
 
 
-/** The reference panel's width, in px: narrow enough that the report still has
- *  a readable measure, wide enough that a source card is not a column two words
- *  across. */
-const PANEL_MIN = 392
-const PANEL_MAX = 600
-const PANEL_DEFAULT = 428
-const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
+/**
+ * The reference panel's width, in px. Fixed.
+ *
+ * It was draggable, with the width kept per browser. In practice the handle
+ * only ever produced work: a width to re-set on every window, and a boundary
+ * that had to be right at every value it could take. One number, wide enough
+ * that a source card is not a column two words across.
+ */
+const PANEL_W = 480
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -313,54 +315,6 @@ export default function App() {
    * tab in full. Following it out to the registry's own page left the reader to
    * find their way back to what we actually hold.
    */
-  /**
-   * How wide the reference panel is, and so how wide the report is.
-   *
-   * The two share one boundary: everything the report gives up, the panel
-   * takes. One number drives the page's right gutter, the panel's own width
-   * and the right edge of the white the report sits on, so they cannot drift
-   * apart. Kept per browser, because column width is a reading preference and
-   * not something about the business on screen.
-   */
-  const [panelW, setPanelW] = useState(() => {
-    try {
-      const held = Number(window.localStorage.getItem('panel-width'))
-      if (held >= PANEL_MIN && held <= PANEL_MAX) return held
-    } catch {
-      // Private windows throw on access. The default is fine.
-    }
-    return PANEL_DEFAULT
-  })
-  useEffect(() => {
-    try {
-      window.localStorage.setItem('panel-width', String(panelW))
-    } catch {
-      // Not worth failing a render over.
-    }
-  }, [panelW])
-
-  /** Drag the boundary. Pointer capture, so leaving the 8px strip mid-drag does
-   *  not drop it — the pointer is nowhere near the handle by the second frame. */
-  const dragBoundary = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    document.body.style.cursor = 'col-resize'
-    // Text selects across the whole page while a drag is live otherwise.
-    document.body.style.userSelect = 'none'
-    const move = (ev: PointerEvent) =>
-      setPanelW(clampPanel(Math.round(window.innerWidth - ev.clientX)))
-    const up = () => {
-      el.releasePointerCapture(e.pointerId)
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-  }
-
   const [sourceFocus, setSourceFocus] = useState<string | null>(null)
   const jumpToSource = (cardId: string) => {
     setTab('sources')
@@ -389,7 +343,7 @@ export default function App() {
       className="core-theme min-h-full lg:h-screen lg:overflow-hidden"
       style={
         {
-          '--panel-w': `${panelW}px`
+          '--panel-w': `${PANEL_W}px`
         } as React.CSSProperties
       }
     >
@@ -590,32 +544,6 @@ export default function App() {
               catches, so the record moved while the report it belongs to moved
               — two things scrolling past each other. It holds still now, and
               scrolls inside itself. */}
-          {/* The boundary between the report and the panel, as something you
-              can take hold of. An 8px strip to grab, a hairline to look at —
-              a visible 8px rule would be a third column of its own. */}
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Report width"
-            aria-valuenow={panelW}
-            aria-valuemin={PANEL_MIN}
-            aria-valuemax={PANEL_MAX}
-            tabIndex={0}
-            onPointerDown={dragBoundary}
-            onDoubleClick={() => setPanelW(PANEL_DEFAULT)}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft') setPanelW((w) => clampPanel(w + 16))
-              else if (e.key === 'ArrowRight') setPanelW((w) => clampPanel(w - 16))
-              else return
-              e.preventDefault()
-            }}
-            className="group hidden lg:fixed lg:bottom-0 lg:top-[57px] lg:z-20 lg:flex lg:w-2 lg:cursor-col-resize lg:justify-center focus-visible:outline-hidden lg:right-[var(--panel-w)]"
-          >
-            <span
-              aria-hidden="true"
-              className="h-full w-px bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-[var(--core-color-focus-ring)]"
-            />
-          </div>
 
           <aside
             ref={panelRef}
