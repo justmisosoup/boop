@@ -581,6 +581,16 @@ type ChatSourcesProps = {
   /** Visible label; the count is appended ('Sources · 12'). */
   label?: string
   /**
+   * LOCAL MODIFICATION (5) — which edge the list opens from.
+   *
+   * `PopoverContent` already takes this and defaults to `start`, which is right
+   * for a roll-up sitting at the start of a line. One at the END of a line
+   * opens away from the trigger and off toward the next column. Passing `end`
+   * hangs the list off the trigger's right edge instead. Unset, nothing
+   * changes.
+   */
+  align?: 'start' | 'center' | 'end'
+  /**
    * LOCAL MODIFICATION (4) — one identity for the whole list.
    *
    * The default trigger stacks a tile per source, which says "these came from
@@ -599,6 +609,7 @@ type ChatSourcesProps = {
 }
 
 export const ChatSources = ({
+  align,
   className,
   glyph,
   label = 'Sources',
@@ -644,7 +655,7 @@ export const ChatSources = ({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent className='w-80' themeMode={themeMode}>
+      <PopoverContent align={align} className='w-80' themeMode={themeMode}>
         <SourceList glyph={glyph ? false : undefined} label={label} sources={sources} />
       </PopoverContent>
     </Popover>

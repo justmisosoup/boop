@@ -514,6 +514,9 @@ export default function App() {
           <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 desk:min-h-0 desk:flex-1 desk:rounded-none desk:bg-transparent desk:px-8 desk:pb-40 desk:pt-[51px] desk:overflow-y-auto panel-scroll">
             <AnalysisPanel
               versions={analysis.versions}
+              // Named on the recommendation, as what the call was read from.
+              // The held report carries no skills, so a reload lost it.
+              workflow={standing?.name}
               business={selected.name}
               entityLine={describe(selected)}
               record={selected}

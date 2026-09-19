@@ -852,6 +852,17 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   if (key === 'address_cmra')
     return inGroup('address', record.addresses.filter((a) => a.cmra).map((a) => addressRow(a, 'cmra')))
 
+  // Only an address that IS one. The check asks who the registered agent of
+  // record is; falling through to the `address_` catch-all answered it with
+  // the submitted office, which is the one address that is not the answer.
+  if (key === 'address_registered_agent')
+    return inGroup(
+      'address',
+      record.addresses
+        .filter((a) => a.isRegisteredAgent || a.labels.includes('registered_agent'))
+        .map((a) => addressRow(a))
+    )
+
   if (key.startsWith('address_')) return inGroup('address', addressRows(record, { submittedOnly: true }))
 
   // The banded form is handled above, one insight per band. This is the
@@ -1132,11 +1143,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
               }))
             : []
 
-    return [
-      // Submitted and found are not alternatives. A person the customer named
-      // who also turns up on three registrations is both, and showing only the
-      // first loses the corroboration — same treatment as an address.
-      ...[...names, ...screened].flatMap((item) => {
+    const built = [...names, ...screened].flatMap((item) => {
         const articles = matchesFor(item)
         // Per name, not per check: one director can come back clean while
         // another pulls in four articles, and a single outcome across the whole
@@ -1150,7 +1157,18 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           // nothing the record did not already say, and what the screen
           // RETURNED is the insight, not a fact about the company.
           detail: true,
-          label: 'Screened',
+          // Which screen this is. All three checks used the one word
+          // "Screened", so a section citing watchlist, adverse media and PEP
+          // produced four rows with the same label and a reader could not tell
+          // what any of them had been run against.
+          label:
+            key === 'watchlist'
+              ? 'Watchlist and sanctions'
+              : key === 'adverse_media'
+                ? 'Adverse media'
+                : key === 'politically_exposed_persons'
+                  ? 'Politically exposed persons'
+                  : 'Screened',
           value: `${item.name}${found ? '' : outcome}`,
           source: '',
           // On a hit, the list or article it matched. On a clean name, nothing:
@@ -1182,8 +1200,35 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           trailing: found ? riskLevel(articles) : undefined
         }
 
-        return [row]
-      }),
+      return [{ name: item.name, found, row }]
+    })
+
+    /*
+     * One row per screen, not one per name.
+     *
+     * Every name got its own row, so citing watchlist, adverse media and PEP
+     * against two names produced six rows that between them said one thing:
+     * nothing came back. The outcome is the finding; who it covers is the
+     * scope, and scope belongs under the value rather than in place of it.
+     *
+     * A name that DID come back keeps its own row. It carries the articles and
+     * the provider's rating, and folding it into a count would bury the one
+     * result on the screen that a reader has to act on.
+     */
+    const clean = built.filter((b) => !b.found)
+    const hits = built.filter((b) => b.found).map((b) => b.row)
+
+    return [
+      ...hits,
+      ...(clean.length > 0
+        ? [
+            {
+              ...clean[0].row,
+              value: key === 'adverse_media' ? 'None found' : 'No hits',
+              evidenceNote: `Screened: ${clean.map((b) => b.name).join(', ')}`
+            }
+          ]
+        : []),
       ...searched
     ]
   }
@@ -1519,16 +1564,56 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   // The counts and the shared-attribute breakdown are not on the record; only
   // the aggregate outcome is. Until that source is known, the evidence is the
   // attributes a connection could be matched on, and nothing implied beyond it.
-  if (key === 'business_connections')
-    return [
-      ...peopleRow(officers, 'Officer'),
-      ...inGroup('address', addressRows(record)).slice(0, 3)
-    ]
+  /*
+   * The connections check has no attribute on this record.
+   *
+   * It returned the officers and the first three addresses, so "2 connections
+   * found" was evidenced by three addresses and an officer, none of which is a
+   * connection. The connected entities' names come from `list_connections`,
+   * which the record does not carry, so there is nothing here to show yet.
+   */
+  if (key === 'business_connections') return []
+
+  // --- Licences ------------------------------------------------------------
+  //
+  // `license:<id>`, and the two match checks derived beside it. The sentence
+  // says a licence record is on file; the holder, the profession, the state
+  // licence number and when the registry was last updated are what a reviewer
+  // writes down, so they are cards rather than a parenthesis in the prose.
+  if (key.startsWith('license')) {
+    const id = rawKey.slice(rawKey.indexOf(':') + 1)
+    const rows = licenseRows(record).filter((r) => r.refs?.some((ref) => ref.id === id))
+    if (rows.length === 0) return []
+
+    const only = (...labels: string[]) => rows.filter((r) => labels.includes(r.label))
+
+    // The match checks evidence the match: the licence's side and the record's
+    // side, together, so the reader can see what was compared.
+    if (key === 'license_person_match')
+      return [...only('Licence holder'), ...peopleRow(record.people.filter((p) => p.submitted), 'Person')]
+    if (key === 'license_address_match')
+      return [
+        ...only('Practice address'),
+        ...inGroup('address', addressRows(record, { submittedOnly: true }))
+      ]
+
+    return rows
+  }
 
   // --- TIN -----------------------------------------------------------------
   if (key === 'tin') return [tinRow(record), nameRow]
 
-  return [nameRow]
+  /*
+   * Nothing, rather than the business name.
+   *
+   * This used to fall back to `nameRow`, so every check with no mapping was
+   * evidenced by the legal name: `risky_keywords`, `operating_as_claimed`,
+   * `complaint_themes` and the four person-level searches all produced
+   * `Legal name: KAIROS PHYSICAL THERAPY PLLC`. In one section that was four
+   * identical cards in a row, none of which answered the sentence above them.
+   * A check with no attribute behind it has nothing to show.
+   */
+  return []
 }
 
 /**

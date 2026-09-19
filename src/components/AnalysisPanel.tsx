@@ -221,9 +221,14 @@ const CiteList = ({
   const rows = cited.flatMap((r) =>
     (record ? attributesFor(r.insightId, record) : [])
       .filter((a) => a.value && a.label)
-      .map((a) => ({ label: a.label, value: a.value as string, from: r }))
+      // `evidenceNote` is where the answer lives. `21 businesses at this
+      // location`, `Commercial`, `Deliverable` — the address is the same in
+      // all three, so without the note the frequency check, the property-type
+      // check and the deliverability check rendered three identical cards and
+      // none of them answered its own insight.
+      .map((a) => ({ label: a.label, value: a.value as string, note: a.evidenceNote, from: r }))
       .filter((a) => {
-        const key = `${a.label}\u0000${a.value}`
+        const key = `${a.label}\u0000${a.value}\u0000${a.note ?? ''}`
         if (seen.has(key)) return false
         seen.add(key)
         return true
@@ -245,6 +250,9 @@ const CiteList = ({
           >
             <MutedText className="block text-caption leading-snug">{a.label}</MutedText>
             <span className="mt-0.5 block text-sm leading-snug">{a.value}</span>
+            {a.note && (
+              <MutedText className="mt-0.5 block text-caption leading-snug">{a.note}</MutedText>
+            )}
           </button>
         ))}
       </div>
@@ -271,6 +279,7 @@ export const Para = ({
   categories,
   record,
   onJumpToGroup,
+  cards = true,
   children
 }: {
   lead?: string
@@ -280,6 +289,9 @@ export const Para = ({
   categories: Map<string, string>
   record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  /** The attribute cards under the prose. Off in the recommendation, which is
+   *  the call and not the evidence. */
+  cards?: boolean
   children: React.ReactNode
 }) => {
   const cited = useCited(cites, results)
@@ -312,7 +324,7 @@ export const Para = ({
   return (
     <div className="mt-3">
       {body}
-      {cited.length > 0 && (
+      {cards && cited.length > 0 && (
         <CiteList cited={cited} categories={categories} record={record} onJumpToGroup={onJumpToGroup} />
       )}
     </div>
@@ -331,13 +343,15 @@ export const SectionBody = ({
   results,
   categories,
   record,
-  onJumpToGroup
+  onJumpToGroup,
+  cards = true
 }: {
   section: AssessmentSection
   results: Derived[]
   categories: Map<string, string>
   record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  cards?: boolean
 }) => (
   <>
     {section.body.map((b) => (
@@ -349,12 +363,17 @@ export const SectionBody = ({
         categories={categories}
         record={record}
         onJumpToGroup={onJumpToGroup}
+        cards={cards}
       >
         {b.text}
       </Para>
     ))}
 
-    {section.gaps?.map((g, i) => (
+    {/* Only the open ones. A `noAction` gap is one nobody is going to act on,
+        and printing it read as "Not established. X, and also nothing will be
+        done about it" — a line that costs the reader attention and changes
+        nothing they do. It stays in the data; it is not part of the report. */}
+    {section.gaps?.filter((g) => !g.noAction).map((g, i) => (
       <Para
         key={g.point}
         lead={i === 0 ? 'Not established.' : undefined}
@@ -368,9 +387,6 @@ export const SectionBody = ({
         <span className="text-[var(--core-color-text-muted)]">
           — {WHY[g.why]}
           {g.wouldAnswer ? `. ${g.wouldAnswer}` : ''}
-          {/* Written off rather than closed: shown, because a decision nobody
-              can see is indistinguishable from an oversight. */}
-          {g.noAction ? ` No follow-up: ${g.noAction}` : ''}
         </span>
       </Para>
     ))}
@@ -439,6 +455,7 @@ const ReportBody = ({
   results,
   categories,
   policy,
+  skills = [],
   record,
   stream = false,
   onJumpToGroup
@@ -448,6 +465,8 @@ const ReportBody = ({
   categories: Map<string, string>
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
+  /** The workflow the run was composed from, named on the recommendation. */
+  skills?: string[]
   record?: BusinessRecord
   /** A run is being written, so sections not yet here are coming. */
   stream?: boolean
@@ -510,14 +529,50 @@ const ReportBody = ({
           >
             {/* Body size, bold. `Heading level={3}` sets these at 18px, which made
                five section titles compete with the report they label. */}
-            <Text className="block font-semibold">{heading}</Text>
+            {id === 'recommendation' ? (
+              /* What the call was made from, at the end of its own heading
+                 line: the workflow that composed the run, and the record it was
+                 read against. The recommendation carries no attribute cards, so
+                 without this there is nothing on it saying where it came from. */
+              <div className="flex items-baseline justify-between gap-4">
+                <Text className="block font-semibold">{heading}</Text>
+                <span className="shrink-0">
+                  {/* The roll-up, not a chip: core's own `ChatSources`, which
+                      stacks the sources' tiles and opens to the list. */}
+                  <ChatSources
+                    align="end"
+                    label="Analysed with"
+                    sources={[
+                      ...skills.map((name) => ({
+                        id: `skill:${name}`,
+                        label: name,
+                        title: name,
+                        annotation: 'Assessment workflow'
+                      })),
+                      {
+                        id: 'middesk-context',
+                        label: 'Middesk context',
+                        title: 'Middesk context',
+                        annotation: 'The business record this run was read against'
+                      }
+                    ]}
+                  />
+                </span>
+              </div>
+            ) : (
+              <Text className="block font-semibold">{heading}</Text>
+            )}
             {/* The verdict sentence is the recommendation's first line, where
                 the conclusion is drawn — not floating above the whole message
                 unattached to the section that argues it. */}
             {id === 'recommendation' && verdict && (
               <Text className="mt-3">{verdict.headline}</Text>
             )}
-            {section && <SectionBody section={section} {...pass} />}
+            {/* The recommendation is the call, not the evidence. Its cards
+                restated attributes the assessments above had already shown,
+                under the one section meant to read as a decision. The
+                follow-up's own entity cards are not these and stay. */}
+            {section && <SectionBody section={section} {...pass} cards={id !== 'recommendation'} />}
             {tail && <FollowUps items={followUps} />}
           </div>
         )
@@ -528,6 +583,7 @@ const ReportBody = ({
 
 const Answer = ({
   version,
+  workflow,
   results,
   categories,
   record,
@@ -535,6 +591,7 @@ const Answer = ({
   wrapRun
 }: {
   version: AnalysisVersion
+  workflow?: string
   results: Derived[]
   record?: BusinessRecord
   categories: Map<string, string>
@@ -568,6 +625,9 @@ const Answer = ({
         categories={categories}
         record={record}
         policy={version.policy ?? []}
+        // A held report carries no skills, so the workflow the page knows about
+        // stands in for it — otherwise a reload loses the name.
+        skills={version.skills?.length ? version.skills : workflow ? [workflow] : []}
         onJumpToGroup={onJumpToGroup}
       />
     </ChatMessage>
@@ -583,6 +643,7 @@ const Answer = ({
  */
 export const AnalysisPanel = ({
   versions,
+  workflow,
   results,
   categories,
   record,
@@ -603,6 +664,8 @@ export const AnalysisPanel = ({
   superseded
 }: {
   versions: AnalysisVersion[]
+  /** The workflow this run was composed from. */
+  workflow?: string
   results: Derived[]
   categories: Map<string, string>
   /** The record itself, so a cited check can show the value behind it. */
@@ -652,6 +715,7 @@ export const AnalysisPanel = ({
         <div key={v.id}>
           <Answer
             version={v}
+            workflow={workflow}
             results={results}
             categories={categories}
             record={record}

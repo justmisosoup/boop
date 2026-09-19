@@ -160,7 +160,7 @@
                 ]
               },
               {
-                "text": "A licence record is on file. The NPI Registry holds an Active Physical Therapist licence for JOSHUA Y GEE, DPT (NY licence 048266, taxonomy 225100000X), last updated 2024-03-11.",
+                "text": "A licence record is on file. The NPI Registry holds an Active Physical Therapist licence.",
                 "cites": [
                   "license:npi-1477211969"
                 ]
@@ -175,7 +175,7 @@
                 ]
               },
               {
-                "text": "The entity form is what makes that link load-bearing. A New York PLLC may be formed only to practise a licensed profession, and statute restricts membership to individuals licensed in that profession, so the licence is a condition of the activity rather than a credential worth noting. The entity_type field buckets this as LLC, so a policy keyed on that field will not ask for licence evidence on its own.",
+                "text": "A New York PLLC may only practise a licensed profession, and statute restricts its members to people licensed in it. The licence is a condition of the business operating, not a detail about it. The record types this entity as an LLC, so a rule keyed on entity type alone will not ask for licence evidence.",
                 "cites": [
                   "entity_type"
                 ]
@@ -200,7 +200,7 @@
             "id": "skill-kyb-3",
             "body": [
               {
-                "text": "Nothing screened returned a hit. Watchlist and sanctions screening against the submitted business name returned No Hits, adverse media returned Low risk with nothing found, and PEP screening returned no hits on the submitted individual or on their relatives and close associates.",
+                "text": "Watchlist, sanctions and PEP screening returned no hits, on the entity or on JOSHUA GEE. Adverse media returned one match against the name JOSHUA GEE: a grand jury indictment reported in Lawrence County, carrying fraud, narcotics and weapons risks. It is scored on the name, not the person, and nothing on the record ties the article to this practice or to New York. The match is unresolved rather than clear.",
                 "cites": [
                   "watchlist",
                   "adverse_media",
@@ -276,7 +276,7 @@
               },
               {
                 "id": "own_connected_entities",
-                "point": "Who owns or controls KAIROS 801 LLC and J.L.W. INVESTORS, LTD",
+                "point": "Who owns or controls KAIROS 801 LLC and J.L.W. INVESTORS, LTD, and whether either shares an owner with this business",
                 "why": "not_held_or_unreachable"
               }
             ]
@@ -296,7 +296,7 @@
                 ]
               },
               {
-                "text": "The decision turns on one thing: nobody is on the file. No filing names a natural person, so the entity is its own officer of record and JOSHUA GEE is not tied to it by anything we hold. An active New York physical therapy licence for JOSHUA Y GEE, DPT sits at the submitted office address, which is a strong lead and not a link. The entity is a PLLC, so membership is restricted by statute to licensed practitioners, which makes that link a condition of the account rather than a detail.",
+                "text": "The submitted person is not on file. No filing names a natural person, so the entity is its own officer of record and JOSHUA GEE is not tied to it by anything we hold. An active New York physical therapy licence for JOSHUA Y GEE, DPT sits at the submitted office address, which is a strong lead and not a link. The entity is a PLLC, so membership is restricted by statute to licensed practitioners, which makes that link a condition of the account rather than a detail.",
                 "cites": [
                   "person_verification",
                   "license_person_match:npi-1477211969",
