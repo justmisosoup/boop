@@ -396,10 +396,15 @@ const FollowUps = ({
    * made and evidenced in the assessment above. Repeating the evidence on the
    * action attached it to a sentence that is not claiming anything.
    */
-  <ul className="mt-3 list-disc space-y-3 pl-5 marker:text-[var(--core-color-text-muted)]">
+  /*
+   * Not a bulleted list. The follow-ups are the only part of the report meant
+   * to read as actionable, and a disc with an indent behind it made them the
+   * report's footnotes. Set flush and bold, they are the thing to do.
+   */
+  <ul className="mt-3 list-none space-y-3 pl-0">
     {items.map((f) => (
       <li key={f.text}>
-        <Text>{f.text}</Text>
+        <Text className="font-semibold">{f.text}</Text>
         {/* The things the step acts on, named. A step that says "establish who
             is behind the connected businesses" is not actionable until the
             businesses are on screen. */}
