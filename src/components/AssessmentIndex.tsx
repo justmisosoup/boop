@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { MutedText, Text } from '@/core'
+import { HoverCard, HoverCardContent, HoverCardTrigger, MutedText } from '@/core'
 
 import { cn } from '../utils/twUtils'
 
@@ -13,9 +13,10 @@ import { cn } from '../utils/twUtils'
  * a long document has always had.
  *
  * It sits in the margin beside the report rather than above it, so it stays
- * still while the prose moves past. Below the breakpoint there is no margin to
- * sit in, so it becomes an ordinary row above the report instead of being
- * dropped: on a narrow window the report is longer, not shorter.
+ * still while the prose moves past, and it is the contents and nothing else:
+ * what the business does leads the report itself — see BusinessLede. Below the
+ * breakpoint there is no margin to sit in and the rail is not rendered, so a
+ * narrow window loses the jump list, not the report.
  */
 /**
  * Where a heading counts as reached, in viewport coordinates.
@@ -67,14 +68,12 @@ const StateDot = ({ state }: { state: 'done' | 'running' | 'pending' }) => {
 
 export const AssessmentIndex = ({
   sections,
-  lede,
   present,
   steps,
   running = false
 }: {
   /** The pillars in the report, in the order they are laid out. */
   sections: Array<{ id: string; heading: string }>
-  lede: string | null
   /** Section ids whose prose is on the page right now. */
   present?: Set<string>
   /** What each section did, opened from the caret beside it. */
@@ -251,36 +250,16 @@ export const AssessmentIndex = ({
     requestAnimationFrame(watch)
   }
 
-  return (
-    <nav
-      aria-label="Assessment contents"
-      className={cn(
-        // A column of the document, shown only at `desk` (1576px), which is
-        // the width at which the rail, an 800px report and the reference panel
-        // all fit. It used to appear at `lg`, where all three were present and
-        // the report paid for it, down to 224px of prose. Below `desk` the page
-        // stacks and this is not rendered at all.
-        'hidden',
-        // No ground of its own. It is margin furniture, not a panel — a white
-        // card here made it compete with the report for the same reading, and
-        // the page behind it is what marks it as apart from the document.
-        // `pt-7` matches the report card's own top padding, so the rail's first
-        // line sits on the same baseline as the report's rather than 28px
-        // above it.
-        'desk:flex desk:w-56 desk:shrink-0 desk:flex-col desk:gap-y-1 desk:overflow-y-auto desk:pt-[51px] panel-scroll'
-      )}
-    >
-      {/* What the business actually does, kept in view while working down a
-          report about it. The name and the entity line used to sit above this
-          and now live in the fixed header, which is on screen at every scroll
-          position — printing them here as well was the same fact twice, 200px
-          apart. */}
-      {lede && (
-        <Text className="mb-4 line-clamp-6 block font-normal leading-relaxed">
-          {lede}
-        </Text>
-      )}
-
+  /**
+   * The list itself, rendered by both forms of this component.
+   *
+   * The rail holds it in the margin; the collapsed strip holds it in a hover
+   * card. Same element, so the rows, their states, their step disclosures and
+   * the jump cannot drift apart between the two — and `shown` being shared
+   * means a section opened in one is open in the other.
+   */
+  const contents = (
+    <>
       {/* What the run is doing, at the top of the thing that tracks it. It used
           to sit over the report as "Thought for 7s" — the right fact in the
           wrong place, arriving only once there was nothing left to wait for. */}
@@ -304,9 +283,6 @@ export const AssessmentIndex = ({
         </div>
       )}
 
-      {/* How much of the report exists, before the list of what it is. Only
-          while a run is in flight — a finished report does not need a progress
-          bar over its table of contents. */}
       {sections.map(({ id, heading }) => {
         const current = here === id
         const state = stateOf(id)
@@ -388,6 +364,119 @@ export const AssessmentIndex = ({
           </div>
         )
       })}
-    </nav>
+    </>
+  )
+
+  /** The current entry, before the observer has had a chance to say. Without
+   *  this the strip opens with no mark lit, which reads as "nowhere" rather
+   *  than "the top". */
+  const at = here ?? sections[0].id
+
+  return (
+    <>
+      <nav
+        aria-label="Assessment contents"
+        className={cn(
+          // A column of the document, shown only at `desk` (1504px), which is
+          // the width at which the rail, an 800px report and the reference
+          // panel all fit. It used to appear at `lg`, where all three were
+          // present and the report paid for it, down to 224px of prose. Below
+          // `desk` the collapsed strip below carries the list instead.
+          'hidden',
+          // No ground of its own. It is margin furniture, not a panel — a white
+          // card here made it compete with the report for the same reading, and
+          // the page behind it is what marks it as apart from the document.
+          // `pt-7` matches the report card's own top padding, so the rail's
+          // first line sits on the same baseline as the report's rather than
+          // 28px above it.
+          'desk:flex desk:w-56 desk:shrink-0 desk:flex-col desk:gap-y-1 desk:overflow-y-auto desk:pt-[51px] panel-scroll'
+        )}
+      >
+        {contents}
+      </nav>
+
+      {/*
+        * The same list, collapsed to its marks.
+        *
+        * Below `desk` there is no margin to put a 224px rail in, and the rail
+        * was simply dropped — so at the width most windows actually are, the
+        * report had no jump list and nothing saying where in it you were. A
+        * mark per section keeps both: where you are, and a way to somewhere
+        * else. The names come back on hover.
+        *
+        * Pinned to the window rather than the document: at `wide` the report
+        * scrolls inside its own column, and a strip that scrolled with the
+        * prose would leave the screen exactly when it is wanted. It ends 6px
+        * short of the report card, in the page's own gutter — there is no slack
+        * anywhere below `desk`, so this is the only place it can go without
+        * taking width from the prose.
+        */}
+      <HoverCard openDelay={120} closeDelay={160}>
+        <HoverCardTrigger asChild>
+          <div
+            className={cn(
+              // 24px wide from the nav's edge: the page's own gutter, which is
+              // all the room there is below `desk`. `top-[108px]` is the fixed
+              // name bar (57px) plus the report's own top padding (51px) — the
+              // same arithmetic the rail does with `desk:pt-[51px]`, so the
+              // first dot sits level with the report's first line rather than
+              // floating in the middle of the window.
+              'fixed left-[var(--nav-w)] top-[108px] z-20 w-6',
+              'flex flex-col items-center gap-0.5 desk:hidden'
+            )}
+          >
+            {sections.map(({ id, heading }) => {
+              const state = stateOf(id)
+              const current = at === id
+              /* Size and fill, not colour alone: the rail says which entry you
+                 are on by setting its label in semibold, and a dot has no label
+                 to embolden. The vocabulary is `StateDot`'s — filled for what
+                 is on the page, a ring for what has not started. */
+              const mark = cn(
+                'block rounded-full transition-all duration-200',
+                current && 'size-2 bg-foreground',
+                !current && state === 'pending' &&
+                  'size-1.5 border border-solid border-[var(--core-color-border-bold)]',
+                !current && state !== 'pending' && 'size-1.5 bg-[var(--core-color-border-bold)]',
+                state === 'running' && 'motion-safe:animate-pulse'
+              )
+              /* A section that has not landed is not a button — and not a
+                 disabled one either: a disabled control swallows the pointer,
+                 which would punch a hole in the strip the hover card opens
+                 from. */
+              return state === 'done' ? (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => go(id)}
+                  aria-label={heading}
+                  aria-current={current ? 'true' : undefined}
+                  className="flex w-full cursor-pointer justify-center py-1"
+                >
+                  <span className={mark} aria-hidden="true" />
+                </button>
+              ) : (
+                <span key={id} className="flex w-full justify-center py-1" aria-hidden="true">
+                  <span className={mark} />
+                </span>
+              )
+            })}
+          </div>
+        </HoverCardTrigger>
+        {/* Pulled back over the strip — a negative offset of exactly its 24px
+            width — so the list opens where the dots were rather than beside
+            them. The dots are the collapsed state of this list, not a legend
+            for it, and leaving both on screen read as two controls. */}
+        <HoverCardContent
+          side="right"
+          align="start"
+          sideOffset={-24}
+          alignOffset={-12}
+          className="w-56 p-3"
+        >
+          <div className="flex flex-col gap-y-1">{contents}</div>
+        </HoverCardContent>
+      </HoverCard>
+    </>
   )
 }

@@ -91,10 +91,10 @@ product.
 No one asked; the analyst arrived knowing why they are here. Write it for **a
 financial institution opening a business bank account**.
 
-It reads in three movements: **what the business is**, **what we think**, then
-**why we think it**. The recommendation sits second, above the assessments it rests
-on — an analyst wants the call before the working, and reads the assessments when
-they want to disagree with it.
+It reads in three movements: **what the business is**, **what to do about it**, then
+**why**. The recommendations sit second, above the assessments they rest on — an
+analyst wants the actions before the working, and reads the assessments when they
+want to disagree with them.
 
 The assessments are **the stages an account-opening file is actually built from**,
 not the shape of the record we happen to hold: customer identification, beneficial
@@ -103,10 +103,11 @@ screening, and adverse information and financial standing. Written in that order
 report is the file, in the sequence a reviewer works it — which is the point of
 structuring it this way rather than by where the data came from.
 
-The headline is the account-opening answer, not a summary of the record. It is
-printed as the first line of `recommendation`, which the reader reaches second. Do
-not repeat it in the `recommendation` prose; that paragraph earns its place by
-saying what the verdict rests on.
+The headline is the account-opening answer, not a summary of the record. On a
+standing report it does not render — the follow-ups under `Recommendations` are what
+the reader acts on — and on a typed question it is the answer, printed above the
+message. Write it either way: the endpoint requires it, and it is what says which of
+the three decisions was reached.
 
 **`question`** — a follow-up the user typed. Answer that, directly, using the same
 rules. Prior turns arrive in `history`.
@@ -172,7 +173,7 @@ Two ids are the runner's and no assessment may claim them:
 
 | `id` | What goes in it |
 |---|---|
-| `recommendation` | **Last, where it is reached.** Whether to onboard, and what that rests on. `headline` is printed as its first line, so the prose here must carry the argument rather than restate that sentence; `followUps` render beneath it as a bulleted list. Written after every assessment has landed. |
+| `recommendation` | **Last, where it is reached.** Carried with an empty `body` — the section renders `followUps` and nothing else. Written after every assessment has landed. |
 | `answer` | A typed follow-up, answered on its own terms. Renders with no heading, beneath the headline. |
 
 `description` is **gone**. The lede is not a section of a run — it is authored per
@@ -344,22 +345,32 @@ is a legitimate finding. Silently ignoring one is the failure mode.
 for a sole proprietor; a registered-agent address is ordinary for a Delaware
 corporation.
 
-**Keep the recommendation to one paragraph.** The assessments above carry the
-evidence. Re-stating what the registries, the officer match and the website each
-showed says the same thing twice, at length, in the section least able to act on it.
+**The recommendation section carries no prose.** Write `recommendation` with an
+empty `body`. The assessments above carry the evidence and the reader has just read
+them; a paragraph restating what the registries, the officer match and the website
+each showed says the same thing twice, at length, in the section least able to act on
+it. What renders under that heading is `followUps`, and nothing else.
 
-The paragraph has one job: say **whether to onboard**, name what is still open
-**against the customer's policy**, and frame the steps that close it. The decision is
-one of three — onboard, onboard subject to named conditions, or do not onboard — and
-the headline states which. Sort the open items by what kind of thing each is: an
-order, a document to collect from the customer, a finding to read before anyone can
-weigh it, or a policy decision the bank makes about itself rather than about this
-record. **Point at the assessments rather than repeat
-them** — "the unsized liens in Compliance" tells a reader where to look and costs six
-words; re-arguing the finding costs four sentences and adds nothing they cannot
-already see. Say what kind of thing each open item is: an order, a decision about
-what the policy will accept, a request to the customer. If nothing is open, say so in
-a sentence and stop.
+So the verdict is the list. Each follow-up is **one action a reviewer takes before
+the account opens**, against the customer's policy and what is standard for the
+industry, with only the facts that justify it behind the instruction:
+
+> Establish who is behind KAIROS 801 LLC. This is linked to the business by two
+> shared addresses. A common owner is plausible, but not on the record.
+
+**If it cannot be acted on, it is not a follow-up.** A second business at the same
+address that is plainly a neighbour is a fact the assessment states and nobody
+actions; writing it up as a step spends a reviewer's attention and returns nothing.
+The test is whether someone could do the thing tomorrow.
+
+**Two things produce one**, and the second is easy to miss: something the record
+leaves open, and something a registry does not publish. "Submit an RFI for a
+Certificate of Good Standing, as New York does not publish one" is a real step and
+comes from a `not_published` gap, not from a finding.
+
+The decision itself — onboard, onboard subject to named conditions, or do not onboard
+— is the `headline`. It is still written and still validated, but it renders only on
+a typed question; on a standing report the follow-ups ARE the conditions.
 
 **`followUps` are ranked, not grouped.** One list, ordered by what most needs doing
 — the item that unblocks the decision first, the nice-to-have last. Do not sort them

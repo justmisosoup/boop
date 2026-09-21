@@ -493,7 +493,7 @@ export const AnalysisDock = ({
 
   if (!open) {
     return (
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-floating pb-4">
+      <div className="pointer-events-none fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)]">
         {/* Centred on the viewport, and the same width whatever the report is.
             It used to mirror the page's gutters, which meant dragging the
             report/panel boundary slid the composer sideways and resized it. */}
@@ -509,7 +509,7 @@ export const AnalysisDock = ({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-floating pb-4">
+    <div className="fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)]">
       {/* Centred on the viewport at a fixed width — it is the same object
           whatever width the report is dragged to. */}
       <div className="mx-auto w-full max-w-[676px] px-6">

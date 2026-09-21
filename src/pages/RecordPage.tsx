@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
+import { Link, Navigate, useParams } from 'react-router'
 
 import {
   ActionButton,
-  Input,
+  ChatSources,
   MetaChip,
   MutedText,
   Surface,
@@ -11,48 +13,28 @@ import {
   TabsList,
   TabsRoot,
   TabsTrigger,
-  Tag,
   Text
 } from '@/core'
 
-import { AnalysisDock } from './components/AnalysisDock'
-import { AttributesTab, countAttributes } from './components/AttributesTab'
-import { AnalysisPanel } from './components/AnalysisPanel'
-import { AssessmentIndex } from './components/AssessmentIndex'
-import { PanelGroup } from './components/PanelGroup'
-import { BusinessLede } from './components/BusinessLede'
-import { ScreenshotViewerProvider } from './components/ScreenshotViewer'
-import { SourcesTab, sourcesFor } from './components/SourcesTab'
-import { InsightRow } from './components/InsightRow'
-import rawRecords from './data/records.json'
-import licenseStore from './data/licenses.json'
-import { categoriesOf, deriveResults, trueEntityType, type BusinessRecord, type Derived } from './lib/deriveResults'
-import { GROUPS, type GroupId, makeGroupFor } from './lib/groups'
-import { useAnalysis } from './lib/useAnalysis'
-import { AssessmentEditor } from './components/AssessmentEditor'
-import { composeAssessment } from './lib/library'
-import { cn } from './utils/twUtils'
-import { useAgent } from './lib/useAgent'
-import { useLede } from './lib/useLede'
-
-/**
- * Licences, merged onto the records they belong to.
- *
- * `records.json` is gitignored and rewritten wholesale by `bun run pull`, so
- * anything found by hand and written there is lost on the next pull. The store
- * is keyed by business NAME rather than id, because re-ordering the same
- * company mints a new business id every time and an id-keyed store would come
- * back empty for the business it was written for.
- */
-const LICENSES = (licenseStore as { licenses: Record<string, unknown[]> }).licenses
-const licenseKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim()
-
-const records = (rawRecords as BusinessRecord[]).map((r) => {
-  const found = LICENSES[licenseKey(r.name)]
-  return found ? { ...r, licenses: found as BusinessRecord['licenses'] } : r
-})
-
-const ALL = records
+import { AnalysisDock } from '../components/AnalysisDock'
+import { AttributesTab, countAttributes } from '../components/AttributesTab'
+import { AnalysisPanel } from '../components/AnalysisPanel'
+import { AssessmentIndex } from '../components/AssessmentIndex'
+import { PanelGroup } from '../components/PanelGroup'
+import { BusinessIdentity } from '../components/BusinessIdentity'
+import { BusinessLede } from '../components/BusinessLede'
+import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
+import { SourcesTab, sourcesFor } from '../components/SourcesTab'
+import { InsightRow } from '../components/InsightRow'
+import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
+import { byId, describe } from '../lib/records'
+import { GROUPS, type GroupId, makeGroupFor } from '../lib/groups'
+import { useAnalysis } from '../lib/useAnalysis'
+import { AssessmentEditor } from '../components/AssessmentEditor'
+import { composeAssessment } from '../lib/library'
+import { cn } from '../utils/twUtils'
+import { useAgent } from '../lib/useAgent'
+import { useLede } from '../lib/useLede'
 
 /**
  * What the assessment workflow runs against.
@@ -68,13 +50,6 @@ const CONTEXT = [
   { id: 'context:industries', label: 'Middesk Industries' }
 ]
 
-// The form the filings carry, not the provider's bucket — see trueEntityType.
-const describe = (r: BusinessRecord) =>
-  r.formation
-    ? `${trueEntityType(r) ?? r.formation.entityType} · ${r.formation.state} · formed ${r.formation.date}`
-    : 'No formation record'
-
-
 /**
  * The reference panel's width, in px. Fixed.
  *
@@ -85,29 +60,25 @@ const describe = (r: BusinessRecord) =>
  */
 const PANEL_W = 480
 
-export default function App() {
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<BusinessRecord>(ALL[0])
-  const [open, setOpen] = useState(false)
-  const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+/**
+ * One business's assessment.
+ *
+ * The whole prototype until the businesses list arrived. Which record it shows
+ * is the route now, not local state — so a reload holds its place and a record
+ * can be linked to. Finding a different one is the rail's ⌘K search.
+ */
+export function RecordPage() {
+  const { businessId } = useParams()
+  const selected = byId(businessId)
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return ALL.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.formation?.state.toLowerCase().includes(q) ||
-        r.addresses.some((a) => a.fullAddress.toLowerCase().includes(q))
-    ).slice(0, 6)
-  }, [query])
+  // An id that isn't one of the ingested records: back to the list rather than
+  // a half-rendered screen.
+  if (!selected) return <Navigate replace to='/businesses' />
 
-  const choose = (r: BusinessRecord) => {
-    setSelected(r)
-    setQuery('')
-    setOpen(false)
-  }
+  return <Record record={selected} />
+}
 
+function Record({ record: selected }: { record: BusinessRecord }) {
   const derived = useMemo(() => deriveResults(selected), [selected])
   const results: Derived[] = useMemo(() => derived, [derived])
   const undetermined = derived.filter((r) => r.reasonUndetermined).length
@@ -137,6 +108,47 @@ export default function App() {
     [agent.skills, agent.disabled]
   )
   const analysis = useAnalysis(selected, results)
+
+  /**
+   * What the report was read from, at the head of the page.
+   *
+   * It used to sit on the recommendation's heading line, which put it a third
+   * of the way down a report it describes the whole of — and a follow-up
+   * printed a second copy further down. One roll-up, at the top, naming the
+   * latest run's workflow: the skills it was composed from, and the record it
+   * was read against. Nothing to say before a run has happened, so it is not
+   * rendered then.
+   */
+  const latestRun = analysis.versions[analysis.versions.length - 1]
+  // A held report carries no skills, so the workflow the page knows about
+  // stands in for it — otherwise a reload loses the name.
+  const runSkills = latestRun?.skills?.length
+    ? latestRun.skills
+    : standing?.name
+      ? [standing.name]
+      : []
+  const analysedWith = latestRun ? (
+    // The roll-up, not a chip: core's own `ChatSources`, which stacks the
+    // sources' tiles and opens to the list.
+    <ChatSources
+      align="end"
+      label="Analysed with"
+      sources={[
+        ...runSkills.map((name) => ({
+          id: `skill:${name}`,
+          label: name,
+          title: name,
+          annotation: 'Assessment workflow'
+        })),
+        {
+          id: 'middesk-context',
+          label: 'Middesk context',
+          title: 'Middesk context',
+          annotation: 'The business record this run was read against'
+        }
+      ]}
+    />
+  ) : null
   const [agentOpen, setAgentOpen] = useState<string | null>(null)
 
   /**
@@ -182,6 +194,9 @@ export default function App() {
             ]
       )
     }
+    // The head of the report — the name and what the business does — is always
+    // on the page, so the index's first entry is never pending.
+    present.add('lede')
     return { presentSections: present, sectionSteps: steps }
   }, [analysis.draft, analysis.active, results])
 
@@ -191,10 +206,13 @@ export default function App() {
     // Same order the report is laid out in — recommendation first. The index
     // has to match the page or clicking it sends the reader to the wrong place.
     return [
-      { id: 'recommendation', heading: 'Recommendation' },
+      // What the report opens with, before it argues anything: the business
+      // itself. The index is a map of the page, and the page starts here.
+      { id: 'lede', heading: selected.name },
+      { id: 'recommendation', heading: 'Recommendations' },
       ...live.map(({ id, name }) => ({ id, heading: name }))
     ]
-  }, [analysis.waiting, analysis.waitingPolicy, analysis.active, policy])
+  }, [analysis.waiting, analysis.waitingPolicy, analysis.active, policy, selected.name])
 
   /*
    * The report is static on arrival.
@@ -366,88 +384,39 @@ export default function App() {
           * except a line in the margin. A report this long needs its subject
           * fixed to the top of it.
           */}
-        <header className="fixed inset-x-0 top-0 z-floating border-b border-solid border-border bg-card">
+        {/* `left-[var(--nav-w)]`: the bar is fixed to the window, and the
+            global nav rail is too — so it starts where the rail ends rather
+            than under it. The Shell sets the variable. */}
+        {/* `z-chrome`, under the global nav: the rail hover-expands over the
+            page, and at `z-floating` this bar was painted across the top of
+            that overlay. */}
+        <header className="fixed right-0 top-0 z-chrome border-b border-solid border-border bg-card left-[var(--nav-w)]">
           <div className="mx-auto flex items-center gap-4 px-6 py-2">
+            {/* There is a list to go back to now. It sits before the name
+                because that is the order the two were arrived at. */}
+            <Link
+              to="/businesses"
+              aria-label="Back to Businesses"
+              className="-ml-1 flex size-7 shrink-0 items-center justify-center rounded-control text-text-secondary no-underline transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.5} />
+            </Link>
             <div className="flex min-w-0 items-baseline gap-3">
               <Text size="sm" className="shrink-0 truncate font-medium">
                 {selected.name}
               </Text>
               <MutedText className="truncate text-caption">{describe(selected)}</MutedText>
             </div>
-
-            {/* Changing which business you are looking at belongs beside the
-                name of the one you are looking at. In the reference panel it
-                sat above Insights/Attributes/Sources and read as a filter over
-                them, which is not what it does — it swaps the whole screen. */}
-            <div className="ml-auto">
-<div className="relative w-72 shrink-0">
-              <Input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setOpen(true)
-                }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => {
-                  blurTimer.current = setTimeout(() => setOpen(false), 120)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && matches[0]) choose(matches[0])
-                  if (e.key === 'Escape') setOpen(false)
-                }}
-                placeholder="Search a business by name, state or address"
-                aria-label="Search a business"
-              />
-
-              {open && matches.length > 0 && (
-                <Surface
-                  variant="raised"
-                  padding="none"
-                  /* `!absolute`: core's raised surface sets `position: relative`
-                     and wins on stylesheet order, so the menu rendered in flow
-                     and `top-full` then shoved it a panel's height down the
-                     page, clear of the box it belongs to. */
-                  className="!absolute inset-x-0 top-full z-10 mt-1 overflow-hidden"
-                >
-                  <div className="divide-y divide-solid divide-border">
-                    {matches.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onMouseDown={() => {
-                          clearTimeout(blurTimer.current)
-                          choose(r)
-                        }}
-                        className="flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left hover:bg-muted"
-                      >
-                        <span className="min-w-0">
-                          <Text size="sm" className="truncate font-medium">
-                            {r.name}
-                          </Text>
-                          <MutedText className="mt-0.5 block truncate text-caption">
-                            {describe(r)}
-                          </MutedText>
-                        </span>
-                        <Tag tone="subtle" size="compact">
-                          {r.reviewTasks.length}
-                        </Tag>
-                      </button>
-                    ))}
-                  </div>
-                </Surface>
-              )}
-            </div>
-            </div>
           </div>
         </header>
 
         {/*
-          * The heading lives in the left rail now.
+          * Nothing about the business is printed here.
           *
-          * It was in both, so the name, the entity line and the lede each
-          * appeared twice on one screen — and the rail's copy is the one that
-          * stays put while the report scrolls, which is the job it was added
-          * for. Kept here only below the breakpoint, where there is no rail.
+          * The name and the entity line are in the fixed bar above, which is on
+          * screen at every scroll position; what the business does leads the
+          * report, under its own heading. Saying any of it a second time put
+          * the same fact on one screen twice, 200px apart.
           */}
         {/*
           * Two columns: the assessment, and the record it was written from.
@@ -474,14 +443,13 @@ export default function App() {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents wide:fixed wide:left-0 wide:top-[57px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
+        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-[57px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
         {/* The index mirrors the report: what is on the page, what is being
             written, what has not started. Taken from the sections actually
             rendered rather than from the run's own bookkeeping, so it is right
             for a live run and for a replay alike. */}
         <AssessmentIndex
           sections={reportSections}
-          lede={lede}
           present={presentSections}
           steps={sectionSteps}
           running={analysis.waiting}
@@ -505,25 +473,32 @@ export default function App() {
             */}
           <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:px-8 wide:pb-40 wide:pt-[51px] wide:overflow-y-auto panel-scroll">
             {/*
-              * The lede, wherever the rail is not carrying it.
+              * The lede, at the head of the report and at every width.
               *
-              * It used to sit above the document container as a sibling. At
-              * `wide` that container is `fixed`, so the lede rendered into the
-              * flow underneath it and was covered by the white: present in the
-              * DOM, never on screen. Inside the report it leads the prose, which
-              * is where a reader looks for it when the rail is gone.
+              * The contents rail carried it above `desk` and this was the copy
+              * for everything below, so the paragraph saying what the company
+              * does was either 224px wide and clamped at six lines, or
+              * somewhere else entirely, depending on the window. One copy now,
+              * here, and the rail is a contents list.
               *
-              * The name and the entity line are in the fixed bar at every width,
-              * so only the lede is repeated here.
+              * It has to be inside the report rather than a sibling of the
+              * document container: at `wide` that container is `fixed`, so a
+              * sibling rendered into the flow underneath it and was covered by
+              * the white — present in the DOM, never on screen.
+              *
+              * The entity line is in the fixed bar. So is the registered name,
+              * but the heading here is the name the lede itself opens with,
+              * which is usually the one the business trades under.
               */}
-            <header className="mb-5 desk:hidden">
-              <BusinessLede text={lede} />
+            <header id="section-lede" className="mb-8 scroll-mt-6">
+              <BusinessLede text={lede} name={selected.name} trailing={analysedWith} />
             </header>
+            {/* What the record holds about the business, before the report
+                starts reading it. Attributes only — the filing facts an account
+                is opened against. */}
+            <BusinessIdentity record={selected} />
             <AnalysisPanel
               versions={analysis.versions}
-              // Named on the recommendation, as what the call was read from.
-              // The held report carries no skills, so a reload lost it.
-              workflow={standing?.name}
               business={selected.name}
               entityLine={describe(selected)}
               record={selected}

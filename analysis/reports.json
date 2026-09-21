@@ -123,7 +123,9 @@
                 "id": "domestic_good_standing",
                 "point": "Whether the New York registration is in good standing, beyond being active",
                 "why": "not_published",
-                "noAction": true
+                "cites": [
+                  "sos_domestic_sub_status"
+                ]
               },
               {
                 "id": "registered_agent",
@@ -276,46 +278,34 @@
               },
               {
                 "id": "own_connected_entities",
-                "point": "Who owns or controls KAIROS 801 LLC and J.L.W. INVESTORS, LTD, and whether either shares an owner with this business",
+                "point": "Who owns or controls KAIROS 801 LLC, and whether it shares an owner with this business",
                 "why": "not_held_or_unreachable"
               }
             ]
           },
           {
             "id": "recommendation",
-            "body": [
-              {
-                "text": "The entity is established and clean. It matches an active New York filing, the IRS holds the TIN and name pair, and everything screened so far, the business and JOSHUA GEE, returned no hits.",
-                "cites": [
-                  "sos_active",
-                  "sos_match",
-                  "tin",
-                  "watchlist",
-                  "adverse_media",
-                  "politically_exposed_persons"
-                ]
-              },
-              {
-                "text": "The submitted person is not on file. No filing names a natural person, so the entity is its own officer of record and JOSHUA GEE is not tied to it by anything we hold. An active New York physical therapy licence for JOSHUA Y GEE, DPT sits at the submitted office address, which is a strong lead and not a link. The entity is a PLLC, so membership is restricted by statute to licensed practitioners, which makes that link a condition of the account rather than a detail.",
-                "cites": [
-                  "person_verification",
-                  "license_person_match:npi-1477211969",
-                  "license_address_match:npi-1477211969",
-                  "entity_type"
-                ]
-              }
-            ]
+            "body": []
           }
         ],
         "followUps": [
           {
-            "text": "Establish who is behind KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link to this business by shared address only, and KAIROS 801 LLC sits at the Bayside address this registration also carries, so a common owner is plausible and not on the record.",
+            "text": "Establish who is behind KAIROS 801 LLC. This is linked to the business by two shared addresses. A common owner is plausible, but not on the record.",
             "cites": [
               "business_connections",
               "location_frequency:low"
             ],
             "closes": [
               "own_connected_entities"
+            ]
+          },
+          {
+            "text": "Submit an RFI for a Certificate of Good Standing, as New York does not publish one.",
+            "cites": [
+              "sos_domestic_sub_status"
+            ],
+            "closes": [
+              "domestic_good_standing"
             ]
           }
         ]

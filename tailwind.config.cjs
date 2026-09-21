@@ -30,19 +30,25 @@ module.exports = {
          * report gets 352 here and grows from there: narrow, but the record
          * beside the report is worth more than the extra measure. Below this
          * the panel goes under the report instead.
+         *
+         * Both numbers here are budgets over the width the PAGE has, and the
+         * page no longer has the window: the global nav rail takes 224 of it
+         * when pinned, which is the default. So both carry the rail — 880 + 224.
+         * Unpinned the rail only takes 49, and the page gets 175 more than the
+         * budget asks for, which costs nothing.
          */
-        wide: '880px',
+        wide: '1104px',
         /**
          * The contents rail joins it. It costs 224 plus a 24 gap, which the
          * report can only afford once there is 1280 to share: 48 + 224 + 24 +
-         * 480 leaves it 504.
+         * 480 leaves it 504. Plus the nav rail, as above.
          *
          * One breakpoint for both was the error. At 1576 ordinary laptops got
          * the stacked page; at 1280 a 1064px window still lost the panel
          * entirely, when all it could not afford was the rail. The rail is
          * margin furniture, so it is what goes first.
          */
-        desk: '1280px'
+        desk: '1504px'
       },
       fontFamily: {
         suisse: ["'Suisse Intl'", 'sans-serif']
@@ -64,6 +70,10 @@ module.exports = {
       // `z-nav|z-floating|z-overlay|z-popover` over arbitrary `z-[…]` so
       // floating surfaces stack predictably against each other.
       zIndex: {
+        // A page's own fixed chrome — a record's name bar, say. Under the
+        // global nav rather than over it: the rail expands over the page on
+        // hover, and a page bar at `z-floating` sliced that overlay in half.
+        chrome: 'calc(var(--core-z-nav) - 1)',
         nav: 'var(--core-z-nav)',
         floating: 'var(--core-z-floating)',
         overlay: 'var(--core-z-overlay)',

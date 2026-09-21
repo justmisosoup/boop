@@ -221,8 +221,22 @@ export type AnalysisDraft = {
  * rejected rather than rendered.
  */
 export type AnalysisVerdict = {
-  /** One sentence answering the question asked. */
+  /**
+   * One sentence answering the question asked.
+   *
+   * It renders on a typed question, where it is the answer. On a standing
+   * report it does not: the follow-ups under `Recommendations` are what a
+   * reviewer acts on, and a sentence saying "onboard subject to conditions"
+   * above them only named what the list already is. Still written, still
+   * validated — it is what records which of the three decisions was reached.
+   */
   headline: string
+  /**
+   * Carried with an empty `body`. The section renders the follow-ups and
+   * nothing else: the assessments above hold the evidence and the reader has
+   * just read them, so a paragraph here said everything twice in the one place
+   * meant to be acted on.
+   */
   recommendation: AssessmentSection
   /**
    * What to follow up with, **ordered by what needs doing first** — not grouped
@@ -230,8 +244,13 @@ export type AnalysisVerdict = {
    * should be able to stop at any point and know that everything above the line
    * mattered more than everything below it.
    *
-   * The one part of the report that is a list rather than prose, because it is
-   * genuinely a list: discrete items, done independently, in an order.
+   * The whole of the recommendation section, and genuinely a list: discrete
+   * actions, done independently, in an order. Each is one thing a reviewer does
+   * before the account opens, with only the facts that justify it behind the
+   * instruction. If nobody could act on it tomorrow it is not one — a connected
+   * business that is plainly a neighbour belongs in the assessment that found
+   * it. Two things produce a step: something the record leaves open, and
+   * something a registry does not publish.
    */
   followUps: Array<{
     text: string

@@ -60,6 +60,37 @@ how a capture is shown at full size is the consuming screen's decision.
 All three are marked in the files themselves. Adding a primitive means copying its
 file, its transitive core imports, and adding a line to the barrel.
 
+## The skills, cloned too
+
+The dashboard's design skills are cloned into `.claude/skills/`, on the same
+terms as the code.
+
+- **Source:** `/Users/sara-menefee/Projects/app`, `.agents/skills/` (symlinked
+  there as `.claude/skills/`), at commit `a7b2f9bc9`
+- **Cloned:** 2026-09-21
+- **Direction:** one way, as above.
+
+| From `/app` | To | Modified? |
+|---|---|---|
+| `.agents/skills/design-system/` | `.claude/skills/design-system/` | `SKILL.md` only — one pointer line |
+| `.agents/skills/design-polish/` | `.claude/skills/design-polish/` | One pointer line |
+| `.agents/skills/design-ux/` | `.claude/skills/design-ux/` | One pointer line |
+| `.agents/skills/component-patterns/` | `.claude/skills/component-patterns/` | One pointer line |
+
+`building.md`, `pitfalls.md` and `reference.md` are byte-identical to the app's.
+Each `SKILL.md` gained exactly one block, directly under its frontmatter,
+pointing at `.claude/skills/design-system/prototype.md` — so re-syncing stays a
+straight copy plus four one-line re-inserts.
+
+`prototype.md` is the only local document, and the only one to write in. It
+holds the six things those skills read differently here: core is read-only, there
+is no workbench, Tailwind 3 with a `.cjs` config, no legacy stack to choose, the
+result-state grammar below is deliberate, and the rule for porting a screen from
+the app. Where it and a cloned skill disagree, it wins.
+
+`CLAUDE.md` at the repo root points at all of it, so a session loads the bar
+before it starts editing rather than after being asked to.
+
 ## Known inherited condition
 
 `src/core/tokens/colors.ts` raises `TS2589: Type instantiation is excessively deep`.

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, cloneElement, isValidElement, useState } from 'react'
 
 import { CubeIcon } from '@radix-ui/react-icons'
 import { Check } from 'lucide-react'
@@ -10,7 +10,6 @@ import {
   Heading,
   MutedText,
   Spinner,
-  Surface,
   Tag,
   Text,
   type ChatThinkingStep
@@ -46,6 +45,7 @@ const RunLabel = ({ busy, children }: { busy: boolean; children: React.ReactNode
 
 
 
+import { AttributeGrid } from './AttributeGrid'
 import { POLICY } from '../lib/useAnalysis'
 
 
@@ -96,7 +96,7 @@ import { ROLLUP_NO_GLYPH } from './chipStyles'
  * the working. It still RUNS last, because it reads every assessment.
  */
 const sectionsOf = (policy: Array<{ id: string; name: string }>) => [
-  { id: 'recommendation', heading: 'Recommendation' },
+  { id: 'recommendation', heading: 'Recommendations' },
   ...policy.map(({ id, name }) => ({ id, heading: name }))
 ]
 
@@ -238,25 +238,16 @@ const CiteList = ({
   if (rows.length === 0) return null
 
   return (
-    <Surface variant="default" padding="none" className="mt-2 overflow-hidden">
-      {/* A single attribute runs full width; the split starts at two. */}
-      <div className={`-mb-px -mr-px grid${rows.length > 1 ? ' sm:grid-cols-2' : ''}`}>
-        {rows.map((a) => (
-          <button
-            key={`${a.label}-${a.value}`}
-            type="button"
-            onClick={() => onJumpToGroup(groupOf(a.from.insightId), [a.from.insightId])}
-            className="border-b border-r border-solid border-border px-3 py-2 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)]"
-          >
-            <MutedText className="block text-caption leading-snug">{a.label}</MutedText>
-            <span className="mt-0.5 block text-sm leading-snug">{a.value}</span>
-            {a.note && (
-              <MutedText className="mt-0.5 block text-caption leading-snug">{a.note}</MutedText>
-            )}
-          </button>
-        ))}
-      </div>
-    </Surface>
+    <AttributeGrid
+      className="mt-2"
+      items={rows.map((a, i) => ({
+        key: `${a.label}-${a.value}-${i}`,
+        label: a.label,
+        value: a.value,
+        note: a.note,
+        onSelect: () => onJumpToGroup(groupOf(a.from.insightId), [a.from.insightId])
+      }))}
+    />
   )
 }
 
@@ -271,6 +262,80 @@ const useCited = (cites: string[] | undefined, results: Derived[]) => {
   return found.filter((r) => !seen.has(r.statement) && seen.add(r.statement))
 }
 
+const escapeRe = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * The attribute values this paragraph's cards carry, as one matcher.
+ *
+ * Longest first: the full address has the shorter values inside it, and a
+ * shorter alternative winning would mark it a piece at a time. The lookarounds
+ * keep a value from matching inside a longer word.
+ */
+const attributePattern = (cited: Derived[], record?: BusinessRecord) => {
+  const values = new Set<string>()
+  for (const r of cited) {
+    for (const a of record ? attributesFor(r.insightId, record) : []) {
+      // `value` and not `matchValue`: the latter is a dedupe key on most rows
+      // (`legal:kairos physical therapy pllc`), and the prose says the value.
+      const v = a.value?.trim()
+      // Anything shorter is a state code or an entity suffix. They sit inside
+      // ordinary sentences, and marking them marks the sentence.
+      if (v && v.length > 3) values.add(v)
+    }
+  }
+  if (values.size === 0) return null
+  const alts = [...values]
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRe)
+    .join('|')
+  // Case-sensitive: the record writes `Active`, and a sentence saying an
+  // `active New York filing` is using the word, not citing the attribute.
+  return new RegExp(`(?<![A-Za-z0-9])(?:${alts})(?![A-Za-z0-9])`, 'g')
+}
+
+/**
+ * The attributes, marked where the prose says them.
+ *
+ * The card under a sentence holds the value the sentence is about, and tying
+ * the two together was left to the reader's eye. Marking the value in place
+ * says which words the card is holding, so the sentence and the card read as
+ * one thing rather than two.
+ */
+const markAttributes = (node: React.ReactNode, pattern: RegExp | null): React.ReactNode => {
+  if (!pattern) return node
+
+  if (typeof node === 'string') {
+    const parts: React.ReactNode[] = []
+    let last = 0
+    for (const m of node.matchAll(pattern)) {
+      const at = m.index ?? 0
+      if (at > last) parts.push(node.slice(last, at))
+      parts.push(
+        <span key={`${at}-${m[0]}`} className="attribute-mention">
+          {m[0]}
+        </span>
+      )
+      last = at + m[0].length
+    }
+    if (last === 0) return node
+    if (last < node.length) parts.push(node.slice(last))
+    return parts
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child, i) => (
+      <Fragment key={i}>{markAttributes(child, pattern)}</Fragment>
+    ))
+  }
+
+  if (isValidElement(node)) {
+    const kids = (node.props as { children?: React.ReactNode }).children
+    return kids === undefined ? node : cloneElement(node, undefined, markAttributes(kids, pattern))
+  }
+
+  return node
+}
+
 export const Para = ({
   lead,
   sources,
@@ -279,7 +344,6 @@ export const Para = ({
   categories,
   record,
   onJumpToGroup,
-  cards = true,
   children
 }: {
   lead?: string
@@ -289,17 +353,15 @@ export const Para = ({
   categories: Map<string, string>
   record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
-  /** The attribute cards under the prose. Off in the recommendation, which is
-   *  the call and not the evidence. */
-  cards?: boolean
   children: React.ReactNode
 }) => {
   const cited = useCited(cites, results)
+  const pattern = attributePattern(cited, record)
 
   const body = (
     <Text>
       {lead && <span className="font-semibold">{lead} </span>}
-      {children}
+      {markAttributes(children, pattern)}
       {/* The chip is the disclosure: one labelled "Public sources", opening the
           pages the claim came from. It reads the same way as an insight citation
           because it is doing the same job — saying where this came from. */}
@@ -324,7 +386,7 @@ export const Para = ({
   return (
     <div className="mt-3">
       {body}
-      {cards && cited.length > 0 && (
+      {cited.length > 0 && (
         <CiteList cited={cited} categories={categories} record={record} onJumpToGroup={onJumpToGroup} />
       )}
     </div>
@@ -343,15 +405,13 @@ export const SectionBody = ({
   results,
   categories,
   record,
-  onJumpToGroup,
-  cards = true
+  onJumpToGroup
 }: {
   section: AssessmentSection
   results: Derived[]
   categories: Map<string, string>
   record?: BusinessRecord
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
-  cards?: boolean
 }) => (
   <>
     {section.body.map((b) => (
@@ -363,7 +423,6 @@ export const SectionBody = ({
         categories={categories}
         record={record}
         onJumpToGroup={onJumpToGroup}
-        cards={cards}
       >
         {b.text}
       </Para>
@@ -413,37 +472,25 @@ const FollowUps = ({
    * action attached it to a sentence that is not claiming anything.
    */
   /*
-   * Not a bulleted list. The follow-ups are the only part of the report meant
-   * to read as actionable, and a disc with an indent behind it made them the
-   * report's footnotes. Set flush and bold, they are the thing to do.
+   * Bulleted, now that they are the section.
+   *
+   * They were set flush and unbulleted while they sat under a paragraph of
+   * prose, where a disc and an indent made them read as its footnotes. With the
+   * prose gone there is nothing for them to hang off: the marker is what says
+   * this is a list of separate things to do rather than one long instruction.
    */
-  <ul className="mt-3 list-none space-y-3 pl-0">
+  <ul className="mt-3 list-disc space-y-3 pl-5">
     {items.map((f) => (
-      <li key={f.text}>
+      <li key={f.text} className="pl-1">
         <Text className="font-semibold">{f.text}</Text>
         {/* The things the step acts on, named. A step that says "establish who
             is behind the connected businesses" is not actionable until the
             businesses are on screen. */}
         {f.entities && f.entities.length > 0 && (
-          <Surface variant="default" padding="none" className="mt-2 overflow-hidden">
-            <div
-              className={`-mb-px -mr-px grid${f.entities.length > 1 ? ' sm:grid-cols-2' : ''}`}
-            >
-              {f.entities.map((e) => (
-                <div
-                  key={e.name}
-                  className="border-b border-r border-solid border-border px-3 py-2"
-                >
-                  <span className="block text-sm leading-snug">{e.name}</span>
-                  {e.note && (
-                    <MutedText className="mt-0.5 block text-caption leading-snug">
-                      {e.note}
-                    </MutedText>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Surface>
+          <AttributeGrid
+            className="mt-2"
+            items={f.entities.map((e) => ({ key: e.name, value: e.name, note: e.note }))}
+          />
         )}
       </li>
     ))}
@@ -455,7 +502,6 @@ const ReportBody = ({
   results,
   categories,
   policy,
-  skills = [],
   record,
   stream = false,
   onJumpToGroup
@@ -465,8 +511,6 @@ const ReportBody = ({
   categories: Map<string, string>
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
-  /** The workflow the run was composed from, named on the recommendation. */
-  skills?: string[]
   record?: BusinessRecord
   /** A run is being written, so sections not yet here are coming. */
   stream?: boolean
@@ -486,8 +530,8 @@ const ReportBody = ({
   return (
     <>
       {/* The lede is not rendered here. It describes the business rather than
-          the assessment, so it sits under the business name where every tab can
-          see it — see BusinessLede. */}
+          the assessment, so it leads the report under its own heading, above
+          everything a run wrote — see BusinessLede. */}
 
       {/* A question has no recommendation to land in, so its one-sentence answer
           leads instead — the same sentence, in the only place it can go. */}
@@ -518,61 +562,41 @@ const ReportBody = ({
             // The contents list jumps here.
             id={`section-${id}`}
             className={[
-              // A rule between sections, counted over the sections that actually
-              // rendered rather than over the manifest. Keyed to manifest
+              // The break between sections is the heading's own rule now, so
+              // this is spacing alone. Counted over the sections that actually
+              // rendered rather than over the manifest: keyed to manifest
               // position, a first section that had not landed yet left the
-              // second one drawing a divider against nothing: an empty band and
-              // a rule at the very top of the report.
-              i > 0 ? 'mt-7 border-t border-solid border-border pt-7' : '',
+              // second one opening a gap at the very top of the report.
+              i > 0 ? 'mt-10' : '',
               'scroll-mt-6'
             ].join(' ')}
           >
             {/* Body size, bold. `Heading level={3}` sets these at 18px, which made
-               five section titles compete with the report they label. */}
-            {id === 'recommendation' ? (
-              /* What the call was made from, at the end of its own heading
-                 line: the workflow that composed the run, and the record it was
-                 read against. The recommendation carries no attribute cards, so
-                 without this there is nothing on it saying where it came from. */
-              <div className="flex items-baseline justify-between gap-4">
-                <Text className="block font-semibold">{heading}</Text>
-                <span className="shrink-0">
-                  {/* The roll-up, not a chip: core's own `ChatSources`, which
-                      stacks the sources' tiles and opens to the list. */}
-                  <ChatSources
-                    align="end"
-                    label="Analysed with"
-                    sources={[
-                      ...skills.map((name) => ({
-                        id: `skill:${name}`,
-                        label: name,
-                        title: name,
-                        annotation: 'Assessment workflow'
-                      })),
-                      {
-                        id: 'middesk-context',
-                        label: 'Middesk context',
-                        title: 'Middesk context',
-                        annotation: 'The business record this run was read against'
-                      }
-                    ]}
-                  />
-                </span>
-              </div>
-            ) : (
-              <Text className="block font-semibold">{heading}</Text>
-            )}
-            {/* The verdict sentence is the recommendation's first line, where
-                the conclusion is drawn — not floating above the whole message
-                unattached to the section that argues it. */}
-            {id === 'recommendation' && verdict && (
-              <Text className="mt-3">{verdict.headline}</Text>
-            )}
-            {/* The recommendation is the call, not the evidence. Its cards
-                restated attributes the assessments above had already shown,
-                under the one section meant to read as a decision. The
-                follow-up's own entity cards are not these and stay. */}
-            {section && <SectionBody section={section} {...pass} cards={id !== 'recommendation'} />}
+               five section titles compete with the report they label.
+
+               Every heading is the same line now. The recommendation's used to
+               carry the "Analysed with" roll-up as well, which described the
+               whole report from a third of the way down it and printed itself
+               again on every follow-up; it is at the head of the page, beside
+               the business name — see RecordPage. */}
+            <div className="mb-10 flex items-center gap-4">
+              <Text className="font-semibold">{heading}</Text>
+              <span aria-hidden="true" className="section-rule h-px flex-1" />
+            </div>
+            {/*
+              * The recommendations are the whole section.
+              *
+              * It used to open with the verdict sentence and a paragraph or two
+              * arguing it, and the reader had just read the assessments those
+              * paragraphs were summarising. What a reviewer needs at the head of
+              * a file is what they have to do before the account opens, so that
+              * is all this section is: the actions, ranked, and nothing else.
+              *
+              * The headline is still written and still validated — it is the
+              * answer on a typed question, which renders above the message
+              * rather than here.
+              */}
+            {id !== 'recommendation' && section && <SectionBody section={section} {...pass} />}
             {tail && <FollowUps items={followUps} />}
           </div>
         )
@@ -583,7 +607,6 @@ const ReportBody = ({
 
 const Answer = ({
   version,
-  workflow,
   results,
   categories,
   record,
@@ -591,7 +614,6 @@ const Answer = ({
   wrapRun
 }: {
   version: AnalysisVersion
-  workflow?: string
   results: Derived[]
   record?: BusinessRecord
   categories: Map<string, string>
@@ -625,9 +647,6 @@ const Answer = ({
         categories={categories}
         record={record}
         policy={version.policy ?? []}
-        // A held report carries no skills, so the workflow the page knows about
-        // stands in for it — otherwise a reload loses the name.
-        skills={version.skills?.length ? version.skills : workflow ? [workflow] : []}
         onJumpToGroup={onJumpToGroup}
       />
     </ChatMessage>
@@ -643,7 +662,6 @@ const Answer = ({
  */
 export const AnalysisPanel = ({
   versions,
-  workflow,
   results,
   categories,
   record,
@@ -664,8 +682,6 @@ export const AnalysisPanel = ({
   superseded
 }: {
   versions: AnalysisVersion[]
-  /** The workflow this run was composed from. */
-  workflow?: string
   results: Derived[]
   categories: Map<string, string>
   /** The record itself, so a cited check can show the value behind it. */
@@ -715,7 +731,6 @@ export const AnalysisPanel = ({
         <div key={v.id}>
           <Answer
             version={v}
-            workflow={workflow}
             results={results}
             categories={categories}
             record={record}

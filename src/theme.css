@@ -35,6 +35,16 @@ body,
   margin: 0;
 }
 
+/* How much room the global nav rail takes from the page.
+ *
+ * The rail is fixed, so it reserves nothing on its own — the pages that lay
+ * themselves out against the window (the record view's header, its columns,
+ * its composer) read this instead. `Shell` sets the real value; this is the
+ * fallback, so anything rendered outside the shell still lays out. */
+:root {
+  --nav-w: 0px;
+}
+
 /* Canvas only. Typography is NOT set here — @/core carries the font on its own
    primitives (`font-suisse` in the cva variants, `.core-action`, `.core-badge`).
    Every text node in this prototype must be a core primitive; if something
@@ -105,4 +115,65 @@ body,
 
 .panel-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* One dashed rule, drawn everywhere a line is dashed.
+ *
+ * A 1px `dotted` border and a `dotted` text-decoration both draw single-pixel
+ * dots, and the treatment these views follow is a 4px dash against a 4px gap.
+ * Nothing in `border-style` or `text-decoration-style` produces that, so the
+ * rule is painted, and the card's dividers, the prose underline and the rule
+ * across a section heading all read from these declarations — one line,
+ * wherever the report draws one. The colour is `--rule-color` at the use site,
+ * graphite where nothing sets it.
+ */
+.core-theme {
+  --dash-rule-x: repeating-linear-gradient(
+    to right,
+    var(--rule-color, var(--core-color-text-primary)) 0 4px,
+    transparent 4px 8px
+  );
+  --dash-rule-y: repeating-linear-gradient(
+    to bottom,
+    var(--rule-color, var(--core-color-text-primary)) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* The rules between attribute cells. The last column and row hang one pixel
+   past the card (`-mr-px -mb-px` on the grid) and the card clips them, so only
+   the interior rules show. */
+.attribute-cell {
+  background-image: var(--dash-rule-y), var(--dash-rule-x);
+  background-position: right top, left bottom;
+  background-repeat: no-repeat;
+  background-size: 1px 100%, 100% 1px;
+}
+
+/* An attribute where the prose says it: the card's own rule, run under the
+   words. Painted rather than underlined so the dots keep the same rhythm, and
+   dotted rather than solid because a solid underline in running text reads as
+   a link — these words do not go anywhere, they point at the card holding the
+   same value. */
+.attribute-mention {
+  background-image: var(--dash-rule-x);
+  background-position: left calc(100% - 1px);
+  background-repeat: repeat-x;
+  background-size: 8px 1px;
+}
+
+/* The rule that carries a section heading into its assessment.
+ *
+ * The sections were separated by a solid rule above the heading, which drew a
+ * line the report did not need twice — the heading already says a section has
+ * started. The rule now runs out of the heading itself, on its line and at its
+ * middle, so the break and the label are one gesture. Lighter than the
+ * attribute rules: this one divides the report, it does not carry a value.
+ */
+.section-rule {
+  --rule-color: var(--core-color-border-strong);
+  background-image: var(--dash-rule-x);
+  background-position: left center;
+  background-repeat: repeat-x;
+  background-size: 8px 1px;
 }

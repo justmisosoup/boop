@@ -99,6 +99,8 @@ export type BusinessRecord = {
   id: string
   name: string
   status: string
+  /** When the business was ordered. `scripts/pull-records.ts` writes it. */
+  createdAt?: string | null
   names: Array<{
     name: string
     type: string
