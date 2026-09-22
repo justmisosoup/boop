@@ -332,29 +332,26 @@ const markAttributes = (node: React.ReactNode, pattern: RegExp | null): React.Re
   return node
 }
 
+/**
+ * One sentence of the argument.
+ *
+ * It carries no citations of its own any more. Every paragraph used to end in
+ * the stack of checks it rested on, which broke a five-sentence assessment into
+ * five blocks of prose separated by five cards, and printed a check twice when
+ * two sentences cited it. The assessment's checks are one card at the end of it
+ * — see `SectionBody`.
+ */
 export const Para = ({
   sources,
-  cites,
   results,
   record,
-  negatives,
-  onJumpToSource,
-  aside,
   children
 }: {
   sources?: Array<{ title: string; url: string }>
-  cites?: string[]
   results: Derived[]
   record?: BusinessRecord
-  negatives?: ReadonlySet<string>
-  onJumpToSource?: (cardId: string) => void
-  /** Rendered between the sentence and the insights it rests on — the one slot
-   *  the identity card can occupy without separating a claim from its own
-   *  citations. See `SectionBody`. */
-  aside?: React.ReactNode
   children: React.ReactNode
 }) => {
-  const cited = useCited(cites, results)
   // Memoised on the report's own inputs: the matcher walks every insight's
   // attributes, and a paragraph is not the right place to do that per render.
   const pattern = useMemo(() => attributePattern(results, record), [results, record])
@@ -383,20 +380,7 @@ export const Para = ({
     </Text>
   )
 
-  return (
-    <div className="mt-3">
-      {body}
-      {aside}
-      {cited.length > 0 && (
-        <CiteList
-          cited={cited}
-          record={record}
-          negatives={negatives}
-          onJumpToSource={onJumpToSource}
-        />
-      )}
-    </div>
-  )
+  return <div className="mt-3">{body}</div>
 }
 
 /**
@@ -435,19 +419,32 @@ export const SectionBody = ({
    */
   identity?: React.ReactNode
   onJumpToSource?: (cardId: string) => void
-}) => (
+}) => {
+  /*
+   * One stack of insights for the whole assessment, at the end of it.
+   *
+   * Each paragraph used to carry its own — five sentences, five cards, and the
+   * prose arrived a paragraph at a time between them. The reader could not read
+   * the assessment without stopping at every break, and the same check cited by
+   * two sentences appeared twice. The prose is one summary now and the checks
+   * are one card under it: the argument reads through, and what it rests on is
+   * in one place.
+   *
+   * The gaps' citations go in too — a gap is part of what the assessment found,
+   * and splitting its checks off would be the same interleaving one level down.
+   */
+  const cited = useCited(
+    [
+      ...section.body.flatMap((b) => b.cites ?? []),
+      ...(section.gaps ?? []).filter((g) => !g.noAction).flatMap((g) => g.cites ?? [])
+    ],
+    results
+  )
+
+  return (
   <>
-    {section.body.map((b, i) => (
-      <Para
-        key={b.text}
-        sources={b.sources}
-        cites={b.cites}
-        results={results}
-        record={record}
-        negatives={negatives}
-        onJumpToSource={onJumpToSource}
-        aside={i === 0 ? identity : undefined}
-      >
+    {section.body.map((b) => (
+      <Para key={b.text} sources={b.sources} results={results} record={record}>
         {b.text}
       </Para>
     ))}
@@ -469,14 +466,7 @@ export const SectionBody = ({
         .filter(Boolean)
         .join('. ')
       return (
-        <Para
-          key={g.point}
-          cites={g.cites}
-          results={results}
-          record={record}
-          negatives={negatives}
-          onJumpToSource={onJumpToSource}
-        >
+        <Para key={g.point} results={results} record={record}>
           {g.point}
           {tail && (
             <>
@@ -487,8 +477,20 @@ export const SectionBody = ({
         </Para>
       )
     })}
+
+    {/* The filing's own values, between the summary and the checks behind it.
+        Only under the assessment this card is the subject of — see ReportBody. */}
+    {identity}
+
+    <CiteList
+      cited={cited}
+      record={record}
+      negatives={negatives}
+      onJumpToSource={onJumpToSource}
+    />
   </>
-)
+  )
+}
 
 /**
  * The follow-ups, in priority order.
