@@ -1,6 +1,7 @@
 import { ChatSources, MutedText, type ChatSourceData } from '@/core'
 
 import { ROLLUP_NO_GLYPH } from './chipStyles'
+import { cn } from '../utils/twUtils'
 
 import type { Derived } from '../lib/deriveResults'
 import { makeGroupFor, THEME, type GroupId } from '../lib/groups'
@@ -93,7 +94,8 @@ export const AnalysisSources = ({
   results,
   categories,
   onSelect,
-  inline
+  inline,
+  className
 }: {
   used: string[]
   results: Derived[]
@@ -102,6 +104,9 @@ export const AnalysisSources = ({
   onSelect?: (groupId: string, insightIds: string[]) => void
   /** Inline within the prose, rather than the message-level roll-up. */
   inline?: boolean
+  /** Where the roll-up sits. It hung off a chat message's footer, which placed
+   *  it; at the foot of a report it has to say so itself. */
+  className?: string
 }) => {
   const groupFor = makeGroupFor(categories)
   const byId = new Map(results.map((r) => [r.insightId, r]))
@@ -132,7 +137,7 @@ export const AnalysisSources = ({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div className={cn('mt-3 flex flex-wrap items-center gap-2', className)}>
       <ChatSources
         className={ROLLUP_NO_GLYPH}
         label="Insights used"

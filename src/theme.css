@@ -120,14 +120,16 @@ body,
 /**
  * Columns that scroll without saying so.
  *
- * The report and the reference panel each scroll themselves, which meant two
- * vertical bars on screen for two regions that move independently — and every
- * one of them took 11-15px of real layout width out of the column it was in,
- * which is what kept knocking the panel's margins off centre.
+ * The chat and the report each scroll themselves, which means a vertical bar
+ * per region for regions that move independently — and every one of them takes
+ * 11-15px of real layout width out of the column it is in, which is what kept
+ * knocking the report's margins off centre when there were two. There are
+ * three regions on the record page now, so the argument is stronger than when
+ * it was written.
  *
- * Neither column needs one. The report has a contents list in the margin that
- * says where you are and how much is left, and the panel's own group headings
- * do the same. Scrolling, wheel, trackpad, keyboard and `scrollIntoView` all
+ * No column needs one. The report has a contents list in the margin that says
+ * where you are and how much is left, and the chat's log pins itself to the
+ * newest turn. Scrolling, wheel, trackpad, keyboard and `scrollIntoView` all
  * work exactly as before; only the bar is gone.
  */
 .panel-scroll {

@@ -28,6 +28,9 @@ import { AnalysisPanel } from '../components/AnalysisPanel'
 import { AssessmentIndex } from '../components/AssessmentIndex'
 import { PanelGroup } from '../components/PanelGroup'
 import { negativesFor } from '../lib/identityScore'
+import { AnalysisChat } from '../components/AnalysisChat'
+import { ColumnResizer } from '../components/ColumnResizer'
+import { useWide } from '../hooks/useWide'
 import { BusinessIdentity } from '../components/BusinessIdentity'
 import { IdentityScoreCard } from '../components/IdentityScore'
 import { BusinessLede } from '../components/BusinessLede'
@@ -35,7 +38,7 @@ import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourcesTab, sourcesFor } from '../components/SourcesTab'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
-import { byId, describe } from '../lib/records'
+import { byId } from '../lib/records'
 import { GROUPS, type GroupId, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
 import { AssessmentEditor } from '../components/AssessmentEditor'
@@ -75,6 +78,17 @@ const CONTEXT = [
  * simply run to the right edge.
  */
 const PANEL_W = 0
+
+/**
+ * The report's measure, wherever something has to line up with it.
+ *
+ * 1000 at most, centred in whatever the white leaves. It used to be the report
+ * column itself — `basis-[800px] shrink grow max-w-[1000px]` under the
+ * wrapper's `justify-center` — but then everything inside the column inherited
+ * the measure's edges, including the tab bar's rule, which stopped where the
+ * prose stopped. The region spans; the text is what is measured.
+ */
+const MEASURE = 'mx-auto w-full max-w-[1000px]'
 
 /**
  * One business's assessment.
@@ -261,25 +275,52 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       }))
   }, [analysis.selected, policy])
 
+  /** The chat has a column of its own only when the page is wide enough for a
+   *  third region. CSS sizes it; this decides whether its log is mounted. */
+  const isWide = useWide()
+
+  /**
+   * The chat's width, once the reader has set it.
+   *
+   * `null` means the breakpoint's own value — 360, or 420 at `desk`. Dragging
+   * writes a number here and the root's inline style overrides the class, which
+   * is the whole reason the default lives in a class and not in the style: an
+   * inline value can win over a token, a token cannot win over an inline value.
+   * Below `wide` nothing reads `--chat-w`, so a set width is simply inert there.
+   */
+  const [chatW, setChatW] = useState<number | null>(null)
+
   /** The insights the score read as a point against the identity, marked in the
    *  report where they are argued. */
   const negatives = useMemo(() => negativesFor(record, results), [record, results])
 
+  /**
+   * A REPORT is being written — not merely that something was sent.
+   *
+   * A typed question sets `waiting` too, with an empty manifest, so everything
+   * keyed to the bare flag treated a follow-up as a new report: the contents
+   * rail collapsed to two entries and spun every dot while the report it was
+   * indexing was still on the page. Harmless while the conversation lived in
+   * this column; wrong the moment it moved out, because the report column would
+   * start running because of something typed in the chat.
+   */
+  const running = analysis.waiting && analysis.waitingKind === 'report'
+
   /** What the index lists: the pillars this report is laid out in. */
   const reportSections = useMemo(() => {
-    const live = analysis.waiting
-      ? analysis.waitingPolicy
-      : (analysis.selected?.policy ?? policy)
+    const live = running ? analysis.waitingPolicy : (analysis.selected?.policy ?? policy)
     // Same order the report is laid out in — recommendation first. The index
     // has to match the page or clicking it sends the reader to the wrong place.
     return [
-      // What the report opens with, before it argues anything: the business
-      // itself. The index is a map of the page, and the page starts here.
-      { id: 'lede', heading: selected.name },
-      { id: 'recommendation', heading: 'Approve' },
+      // What the report opens with, before it argues anything. It was the
+      // business's name, which is on the fixed bar above and in 30px type just
+      // below — three copies of one word, and the only one that had to be read
+      // was the heading. The index says what the entry IS.
+      { id: 'lede', heading: 'Assessment' },
+      { id: 'recommendation', heading: 'Recommendation' },
       ...live.map(({ id, name }) => ({ id, heading: name }))
     ]
-  }, [analysis.waiting, analysis.waitingPolicy, analysis.selected, policy, selected.name])
+  }, [running, analysis.waitingPolicy, analysis.selected, policy])
 
   /*
    * The report is static on arrival.
@@ -588,20 +629,28 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   return (
     <ScreenshotViewerProvider>
     <div
-      className="core-theme min-h-full wide:h-screen wide:overflow-hidden"
+      /* `--chat-w` is the third region's width, and CSS owns it: the report's
+         inset is computed from the same value in the same pass, so a resize can
+         never leave the column and the report a frame out of step. It is zero
+         below `wide`, where the chat has no column and the composer is the
+         fixed bar it has always been. */
+      className="core-theme min-h-full wide:h-screen wide:overflow-hidden [--chat-w:0px] wide:[--chat-w:400px] desk:[--chat-w:460px]"
       style={
         {
-          '--panel-w': `${PANEL_W}px`
+          '--panel-w': `${PANEL_W}px`,
+          ...(chatW === null ? {} : { '--chat-w': `${chatW}px` })
         } as React.CSSProperties
       }
     >
-      {/* The tail clears the composer, which is fixed over the page: `pb-40` was
-          shorter than the dock once it carried a token row, so the last
-          paragraph of a report sat behind it and could not be scrolled to. */}
-      {/* The rail is fixed, so the page has to leave it room — otherwise it
-          sits on top of the report at every width where both are visible. */}
-      {/* Both rails are fixed to the window, so the page reserves the gutters
-          they sit in. Nothing in the middle column has to know they exist. */}
+      {/* Below `wide` the composer is still fixed over the page, and `pb-56`
+          is its clearance: `pb-40` was shorter than the dock once it carried a
+          token row, so the last paragraph sat behind it and could not be
+          scrolled to. Above `wide` the composer is in the chat column and the
+          page needs none of it (`wide:pb-6`). */}
+      {/* Three regions, each fixed to the window, each with a variable the
+          others read: the nav rail (`--nav-w`, set by Shell), the chat
+          (`--chat-w`, on the root above), and the report, which takes what is
+          left. Nothing in the middle column has to know the other two exist. */}
       <div className="mx-auto max-w-[1048px] px-6 pb-56 pt-20 wide:flex wide:h-screen wide:max-w-none wide:flex-col wide:pb-6">
 
 
@@ -621,21 +670,38 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             page, and at `z-floating` this bar was painted across the top of
             that overlay. */}
         <header className="fixed right-0 top-0 z-chrome border-b border-solid border-border bg-card left-[var(--nav-w)]">
-          <div className="mx-auto flex items-center gap-4 px-6 py-2">
-            {/* There is a list to go back to now. It sits before the name
-                because that is the order the two were arrived at. */}
+          {/* `min-h-11` — 44px, plus the border, is the 45px every fixed region
+              below starts at (`top-[45px]`). The arrow used to hold that height
+              with its own 28px hit area; it is absolute now, so the row holds
+              it instead. A `min-h` is on the border box, so this is the whole
+              44 rather than 28 + the padding — at `min-h-7` the row measured 36
+              and a silver band of canvas showed under the bar. */}
+          <div className="relative flex min-h-11 items-center px-6">
+            {/* There is a list to go back to now. Held at the bar's own left
+                edge rather than in front of the name: the name has moved onto
+                the report's measure, and an arrow that travelled with it would
+                drift 100px in from the corner it belongs in. */}
             <Link
               to="/businesses"
               aria-label="Back to Businesses"
-              className="-ml-1 flex size-7 shrink-0 items-center justify-center rounded-control text-text-secondary no-underline transition-colors hover:bg-muted hover:text-foreground"
+              className="absolute left-5 flex size-7 shrink-0 items-center justify-center rounded-control text-text-secondary no-underline transition-colors hover:bg-muted hover:text-foreground"
             >
               <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.5} />
             </Link>
-            <div className="flex min-w-0 items-baseline gap-3">
-              <Text size="sm" className="shrink-0 truncate font-medium">
-                {selected.name}
-              </Text>
-              <MutedText className="truncate text-caption">{describe(record)}</MutedText>
+            {/* The name sits where the report's first word sits. The bar spans
+                the chat column too, so it takes the white's right inset before
+                measuring, or the name would be centred over both regions and
+                land right of the prose it names.
+
+                The entity line went: "PLLC · NY · formed 2022-06-13" is three
+                facts the identity card states in full, in the report, under
+                labels — here it was a subtitle nobody read. */}
+            <div className="w-full min-w-0 wide:mr-[calc(var(--panel-w)_+_var(--chat-w))]">
+              <div className={cn(MEASURE, 'px-12')}>
+                <Text size="sm" className="truncate font-medium">
+                  {selected.name}
+                </Text>
+              </div>
             </div>
           </div>
         </header>
@@ -673,13 +739,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-[45px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
-        {/* The report's measure: 800 wanted, 1000 at most.
-            `min-w-[800px]` was a hard floor, so at a narrow window with the
-            panel dragged out the report ran past the white and under the
-            panel. A basis is a preference: it holds 800 wherever 800 fits,
-            grows to 1000, and gives way rather than overlap. */}
-        <div className="min-w-0 desk:ml-6 wide:flex wide:min-h-0 wide:max-w-[1000px] wide:shrink wide:grow wide:basis-[800px] wide:flex-col">
+        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-[45px] wide:bottom-0 wide:right-[calc(var(--panel-w)_+_var(--chat-w))] wide:z-0 wide:flex wide:justify-center wide:bg-card">
+        {/* The report region, edge to edge of the white.
+            It used to be the measure itself — `basis-[800px] max-w-[1000px]`,
+            centred by the wrapper — which meant the tab bar's rule stopped
+            where the prose stopped, with white either side of it. The rule
+            belongs to the region and the measure belongs to the text, so the
+            region spans and each band inside it centres its own `MEASURE`. */}
+        <div className="min-w-0 wide:flex wide:min-h-0 wide:w-full wide:flex-col">
           {/*
             * The report scrolls itself.
             *
@@ -712,7 +779,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * scrolled through the gap above it — content passing over the
               * tabs. Outside the scroller it cannot be passed at all.
               */}
-            <div className="flex shrink-0 items-center gap-4 border-b border-solid border-border bg-card px-8 pt-3">
+            <div className="flex shrink-0 items-center border-b border-solid border-border bg-card pt-3">
+              <div className={cn(MEASURE, 'flex items-center gap-4 px-12')}>
                 <TabsList className="min-w-0 flex-1 border-0">
                   {assessmentTab}
                   <TabsTrigger value="insights">
@@ -728,18 +796,23 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     <TabsCount>{sourceCount}</TabsCount>
                   </TabsTrigger>
                 </TabsList>
+              </div>
             </div>
 
             {/*
               * The report scrolls itself, under its own tabs.
               *
-              * `pb-40` is the composer's clearance, inside the thing the
-              * composer sits over.
+              * The tail was 160px of clearance for a composer that floated over
+              * this column. The composer is in the chat column now, so what is
+              * left is ordinary breathing room at the end of a document.
+              * Below `wide` the composer is still fixed over the page, and the
+              * page container's own `pb-56` is what clears it.
               */}
             <div
               ref={panelRef}
-              className="relative z-10 min-w-0 rounded-card bg-card px-8 pb-7 pt-6 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:pb-40 wide:overflow-y-auto panel-scroll"
+              className="relative z-10 min-w-0 rounded-card bg-card pb-7 pt-6 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
             >
+              <div className={cn(MEASURE, 'px-12')}>
               <TabsContent value="assessment">
                 {/* The contents belong to the assessment, not to the page.
                     They list that assessment's own sections, so they sit beside
@@ -750,10 +823,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                       exactly where the tabs do rather than 48px in from them. */}
                   <div className="relative w-0">
                   <AssessmentIndex
-                    sections={view || analysis.waiting ? reportSections : []}
+                    sections={view || running ? reportSections : []}
                     present={presentSections}
                     steps={sectionSteps}
-                    running={analysis.waiting}
+                    running={running}
                   />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -794,7 +867,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * nobody has assessed yet. The action is the same run the composer
               * sends, put where the absence is.
               */}
-            {!view && !analysis.waiting && (
+            {!view && !running && (
               <EmptyState
                 className="mt-10"
                 title="No report yet"
@@ -804,7 +877,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               />
             )}
             <AnalysisPanel
-              versions={analysis.versions}
+              version={analysis.reportVersion}
               // Under the recommendations: what to do first, then what the
               // record says about the business you are doing it to.
               identity={
@@ -820,30 +893,40 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                   />
                 ) : null
               }
-              business={selected.name}
-              entityLine={describe(record)}
               record={record}
               results={results}
-              // The count the Insights tab shows — what this business actually
-              // has — not every check the catalog defines.
-              insightCount={reported.length}
               categories={categories}
-              waiting={analysis.waiting}
-              waitingKind={analysis.waitingKind}
-              waitingSkills={analysis.waitingSkills}
-              waitingTyped={analysis.waitingTyped}
-              acknowledged={analysis.acknowledged}
+              // Only a report puts this column to work. A typed question is
+              // answered in the chat and leaves the report where it is.
+              waiting={running}
               // The run's own manifest while one is in flight; the store's
               // otherwise, so the panel is laid out before anything is sent.
-              policy={analysis.waiting ? analysis.waitingPolicy : policy}
-              arrived={analysis.arrived}
+              policy={running ? analysis.waitingPolicy : policy}
               draft={analysis.draft}
-              slow={analysis.slow}
-              error={analysis.error}
               onJumpToGroup={jumpToGroup}
               onJumpToSource={jumpToSource}
               negatives={negatives}
             />
+
+            {/* No column at this width, so the turns sit under the report —
+                which is where the conversation has always been here. */}
+            {!isWide && analysis.selected && (
+              <AnalysisChat
+                className="mt-10"
+                scroll={false}
+                turns={analysis.questions}
+                waiting={analysis.waiting && analysis.waitingKind === 'question'}
+                waitingTyped={analysis.waitingTyped}
+                waitingSkills={analysis.waitingSkills}
+                error={analysis.error}
+                results={results}
+                record={record}
+                categories={categories}
+                negatives={negatives}
+                onJumpToGroup={jumpToGroup}
+                onJumpToSource={jumpToSource}
+              />
+            )}
                   </div>
                           </div>
               </TabsContent>
@@ -909,6 +992,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             />
             )}
           </TabsContent>
+              </div>
             </div>
           </TabsRoot>
         </div>
@@ -930,7 +1014,65 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         onDeleteSkill={(id) => void agent.deleteSkill(id)}
       />
 
+      {/*
+        * The chat's own column, down the right-hand side.
+        *
+        * The report reads left, where the nav rail already anchors the page and
+        * the eye starts; the conversation sits beside it at the outer edge,
+        * which is also where the old reference panel was docked and where
+        * `--panel-w` still reserves for it.
+        *
+        * `contents` below `wide`: the aside stops being a box, the composer
+        * inside it is `fixed` on its own, and the narrow page is exactly what it
+        * has always been. It is also why the composer is placed by CSS rather
+        * than mounted conditionally — crossing the breakpoint must not throw
+        * away what someone has typed.
+        *
+        * No `z-index`. The column sits under the nav rail so an unpinned rail
+        * still hover-expands over it, the way the header already does.
+        */}
+      <aside
+        aria-label="Analysis conversation"
+        className="contents wide:fixed wide:bottom-0 wide:right-0 wide:top-[45px] wide:flex wide:w-[var(--chat-w)] wide:flex-col wide:border-l wide:border-solid wide:border-border"
+      >
+        {/* The seam is a handle. It is inside the column so it moves with it,
+            and it is the column's own left edge — the one the report is on the
+            other side of. */}
+        {isWide && (
+          <ColumnResizer
+            width={chatW ?? (window.innerWidth >= 1504 ? 460 : 400)}
+            onResize={setChatW}
+            onReset={() => setChatW(null)}
+          />
+        )}
+
+        {isWide && analysis.selected && (
+          <AnalysisChat
+            // A different report is a different conversation: remounting resets
+            // the log's stick-to-bottom, which would otherwise stay detached
+            // from where the reader had scrolled in the last one.
+            key={analysis.selected.id}
+            turns={analysis.questions}
+            marker={
+              running
+                ? `Running ${analysis.waitingSkills[0] ?? standing?.name ?? 'the assessment'}`
+                : `${reportLabel(analysis.selected)} · ${reportDate(analysis.selected)}`
+            }
+            waiting={analysis.waiting && analysis.waitingKind === 'question'}
+            waitingTyped={analysis.waitingTyped}
+            waitingSkills={analysis.waitingSkills}
+            error={analysis.error}
+            results={results}
+            record={record}
+            categories={categories}
+            negatives={negatives}
+            onJumpToGroup={jumpToGroup}
+            onJumpToSource={jumpToSource}
+          />
+        )}
+
       <AnalysisDock
+        docked={isWide}
         open={dockOpen}
         setOpen={setDockOpen}
         // Which report a question joins. A report ignores it and starts its own.
@@ -969,6 +1111,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         onUnpin={(id) => analysis.unpin(id)}
         hasAnalysis={analysis.versions.length > 0}
       />
+      </aside>
     </div>
     </ScreenshotViewerProvider>
   )

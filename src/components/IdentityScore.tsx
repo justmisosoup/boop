@@ -196,8 +196,11 @@ export const IdentityScoreCard = ({
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   return (
-    <section className="mt-10">
-      <CardLabel className="mb-2">Assessment score</CardLabel>
+    /* The contents rail's `recommendation` entry locks here. The section it
+       used to point at lost its heading when the card took over saying the
+       call, so the anchor moved to the thing that says it. */
+    <section id="section-recommendation" className="mt-10 scroll-mt-6">
+      <CardLabel className="mb-2">Recommendation</CardLabel>
       <Surface
         variant="default"
         padding="none"

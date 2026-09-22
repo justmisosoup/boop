@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { CubeIcon } from '@radix-ui/react-icons'
 import { ArrowUp, ChevronDown, History, Paperclip, Pencil, Plus } from 'lucide-react'
@@ -210,8 +211,10 @@ const LibraryPicker = ({
         Workflow
       </ActionButton>
     </MenuTrigger>
-    {/* `z-popover` over core's default `z-50`: the dock is `z-floating` (1050)
-        and a menu opened from inside it renders behind it otherwise. */}
+    {/* `z-popover` over core's default `z-50`. Below `wide` the dock is
+        `z-floating` (1050) and a menu opened from inside it renders behind it
+        otherwise; in the chat column the menu has to clear the report and the
+        header instead. Both want the same answer. */}
     <MenuContent align="start" side="top" className="z-popover w-64">
       {custom
         .filter((c) => c.kind === 'workflow')
@@ -273,6 +276,7 @@ const LibraryPicker = ({
  * pill so it never sits on top of the record you are reading.
  */
 export const AnalysisDock = ({
+  docked = false,
   open,
   setOpen,
   onSend,
@@ -288,6 +292,15 @@ export const AnalysisDock = ({
   onUnpin,
   hasAnalysis
 }: {
+  /**
+   * In the chat column rather than floating over the page.
+   *
+   * Two effects, and only two: there is no collapsed pill (a column has nothing
+   * to dismiss the composer OFF to), and Escape does not close it. Where it
+   * sits is CSS — `wide:static` drops it out of the fixed layer — so crossing
+   * the breakpoint never unmounts it and never loses what has been typed.
+   */
+  docked?: boolean
   open: boolean
   setOpen: (v: boolean) => void
   /** One send for every combination: the composed instructions, the names that
@@ -535,7 +548,7 @@ export const AnalysisDock = ({
     if (filePicker.current) filePicker.current.value = ''
   }
 
-  if (!open) {
+  if (!open && !docked) {
     return (
       <div className="pointer-events-none fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)]">
         {/* Centred on the viewport, and the same width whatever the report is.
@@ -553,10 +566,10 @@ export const AnalysisDock = ({
   }
 
   return (
-    <div className="fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)]">
+    <div className="fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)] wide:static wide:z-auto wide:shrink-0">
       {/* Centred on the viewport at a fixed width — it is the same object
           whatever width the report is dragged to. */}
-      <div className="mx-auto w-full max-w-[676px] px-6">
+      <div className="mx-auto w-full max-w-[676px] px-6 wide:max-w-none wide:px-4">
         {/* One box: the field and its controls live inside a single bordered
             surface, with submit as a round button in the bottom-right corner. */}
         <Surface
@@ -634,7 +647,8 @@ export const AnalysisDock = ({
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
-                if (e.key === 'Escape') setOpen(false)
+                // In the column there is nowhere to escape to.
+      if (e.key === 'Escape' && !docked) setOpen(false)
                 // Backspace on an empty field takes the last skill back off,
                 // the way it removes the last character otherwise.
                 if (e.key === 'Backspace' && !prompt) {
@@ -736,148 +750,156 @@ export const AnalysisDock = ({
           and files under it. New, the business is read again from scratch and
           the answer opens its own report. Two affirmatives, so neither is the
           `ConfirmDialog` shape of "do it / do not". */}
-      <Dialog
-        isOpen={ask !== null}
-        onClose={() => setAsk(null)}
-        size="sm"
-        title="Where should this answer go?"
-        description={
-          report
-            ? `Add it to ${report.label}, which reads what that report read — or start a new report, read against the business as it is now.`
-            : undefined
-        }
-        footer={
-          <div className="flex justify-end gap-2">
-            <ActionButton
-              variant="secondary"
-              onClick={() => ask && dispatch({ ...ask, kind: 'report', target: undefined })}
-            >
-              Start a new report
-            </ActionButton>
-            <ActionButton
-              onClick={() => ask && dispatch({ ...ask, kind: 'question', target: report?.id })}
-            >
-              Add to this report
-            </ActionButton>
-          </div>
-        }
-      >
-        <span className="sr-only">
-          Choose whether this question is answered inside the report you are
-          reading or as a new one.
-        </span>
-      </Dialog>
+      {createPortal(
+        <Dialog
+          isOpen={ask !== null}
+          onClose={() => setAsk(null)}
+          size="sm"
+          title="Where should this answer go?"
+          description={
+            report
+              ? `Add it to ${report.label}, which reads what that report read — or start a new report, read against the business as it is now.`
+              : undefined
+          }
+          footer={
+            <div className="flex justify-end gap-2">
+              <ActionButton
+                variant="secondary"
+                onClick={() => ask && dispatch({ ...ask, kind: 'report', target: undefined })}
+              >
+                Start a new report
+              </ActionButton>
+              <ActionButton
+                onClick={() => ask && dispatch({ ...ask, kind: 'question', target: report?.id })}
+              >
+                Add to this report
+              </ActionButton>
+            </div>
+          }
+        >
+          <span className="sr-only">
+            Choose whether this question is answered inside the report you are
+            reading or as a new one.
+          </span>
+        </Dialog>
+        ,
+        document.body
+      )}
 
-      <Dialog
-        isOpen={inspect !== null}
-        onClose={() => setInspect(null)}
-        size="lg"
-        // Both kinds carry their own header in the body, at the same scale:
-        // one is typed and one is read, and a default rendered through the
-        // primitive's header sat visibly smaller than the name beside it.
-        showHeader={false}
-        title={inspect?.name ?? ''}
-      >
-        {inspect && (
-          <div className="grid gap-[var(--core-spacing-sm)]">
-            {/* Both kinds render through the SAME two fields, so the two modals
-                measure identically and only their editability differs. A
-                heading for one and an input for the other looked like two
-                dialogs that happened to share a subject. */}
-            <Input
-              value={inspect.editable ? draftName : inspect.name}
-              onChange={(e) => setDraftName(e.target.value)}
-              disabled={!inspect.editable}
-              placeholder="Assessment name"
-              aria-label="Assessment name"
-              // `!` because `.core-input` sets font-size as a class rule and
-              // wins the cascade against a plain utility.
-              className={[
-                '!h-auto !min-h-0 !border-0 !bg-transparent px-0 py-0 shadow-none',
-                '!text-2xl font-semibold !leading-8 tracking-[-0.015em]',
-                'disabled:!text-foreground',
-                'focus-visible:!border-0 focus-visible:!outline-none focus-visible:!ring-0 hover:!border-0'
-              ].join(' ')}
-            />
+      {createPortal(
+        <Dialog
+          isOpen={inspect !== null}
+          onClose={() => setInspect(null)}
+          size="lg"
+          // Both kinds carry their own header in the body, at the same scale:
+          // one is typed and one is read, and a default rendered through the
+          // primitive's header sat visibly smaller than the name beside it.
+          showHeader={false}
+          title={inspect?.name ?? ''}
+        >
+          {inspect && (
+            <div className="grid gap-[var(--core-spacing-sm)]">
+              {/* Both kinds render through the SAME two fields, so the two modals
+                  measure identically and only their editability differs. A
+                  heading for one and an input for the other looked like two
+                  dialogs that happened to share a subject. */}
+              <Input
+                value={inspect.editable ? draftName : inspect.name}
+                onChange={(e) => setDraftName(e.target.value)}
+                disabled={!inspect.editable}
+                placeholder="Assessment name"
+                aria-label="Assessment name"
+                // `!` because `.core-input` sets font-size as a class rule and
+                // wins the cascade against a plain utility.
+                className={[
+                  '!h-auto !min-h-0 !border-0 !bg-transparent px-0 py-0 shadow-none',
+                  '!text-2xl font-semibold !leading-8 tracking-[-0.015em]',
+                  'disabled:!text-foreground',
+                  'focus-visible:!border-0 focus-visible:!outline-none focus-visible:!ring-0 hover:!border-0'
+                ].join(' ')}
+              />
 
-            {/* Whose skill this is, in one place and one register for both:
-                "Middesk · v0.12" for a default, "Sara Menefee · Updated 1 min
-                ago" for one the customer wrote. */}
-            {inspect.author && (
-              <div className="flex items-center gap-1">
-                <MutedText className="text-caption">{inspect.author}</MutedText>
+              {/* Whose skill this is, in one place and one register for both:
+                  "Middesk · v0.12" for a default, "Sara Menefee · Updated 1 min
+                  ago" for one the customer wrote. */}
+              {inspect.author && (
+                <div className="flex items-center gap-1">
+                  <MutedText className="text-caption">{inspect.author}</MutedText>
 
-                {/* "Updated" answers when it last changed; this answers when it
-                    changed before that. Behind an icon because on a skill saved
-                    once it says nothing the line above has not. */}
-                {(inspect.history?.length ?? 0) > 1 && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Change history"
-                        title="Change history"
-                        className="rounded-control p-0.5 text-muted-foreground hover:text-foreground"
-                      >
-                        <History aria-hidden="true" className="size-3.5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="z-popover w-64 p-2">
-                      <MutedText className="mb-1 block text-caption font-semibold">
-                        Change history
-                      </MutedText>
-                      <div className="grid gap-1">
-                        {[...(inspect.history ?? [])].reverse().map((h, i) => (
-                          <div key={h.at} className="flex items-baseline justify-between gap-3">
-                            <MutedText className="text-caption">
-                              {i === (inspect.history?.length ?? 0) - 1 ? 'Created' : 'Updated'}
-                            </MutedText>
-                            <MutedText className="text-caption tabular-nums">
-                              {ago(h.at)}
-                            </MutedText>
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  {/* "Updated" answers when it last changed; this answers when it
+                      changed before that. Behind an icon because on a skill saved
+                      once it says nothing the line above has not. */}
+                  {(inspect.history?.length ?? 0) > 1 && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Change history"
+                          title="Change history"
+                          className="rounded-control p-0.5 text-muted-foreground hover:text-foreground"
+                        >
+                          <History aria-hidden="true" className="size-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="z-popover w-64 p-2">
+                        <MutedText className="mb-1 block text-caption font-semibold">
+                          Change history
+                        </MutedText>
+                        <div className="grid gap-1">
+                          {[...(inspect.history ?? [])].reverse().map((h, i) => (
+                            <div key={h.at} className="flex items-baseline justify-between gap-3">
+                              <MutedText className="text-caption">
+                                {i === (inspect.history?.length ?? 0) - 1 ? 'Created' : 'Updated'}
+                              </MutedText>
+                              <MutedText className="text-caption tabular-nums">
+                                {ago(h.at)}
+                              </MutedText>
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              )}
+
+              <Textarea
+                value={inspect.editable ? draft : inspect.instructions}
+                onChange={(e) => setDraft(e.target.value)}
+                // `disabled`, not `readOnly`: read-only keeps live-text styling
+                // and the box reads as editable until you try.
+                disabled={!inspect.editable}
+                aria-label="Instructions"
+                rows={10}
+                className="min-h-56"
+              />
+
+              <div className="flex justify-end gap-2">
+                <ActionButton variant="secondary" onClick={() => setInspect(null)}>
+                  {inspect.editable ? 'Cancel' : 'Close'}
+                </ActionButton>
+                {inspect.editable && (
+                  <ActionButton
+                    disabled={
+                      !draft.trim() ||
+                      !draftName.trim() ||
+                      (draft.trim() === inspect.instructions && draftName.trim() === inspect.name)
+                    }
+                    onClick={() => {
+                      onUpdateSkill(inspect.id, draftName, draft)
+                      setInspect(null)
+                    }}
+                  >
+                    Save
+                  </ActionButton>
                 )}
               </div>
-            )}
-
-            <Textarea
-              value={inspect.editable ? draft : inspect.instructions}
-              onChange={(e) => setDraft(e.target.value)}
-              // `disabled`, not `readOnly`: read-only keeps live-text styling
-              // and the box reads as editable until you try.
-              disabled={!inspect.editable}
-              aria-label="Instructions"
-              rows={10}
-              className="min-h-56"
-            />
-
-            <div className="flex justify-end gap-2">
-              <ActionButton variant="secondary" onClick={() => setInspect(null)}>
-                {inspect.editable ? 'Cancel' : 'Close'}
-              </ActionButton>
-              {inspect.editable && (
-                <ActionButton
-                  disabled={
-                    !draft.trim() ||
-                    !draftName.trim() ||
-                    (draft.trim() === inspect.instructions && draftName.trim() === inspect.name)
-                  }
-                  onClick={() => {
-                    onUpdateSkill(inspect.id, draftName, draft)
-                    setInspect(null)
-                  }}
-                >
-                  Save
-                </ActionButton>
-              )}
             </div>
-          </div>
-        )}
-      </Dialog>
+          )}
+        </Dialog>
+        ,
+        document.body
+      )}
     </div>
   )
 }

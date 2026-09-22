@@ -14,10 +14,10 @@ module.exports = {
       /**
        * The width the three-column page needs before it is worth having.
        *
-       * 48 of page padding + 224 of contents rail + 24 of gap + 480 of
-       * reference panel is 776, so at 1280 the report still gets 504: a
-       * readable measure, and the report grows from there toward its preferred
-       * 800. Below this the page stacks.
+       * The three are the global nav rail, the chat column and the report. The
+       * numbers below were first derived for a right-hand reference panel that
+       * no longer exists (`PANEL_W` is 0); the chat column inherited the budget
+       * it left behind, and costs less than it did.
        *
        * It was 1576, which is the width at which the report gets its full 800.
        * That treated a preference as a requirement and sent common laptop
@@ -26,27 +26,31 @@ module.exports = {
        */
       screens: {
         /**
-         * The panel docks. 48 of page padding + 480 of panel is 528, so the
-         * report gets 352 here and grows from there: narrow, but the record
-         * beside the report is worth more than the extra measure. Below this
-         * the panel goes under the report instead.
+         * The chat gets a column. 48 of page padding + 360 of chat is 408, so
+         * the report gets 472 here and grows from there: narrow, but a reviewer
+         * who can ask a question beside the report is worth more than the extra
+         * measure. Below this the chat's composer floats over the page instead,
+         * the way it always did, and the conversation stacks under the report.
          *
          * Both numbers here are budgets over the width the PAGE has, and the
          * page no longer has the window: the global nav rail takes 224 of it
          * when pinned, which is the default. So both carry the rail — 880 + 224.
          * Unpinned the rail only takes 49, and the page gets 175 more than the
          * budget asks for, which costs nothing.
+         *
+         * The old panel wanted 480 here and was allowed it. 360 is what the
+         * chat takes, so this breakpoint is 120px looser than the layout it was
+         * chosen for, not tighter.
          */
         wide: '1104px',
         /**
-         * The contents rail joins it. It costs 224 plus a 24 gap, which the
-         * report can only afford once there is 1280 to share: 48 + 224 + 24 +
-         * 480 leaves it 504. Plus the nav rail, as above.
+         * The chat can afford 420 instead of 360, and the report can afford the
+         * 24px gap it keeps on its left. Both are comforts, not requirements,
+         * which is why they wait for a width this page will not always have.
          *
          * One breakpoint for both was the error. At 1576 ordinary laptops got
-         * the stacked page; at 1280 a 1064px window still lost the panel
-         * entirely, when all it could not afford was the rail. The rail is
-         * margin furniture, so it is what goes first.
+         * the stacked page; at 1280 a 1064px window still lost the second
+         * column entirely, when all it could not afford was the trimmings.
          */
         desk: '1504px'
       },

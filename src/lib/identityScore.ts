@@ -320,7 +320,7 @@ const scoreArea = (
 ): ScoreComponent => {
   const cited = area.insightIds
     .map((id) => byId.get(id))
-    .filter((r): r is Derived => Boolean(r) && !r.notReported)
+    .filter((r): r is Derived => Boolean(r) && !r?.notReported)
 
   const read = cited.map((r) => ({ r, polarity: polarityOf(r, record) }))
   const positive = read.filter((x) => x.polarity === 'positive')

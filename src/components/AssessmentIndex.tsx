@@ -46,25 +46,37 @@ const scrollParent = (el: HTMLElement): HTMLElement | null => {
  * would be louder than the headings they annotate, and the headings are the
  * point of the list.
  */
-const StateDot = ({ state }: { state: 'done' | 'running' | 'pending' }) => {
-  if (state === 'done') {
-    return <span className="size-1.5 shrink-0 rounded-full bg-foreground" aria-hidden="true" />
-  }
-  if (state === 'running') {
-    return (
-      <span
-        className="size-2.5 shrink-0 rounded-full border border-solid border-muted-foreground border-t-transparent motion-safe:animate-spin"
-        aria-hidden="true"
-      />
-    )
-  }
-  return (
-    <span
-      className="size-1.5 shrink-0 rounded-full border border-solid border-muted-foreground"
-      aria-hidden="true"
-    />
+/**
+ * One mark, and it says one thing: whether this is the section you are on.
+ *
+ * Filled for where you are, an open ring for everywhere else — in the strip and
+ * in the list the strip opens, because they are the same control at two sizes
+ * and a dot that means "done" in one and "here" in the other is two
+ * vocabularies for six dots. A section still running keeps its own tell: the
+ * ring pulses rather than sitting still.
+ */
+const markClass = ({
+  current,
+  state
+}: {
+  current: boolean
+  state: 'done' | 'running' | 'pending'
+}) =>
+  cn(
+    'block shrink-0 rounded-full border border-solid transition-all duration-200',
+    current
+      ? 'size-2 border-foreground bg-foreground'
+      : 'size-1.5 border-[var(--core-color-border-bold)]',
+    state === 'running' && 'motion-safe:animate-pulse'
   )
-}
+
+const StateDot = ({
+  state,
+  current
+}: {
+  state: 'done' | 'running' | 'pending'
+  current: boolean
+}) => <span className={markClass({ current, state })} aria-hidden="true" />
 
 export const AssessmentIndex = ({
   sections,
@@ -82,9 +94,6 @@ export const AssessmentIndex = ({
   running?: boolean
 }) => {
   const [here, setHere] = useState<string | null>(null)
-  /** Which entries are showing their steps. Closed by default: the contents
-   *  list is a list of contents first, and the work behind each is on request. */
-  const [shown, setShown] = useState<string[]>([])
   /**
    * Set while a click's smooth scroll is still travelling.
    *
@@ -286,8 +295,6 @@ export const AssessmentIndex = ({
       {sections.map(({ id, heading }) => {
         const current = here === id
         const state = stateOf(id)
-        const mine = steps?.get(id) ?? []
-        const open = shown.includes(id)
 
         return (
           /* No rule down the side. It moved as the current entry changed, and
@@ -310,57 +317,14 @@ export const AssessmentIndex = ({
                   state === 'done' && 'cursor-pointer'
                 )}
               >
-                <StateDot state={state} />
+                <StateDot state={state} current={current} />
                 <span className={cn('min-w-0 truncate', state === 'running' && 'shimmer-text')}>
                   {heading}
                 </span>
               </button>
 
-              {/* Only where there is something to open. A caret on a section
-                  that has not run yet promises a list that does not exist. */}
-              {mine.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShown((prev) =>
-                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                    )
-                  }
-                  aria-expanded={open}
-                  aria-label={open ? `Hide steps for ${heading}` : `Show steps for ${heading}`}
-                  className="inline-flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <svg
-                    viewBox="0 0 12 12"
-                    aria-hidden="true"
-                    className={cn('h-2.5 w-2.5 transition-transform duration-200', open && 'rotate-90')}
-                    fill="none"
-                  >
-                    <path
-                      d="M4.5 3 7.5 6 4.5 9"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              )}
             </div>
 
-            {open && (
-              <ul className="ml-[3px] mt-1 space-y-1 border-l border-solid border-border pl-3">
-                {mine.map((step) => (
-                  <li key={step.label} className="flex items-start gap-1.5">
-                    <span
-                      className="mt-1 size-1 shrink-0 rounded-full bg-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <MutedText className="text-caption leading-snug">{step.label}</MutedText>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         )
       })}
@@ -394,29 +358,23 @@ export const AssessmentIndex = ({
               // In the document's own left padding, not in the column: the
               // prose keeps the measure the tabs above it set. Sticky, so the
               // marks hold while the prose moves past them.
-              'sticky top-0 z-20 -ml-7 w-6',
+              //
+              // `-ml-9` against the measure's `px-12`: the 24px strip ends 12px
+              // short of the first character. At `-ml-7` in a 32px gutter it
+              // ended 4px short, which read as the dots sitting on the words.
+              'sticky top-0 z-20 -ml-9 w-6',
               'flex flex-col items-center gap-0.5'
             )}
           >
             {sections.map(({ id, heading }) => {
               const state = stateOf(id)
               const current = at === id
-              /* Size and fill, not colour alone: the rail says which entry you
-                 are on by setting its label in semibold, and a dot has no label
-                 to embolden. The vocabulary is `StateDot`'s — filled for what
-                 is on the page, a ring for what has not started. */
               /* Empty at rest — a column of filled dots beside the prose read
                  as a second piece of content. They are an outline, and an
                  outline is the quietest thing that can still be pointed at.
-                 Where you are is the one that is darker and a size up, not the
-                 one that is filled in. */
-              const mark = cn(
-                'block rounded-full border border-solid transition-all duration-200',
-                current
-                  ? 'size-2 border-foreground'
-                  : 'size-1.5 border-[var(--core-color-border-bold)]',
-                state === 'running' && 'motion-safe:animate-pulse'
-              )
+                 The one you are on is filled, and the list this strip opens
+                 fills the same one. */
+              const mark = markClass({ current, state })
               /* A section that has not landed is not a button — and not a
                  disabled one either: a disabled control swallows the pointer,
                  which would punch a hole in the strip the hover card opens

@@ -335,6 +335,17 @@ export const useAnalysis = (
     [selected]
   )
 
+  /**
+   * The two halves of a thread, named rather than sliced at the call site.
+   *
+   * The report is always the first turn and the questions are always the rest
+   * (`versions` is built that way, just above), but those two now render in
+   * different columns — the report in the report, the questions in the chat —
+   * and index arithmetic spread across two components is how they drift.
+   */
+  const reportVersion = useMemo(() => versions[0] ?? null, [versions])
+  const questions = useMemo(() => versions.slice(1), [versions])
+
   const run = useCallback(
     (
       prompt: string,
@@ -464,6 +475,8 @@ export const useAnalysis = (
     waitingSkills: pending?.skills ?? [],
     waitingTyped: pending?.typed ?? '',
     versions,
+    reportVersion,
+    questions,
     /** Every report this business has, oldest first. */
     reports,
     /** The one being read — its assessment, and the snapshot the tabs render. */
