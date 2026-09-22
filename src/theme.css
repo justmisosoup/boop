@@ -205,6 +205,21 @@ body,
   background-size: 100% 1px;
 }
 
+/* Cells that divide a CARD rather than a record.
+ *
+ * The assessments on the score card are the report's own sections, not values
+ * read off a filing — so they take the solid rule the insight rows take, and
+ * the dashes stay where the attributes are. Same colour, same pixel; only the
+ * style carries the distinction. The grid hangs a pixel past its card
+ * (`-mr-px -mb-px`) so the last column's and last row's rules are clipped,
+ * exactly as the painted ones were.
+ */
+.cells-solid .attribute-cell {
+  background-image: none;
+  border-right: 1px solid var(--rule-color, var(--core-color-text-primary));
+  border-bottom: 1px solid var(--rule-color, var(--core-color-text-primary));
+}
+
 /* An insight in a stack of insights, divided by a SOLID rule.
  *
  * The dashed rule is this report's line for a value: a cell of the identity
@@ -242,13 +257,16 @@ body,
  * started. The rule now runs out of the heading itself, on its line and at its
  * middle, so the break and the label are one gesture. Lighter than the
  * attribute rules: this one divides the report, it does not carry a value.
+ *
+ * Solid. It was dashed, and the dash is this report's line for a value — a cell
+ * of the identity grid, an attribute under a statement, a word in the prose
+ * pointing at one. Nothing about a section heading is a value, so the dashes
+ * were borrowing a meaning the rule does not have.
  */
 .section-rule {
   --rule-color: var(--core-color-border-strong);
-  background-image: var(--dash-rule-x);
-  background-position: left center;
-  background-repeat: repeat-x;
-  background-size: 8px 1px;
+  background-image: none;
+  border-top: 1px solid var(--rule-color);
 }
 
 /* The rule above an inset region — an insight's evidence under the statement it

@@ -103,6 +103,9 @@ const componentCell = (
 ): AttributeCell => ({
   key: c.id,
   label: c.label,
+  // H4: the cell names a section of the report, not a field of the record —
+  // set as a field name it read as a caption on the number under it.
+  labelNode: <Heading level={4}>{c.label}</Heading>,
   values: [
     {
       value: c.subScore === null ? 'Not evaluated' : `${c.subScore} / 100`,
@@ -135,8 +138,9 @@ const componentCell = (
  * assessments came back clear and which one is holding the number down, so the
  * line is a reading of the card under it rather than a tally of it.
  *
- * Nothing is invented: `CLEAR` is the same 90 the top band starts at, and the
- * names are the assessments' own.
+ * Nothing is invented: the count is the report's own findings, counted once
+ * each — the three that are cited by all four assessments are three things to
+ * do, not twelve.
  */
 const summarise = (score: IdentityScore): string | null => {
   const read = score.components.filter((c) => c.subScore !== null)
@@ -242,7 +246,9 @@ export const IdentityScoreCard = ({
             only thing below it, so a label saying they are what it rests on was
             naming the obvious in the card's own voice. */}
         <AttributeCells
-          className="-mb-px"
+          // Solid dividers: these cells are assessments, not attributes — see
+          // `.cells-solid` in theme.css.
+          className="cells-solid -mb-px"
           items={score.components.map((c) => componentCell(c, jump))}
         />
       </Surface>

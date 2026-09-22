@@ -182,33 +182,76 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   web_address_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   web_email_address_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   web_phone_number_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
-  // The check's own verdict, not the fact that it ran. `business_name_match` is
-  // null on this record even where the task says `Mismatch`, so the flag cannot
-  // be the reading: a site presenting a different name from the application is
-  // a name to reconcile, and `Similar Match` is not a mismatch.
+  /*
+   * A name on the website is context, not a finding against the identity.
+   *
+   * A `Mismatch` here counted against the business, and a website is not a
+   * source of record: a studio trades under one name and files under another,
+   * and the check returns the mismatch without saying what the other name was.
+   * The filing is what establishes the name, and `name` above reads that. A
+   * `Verified` match is a genuine point for the file; a mismatch is a question,
+   * and a question is not a mark against.
+   */
   web_business_name_verification: (_r, record) =>
-    (sub(record, 'web_business_name_verification') ?? '').toLowerCase().startsWith('mismatch')
-      ? 'negative'
-      : 'positive',
+    (sub(record, 'web_business_name_verification') ?? '').toLowerCase().startsWith('verified')
+      ? 'positive'
+      : 'neutral',
 
   // People. A submitted person nobody can match to a filing or to the site is
   // the gap a CIP file cannot close by itself.
-  // `Unverified` is a result in the data and a gap in substance: the record
-  // returned an answer, and the answer is that nobody could be matched.
-  person_verification: (_r, record) =>
-    (sub(record, 'person_verification') ?? '').toLowerCase().startsWith('verified')
-      ? 'positive'
-      : 'negative',
+  /*
+   * Unmatched only counts against the file when there was something to match.
+   *
+   * A person is matched against the officers a filing names, and a New York
+   * PLLC's filing names none — membership is a licensed-practitioner question
+   * the state does not publish. Not matching a person against a filing that
+   * names no people is the EXPECTED outcome for a professional entity, so it
+   * reads as the file behaving normally rather than as something withheld: a
+   * point for it, not a question hanging over it.
+   *
+   * Where a registration DOES list officers and the submitted person is still
+   * not among them, the check has something to say and it says it: that is a
+   * point against, and it stays one.
+   */
+  person_verification: (_r, record) => {
+    if ((sub(record, 'person_verification') ?? '').toLowerCase().startsWith('verified'))
+      return 'positive'
+    /*
+     * A NATURAL person, not an officer row.
+     *
+     * New York lists this PLLC as its own process agent, so the filing's
+     * `officers` array is non-empty and holds one entry: the entity's own name.
+     * Testing the array's length read that as "a filing names people, and the
+     * submitted person is not among them" — the one reading that makes this a
+     * finding — when what the record actually says is the sentence the report
+     * opens the ownership section with: no natural person is named.
+     */
+    const itself = new Set(
+      [record.name, ...record.names.map((n) => n.name), ...record.registrations.map((r) => r.name)]
+        .filter(Boolean)
+        .map((n) => n.trim().toLowerCase())
+    )
+    const namesAPerson = record.registrations.some((r) =>
+      (r.officers ?? []).some((o) => o && !itself.has(o.trim().toLowerCase()))
+    )
+    return namesAPerson ? 'negative' : 'positive'
+  },
   web_person_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
-  // Connections are found, not cleared. Two businesses sharing this one's
-  // addresses is a question about who is behind them.
-  // No record field holds these — the check's own reading is the only account
-  // of them, so it is what is read: `Found` is a question about who is behind
-  // them, `Not Found` is a point for the file.
-  business_connections: (_r, record) =>
-    (sub(record, 'business_connections') ?? '').toLowerCase().startsWith('found')
-      ? 'negative'
-      : 'positive',
+  /*
+   * Connections are context, not a finding.
+   *
+   * This counted `Found` against the identity, which is not what a connected
+   * business is. Two entities sharing an address is ordinary — a shared clinical
+   * floor, a holding company, a landlord — and nothing in the check says which.
+   * What it is NOT is a point against this business, and scoring it as one put a
+   * red mark on the row in three assessments for something the record does not
+   * allege. Whether the connection matters is the follow-up's question to ask,
+   * not this table's to answer.
+   *
+   * `Not Found` is not a point for the file either: nobody looked for something
+   * and failed to find it.
+   */
+  business_connections: () => 'neutral',
 
   // Screening. The absence of a hit is the point; a hit is the finding, and the
   // ceilings below carry the serious ones.

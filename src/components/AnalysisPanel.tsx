@@ -647,12 +647,12 @@ const ReportBody = ({
                five section titles compete with the report they label. Every
                section's heading is this one line: the assessment's name, and a
                rule carrying it across. */}
-            {/* H2. It was body size and bold, set down so five section titles
-                would not compete with the report they label — but with the
-                score card carrying the head of the page, the assessments are
-                the page's own divisions and were reading as paragraph leads. */}
+            {/* H3. One step above the assessment's own cell on the score card,
+                which is H4: the same assessment is named in both places, and
+                over the argument it is a division of the page rather than a
+                label on a number. */}
             <div className="mb-10 flex items-center gap-4">
-              <Heading level={2}>{heading}</Heading>
+              <Heading level={3}>{heading}</Heading>
               <span aria-hidden="true" className="section-rule h-px flex-1" />
             </div>
             {section && (

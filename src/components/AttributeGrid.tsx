@@ -30,6 +30,14 @@ export type AttributeCell = {
   /** Absent where the value names itself — a business, rather than a field. */
   label?: string
   /**
+   * The label, drawn by the caller.
+   *
+   * For a cell whose label is a heading rather than a field name — the
+   * assessments on the score card, which name a section of the report. `label`
+   * is still set beside it: it is what the cell is keyed and read by.
+   */
+  labelNode?: ReactNode
+  /**
    * The facts this label names.
    *
    * One is the ordinary case. Several where the label heads a run — three
@@ -134,9 +142,11 @@ const CellBody = ({ item }: { item: AttributeCell }) => (
   <>
     {item.label && (
       <span className="flex items-center gap-1">
-        <Text tone="secondary" size="sm" className="leading-snug">
-          {item.label}
-        </Text>
+        {item.labelNode ?? (
+          <Text tone="secondary" size="sm" className="leading-snug">
+            {item.label}
+          </Text>
+        )}
         {item.badge ?? (item.submitted ? <Mark verified={item.verified} /> : null)}
       </span>
     )}
