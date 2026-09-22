@@ -1,3 +1,8 @@
+// Type-only, and so erased: `deriveResults` imports the insight contract from
+// here, and a report's snapshot is made of what it produces. Nothing is
+// imported at runtime in either direction.
+import type { BusinessRecord, Derived } from './lib/deriveResults'
+
 export type ResultState = 'result' | 'unknown' | 'no_result'
 
 export type NoResultReason =
@@ -91,6 +96,83 @@ export type AnalysisRequest = {
    */
   attachments?: Array<{ name: string; type: string; size: number; path: string }>
   history?: Array<{ prompt: string; result: AnalysisResult }>
+  /**
+   * What the page was showing when this was asked — the record and every
+   * insight derived from it. Stored with the report so an old one reads against
+   * what it saw. Stripped from the request before it is written to disk: the
+   * session reads `pending.json` by hand and this is 60KB of input it already
+   * has as `insights`.
+   *
+   * Only on a `report`. A question inherits the snapshot of the report it is
+   * filed against.
+   */
+  snapshot?: ReportSnapshot
+  /** Which report a `question` is asked of. Absent on a `report`. */
+  reportId?: string
+  /** The assessments that composed the run, in read order. The first is the
+   *  workflow, which is what a report is called. */
+  skills?: string[]
+}
+
+/**
+ * What a report saw.
+ *
+ * Two values, not five. The Attributes and Sources tabs are pure functions of
+ * the record and the insight list — `attributeRowsByGroup(record, results,
+ * groupFor)` and `sourcesFor(record, results, groupFor)` — so freezing the
+ * inputs reproduces the tabs without storing them, and without storing the
+ * derived structures, which cross-reference each other and serialise badly.
+ *
+ * It also fixes the semantics: no check the catalog gained since can appear in
+ * an old report, because the insight list is fixed; but a row whose presentation
+ * improved shows the improvement, because the rendering is today's.
+ */
+export type ReportSnapshot = {
+  /** Informational. Ids are re-minted by a re-pull, so never look one up by it. */
+  recordId: string
+  record: BusinessRecord
+  results: Derived[]
+}
+
+/** A typed follow-up, filed against the report it was asked of. */
+export type StoredQuestion = {
+  id: string
+  at: string
+  prompt: string
+  typed?: string
+  skills?: string[]
+  pinned?: string[]
+  durationMs?: number
+  result: AnalysisResult
+}
+
+/**
+ * A report as it is kept: what it concluded, and what it was reading.
+ *
+ * One business has a list of these. A run appends; it does not overwrite, which
+ * is what makes an earlier report still openable.
+ */
+export type StoredReport = {
+  /** The run id — the same id the request and its result files carry. */
+  id: string
+  /**
+   * The assessment it was run from — what the report is called.
+   *
+   * A report is named by the thing that produced it, not by when it landed: a
+   * reader picking between readings of a business is choosing between
+   * assessments, and two runs of the same one are told apart by their date.
+   */
+  name: string
+  /** When it was asked, from the request. */
+  at: string
+  /** Fingerprint of the briefs it ran, for the replay path. */
+  brief: string
+  policy: Array<{ id: string; name: string }>
+  report: AnalysisResult
+  /** Null only for a report kept before snapshots existed; the page falls back
+   *  to the live record for those. */
+  snapshot: ReportSnapshot | null
+  questions: StoredQuestion[]
 }
 
 export type CouldNotConfirmReason =
@@ -159,6 +241,14 @@ export type AssessmentSection = {
   gaps?: Array<{
     /** Slug, unique within the report. Follow-ups close gaps by this id. */
     id: string
+    /**
+     * The open question, as a complete sentence that explains itself.
+     *
+     * It used to be a fragment completing a bold "Not established." the UI put
+     * in front of it — "Whether the registration is in good standing". The
+     * label is gone, so nothing supplies the missing half: write the sentence
+     * the reader should read.
+     */
     point: string
     why: CouldNotConfirmReason
     /** Required when `why` is `no_insight_covers_it` — name the check that would. */

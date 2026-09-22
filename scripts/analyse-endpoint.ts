@@ -22,7 +22,8 @@ import type {
   AnalysisResult,
   AnalysisVerdict,
   AssessmentFile,
-  AssessmentSection
+  AssessmentSection,
+  StoredReport
 } from '../src/types'
 
 const DIR = join(process.cwd(), 'analysis')
@@ -58,38 +59,114 @@ const reportKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim
 const briefPrint = (request: AnalysisRequest) =>
   [request.prompt, ...(request.assessments ?? []).map((a) => `${a.id}:${a.instructions}`)].join('\u0000')
 
-const readReports = (): Record<string, unknown> => {
+/**
+ * Every report a business has, oldest first.
+ *
+ * A v1 store held one report per business, as a bare object. It is read as a
+ * one-element list with no snapshot, so a store written before snapshots
+ * existed still serves — the page falls back to the live record for those.
+ */
+const readReports = (): Record<string, StoredReport[]> => {
   if (!existsSync(REPORTS)) return {}
   try {
-    return (JSON.parse(readFileSync(REPORTS, 'utf8')) as { reports?: Record<string, unknown> })
-      .reports ?? {}
+    const held =
+      (JSON.parse(readFileSync(REPORTS, 'utf8')) as { reports?: Record<string, unknown> })
+        .reports ?? {}
+    const out: Record<string, StoredReport[]> = {}
+    for (const [key, value] of Object.entries(held)) {
+      out[key] = Array.isArray(value) ? (value as StoredReport[]) : [asStored(key, value)]
+    }
+    return out
   } catch {
     return {}
   }
 }
 
-const keepReport = (
-  name: string,
-  report: unknown,
-  brief: string,
-  /** The assessments it was composed of — the report's own headings and order,
-   *  which the page cannot recover from the sections alone. */
-  policy: Array<{ id: string; name: string }>
-) => {
-  if (!name) return
+/** A v1 entry, read forward. */
+const asStored = (key: string, value: unknown): StoredReport => {
+  const v = (value ?? {}) as { brief?: string; policy?: StoredReport['policy']; report?: unknown }
+  return {
+    id: `held:${key}`,
+    name: 'Assessment',
+    at: '',
+    brief: v.brief ?? '',
+    policy: v.policy ?? [],
+    report: v.report as StoredReport['report'],
+    snapshot: null,
+    questions: []
+  }
+}
+
+/** The one a re-run is compared against, and the one the page opens on. */
+const newestReport = (key: string): StoredReport | null => {
+  const list = readReports()[key] ?? []
+  return list.length > 0 ? list[list.length - 1] : null
+}
+
+/** What the page was reading when the run was asked, kept beside the run. */
+const snapshotPath = (id: string) => join(DIR, `snapshot-${id}.json`)
+
+const readSnapshot = (id: string): StoredReport['snapshot'] => {
+  if (!existsSync(snapshotPath(id))) return null
   try {
-    const reports = { ...readReports(), [reportKey(name)]: { brief, policy, report } }
+    return JSON.parse(readFileSync(snapshotPath(id), 'utf8')) as StoredReport['snapshot']
+  } catch {
+    return null
+  }
+}
+
+const STORE_COMMENT =
+  'Every report a business has, oldest first, keyed by name. A report carries what it concluded and what it was reading, so an earlier one still opens against what it saw. Written when a run completes.'
+
+/**
+ * Kept, not replaced.
+ *
+ * A report is appended: the one before it stays readable, which is the whole
+ * point of a report being a moment rather than a slot. A question is filed
+ * INTO the report it was asked of — it was answered against that report's
+ * snapshot, and it belongs with it.
+ *
+ * The `kind` branch is also a fix. This was called for every completed run and
+ * wrote to one slot per business, so a typed follow-up overwrote the business's
+ * report with a single `answer` section and an empty policy.
+ */
+const keepReport = (asked: AnalysisRequest, report: AnalysisResult) => {
+  const key = reportKey(asked.business?.name ?? '')
+  if (!key) return
+  try {
+    const store = readReports()
+    const list = [...(store[key] ?? [])]
+
+    if (asked.kind === 'question') {
+      const at = list.findIndex((r) => r.id === asked.reportId)
+      // A question against a report we do not hold has nowhere to go. Dropping
+      // it is better than inventing a report around it.
+      if (at === -1) return
+      list[at] = {
+        ...list[at],
+        questions: [
+          ...list[at].questions,
+          { id: asked.id, at: asked.requestedAt, prompt: asked.prompt, result: report }
+        ]
+      }
+    } else {
+      list.push({
+        id: asked.id,
+        name: asked.skills?.[0] ?? 'Assessment',
+        at: asked.requestedAt,
+        brief: briefPrint(asked),
+        policy: (asked.assessments ?? []).map(({ id, name }) => ({ id, name })),
+        report,
+        snapshot: readSnapshot(asked.id),
+        questions: []
+      })
+    }
+
+    // Unindented: with a snapshot on every report this is not a file anyone
+    // reads by hand, and indentation roughly doubles it.
     writeFileSync(
       REPORTS,
-      JSON.stringify(
-        {
-          _comment:
-            'The latest report per business, keyed by name. Written when a run completes; served on arrival so a reload or a new run does not lose the last one.',
-          reports
-        },
-        null,
-        2
-      )
+      JSON.stringify({ _comment: STORE_COMMENT, version: 2, reports: { ...store, [key]: list } })
     )
   } catch {
     // Serving the report matters; keeping it is best effort.
@@ -258,10 +335,20 @@ export const analysePlugin = (): Plugin => ({
           }
         })
 
+        /**
+         * The snapshot goes to a file of its own, like an attachment.
+         *
+         * It is the record and every insight derived from it — 60KB the session
+         * already has in `insights`, and `pending.json` is a file a session
+         * reads by hand. It is read back when the report is kept.
+         */
+        const { snapshot, ...asked } = body
+        if (snapshot) writeFileSync(snapshotPath(id), JSON.stringify(snapshot))
+
         const request: AnalysisRequest = {
           id,
           requestedAt: new Date().toISOString(),
-          ...body,
+          ...asked,
           attachments
         }
 
@@ -276,9 +363,7 @@ export const analysePlugin = (): Plugin => ({
          * brief and the fingerprint moves, so the run goes to the session for a
          * genuinely new answer — which is what editing one is for.
          */
-        const held = readReports()[reportKey(request.business.name)] as
-          | { brief?: string; report?: AnalysisResult }
-          | undefined
+        const held = newestReport(reportKey(request.business.name))
         if (held?.report && held.brief === briefPrint(request)) {
           writeFileSync(
             join(DIR, `replay-${id}.json`),
@@ -336,11 +421,7 @@ export const analysePlugin = (): Plugin => ({
           const name = params.get('name') ?? ''
           // The store keeps the briefs beside the report so a re-run can tell
           // whether they moved; the page only wants the report.
-          const held = name
-            ? (readReports()[reportKey(name)] as
-                | { report?: AnalysisResult; policy?: Array<{ id: string; name: string }> }
-                | undefined)
-            : undefined
+          const held = name ? newestReport(reportKey(name)) : null
           res.end(
             JSON.stringify({ stored: held?.report ?? null, policy: held?.policy ?? [] })
           )
@@ -457,12 +538,7 @@ export const analysePlugin = (): Plugin => ({
         }
         // Written on completion, not on demand: the moment a report is whole is
         // the only moment we can be sure it is worth keeping.
-        keepReport(
-          asked.business?.name ?? '',
-          merged,
-          briefPrint(asked),
-          (asked.assessments ?? []).map(({ id, name }) => ({ id, name }))
-        )
+        keepReport(asked, merged)
 
         res.end(JSON.stringify(merged))
         return

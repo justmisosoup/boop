@@ -13,7 +13,7 @@ const BUNDLED: Record<string, { text?: string }> =
   (ledeStore as { ledes?: Record<string, { text?: string }> }).ledes ?? {}
 
 const bundledLede = (name: string) =>
-  BUNDLED[name.toLowerCase().replace(/\s+/g, ' ').trim()]?.text ?? null
+  BUNDLED[(name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()]?.text ?? null
 
 /**
  * The business's own description, authored separately from any run.

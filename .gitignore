@@ -8,5 +8,6 @@ analysis/request-*.json
 analysis/result-*.json
 analysis/result-*.assessments/
 analysis/replay-*.json
+analysis/snapshot-*.json
 analysis/lede-*.json
 analysis/pending.json

@@ -12,13 +12,41 @@
  */
 import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
-import { stateName } from './states'
+import { entityFormLabel } from './normalise'
+import { stateLabel, stateName } from './states'
 import { frequencyBand } from './statements'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
  *  $4,500.37 and the cents column is noise beside a case number. */
 const money = (cents: number) =>
   `$${Math.round(cents / 100).toLocaleString('en-US')}`
+
+/**
+ * Corroborated, not merely claimed.
+ *
+ * `sources` is everything that carries a value except the customer — it
+ * excludes `submitted` by contract — so a submitted value with one is a value a
+ * source of record agrees with, and a submitted value with none is the
+ * customer's word alone. The Attributes tab says the same thing in words, where
+ * it prints "No source" beside it.
+ *
+ * `registrations` counts too: a name-match row carries the filings that list
+ * the name instead of a source string, and a name on a state filing is as
+ * corroborated as a value gets.
+ *
+ * `refs` deliberately does not. A submitted person whose only source object is
+ * an adverse-media screening hit would read as verified, while the report
+ * beside it says we could not match them at all.
+ *
+ * Structural rather than typed to `AttributeRow`, because the identity card
+ * asks the same question of an address off the record.
+ */
+export const corroborated = (a: {
+  sources?: string[]
+  source?: string
+  registrations?: unknown[] | null
+}) =>
+  (a.sources?.length ?? 0) > 0 || Boolean(a.source) || (a.registrations?.length ?? 0) > 0
 
 export type AttributeRow = {
   label: string
@@ -84,6 +112,17 @@ export type AttributeRow = {
    * four names they belong to.
    */
   detail?: boolean
+  /**
+   * Evidence for one check, never an attribute of its own.
+   *
+   * The Attributes tab is built from every check's evidence, so a row invented
+   * to answer one question turns up in it as a fact about the business. "Filing
+   * state: New York (NY)" is how a match check shows its two halves; as an
+   * attribute it is the formation state under a second name. Unlike `detail`,
+   * these rows stand on their own inside the insight rather than folding into
+   * the row above.
+   */
+  evidenceOnly?: boolean
   /**
    * Several distinct pages behind one row, each addressable on its own.
    *
@@ -321,20 +360,65 @@ const sentence = (value: string | null | undefined) =>
   value ? value.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase()) : value
 
 /**
- * How long the filing has stood, in the coarsest unit still true.
+ * A date as it is read aloud: June 13, 2022.
+ *
+ * `2022-06-13` is the API's storage format, not a reading format — beside a
+ * name and an address it was the one value on the card that had to be decoded.
+ *
+ * Split by hand rather than through `new Date(iso)`: an ISO date with no time
+ * parses as UTC midnight, and west of Greenwich that prints as the day before.
+ */
+export const longDate = (iso: string | null | undefined) => {
+  if (!iso) return iso ?? undefined
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!y || !m || !d) return iso
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+/**
+ * How long the filing has stood: years and months, never days.
  *
  * A qualification filed last quarter and one standing since 2018 are different
  * claims about the business, and a column of ISO dates leaves the reader doing
- * the arithmetic to see it.
+ * the arithmetic to see it. It said "4 years old" for anything from four years
+ * to four years and eleven months — which is the difference between a company
+ * that has just cleared a threshold and one about to clear the next.
+ *
+ * Counted on the calendar rather than by dividing elapsed milliseconds: an
+ * average month is 30.44 days and no month is, so the approximation drifted a
+ * whole month either way on a date near the turn.
+ *
+ * Days are deliberately dropped. Nothing in a KYB decision turns on them, and
+ * "4 years, 3 months and 12 days" reads as precision about a filing date that
+ * is itself only as good as the registry's.
+ *
+ * Parenthesised, because it sits immediately after the date it qualifies and
+ * is a reading of that date rather than another value beside it.
  */
-const filingAge = (date: string | null | undefined) => {
+export const filingAge = (date: string | null | undefined) => {
   if (!date) return undefined
   const filed = new Date(date)
   if (Number.isNaN(filed.getTime())) return undefined
-  const months = Math.floor((Date.now() - filed.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
-  if (months < 1) return 'this month'
-  if (months < 24) return `${months} month${months === 1 ? '' : 's'} old`
-  return `${Math.floor(months / 12)} years old`
+
+  const now = new Date()
+  let months =
+    (now.getFullYear() - filed.getFullYear()) * 12 + (now.getMonth() - filed.getMonth())
+  // The day of the month has not come round yet, so the last month is not up.
+  if (now.getDate() < filed.getDate()) months -= 1
+  if (months < 0) return undefined
+
+  const years = Math.floor(months / 12)
+  const rest = months % 12
+  const say = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'}`
+
+  if (months < 1) return '(this month)'
+  if (years === 0) return `(${say(rest, 'month')} old)`
+  if (rest === 0) return `(${say(years, 'year')} old)`
+  return `(${say(years, 'year')}, ${say(rest, 'month')} old)`
 }
 
 /** One row per filing, named. Used where a check is about specific filings. */
@@ -404,7 +488,7 @@ const registrationRowsFor = (
     // the record being read rather than a fact about the company.
     ...byLabel(
       'Registration date',
-      (r) => r.registrationDate,
+      (r) => longDate(r.registrationDate),
       (r) => filingAge(r.registrationDate)
     )
   ]
@@ -474,16 +558,60 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       : []
 
   return [
-    ...field('Entity type', trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
-    ...field('Formation state', record.formation.state),
+    // Spelled out. `PLLC` is the thing this whole record turns on and it is
+    // four letters — see `entityFormLabel`.
+    ...field(
+      'Entity type',
+      entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType)
+    ),
+    ...field('Formation state', stateLabel(record.formation.state)),
     // The same date the domestic filing carries as its registration date; they
     // dedup to one row rather than stating it twice.
-    ...field('Formation date', record.formation.date, filingAge(record.formation.date)),
+    ...field(
+      'Formation date',
+      longDate(record.formation.date),
+      filingAge(record.formation.date)
+    ),
     ...field('Status', sentence(domestic?.status)),
     ...field('Sub status', sentence(domestic?.subStatus)),
     ...field('File number', domestic?.fileNumber)
     // No registered agent: an agent is a person, and People lists every one of
     // them with the filings that name them.
+  ]
+}
+
+/**
+ * What the record says this business is: the identity card's rows.
+ *
+ * The card used to build its own cells straight off the record, which made it
+ * the one surface in the report that stated a value without saying who says so
+ * — no source chips, no claim chip, a bare tick on the label. These are
+ * ordinary `AttributeRow`s, so it cites the way the Attributes tab and an
+ * insight's evidence cite, out of the one mapping the three of them share.
+ *
+ * Still a choice of facts rather than a fan-out over the insights: the filing
+ * facts an account is opened against. `Sub status` and `File number` are not
+ * among them — they are the Attributes tab's, and the card is the short list a
+ * reviewer reads before the report starts arguing.
+ *
+ * No TIN either. It is not a fact about what the business IS, and the check
+ * that matched it states it under the Identity paragraph with the name the IRS
+ * holds it against — the half of that sentence a card of values cannot carry.
+ */
+export const identityRows = (record: BusinessRecord): AttributeRow[] => {
+  const CARD_FIELDS = new Set(['Entity type', 'Formation state', 'Formation date', 'Status'])
+
+  return [
+    ...nameRows(record).filter((r) => r.label === 'DBA'),
+    ...formationRows(record).filter((r) => CARD_FIELDS.has(r.label)),
+    // The address the customer gave us, which is the one the account is opened
+    // against — the record carries others the state happens to list. Named for
+    // the role it plays here rather than "Address", which is what it is called
+    // in a list of every address on file.
+    ...addressRows(record, { submittedOnly: true })
+      .filter((r) => r.submitted)
+      .slice(0, 1)
+      .map((r) => ({ ...r, label: 'Office address' }))
   ]
 }
 
@@ -500,15 +628,51 @@ const peopleRows = (record: BusinessRecord): AttributeRow[] => {
   }))
 }
 
-/** Real TIN on a real record: show only the last four. */
-const tinRow = (record: BusinessRecord): AttributeRow => {
-  const tin = record.tin as { tin?: string } | null
-  return {
-    group: 'other' as const,
-    label: 'TIN',
-    value: tin?.tin ? `••••• ${tin.tin.slice(-4)}` : 'Not held',
-    source: 'IRS TIN record'
-  }
+/**
+ * What the IRS holds: the number, and the name it is held against.
+ *
+ * The number alone was half the record. The IRS match is a match of two things
+ * — a TIN and a business name — and "the IRS has a record for the submitted TIN
+ * and business name combination" is the insight it feeds; showing only the last
+ * four digits left the other half of that sentence with nothing behind it.
+ *
+ * Both are printed in full. The number was masked to its last four, which is
+ * the habit from consumer PII — but this is an EIN on a business the reviewer
+ * is deciding about, it is the value the customer submitted, and a reviewer
+ * checking it against a filing or a letter needs the whole thing. The name is
+ * in full for the same reason: comparing it against the legal name above takes
+ * every character of both.
+ */
+const tinRows = (record: BusinessRecord): AttributeRow[] => {
+  const tin = record.tin as { tin?: string; name?: string; mismatch?: boolean } | null
+
+  return [
+    {
+      group: 'other' as const,
+      label: 'TIN',
+      value: tin?.tin ?? 'Not held',
+      source: 'IRS TIN record',
+      // The customer gave us the number; the IRS holding a record against it is
+      // what makes it verified. The identity card has said so from the start —
+      // this row did not, so the same fact carried a mark in one place on the
+      // page and not in the other.
+      submitted: Boolean(tin?.tin) || undefined
+    },
+    ...(tin?.name
+      ? [
+          {
+            group: 'other' as const,
+            label: 'IRS name',
+            value: tin.name,
+            source: 'IRS TIN record',
+            // Said only when it is news. Two identical names side by side make
+            // the point without a label on it; a name the IRS holds that is NOT
+            // the one on the application is the finding.
+            qualifier: tin.mismatch ? '(not the submitted name)' : undefined
+          }
+        ]
+      : [])
+  ]
 }
 
 /** Brand names the API returns lowercase. Title-casing blindly gives "Bbb". */
@@ -900,23 +1064,109 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     // The domestic checks evidence the formation filing, and the formation rows
     // already are that filing read out — routing them through the foreign-filing
     // shape would have shown Delaware under a heading saying foreign.
-    if (key === 'sos_domestic' || key === 'sos_domestic_sub_status')
-      return domestic.length > 0
-        ? formationRows(record)
-        : [{ group: 'formation', label: 'Domestic registration', value: 'None on the record', source: '' }]
+    const noDomestic = [
+      { group: 'formation' as const, label: 'Domestic registration', value: 'None on the record', source: '' }
+    ]
+
+    // The standing check is about one field, so it shows that field: the state
+    // whose registry was asked, and what it answered. The entity type, the
+    // formation date and the file number are the same five rows every other
+    // formation check shows and none of them bear on standing.
+    //
+    // The absent value is the finding, so the row is emitted empty rather than
+    // dropped — `formationRows` omits a field the filing does not state, which
+    // left the one check about a missing value with no sign of what was
+    // missing. It says why it is empty in words: an em dash is a value nobody
+    // can read, and it left the reader to infer the reason from the statement
+    // above. This cell is now the only place the reason is stated — the gap's
+    // own prose no longer carries it, see AnalysisPanel's `SectionBody`.
+    if (key === 'sos_domestic_sub_status') {
+      if (domestic.length === 0) return noDomestic
+      const rows = formationRows(record)
+
+      return [
+        ...rows.filter((r) => r.label === 'Formation state'),
+        ...(rows.filter((r) => r.label === 'Sub status').length
+          ? rows.filter((r) => r.label === 'Sub status')
+          : [
+              {
+                group: 'formation' as const,
+                label: 'Sub status',
+                value: 'The state does not publish sub status',
+                source: REGISTRY,
+                evidenceOnly: true,
+                domesticOnly: true
+              }
+            ])
+      ]
+    }
+
+    if (key === 'sos_domestic') return domestic.length > 0 ? formationRows(record) : noDomestic
 
     // A status check is answered by the status and, where the state publishes
     // one, the sub-status that says why. A file number and a registration date
     // identify the filing; they do not bear on whether it is inactive.
     const STATUS_KEYS = new Set(['sos_active', 'sos_inactive', 'sos_unknown', 'sos_match'])
-    const rows = registrationRowsFor(filings.filter((r) => !domestic.includes(r)), record)
 
-    return inGroup(
-      'registration',
-      STATUS_KEYS.has(key)
-        ? rows.filter((r) => r.label === 'Status' || r.label === 'Sub status')
-        : rows
-    )
+    // A status check counts EVERY filing, the domestic one included — "1 of 1
+    // filings are active" is about that one filing, and dropping it left a
+    // company with a single domestic registration evidencing its status check
+    // with nothing at all.
+    //
+    // It still must not become an attribute: `formationRows` already states the
+    // domestic filing's status, so a second copy would put "Status · Active"
+    // under Registrations beside the identical row under Formation. So the
+    // domestic filing evidences the check and stays out of the tab, and the
+    // foreign filings — which nothing else states — do both.
+    const foreign = filings.filter((r) => !domestic.includes(r))
+    const home = filings.filter((r) => domestic.includes(r))
+    const rowsFor = (list: BusinessRecord['registrations']) =>
+      list.length ? registrationRowsFor(list, record) : []
+
+    // The match is between two things, so it evidences both: the address the
+    // customer gave us, and the filing in that address's state. Neither alone
+    // is the finding — "Active" says nothing about which state, and the address
+    // says nothing about what was found there.
+    if (key === 'sos_match')
+      return [
+        ...inGroup('address', addressRows(record, { submittedOnly: true })),
+        ...inGroup(
+          'registration',
+          filings.flatMap((r) => [
+            {
+              label: 'Filing state',
+              value: stateLabel(r.state) ?? 'Unknown',
+              source: '',
+              evidenceOnly: true,
+              matchValue: `Filing state:${r.state ?? ''}`,
+              registrations: [r]
+            },
+            ...(r.status
+              ? [
+                  {
+                    label: 'Status',
+                    value: sentence(r.status) as string,
+                    source: '',
+                    evidenceOnly: true,
+                    matchValue: `Status:${r.status}`,
+                    registrations: [r]
+                  }
+                ]
+              : [])
+          ])
+        )
+      ]
+
+    if (STATUS_KEYS.has(key)) {
+      const rows = [
+        ...rowsFor(foreign),
+        ...rowsFor(home).map((r) => ({ ...r, evidenceOnly: true }))
+      ].filter((r) => r.label === 'Status' || r.label === 'Sub status')
+
+      return inGroup('registration', rows.length > 0 ? rows : rowsFor(filings))
+    }
+
+    return inGroup('registration', registrationRowsFor(foreign, record))
   }
 
   /**
@@ -935,7 +1185,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
 
     const byType = new Map<string, BusinessRecord['registrations']>()
     for (const r of scope) {
-      const type = r.entityType ? r.entityType.toUpperCase() : 'Not stated on the filing'
+      const type = r.entityType
+        ? entityFormLabel(r.entityType.toUpperCase())
+        : 'Not stated on the filing'
       byType.set(type, [...(byType.get(type) ?? []), r])
     }
 
@@ -1457,6 +1709,11 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             href: p.url ?? undefined,
             source: 'Third-party profile',
             sources: [p.type ? profileName(p.type) : 'Third-party profile'],
+            // The customer named this page. The record has said so all along —
+            // `profile_discovery` filters on exactly this flag — but the row
+            // dropped it, so the one profile the customer gave us read like the
+            // five we went and found.
+            submitted: p.submitted || undefined,
             // Who the profile is for. We do not hold the page's own <title>,
             // and the subject is the useful headline anyway — the host is
             // already the byline and the URL is the line beneath.
@@ -1601,7 +1858,12 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   }
 
   // --- TIN -----------------------------------------------------------------
-  if (key === 'tin') return [tinRow(record), nameRow]
+  // The submitted name first, then what the IRS holds against it. The match is
+  // a match of two things, and it is read in the order the sentence states it:
+  // this is the name the customer gave us, this is the number they gave us, and
+  // this is the name the IRS has on that number. The legal name used to come
+  // last, which put the thing being compared after both of its comparands.
+  if (key === 'tin') return [nameRow, ...tinRows(record)]
 
   /*
    * Nothing, rather than the business name.

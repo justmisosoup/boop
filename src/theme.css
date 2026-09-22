@@ -50,9 +50,30 @@ body,
    Every text node in this prototype must be a core primitive; if something
    renders in a fallback face, the fix is to use the primitive, not to paint a
    font rule over the top. */
-.core-theme {
+/* The page's ground, and only the page's.
+ *
+ * Core scopes its tokens by putting `core-theme` on portaled content too — a
+ * hint, a hover card — so painting the canvas on every element carrying the
+ * class painted it on those as well. A tooltip came out in the page's own
+ * near-white with graphite text, over its own `bg-[…tooltip-bg]`, which is the
+ * one surface that is supposed to invert. Anything inside a popper is excluded
+ * and keeps the colours its own component set. */
+.core-theme:not([data-radix-popper-content-wrapper] *) {
   background-color: var(--core-color-surface-canvas);
   color: var(--core-color-text-primary);
+}
+
+.core-theme {
+
+  /* Tooltips in graphite, not in the deep teal core ships.
+   *
+   * Everything this report draws in a colour draws in graphite — the card
+   * frames, the dashed rules, the tick beside a verified value. A tooltip in
+   * #0b3139 was the one surface arriving in a second dark, close enough to
+   * read as a mistake rather than as a choice. The text stays white; the arrow
+   * follows the same token. */
+  --core-color-overlay-tooltip-bg: var(--core-color-text-primary);
+  --core-color-overlay-tooltip-text: var(--core-color-text-inverse);
 }
 
 /* The shimmer the run label wears while it is working.
@@ -127,6 +148,29 @@ body,
  * wherever the report draws one. The colour is `--rule-color` at the use site,
  * graphite where nothing sets it.
  */
+/* The claim chip.
+ *
+ * "Submitted" is the only chip on a row that is not a source — it is the
+ * customer's own word, and the one carrying the verdict on itself — so it is
+ * tinted where every other chip is the neutral grey. Off the graded midnight
+ * ramp (`src/core/theme.ts`): a wash of midnight-100 under midnight-800 text,
+ * which sits a step above the chip grey without becoming a status colour. Not
+ * green, not the lime accent: the report does not grade values, and a verified
+ * value is not a good value.
+ */
+.core-theme {
+  --chip-claim-bg: #e6ebeb;
+  --chip-claim-hover-bg: #ced6d7;
+  --chip-claim-fg: #0b3139;
+}
+
+.core-theme[data-theme='dark'],
+.dark .core-theme {
+  --chip-claim-bg: #1d4450;
+  --chip-claim-hover-bg: #2b5b68;
+  --chip-claim-fg: #cfd7d8;
+}
+
 .core-theme {
   --dash-rule-x: repeating-linear-gradient(
     to right,
@@ -148,6 +192,35 @@ body,
   background-position: right top, left bottom;
   background-repeat: no-repeat;
   background-size: 1px 100%, 100% 1px;
+}
+
+/* A row in a list card — insights, attributes, a source's payload — ruled the
+   way the grid's cells are. The grid splits two ways and these lists split one,
+   so only the horizontal gradient is painted, and the list hangs a pixel past
+   the card (`-mb-px`) so the last row's rule is clipped with the grid's. */
+.attribute-row {
+  background-image: var(--dash-rule-x);
+  background-position: left bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+}
+
+/* An insight in a stack of insights, divided by a SOLID rule.
+ *
+ * The dashed rule is this report's line for a value: a cell of the identity
+ * grid, an attribute under a statement, a word in the prose pointing at one.
+ * An insight is not a value — it is a reading, and a stack of them is a list of
+ * separate findings rather than one record split into fields. So the divisions
+ * between insights are solid, and the dashes begin where the attributes do:
+ * inside the row, under the chevron, where `.attribute-row-top` opens the
+ * evidence.
+ *
+ * Same colour and same pixel as the dashed rules, so only the style carries the
+ * distinction. The stack hangs a pixel past its card (`-mb-px`) so the last
+ * row's rule is clipped, exactly as `.attribute-row` does.
+ */
+.insight-row {
+  border-bottom: 1px solid var(--rule-color, var(--core-color-text-primary));
 }
 
 /* An attribute where the prose says it: the card's own rule, run under the
@@ -176,4 +249,14 @@ body,
   background-position: left center;
   background-repeat: repeat-x;
   background-size: 8px 1px;
+}
+
+/* The rule above an inset region — an insight's evidence under the statement it
+   belongs to. `.attribute-row` paints the line under a row; the statement above
+   this one is not a row, so nothing would draw the line between them. */
+.attribute-row-top {
+  background-image: var(--dash-rule-x);
+  background-position: left top;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
 }

@@ -26,3 +26,21 @@ const STATE_NAMES: Record<string, string> = {
 /** The state's name, or the code itself when it is not one we hold. */
 export const stateName = (code: string | null | undefined) =>
   (code && STATE_NAMES[code.toUpperCase()]) || code || 'Unknown state'
+
+/**
+ * A state as a value on the page: New York (NY).
+ *
+ * The record stores the two-letter code, which is what every other surface
+ * cites it by — "SOS · NY" on the chips, "NY 048266" on a licence — so the code
+ * has to stay. On its own as a value it made the reader expand an abbreviation
+ * to read a filing fact, and the state a company was formed in is one of the
+ * few facts on the card that a reviewer weighs rather than scans.
+ *
+ * An unknown code prints alone: inventing a name for it would be worse than
+ * the abbreviation.
+ */
+export const stateLabel = (code: string | null | undefined) => {
+  if (!code) return undefined
+  const name = STATE_NAMES[code.toUpperCase()]
+  return name ? `${name} (${code.toUpperCase()})` : code
+}

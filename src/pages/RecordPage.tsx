@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router'
 
 import {
   ActionButton,
   ChatSources,
+  EmptyState,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuTrigger,
   MetaChip,
   MutedText,
   Surface,
@@ -22,6 +28,7 @@ import { AnalysisPanel } from '../components/AnalysisPanel'
 import { AssessmentIndex } from '../components/AssessmentIndex'
 import { PanelGroup } from '../components/PanelGroup'
 import { BusinessIdentity } from '../components/BusinessIdentity'
+import { IdentityScoreCard } from '../components/IdentityScore'
 import { BusinessLede } from '../components/BusinessLede'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourcesTab, sourcesFor } from '../components/SourcesTab'
@@ -58,7 +65,15 @@ const CONTEXT = [
  * that had to be right at every value it could take. One number, wide enough
  * that a source card is not a column two words across.
  */
-const PANEL_W = 480
+/**
+ * No reference panel any more.
+ *
+ * The insights, attributes and sources are tabs of the report rather than a
+ * column beside it, so the document has the window. The variable stays because
+ * the composer and the document wrapper both measure against it; at zero they
+ * simply run to the right edge.
+ */
+const PANEL_W = 0
 
 /**
  * One business's assessment.
@@ -79,9 +94,8 @@ export function RecordPage() {
 }
 
 function Record({ record: selected }: { record: BusinessRecord }) {
-  const derived = useMemo(() => deriveResults(selected), [selected])
-  const results: Derived[] = useMemo(() => derived, [derived])
-  const undetermined = derived.filter((r) => r.reasonUndetermined).length
+  /** What the business is now. What a new report is run against. */
+  const live = useMemo(() => deriveResults(selected), [selected])
 
   // The skill that runs on arrival. Not a special case: it is the same thing a
   // reader could have dropped into the composer themselves.
@@ -107,7 +121,26 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         .map((x) => ({ id: x.id, name: x.name, instructions: x.instructions })),
     [agent.skills, agent.disabled]
   )
-  const analysis = useAnalysis(selected, results)
+  const analysis = useAnalysis(selected, live)
+
+  /**
+   * Everything on this page is the report being read.
+   *
+   * The assessment and the three tabs used to come from different places — the
+   * prose from the store, the insights and attributes computed fresh from
+   * whatever the last pull fetched — so an older report's citations resolved
+   * against newer data than the report had ever seen. They resolve from one
+   * place now: the snapshot the report was written from.
+   *
+   * A report kept before snapshots existed has none, and falls back to the live
+   * record, which is what the page always did. No report at all is the empty
+   * state: `view` is null and nothing downstream has anything to render.
+   */
+  const view = analysis.selected
+    ? (analysis.selected.snapshot ?? { recordId: selected.id, record: selected, results: live })
+    : null
+  const record = view?.record ?? selected
+  const results: Derived[] = view?.results ?? []
 
   /**
    * What the report was read from, at the head of the page.
@@ -119,20 +152,16 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * was read against. Nothing to say before a run has happened, so it is not
    * rendered then.
    */
-  const latestRun = analysis.versions[analysis.versions.length - 1]
+  const latestRun = analysis.selected
   // A held report carries no skills, so the workflow the page knows about
   // stands in for it — otherwise a reload loses the name.
-  const runSkills = latestRun?.skills?.length
-    ? latestRun.skills
-    : standing?.name
-      ? [standing.name]
-      : []
+  const runSkills = standing?.name ? [standing.name] : []
   const analysedWith = latestRun ? (
     // The roll-up, not a chip: core's own `ChatSources`, which stacks the
     // sources' tiles and opens to the list.
     <ChatSources
       align="end"
-      label="Analysed with"
+      label="Processed"
       sources={[
         ...runSkills.map((name) => ({
           id: `skill:${name}`,
@@ -142,9 +171,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         })),
         {
           id: 'middesk-context',
-          label: 'Middesk context',
-          title: 'Middesk context',
-          annotation: 'The business record this run was read against'
+          label: 'Middesk Context',
+          title: 'Middesk Context',
+          annotation: 'Industries, entities, jurisdictions, ages...'
         }
       ]}
     />
@@ -161,9 +190,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * records.
    */
   const { presentSections, sectionSteps } = useMemo(() => {
+    // Every turn of the report being read, not just the last one. Reading the
+    // last one alone, the index collapsed to `lede` + `answer` the moment a
+    // question landed — the report's own sections were still on the page.
     const live = [
       ...(analysis.draft?.sections ?? []),
-      ...(analysis.active?.result.sections ?? [])
+      ...analysis.versions.flatMap((v) => v.result.sections)
     ]
     const present = new Set<string>()
     const steps = new Map<string, Array<{ label: string }>>()
@@ -198,21 +230,51 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     // on the page, so the index's first entry is never pending.
     present.add('lede')
     return { presentSections: present, sectionSteps: steps }
-  }, [analysis.draft, analysis.active, results])
+  }, [analysis.draft, analysis.versions])
+
+  /**
+   * The assessments the score is broken down by, and what each one cited.
+   *
+   * The score card's cells used to be five buckets of `identityScore`'s own
+   * invention, beside a report organised into the customer's assessments — two
+   * vocabularies for one record. These are the sections themselves: the
+   * assessment's name, and the union of every insight its prose and its gaps
+   * point at, which is what that assessment actually rested on.
+   */
+  const scoreAreas = useMemo(() => {
+    const version = analysis.selected
+    if (!version) return []
+    const named = new Map((version.policy ?? policy).map((p) => [p.id, p.name]))
+
+    return version.result.sections
+      .filter((section) => named.has(section.id))
+      .map((section) => ({
+        id: section.id,
+        name: named.get(section.id) as string,
+        insightIds: [
+          ...new Set([
+            ...section.body.flatMap((b) => b.cites ?? []),
+            ...(section.gaps ?? []).flatMap((g) => g.cites ?? [])
+          ])
+        ]
+      }))
+  }, [analysis.selected, policy])
 
   /** What the index lists: the pillars this report is laid out in. */
   const reportSections = useMemo(() => {
-    const live = analysis.waiting ? analysis.waitingPolicy : (analysis.active?.policy ?? policy)
+    const live = analysis.waiting
+      ? analysis.waitingPolicy
+      : (analysis.selected?.policy ?? policy)
     // Same order the report is laid out in — recommendation first. The index
     // has to match the page or clicking it sends the reader to the wrong place.
     return [
       // What the report opens with, before it argues anything: the business
       // itself. The index is a map of the page, and the page starts here.
       { id: 'lede', heading: selected.name },
-      { id: 'recommendation', heading: 'Recommendations' },
+      { id: 'recommendation', heading: 'Approve' },
       ...live.map(({ id, name }) => ({ id, heading: name }))
     ]
-  }, [analysis.waiting, analysis.waitingPolicy, analysis.active, policy, selected.name])
+  }, [analysis.waiting, analysis.waitingPolicy, analysis.selected, policy, selected.name])
 
   /*
    * The report is static on arrival.
@@ -234,13 +296,20 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * but counting those would say a business has 63 insights when half of them
    * are the absence of one.
    */
-  const reported = useMemo(() => derived.filter((r) => !r.notReported), [derived])
+  const reported = useMemo(() => results.filter((r) => !r.notReported), [results])
 
-  const categories = useMemo(() => categoriesOf(selected), [selected])
+  const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
+  /**
+   * Guarded on the report, not on the row count.
+   *
+   * `attributeRowsByGroup` seeds a business's licences before it looks at the
+   * insight list, so a business with a licence and no report would count
+   * attributes it has no report to show them in.
+   */
   const attributeCount = useMemo(
-    () => countAttributes(selected, results, groupFor),
-    [selected, results, groupFor]
+    () => (view ? countAttributes(record, results, groupFor) : 0),
+    [view, record, results, groupFor]
   )
   const groupOf = (result: (typeof results)[number]) => groupFor(result.insightId)
 
@@ -261,6 +330,79 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * was defined. Kept as state rather than a constant because the value is
    * still a product decision someone may want to move.
    */
+  /**
+   * A report, named by when it was asked.
+   *
+   * A date, not "2 days ago": two reports on one business can be months apart,
+   * and the question the picker answers is which reading you are looking at,
+   * not how recent it is. A report kept before this was recorded has no date to
+   * print.
+   */
+  const reportLabel = (r: { name: string }) => r.name
+
+  /** When it was run, for telling two readings of the same assessment apart. */
+  const reportDate = (r: { at: string }) =>
+    r.at
+      ? new Date(r.at).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+      : ''
+
+  /**
+   * Which report you are reading, and the way to another.
+   *
+   * On the document beside its tabs, not up in the page chrome: it names the
+   * thing the tabs are faces of. Switch it and the assessment and all three
+   * lists change together, because they all resolve from it.
+   */
+  /**
+   * Run the standing workflow, from where the report would be.
+   *
+   * The same composition the composer sends — its own brief and the parts under
+   * it — so the run this starts and the run the reader could have sent by hand
+   * are the same run.
+   */
+  const runStanding = () => {
+    if (!standing) return
+    const composed = composeAssessment(standing, agent.skills, agent.disabled ?? [])
+    if (!composed) return
+    analysis.run(
+      composed.prompt,
+      analysis.pinned,
+      [],
+      'report',
+      [standing.name],
+      '',
+      composed.assessments.length > 0 ? composed.assessments : policy
+    )
+  }
+
+  /** Switching report is landing on a different page: start at the top of it,
+   *  with nothing revealed from the one before. */
+  const selectReport = (id: string) => {
+    analysis.select(id)
+    setRevealed([])
+    panelRef.current?.scrollTo({ top: 0 })
+  }
+
+  /**
+   * What the tabs say when there is no report.
+   *
+   * These are a report's insights, attributes and sources, so without one there
+   * is nothing to show — not an empty record, an unassessed one. Guarded on the
+   * report rather than on a row count: `attributeRowsByGroup` seeds a
+   * business's licences before it reads the insight list, so counting rows
+   * would have put attributes under a business nobody has assessed.
+   */
+  const nothingYet = (what: string) => (
+    <EmptyState
+      title="No report yet"
+      description={`Run the assessment to see the ${what} it read.`}
+    />
+  )
+
   const [filter] = useState<'all' | 'found' | 'not_found'>('found')
 
   const visible = useMemo(
@@ -277,11 +419,94 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   })).filter((g) => g.rows.length > 0)
   const [dockOpen, setDockOpen] = useState(true)
   const [revealed, setRevealed] = useState<string[]>([])
-  // The reference panel's own tab. 'analysis' was the default while the report
-  // was a tab beside these; now that it has its own column, that value matches
-  // nothing here and the panel rendered empty.
-  const [tab, setTab] = useState('insights')
-  const panelRef = useRef<HTMLElement | null>(null)
+  /**
+   * Which face of the report is on screen.
+   *
+   * The assessment and the three lists are the same object — one report, read
+   * four ways — so they are tabs of one document rather than a document with a
+   * reference panel bolted to its right. The assessment is what a report is
+   * for, so it opens on it.
+   */
+  const [tab, setTab] = useState('assessment')
+  const panelRef = useRef<HTMLDivElement | null>(null)
+
+  /**
+   * The assessment tab, which is also the report control.
+   *
+   * It carries the name of the assessment that produced what you are reading,
+   * and the chevron is part of the tab rather than a second control beside it:
+   * clicking the tab you are already on opens the other readings. A dropdown
+   * across the row named the same thing twice, at a distance from the tab it
+   * described.
+   */
+  const assessmentTrigger = (
+    <TabsTrigger
+      value="assessment"
+      className={cn(
+        // Radix's menu writes `data-state="closed"` onto the trigger it shares
+        // with the tab, which is the attribute the tab's own active styling
+        // keys off — so opening the menu made the tab stop looking selected.
+        // Asserted here instead of inferred.
+        tab === 'assessment' &&
+          'font-semibold !text-[var(--core-color-tab-fg-active)] shadow-[inset_0_-2px_0_0_var(--core-color-tab-indicator)]'
+      )}
+    >
+      Assessment
+      {analysis.selected && (
+        <ChevronDown
+          aria-hidden="true"
+          className="shrink-0 opacity-60"
+          size={14}
+          strokeWidth={1.75}
+        />
+      )}
+    </TabsTrigger>
+  )
+
+  const assessmentTab =
+    analysis.selected && tab === 'assessment' ? (
+      <Menu>
+        <MenuTrigger asChild>{assessmentTrigger}</MenuTrigger>
+        <MenuContent align="start" className="w-64">
+          {/* What the list is, before what is in it: these are the assessments
+              this business has had run on it, each with when it ran. */}
+          <MenuLabel>Assessments</MenuLabel>
+          {/* Newest first: the one you almost always want is at the top, and
+              the order they are kept in is the order they were written. A radio
+              dot beside each one made a list of five assessments read as a
+              settings form — the one being read is the one set in the heavier
+              weight, which is how the tabs above say the same thing. */}
+          {[...analysis.reports].reverse().map((r) => (
+              <MenuItem
+                key={r.id}
+                onSelect={() => selectReport(r.id)}
+                // The one being read is the one held: a filled row, the way a
+                // selected row reads everywhere else.
+                className={cn(r.id === analysis.selected?.id && 'bg-muted')}
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate">{reportLabel(r)}</span>
+                  {/* The date tells two runs of the same assessment apart; the
+                      follow-up count says how much was asked of this one. */}
+                  <MutedText className="text-caption">
+                    {[
+                      reportDate(r),
+                      r.questions.length > 0
+                        ? `${r.questions.length} follow-up${r.questions.length === 1 ? '' : 's'}`
+                        : ''
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </MutedText>
+                </span>
+              </MenuItem>
+            ))}
+        </MenuContent>
+      </Menu>
+    ) : (
+      assessmentTrigger
+    )
+
   /**
    * A tab starts at its own top.
    *
@@ -301,8 +526,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
 
   // A citation has to land somewhere: switch to the raw insights, then scroll.
   const recordSources = useMemo(
-    () => sourcesFor(selected, results, groupFor),
-    [selected, results, groupFor]
+    () => (view ? sourcesFor(record, results, groupFor) : []),
+    [view, record, results, groupFor]
   )
   const sourceCount = recordSources.length
 
@@ -405,7 +630,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               <Text size="sm" className="shrink-0 truncate font-medium">
                 {selected.name}
               </Text>
-              <MutedText className="truncate text-caption">{describe(selected)}</MutedText>
+              <MutedText className="truncate text-caption">{describe(record)}</MutedText>
             </div>
           </div>
         </header>
@@ -438,23 +663,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           * every layout change knocked one of them out of line with the other
           * two. One element holds all three now, and it IS the white.
           *
-          * `top-[57px]` is the fixed header's own bottom edge, so the white
+          * `top-[45px]` is the fixed header's own bottom edge, so the white
           * starts below the bar rather than running underneath it, and
           * `pt-[23px]` keeps the rail and the report on the baseline they
           * already sit on.
           */}
-        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-[57px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
-        {/* The index mirrors the report: what is on the page, what is being
-            written, what has not started. Taken from the sections actually
-            rendered rather than from the run's own bookkeeping, so it is right
-            for a live run and for a replay alike. */}
-        <AssessmentIndex
-          sections={reportSections}
-          present={presentSections}
-          steps={sectionSteps}
-          running={analysis.waiting}
-        />
-
+        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-[45px] wide:bottom-0 wide:right-[var(--panel-w)] wide:z-0 wide:flex wide:justify-center wide:bg-card wide:px-6">
         {/* The report's measure: 800 wanted, 1000 at most.
             `min-w-[800px]` was a hard floor, so at a narrow window with the
             panel dragged out the report ran past the white and under the
@@ -471,7 +685,73 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             * all. `pb-40` is the composer's clearance, now inside the thing the
             * composer sits over.
             */}
-          <div className="relative z-10 min-w-0 rounded-card bg-card px-8 py-7 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:px-8 wide:pb-40 wide:pt-[51px] wide:overflow-y-auto panel-scroll">
+          {/*
+            * The report's own tabs.
+            *
+            * The assessment and the insights, attributes and sources it read
+            * are one thing — a report — and they used to be two columns that
+            * did not know about each other. They are faces of the same document
+            * now, switched from its head, with the report they belong to named
+            * beside them.
+            */}
+          <TabsRoot
+            value={tab}
+            onValueChange={showTab}
+            className="flex min-h-0 flex-col wide:flex-1"
+          >
+            {/*
+              * Above the scroller, not sticky inside it.
+              *
+              * Sticky positions against the scrollport's padding edge, so a bar
+              * inside a container with `pt-[51px]` sat 51px down and the report
+              * scrolled through the gap above it — content passing over the
+              * tabs. Outside the scroller it cannot be passed at all.
+              */}
+            <div className="flex shrink-0 items-center gap-4 border-b border-solid border-border bg-card px-8 pt-3">
+                <TabsList className="min-w-0 flex-1 border-0">
+                  {assessmentTab}
+                  <TabsTrigger value="insights">
+                    Insights
+                    <TabsCount>{reported.length}</TabsCount>
+                  </TabsTrigger>
+                  <TabsTrigger value="attributes">
+                    Attributes
+                    <TabsCount>{attributeCount}</TabsCount>
+                  </TabsTrigger>
+                  <TabsTrigger value="sources">
+                    Sources
+                    <TabsCount>{sourceCount}</TabsCount>
+                  </TabsTrigger>
+                </TabsList>
+            </div>
+
+            {/*
+              * The report scrolls itself, under its own tabs.
+              *
+              * `pb-40` is the composer's clearance, inside the thing the
+              * composer sits over.
+              */}
+            <div
+              ref={panelRef}
+              className="relative z-10 min-w-0 rounded-card bg-card px-8 pb-7 pt-6 wide:min-h-0 wide:flex-1 wide:rounded-none wide:bg-transparent wide:pb-40 wide:overflow-y-auto panel-scroll"
+            >
+              <TabsContent value="assessment">
+                {/* The contents belong to the assessment, not to the page.
+                    They list that assessment's own sections, so they sit beside
+                    its prose and go away with it when another tab is on. */}
+                <div className="flex">
+                  {/* The marks sit in the assessment's own left margin — a
+                      zero-width column, so the prose below the tabs starts
+                      exactly where the tabs do rather than 48px in from them. */}
+                  <div className="relative w-0">
+                  <AssessmentIndex
+                    sections={view || analysis.waiting ? reportSections : []}
+                    present={presentSections}
+                    steps={sectionSteps}
+                    running={analysis.waiting}
+                  />
+                  </div>
+                  <div className="min-w-0 flex-1">
             {/*
               * The lede, at the head of the report and at every width.
               *
@@ -490,18 +770,54 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * but the heading here is the name the lede itself opens with,
               * which is usually the one the business trades under.
               */}
-            <header id="section-lede" className="mb-8 scroll-mt-6">
-              <BusinessLede text={lede} name={selected.name} trailing={analysedWith} />
+            {/* No bottom margin. Everything that can follow the lede — the
+                score card, an assessment section, the empty state — brings its
+                own 40, and the header's 32 on top of that made the gap under
+                the lede the widest on the page. */}
+            <header id="section-lede" className="scroll-mt-6">
+              <BusinessLede text={lede} name={selected.name} />
             </header>
             {/* What the record holds about the business, before the report
                 starts reading it. Attributes only — the filing facts an account
                 is opened against. */}
-            <BusinessIdentity record={selected} />
+            {/*
+              * No report, where the report goes.
+              *
+              * The three tabs each say this too, but a reader looking at the
+              * document itself was getting a name, a paragraph and then 600px
+              * of nothing — a page that reads as broken rather than as one
+              * nobody has assessed yet. The action is the same run the composer
+              * sends, put where the absence is.
+              */}
+            {!view && !analysis.waiting && (
+              <EmptyState
+                className="mt-10"
+                title="No report yet"
+                description={`Nobody has assessed ${selected.name} yet. Running ${standing?.name ?? 'the assessment'} reads the record and writes the report, with the insights, attributes and sources it read kept alongside it.`}
+                actionLabel={standing ? `Run ${standing.name}` : undefined}
+                onAction={standing ? runStanding : undefined}
+              />
+            )}
             <AnalysisPanel
               versions={analysis.versions}
+              // Under the recommendations: what to do first, then what the
+              // record says about the business you are doing it to.
+              identity={
+                view ? <BusinessIdentity record={record} onJumpToSource={jumpToSource} /> : null
+              }
+              score={
+                view ? (
+                  <IdentityScoreCard
+                    record={record}
+                    results={results}
+                    areas={scoreAreas}
+                    trailing={analysedWith}
+                  />
+                ) : null
+              }
               business={selected.name}
-              entityLine={describe(selected)}
-              record={selected}
+              entityLine={describe(record)}
+              record={record}
               results={results}
               // The count the Insights tab shows — what this business actually
               // has — not every check the catalog defines.
@@ -520,42 +836,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               slow={analysis.slow}
               error={analysis.error}
               onJumpToGroup={jumpToGroup}
-              superseded={analysis.superseded}
+              onJumpToSource={jumpToSource}
             />
-          </div>
-        </div>
+                  </div>
+                          </div>
+              </TabsContent>
 
-          {/* Fixed, not sticky: sticky still travels with the page until it
-              catches, so the record moved while the report it belongs to moved
-              — two things scrolling past each other. It holds still now, and
-              scrolls inside itself. */}
-
-          <aside
-            ref={panelRef}
-            // A docked side panel, not a column floating over the page: flush
-            // to the window's right edge, running from under the fixed bar to
-            // the bottom, on its own surface with a left border that IS the
-            // boundary between the record and the report. The horizontal inset
-            // is NOT here — it is on the tab strip and each tab's contents, so
-            // the pinned strip spans the panel's full width instead of stopping
-            // 16px short of each edge.
-            className="mt-10 min-w-0 wide:fixed wide:right-0 wide:top-[57px] wide:bottom-0 wide:mt-0 wide:flex wide:w-[var(--panel-w)] wide:flex-col wide:overflow-y-auto wide:border-l wide:border-solid wide:border-border wide:bg-background panel-scroll">
-            <TabsRoot value={tab} onValueChange={showTab} className="flex flex-col">
-              <TabsList className="sticky top-0 z-10 shrink-0 bg-background px-4">
-                <TabsTrigger value="insights">
-                  Insights
-                  <TabsCount>{reported.length}</TabsCount>
-                </TabsTrigger>
-                <TabsTrigger value="attributes">
-                  Attributes
-                  <TabsCount>{attributeCount}</TabsCount>
-                </TabsTrigger>
-                <TabsTrigger value="sources">
-                  Sources
-                  <TabsCount>{sourceCount}</TabsCount>
-                </TabsTrigger>
-              </TabsList>
-          <TabsContent value="insights" className="space-y-4 px-4 pt-4">
+          <TabsContent value="insights" className="space-y-4">
+            {!view && nothingYet('insights')}
             {/* The Found/Not found/All control is gone from the panel.
                 The filter it drove is still applied — `filter` is held at
                 `found`, so what shows is what the record establishes — but it
@@ -569,23 +857,18 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 collapsible for putting away a group you have finished with,
                 but closed is not the resting state. */}
             {grouped.map((group) => (
-              <PanelGroup
-                key={group.id}
-                id={`group-${group.id}`}
-                label={group.label}
-                count={group.rows.length}
-                defaultOpen
-                // A citation landed in this group: open it, or the rows it was
-                // pointing at are behind a closed heading.
-                openWhen={group.rows.some((r) => revealed.includes(r.insightId))}
-              >
-                <Surface variant="default" padding="none" className="overflow-hidden">
-                  <div className="divide-y divide-solid divide-border">
+              <PanelGroup key={group.id} id={`group-${group.id}`} label={group.label}>
+                <Surface
+                  variant="default"
+                  padding="none"
+                  className="overflow-hidden rounded-none border-text-primary"
+                >
+                  <div className="-mb-px">
                     {group.rows.map((r) => (
                       <InsightRow
                         key={r.insightId}
                         result={r}
-                        record={selected}
+                        record={record}
                         reveal={revealed.includes(r.insightId)}
                         onJumpToSource={jumpToSource}
                       />
@@ -597,26 +880,32 @@ function Record({ record: selected }: { record: BusinessRecord }) {
 
           </TabsContent>
 
-          <TabsContent value="attributes" className="space-y-6 px-4 pt-4">
+          <TabsContent value="attributes" className="space-y-6">
+            {!view && nothingYet('attributes')}
+            {view && (
             <AttributesTab
-              record={selected}
+              record={record}
               results={results}
               groupFor={groupFor}
               onJumpToSource={jumpToSource}
             />
+            )}
           </TabsContent>
 
-          <TabsContent value="sources" className="space-y-4 px-4 pt-4">
+          <TabsContent value="sources" className="space-y-4">
+            {!view && nothingYet('sources')}
+            {view && (
             <SourcesTab
-              record={selected}
+              record={record}
               results={results}
               groupFor={groupFor}
               focus={sourceFocus}
             />
+            )}
           </TabsContent>
-
-            </TabsRoot>
-          </aside>
+            </div>
+          </TabsRoot>
+        </div>
         </div>
       </div>
 
@@ -638,7 +927,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       <AnalysisDock
         open={dockOpen}
         setOpen={setDockOpen}
-        onSend={({ prompt, assessments, attachments, skills, typed, kind }) =>
+        // Which report a question joins. A report ignores it and starts its own.
+        report={
+          analysis.selected
+            ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
+            : null
+        }
+        onSend={({ prompt, assessments, attachments, skills, typed, kind, target }) =>
           analysis.run(
             prompt,
             analysis.pinned,
@@ -648,7 +943,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             typed,
             // What the composer actually put in the box, so a disabled part or
             // an edit between render and send cannot drift from what runs.
-            assessments.length > 0 ? assessments : policy
+            assessments.length > 0 ? assessments : policy,
+            target
           )
         }
         // Switched off means not offered: the menu lists what can be run, and
@@ -662,7 +958,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         onUpdateSkill={(id, name, instructions) => void agent.updateSkill(id, name, instructions)}
         waiting={analysis.waiting}
         pinned={analysis.pinned}
-        results={results}
+        // Live, not the report's: the composer is what runs the next one.
+        results={live}
         onUnpin={(id) => analysis.unpin(id)}
         hasAnalysis={analysis.versions.length > 0}
       />

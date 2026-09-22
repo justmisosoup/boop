@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 
-import { Heading, MutedText, Surface, Tag, Text } from '@/core'
+import { MutedText, Surface, Tag, Text } from '@/core'
 
 import { PanelGroup } from './PanelGroup'
 
@@ -10,7 +10,7 @@ import { GROUPS, type GroupId } from '../lib/groups'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
 import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { profileName } from '../lib/attributes'
+import { longDate, profileName } from '../lib/attributes'
 import { stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 
@@ -18,7 +18,12 @@ import { useScreenshotViewer } from './ScreenshotViewer'
  *  chips, where "Name and formation" does not fit; a heading has the room, and
  *  the two tabs disagreeing about what a group is called is worse than long. */
 const GROUP_LABEL = new Map(GROUPS.map((g) => [g.id, g.label]))
-import { WEBSITE_METADATA, attributeRowsByGroup, sourceLabel } from './AttributesTab'
+import { attributeRowsByGroup } from './AttributesTab'
+import { AttributeCells, cell } from './AttributeGrid'
+import { cellsFromRows } from './attributeCells'
+import { CardLabelRow } from './CardLabel'
+import { DisclosureChevron } from './DisclosureChevron'
+import { WEBSITE_METADATA, sourceLabel } from '../lib/sourceLabels'
 
 type Registration = BusinessRecord['registrations'][number]
 
@@ -412,65 +417,41 @@ const status = (r: Registration) => sentence(r.status ?? 'unknown')
 
 const standing = (r: Registration) => (r.subStatus ? sentence(r.subStatus) : 'Unknown')
 
-const Field = ({
-  label,
-  lead,
-  trailing,
-  children
-}: {
-  label: string
-  /** Identifiers in a column of their own, so four codes on one row and one on
-   *  the next still line up against each other. */
-  lead?: string
-  /** Held hard right — a qualifier on the value, not part of it. */
-  trailing?: string
-  children: React.ReactNode
-}) => (
-  <div className="flex gap-2">
-    <MutedText className="w-36 shrink-0 text-body font-semibold">{label}</MutedText>
-    {lead !== undefined && (
-      <Text size="md" className="w-44 shrink-0 break-words tabular-nums">
-        {lead}
-      </Text>
-    )}
-    <Text size="md" className="min-w-0 flex-1 break-words">
-      {children}
-    </Text>
-    {trailing && <MutedText className="shrink-0 text-body">{trailing}</MutedText>}
-  </div>
-)
-
 /** The filing's own payload, verbatim — what the API returned about it. */
 const RegistrationPayload = ({ r }: { r: Registration }) => (
-  // No top rule: this is the first thing in the card body, which already carries
-  // one. Two rules a line apart read as an empty row above the payload.
-  <div className="grid gap-1">
-    {/* Identical on every filing. Each registration states its own name,
-        entity type, agent and standing, so nothing here depends on whether the
-        filing is the domestic one — that is what the jurisdiction chip says,
-        and it is the only thing that should differ between these cards. */}
-    {/* Labels are the registration object's own field names — `name`,
-        `entity_type`, `sub_status`, `file_number`, `registration_date`,
-        `source` — read out. Renaming them ("Filed as", "Standing", "Registry")
-        put words on screen the source never used, and nothing downstream could
-        be traced back to the field it came from. */}
-    <Field label="Name">{r.name || 'Unknown'}</Field>
-    <Field label="Entity type">{r.entityType ?? 'Unknown'}</Field>
-    {/* Also on the header as a chip. It stays here because this block is the
-        registration object read out, and dropping a field from it because the
-        header happens to summarise it makes the record incomplete. */}
-    <Field label="Jurisdiction">{r.jurisdiction ?? 'Unknown'}</Field>
-    <Field label="Status">{status(r)}</Field>
-    <Field label="Sub status">{standing(r)}</Field>
-    {/* The registered agent is not a payload field here — they are a person on
-        the record, so they appear under People with the filings that name them,
-        the same as any officer. */}
-    {/* Officers and addresses are not repeated here. They are the filing's raw
-        arrays, and the section below lists the same people and addresses as
-        attributes — with their titles, their labels, and the normalisation the
-        rest of the record uses. Printing both said everything twice, the
-        second time worse. */}
-  </div>
+  /* No label above it: this is the first thing in the card body, and the card's
+     own title already says whose filing it is.
+
+     Identical on every filing. Each registration states its own name, entity
+     type, agent and standing, so nothing here depends on whether the filing is
+     the domestic one — that is what the jurisdiction chip says, and it is the
+     only thing that should differ between these cards.
+
+     Labels are the registration object's own field names — `name`,
+     `entity_type`, `sub_status`, `file_number`, `registration_date`, `source` —
+     read out. Renaming them ("Filed as", "Standing", "Registry") put words on
+     screen the source never used, and nothing downstream could be traced back
+     to the field it came from.
+
+     Jurisdiction is also on the header as a chip. It stays here because this
+     block is the registration object read out, and dropping a field from it
+     because the header happens to summarise it makes the record incomplete.
+
+     The registered agent is not a payload field: they are a person on the
+     record, so they appear under People with the filings that name them, the
+     same as any officer. Officers and addresses are not repeated either — the
+     section below lists the same people and addresses as attributes, with their
+     titles and the normalisation the rest of the record uses. Printing both
+     said everything twice, the second time worse. */
+  <AttributeCells
+    items={[
+      cell('Name', r.name || 'Unknown'),
+      cell('Entity type', r.entityType ?? 'Unknown'),
+      cell('Jurisdiction', r.jurisdiction ?? 'Unknown'),
+      cell('Status', status(r)),
+      cell('Sub status', standing(r))
+    ]}
+  />
 )
 
 /**
@@ -489,18 +470,19 @@ const SourceRecords = ({ refs }: { refs: SourceRef[] }) => {
   if (shown.length === 0) return null
 
   return (
-    <div className="mt-4">
-      <Heading level={4}>{shown.length > 1 ? 'Records' : 'Record'}</Heading>
+    <>
       {shown.map((entries, i) => (
-        <div key={i} className="mt-1 grid gap-1 border-t border-solid border-border pt-2 first:border-0 first:pt-0">
-          {entries.map(([k, v]) => (
-            <Field key={k} label={sentence(k)}>
-              {String(v)}
-            </Field>
-          ))}
-        </div>
+        <Fragment key={i}>
+          {/* Numbered where there are several: the rule between two records is
+              the same rule as the one between two fields, so without a label
+              the second record reads as more fields on the first. */}
+          <CardLabelRow as="h4">
+            {shown.length > 1 ? `Record ${i + 1}` : 'Record'}
+          </CardLabelRow>
+          <AttributeCells items={entries.map(([k, v]) => cell(sentence(k), String(v)))} />
+        </Fragment>
       ))}
-    </div>
+    </>
   )
 }
 
@@ -569,14 +551,16 @@ const CaptureStrip = ({ captures }: { captures: Capture[] }) => {
   if (captures.length === 0) return null
 
   return (
-    <div className="mt-4">
-      <Heading level={4}>{captures.length > 1 ? 'Captures' : 'Capture'}</Heading>
-      <div className="mt-2 flex flex-wrap gap-3">
+    <>
+      <CardLabelRow as="h4">{captures.length > 1 ? 'Captures' : 'Capture'}</CardLabelRow>
+      {/* Outside the grid: a 176x112 thumbnail is not a label over a value, and
+          a cell tall enough to hold one would drag every cell beside it. */}
+      <div className="attribute-row flex flex-wrap gap-3 px-4 py-3">
         {captures.map((capture) => (
           <CaptureThumb key={capture.label + (capture.src ?? '')} capture={capture} />
         ))}
       </div>
-    </div>
+    </>
   )
 }
 
@@ -632,25 +616,31 @@ const StreetViewCaptures = ({ items }: { items: Supplied[] }) => {
 
 /** Where the filing sits in the registry, rather than what it says. */
 const FilingDetails = ({ r }: { r: Registration }) => (
-  <div className="mt-4">
-    <Heading level={4}>Filing details</Heading>
-    <div className="mt-1 grid gap-1">
-      <Field label="File number">{r.fileNumber ?? 'Unknown'}</Field>
-      <Field label="Registration date">{r.registrationDate ?? 'Unknown'}</Field>
-      {r.sourceUrl && (
-        <Field label="Source">
-          <a
-            href={r.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
-          >
-            {r.sourceUrl}
-          </a>
-        </Field>
-      )}
-    </div>
-  </div>
+  <>
+    <CardLabelRow as="h4">Filing details</CardLabelRow>
+    <AttributeCells
+      items={[
+        cell('File number', r.fileNumber ?? 'Unknown'),
+        cell('Registration date', longDate(r.registrationDate) ?? 'Unknown'),
+        ...(r.sourceUrl
+          ? [
+              cell(
+                'Source',
+                <a
+                  href={r.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+                >
+                  {r.sourceUrl}
+                </a>,
+                { span: 'full' as const }
+              )
+            ]
+          : [])
+      ]}
+    />
+  </>
 )
 
 /**
@@ -679,10 +669,12 @@ export const SourcesTab = ({
   /** Card id followed from an attribute's source chip — opened and flashed. */
   focus?: string | null
 }) => {
-  // Open by default. The tab exists to be read — collapsed, every card asked for
-  // a click before it said anything, and comparing five filings meant opening
-  // five. `closed` holds what the reader has chosen to put away.
-  const [closed, setClosed] = useState<Set<string>>(new Set())
+  // Closed by default. Every card states what it holds on its header — the
+  // source, its standing, how many attributes and which groups — so the shut
+  // stack is the index of what was read, and a filing's payload is one click
+  // away rather than eight cards of scroll between it and the next. `open`
+  // holds what the reader has asked to see.
+  const [open, setOpen] = useState<Set<string>>(new Set())
   const sources = sourcesFor(record, results, groupFor)
   const order = GROUPS.map((g) => g.id)
 
@@ -703,22 +695,16 @@ export const SourcesTab = ({
   return (
     <div className="grid gap-[var(--core-spacing-md)]">
       {sections.map((section) => (
-        <PanelGroup
-          key={section.key}
-          label={section.label}
-          count={section.items.length}
-          defaultOpen
-        >
+        <PanelGroup key={section.key} label={section.label}>
           <div className="grid gap-[var(--core-spacing-sm)]">
           {section.items.map((s) => {
         const groups = [...s.supplied.entries()].sort(
           (a, b) => order.indexOf(a[0]) - order.indexOf(b[0])
         )
         const total = groups.reduce((n, [, rows]) => n + rows.length, 0)
-        // A followed card opens whatever the reader had put away: arriving at a
-        // collapsed card says nothing, which is the opposite of following a
-        // citation.
-        const expanded = !closed.has(s.id) || s.id === focus
+        // A followed card opens itself: arriving at a collapsed card says
+        // nothing, which is the opposite of following a citation.
+        const expanded = open.has(s.id) || s.id === focus
 
         return (
           <Surface
@@ -726,18 +712,20 @@ export const SourcesTab = ({
             id={`source-${s.id}`}
             variant="default"
             padding="none"
-            className={`scroll-mt-6 overflow-hidden${
+            className={`scroll-mt-6 overflow-hidden rounded-none border-text-primary${
               s.id === focus ? ' ring-2 ring-[var(--core-color-border-strong)]' : ''
             }`}
           >
             <button
               type="button"
-              className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--core-color-state-hover-bg)]"
+              className={`group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--core-color-state-hover-bg)]${
+                expanded ? ' attribute-row' : ''
+              }`}
               onClick={() =>
-                setClosed((prev) => {
+                setOpen((prev) => {
                   const next = new Set(prev)
-                  if (expanded) next.add(s.id)
-                  else next.delete(s.id)
+                  if (expanded) next.delete(s.id)
+                  else next.add(s.id)
                   return next
                 })
               }
@@ -774,47 +762,47 @@ export const SourcesTab = ({
                   {total} attribute{total === 1 ? '' : 's'} · {summary(s, groups)}
                 </MutedText>
               </span>
-              <MutedText className="shrink-0 text-caption">{expanded ? 'Hide' : 'Show'}</MutedText>
+              {/* The same chevron an insight opens with. It was the words
+                  "Hide"/"Show", which named the gesture rather than showing it
+                  and put a second piece of prose on a header that already has a
+                  title and a subtitle. */}
+              <DisclosureChevron open={expanded} className="group-hover:text-foreground" />
             </button>
 
             {expanded && (
-              <div className="border-t border-solid border-border px-4 py-3">
+              // `-mb-px` on the body and nowhere inside it: every band's last
+              // rule separates it from the band below, and only the card's last
+              // rule hangs outside to be clipped.
+              <div className="-mb-px">
                 {s.registration && <RegistrationPayload r={s.registration} />}
 
                 {s.id !== STREET_VIEW_CARD &&
                   groups.map(([g, rows]) => (
-                  <div key={g} className="mt-4 first:mt-0">
+                  <Fragment key={g}>
                     {/* A card supplying one group does not need that group
                         named — the card title already says what this is, and
                         "Industry codes" under "Industry classification" is the
                         same word twice. */}
-                    {groups.length > 1 && <Heading level={4}>{GROUP_LABEL.get(g)}</Heading>}
-                    <div className="mt-1 grid gap-1">
-                      {/* One row with codes means every row in the group
-                          reserves that column, or the rows without them slide
-                          left and stop lining up with the values above. */}
-                      {rows.map((item, i) => {
-                        const columned = rows.some(({ row }) => row.lead !== undefined)
-                        // The label names a run, not every line in it. Eleven
-                        // codes under one scheme repeated "SIC" eleven times,
-                        // which reads as eleven separate facts rather than one
-                        // classification with eleven codes.
-                        const label = roleLabel(item)
-                        const repeated = i > 0 && roleLabel(rows[i - 1]) === label
-
-                        return (
-                          <Field
-                            key={`${label}-${i}`}
-                            label={repeated ? '' : label}
-                            lead={columned ? (item.row.lead ?? '') : undefined}
-                            trailing={item.row.trailing}
-                          >
-                            {withoutRole(supplied(item), item.role)}
-                          </Field>
-                        )
-                      })}
-                    </div>
-                  </div>
+                    {groups.length > 1 && <CardLabelRow as="h4">{GROUP_LABEL.get(g)}</CardLabelRow>}
+                    <AttributeCells
+                      items={cellsFromRows(
+                        rows.map((item) => item.row),
+                        {
+                          // The role this value played for THIS source, not the
+                          // label it carries elsewhere: a filing's "Mailing
+                          // address", not "Address". Consecutive values sharing
+                          // it fold into one cell — eleven codes under one
+                          // scheme are one classification, not eleven facts.
+                          labelFor: (_, i) => roleLabel(rows[i]),
+                          valueFor: (_, i) => withoutRole(supplied(rows[i]), rows[i].role),
+                          // The card IS the source. A chip on every value would
+                          // cite the card to itself.
+                          provenance: false,
+                          fold: true
+                        }
+                      )}
+                    />
+                  </Fragment>
                 ))}
 
                 {s.registration ? (

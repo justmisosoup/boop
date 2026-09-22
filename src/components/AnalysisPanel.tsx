@@ -1,4 +1,4 @@
-import { Fragment, cloneElement, isValidElement, useState } from 'react'
+import { Fragment, cloneElement, isValidElement, useMemo, useState } from 'react'
 
 import { CubeIcon } from '@radix-ui/react-icons'
 import { Check } from 'lucide-react'
@@ -10,6 +10,7 @@ import {
   Heading,
   MutedText,
   Spinner,
+  Surface,
   Tag,
   Text,
   type ChatThinkingStep
@@ -45,7 +46,8 @@ const RunLabel = ({ busy, children }: { busy: boolean; children: React.ReactNode
 
 
 
-import { AttributeGrid } from './AttributeGrid'
+import { AttributeGrid, cell } from './AttributeGrid'
+import { InsightRow } from './InsightRow'
 import { POLICY } from '../lib/useAnalysis'
 
 
@@ -61,7 +63,6 @@ import type {
 import { AnalysisSources } from './AnalysisSources'
 import { attributesFor } from '../lib/attributes'
 import { StateMark } from './StateMark'
-import { makeGroupFor } from '../lib/groups'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 
 /**
@@ -90,15 +91,16 @@ import { ROLLUP_NO_GLYPH } from './chipStyles'
  * that, and five headings ending in it read as filing labels rather than prose.
  */
 /**
- * The report's shape is the manifest, not a fixed list.
+ * The report's shape is the manifest, nothing else.
  *
- * `recommendation` leads: it is the call, and an analyst wants the call before
- * the working. It still RUNS last, because it reads every assessment.
+ * `recommendation` used to lead it as a section of its own, headed with the
+ * call — "Approve", over a rule, over the follow-ups. The score card says the
+ * call now, in its own band and its own ring, so the heading was the same word
+ * twice with 40px between them. What the recommendation carries is rendered
+ * above the assessments by `ReportBody`, without a heading over it.
  */
-const sectionsOf = (policy: Array<{ id: string; name: string }>) => [
-  { id: 'recommendation', heading: 'Recommendations' },
-  ...policy.map(({ id, name }) => ({ id, heading: name }))
-]
+const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
+  policy.map(({ id, name }) => ({ id, heading: name }))
 
 /**
  * What is actually happening while the analysis is being written, in the order
@@ -182,72 +184,57 @@ const thinkingSteps = (
 }
 
 /**
- * The checks a sentence rests on, under the sentence.
+ * The insights a sentence rests on, under the sentence.
  *
- * The chip alone said "Insights · 5" and opened a popover of categories, which
- * sent the reader to the reference panel and away from the argument. What a
- * citation is asked is "which checks say this" — a short list that belongs
- * directly beneath the claim.
+ * It used to render the ATTRIBUTES those insights read — the value a reviewer
+ * writes down, with the reading stripped off it. But the sentence above IS the
+ * reading, and a card saying `801 Madison Ave Fl 3` under it could not say
+ * which of the three checks on that address it stood for; the evidence note was
+ * doing that work, and doing it in six words.
+ *
+ * The insight is the unit the report argues from, so the insight is what sits
+ * under the claim — the same rows as the Insights tab, with the same
+ * disclosure, the same state grammar and the same evidence cells inside them.
+ * A reader who has learnt one has learnt the other, and the attributes are
+ * still one chevron away rather than gone.
+ *
+ * Deduplicated by `useCited` on the statement: two checks reaching the same
+ * sentence are one row.
  */
 const CiteList = ({
   cited,
-  categories,
   record,
-  onJumpToGroup
+  onJumpToSource
 }: {
   cited: Derived[]
-  categories: Map<string, string>
   record?: BusinessRecord
-  /** A run is being written, so sections not yet here are coming. */
-  stream?: boolean
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  /** An evidence chip names a source record, and following it opens that
+   *  source's card — the behaviour the same chip has in the Insights tab. */
+  onJumpToSource?: (cardId: string) => void
 }) => {
-  const groupOf = makeGroupFor(categories)
-
-  /**
-   * The attributes, not the insights.
-   *
-   * An insight is a reading of a value — "we identified a name we believe is
-   * different from the submitted business name" — and the reading was already
-   * made in the sentence above. What the sentence cannot carry is the value
-   * itself, which is the thing a reviewer writes down: Kairos Physio, 801
-   * Madison Ave Fl 3, the TIN. So the card is the attribute, labelled, and the
-   * insight is only what selects it and where it jumps to.
-   *
-   * Deduplicated on label and value: several checks read the same attribute,
-   * and the business name would otherwise appear four times.
-   */
-  const seen = new Set<string>()
-  const rows = cited.flatMap((r) =>
-    (record ? attributesFor(r.insightId, record) : [])
-      .filter((a) => a.value && a.label)
-      // `evidenceNote` is where the answer lives. `21 businesses at this
-      // location`, `Commercial`, `Deliverable` — the address is the same in
-      // all three, so without the note the frequency check, the property-type
-      // check and the deliverability check rendered three identical cards and
-      // none of them answered its own insight.
-      .map((a) => ({ label: a.label, value: a.value as string, note: a.evidenceNote, from: r }))
-      .filter((a) => {
-        const key = `${a.label}\u0000${a.value}\u0000${a.note ?? ''}`
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-  )
-
-  if (rows.length === 0) return null
+  // The rows read the record for their evidence; without one there is nothing
+  // for them to open.
+  if (!record || cited.length === 0) return null
 
   return (
-    <AttributeGrid
-      className="mt-2"
-      items={rows.map((a, i) => ({
-        key: `${a.label}-${a.value}-${i}`,
-        label: a.label,
-        value: a.value,
-        note: a.note,
-        onSelect: () => onJumpToGroup(groupOf(a.from.insightId), [a.from.insightId])
-      }))}
-    />
+    // The Insights tab's own frame, verbatim: one rule around the stack, rows
+    // divided by their own top border, the last one's bled off the bottom.
+    <Surface
+      variant="default"
+      padding="none"
+      className="mt-3 overflow-hidden rounded-none border-text-primary"
+    >
+      <div className="-mb-px">
+        {cited.map((r) => (
+          <InsightRow
+            key={r.insightId}
+            result={r}
+            record={record}
+            onJumpToSource={onJumpToSource}
+          />
+        ))}
+      </div>
+    </Surface>
   )
 }
 
@@ -265,15 +252,20 @@ const useCited = (cites: string[] | undefined, results: Derived[]) => {
 const escapeRe = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
- * The attribute values this paragraph's cards carry, as one matcher.
+ * Every attribute value the report holds, as one matcher.
+ *
+ * Built from the whole insight list rather than from the paragraph's own
+ * citations: an attribute is an attribute wherever the prose says it, and
+ * marking only the ones a given paragraph happened to cite left the same
+ * address underlined in one sentence and plain in the next.
  *
  * Longest first: the full address has the shorter values inside it, and a
  * shorter alternative winning would mark it a piece at a time. The lookarounds
  * keep a value from matching inside a longer word.
  */
-const attributePattern = (cited: Derived[], record?: BusinessRecord) => {
+const attributePattern = (results: Derived[], record?: BusinessRecord) => {
   const values = new Set<string>()
-  for (const r of cited) {
+  for (const r of results) {
     for (const a of record ? attributesFor(r.insightId, record) : []) {
       // `value` and not `matchValue`: the latter is a dedupe key on most rows
       // (`legal:kairos physical therapy pllc`), and the prose says the value.
@@ -337,30 +329,32 @@ const markAttributes = (node: React.ReactNode, pattern: RegExp | null): React.Re
 }
 
 export const Para = ({
-  lead,
   sources,
   cites,
   results,
-  categories,
   record,
-  onJumpToGroup,
+  onJumpToSource,
+  aside,
   children
 }: {
-  lead?: string
   sources?: Array<{ title: string; url: string }>
   cites?: string[]
   results: Derived[]
-  categories: Map<string, string>
   record?: BusinessRecord
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  onJumpToSource?: (cardId: string) => void
+  /** Rendered between the sentence and the insights it rests on — the one slot
+   *  the identity card can occupy without separating a claim from its own
+   *  citations. See `SectionBody`. */
+  aside?: React.ReactNode
   children: React.ReactNode
 }) => {
   const cited = useCited(cites, results)
-  const pattern = attributePattern(cited, record)
+  // Memoised on the report's own inputs: the matcher walks every insight's
+  // attributes, and a paragraph is not the right place to do that per render.
+  const pattern = useMemo(() => attributePattern(results, record), [results, record])
 
   const body = (
     <Text>
-      {lead && <span className="font-semibold">{lead} </span>}
       {markAttributes(children, pattern)}
       {/* The chip is the disclosure: one labelled "Public sources", opening the
           pages the claim came from. It reads the same way as an insight citation
@@ -386,8 +380,9 @@ export const Para = ({
   return (
     <div className="mt-3">
       {body}
+      {aside}
       {cited.length > 0 && (
-        <CiteList cited={cited} categories={categories} record={record} onJumpToGroup={onJumpToGroup} />
+        <CiteList cited={cited} record={record} onJumpToSource={onJumpToSource} />
       )}
     </div>
   )
@@ -399,30 +394,45 @@ export const Para = ({
  * The gap sits immediately beneath the finding it undercuts rather than in a
  * pooled list at the end — a reader judging ownership needs to see what is
  * missing from ownership while they are still reading about it.
+ *
+ * It is not announced. The first gap used to open with a bold "Not
+ * established.", which made the absence a labelled feature of the page and let
+ * the sentence after it be a fragment hanging off the label. A gap is a
+ * sentence like any other in the report: it says what is not known, in its own
+ * words, and reads as prose rather than as a filed exception.
  */
 export const SectionBody = ({
   section,
   results,
-  categories,
   record,
-  onJumpToGroup
+  identity,
+  onJumpToSource
 }: {
   section: AssessmentSection
   results: Derived[]
-  categories: Map<string, string>
   record?: BusinessRecord
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  /**
+   * The business identity card, under this section's opening claim.
+   *
+   * It used to sit above the first heading, between the recommendations and the
+   * argument, where it was a block of filing facts nothing on either side was
+   * talking about. Identity is the section those facts ARE the subject of, so
+   * it lands there: the sentence that says the name and address match a filing,
+   * then the filing's own values, then the checks behind them.
+   */
+  identity?: React.ReactNode
+  onJumpToSource?: (cardId: string) => void
 }) => (
   <>
-    {section.body.map((b) => (
+    {section.body.map((b, i) => (
       <Para
         key={b.text}
         sources={b.sources}
         cites={b.cites}
         results={results}
-        categories={categories}
         record={record}
-        onJumpToGroup={onJumpToGroup}
+        onJumpToSource={onJumpToSource}
+        aside={i === 0 ? identity : undefined}
       >
         {b.text}
       </Para>
@@ -432,23 +442,36 @@ export const SectionBody = ({
         and printing it read as "Not established. X, and also nothing will be
         done about it" — a line that costs the reader attention and changes
         nothing they do. It stays in the data; it is not part of the report. */}
-    {section.gaps?.filter((g) => !g.noAction).map((g, i) => (
-      <Para
-        key={g.point}
-        lead={i === 0 ? 'Not established.' : undefined}
-        cites={g.cites}
-        results={results}
-        categories={categories}
-        record={record}
-        onJumpToGroup={onJumpToGroup}
-      >
-        {g.point}{' '}
-        <span className="text-[var(--core-color-text-muted)]">
-          — {WHY[g.why]}
-          {g.wouldAnswer ? `. ${g.wouldAnswer}` : ''}
-        </span>
-      </Para>
-    ))}
+    {section.gaps?.filter((g) => !g.noAction).map((g, i) => {
+      /*
+       * The reason, unless the evidence under the claim already states it.
+       *
+       * `not_published` cites a check whose own Sub status cell now reads "The
+       * state does not publish sub status", two lines below the sentence — so
+       * the clause was saying it twice, once in prose and once on the value it
+       * is about. The other three reasons have no such cell and keep theirs.
+       */
+      const tail = [g.why === 'not_published' ? null : WHY[g.why], g.wouldAnswer]
+        .filter(Boolean)
+        .join('. ')
+      return (
+        <Para
+          key={g.point}
+          cites={g.cites}
+          results={results}
+          record={record}
+          onJumpToSource={onJumpToSource}
+        >
+          {g.point}
+          {tail && (
+            <>
+              {' '}
+              <span className="text-[var(--core-color-text-muted)]">— {tail}</span>
+            </>
+          )}
+        </Para>
+      )
+    })}
   </>
 )
 
@@ -489,7 +512,7 @@ const FollowUps = ({
         {f.entities && f.entities.length > 0 && (
           <AttributeGrid
             className="mt-2"
-            items={f.entities.map((e) => ({ key: e.name, value: e.name, note: e.note }))}
+            items={f.entities.map((e) => cell(undefined, e.name, { key: e.name, note: e.note }))}
           />
         )}
       </li>
@@ -500,32 +523,62 @@ const FollowUps = ({
 const ReportBody = ({
   result,
   results,
-  categories,
   policy,
   record,
+  identity,
+  score,
   stream = false,
-  onJumpToGroup
+  onJumpToSource
 }: {
   result: AnalysisResult | AnalysisDraft
   results: Derived[]
-  categories: Map<string, string>
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
   record?: BusinessRecord
+  /**
+   * What the record holds, between the actions and the argument.
+   *
+   * The recommendations are what a reviewer does next, so they come first; the
+   * identity card is what they are about to act on; the assessments are why.
+   * It is passed in rather than rendered here because it is the business's, not
+   * the run's — see RecordPage.
+   */
+  identity?: React.ReactNode
+  /** How well the identity stands up, under the actions it justifies. */
+  score?: React.ReactNode
   /** A run is being written, so sections not yet here are coming. */
   stream?: boolean
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  /** An evidence chip under a cited insight opens that source's card. */
+  onJumpToSource?: (cardId: string) => void
 }) => {
   const verdict = 'headline' in result ? result : null
   const followUps = verdict?.followUps ?? []
   const byId = new Map(result.sections.map((s) => [s.id, s]))
   const answer = byId.get('answer')
   const hasRecs = followUps.length > 0
-  /** Whether a Recommendation block will render at all — the verdict goes there
-   *  if one does, and must not also lead the message. */
-  const hasRecommendation = byId.has('recommendation') || hasRecs
+  /**
+   * A typed question, which is the only turn the headline belongs on.
+   *
+   * `types.ts` states the rule: the headline is one sentence answering the
+   * question asked, and on a STANDING report it does not render — "onboard
+   * subject to conditions" over a list of conditions names what the list
+   * already is. It used to be suppressed by the presence of a recommendation
+   * section; that section is gone, so the test is the thing itself.
+   */
+  const isQuestion = byId.has('answer')
 
-  const pass = { results, categories, record, onJumpToGroup }
+  const pass = { results, record, onJumpToSource }
+
+  /**
+   * Which section the identity card goes under: the first assessment in the
+   * manifest that actually landed — Identity, in every workflow that has one.
+   *
+   * Keyed on position rather than on a section id, because the manifest is the
+   * customer's and its ids are theirs. The first assessment a report opens with
+   * is the one establishing who the business is; that is where the filing's own
+   * values belong.
+   */
+  const identityUnder = sectionsOf(policy).find(({ id }) => byId.has(id))?.id
 
   return (
     <>
@@ -535,19 +588,24 @@ const ReportBody = ({
 
       {/* A question has no recommendation to land in, so its one-sentence answer
           leads instead — the same sentence, in the only place it can go. */}
-      {verdict && !hasRecommendation && <Text className="mt-2">{verdict.headline}</Text>}
+      {verdict && isQuestion && <Text className="mt-2">{verdict.headline}</Text>}
 
       {/* A follow-up question is answered on its own terms — running it through
           the standing headings would be filing, not answering. */}
       {answer && <SectionBody section={answer} {...pass} />}
 
+      {/* What a reviewer does before the account opens, and the number behind
+          the call — both above the argument, neither under a heading. They were
+          a "Recommendations" section, then an "Approve" one; the score card's
+          own band is the call, and the follow-ups are a list of actions that
+          needs no label to be read as one. */}
+      {hasRecs && <FollowUps items={followUps} />}
+      {score}
+
       {sectionsOf(policy)
-        .filter(({ id }) => byId.has(id) || (id === 'recommendation' && hasRecs))
-        .map(({ id, heading }, i) => {
+        .filter(({ id }) => byId.has(id))
+        .map(({ id, heading }) => {
         const section = byId.get(id)
-        // The recommendation lists are the tail of their section, so that
-        // heading stands even when the session wrote no prose above them.
-        const tail = id === 'recommendation' && hasRecs
         /*
          * Not here yet, but on its way, and the report should say so.
          *
@@ -561,43 +619,27 @@ const ReportBody = ({
             key={id}
             // The contents list jumps here.
             id={`section-${id}`}
-            className={[
-              // The break between sections is the heading's own rule now, so
-              // this is spacing alone. Counted over the sections that actually
-              // rendered rather than over the manifest: keyed to manifest
-              // position, a first section that had not landed yet left the
-              // second one opening a gap at the very top of the report.
-              i > 0 ? 'mt-10' : '',
-              'scroll-mt-6'
-            ].join(' ')}
+            // The break between sections is the heading's own rule now, so this
+            // is spacing alone. Every section takes it, including the first:
+            // the score card sits above it, and the first heading was landing
+            // flush on the card's bottom rule.
+            className="mt-10 scroll-mt-6"
           >
             {/* Body size, bold. `Heading level={3}` sets these at 18px, which made
-               five section titles compete with the report they label.
-
-               Every heading is the same line now. The recommendation's used to
-               carry the "Analysed with" roll-up as well, which described the
-               whole report from a third of the way down it and printed itself
-               again on every follow-up; it is at the head of the page, beside
-               the business name — see RecordPage. */}
+               five section titles compete with the report they label. Every
+               section's heading is this one line: the assessment's name, and a
+               rule carrying it across. */}
             <div className="mb-10 flex items-center gap-4">
               <Text className="font-semibold">{heading}</Text>
               <span aria-hidden="true" className="section-rule h-px flex-1" />
             </div>
-            {/*
-              * The recommendations are the whole section.
-              *
-              * It used to open with the verdict sentence and a paragraph or two
-              * arguing it, and the reader had just read the assessments those
-              * paragraphs were summarising. What a reviewer needs at the head of
-              * a file is what they have to do before the account opens, so that
-              * is all this section is: the actions, ranked, and nothing else.
-              *
-              * The headline is still written and still validated — it is the
-              * answer on a typed question, which renders above the message
-              * rather than here.
-              */}
-            {id !== 'recommendation' && section && <SectionBody section={section} {...pass} />}
-            {tail && <FollowUps items={followUps} />}
+            {section && (
+              <SectionBody
+                section={section}
+                {...pass}
+                identity={id === identityUnder ? identity : undefined}
+              />
+            )}
           </div>
         )
       })}
@@ -607,17 +649,23 @@ const ReportBody = ({
 
 const Answer = ({
   version,
+  identity,
+  score,
   results,
   categories,
   record,
   onJumpToGroup,
+  onJumpToSource,
   wrapRun
 }: {
   version: AnalysisVersion
+  identity?: React.ReactNode
+  score?: React.ReactNode
   results: Derived[]
   record?: BusinessRecord
   categories: Map<string, string>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  onJumpToSource?: (cardId: string) => void
   /** Puts the workflow disclosure on the run's summary line. Only on the report
    *  turn: a question is its own prompt and already shows as the user message
    *  above the answer. */
@@ -644,10 +692,11 @@ const Answer = ({
       <ReportBody
         result={result}
         results={results}
-        categories={categories}
         record={record}
+        identity={identity}
+        score={score}
         policy={version.policy ?? []}
-        onJumpToGroup={onJumpToGroup}
+        onJumpToSource={onJumpToSource}
       />
     </ChatMessage>
   )
@@ -662,6 +711,8 @@ const Answer = ({
  */
 export const AnalysisPanel = ({
   versions,
+  identity,
+  score,
   results,
   categories,
   record,
@@ -679,9 +730,13 @@ export const AnalysisPanel = ({
   slow,
   error,
   onJumpToGroup,
-  superseded
+  onJumpToSource
 }: {
   versions: AnalysisVersion[]
+  /** The business identity card, rendered under the recommendations. */
+  identity?: React.ReactNode
+  /** The identity score card, under the recommendations. */
+  score?: React.ReactNode
   results: Derived[]
   categories: Map<string, string>
   /** The record itself, so a cited check can show the value behind it. */
@@ -707,7 +762,9 @@ export const AnalysisPanel = ({
   slow: boolean
   error: string | null
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
-  superseded: AnalysisVersion[]
+  /** Follow an evidence chip on a cited insight to that source's card, the way
+   *  the Insights tab does. */
+  onJumpToSource?: (cardId: string) => void
 }) => {
   const kind = waitingKind ?? 'report'
 
@@ -731,10 +788,14 @@ export const AnalysisPanel = ({
         <div key={v.id}>
           <Answer
             version={v}
+            identity={v.kind === 'report' ? identity : undefined}
+            // A follow-up answer is not a report and does not get a ring.
+            score={v.kind === 'report' ? score : undefined}
             results={results}
             categories={categories}
             record={record}
             onJumpToGroup={onJumpToGroup}
+            onJumpToSource={onJumpToSource}
           />
         </div>
       ))}
@@ -754,11 +815,10 @@ export const AnalysisPanel = ({
             <ReportBody
               result={draft}
               results={results}
-              categories={categories}
               record={record}
               policy={policy}
               stream
-              onJumpToGroup={onJumpToGroup}
+              onJumpToSource={onJumpToSource}
             />
           )}
           </ChatMessage>

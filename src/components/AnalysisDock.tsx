@@ -276,6 +276,7 @@ export const AnalysisDock = ({
   open,
   setOpen,
   onSend,
+  report,
   custom,
   disabled,
   onCreateSkill,
@@ -305,7 +306,12 @@ export const AnalysisDock = ({
     skills: string[]
     typed: string
     kind: 'report' | 'question'
+    /** Which report a question is filed against. Absent starts a new one. */
+    target?: string
   }) => void
+  /** The report being read, if there is one — what a question can be added to.
+   *  Absent means the first run on this business, which is a report. */
+  report?: { id: string; label: string } | null
   /** The customer's own skills, and the way to write another. */
   custom: CustomerSkill[]
   /** Parts and context the customer has switched off. */
@@ -335,6 +341,14 @@ export const AnalysisDock = ({
   const [contexts, setContexts] = useState<string[]>([])
   /** The token being read, and the working copy of what it says. */
   const [inspect, setInspect] = useState<Token | null>(null)
+  /** A question waiting on where it should go. */
+  const [ask, setAsk] = useState<{
+    prompt: string
+    assessments: Array<{ id: string; name: string; instructions: string }>
+    attachments: Attachment[]
+    skills: string[]
+    typed: string
+  } | null>(null)
   const [draft, setDraft] = useState('')
   const [draftName, setDraftName] = useState('')
 
@@ -469,17 +483,47 @@ export const AnalysisDock = ({
     // about this business, whatever else is in the box with it.
     const kind = chosenWorkflow && !prompt.trim() ? 'report' : 'question'
 
-    onSend({
+    const payload = {
       prompt: parts.join('\n\n'),
-      // A question is answered on its own terms, in one section — it does not
-      // fan out across the workflow's assessments.
-      assessments: kind === 'report' ? (composed?.assessments ?? []) : [],
       attachments,
       skills: names,
       typed: prompt.trim(),
-      kind
-    })
+      assessments: composed?.assessments ?? []
+    }
 
+    /*
+     * A question against a report is asked of THAT report.
+     *
+     * It was answered against what that report was reading, so it belongs with
+     * it — but the reader may instead want a fresh reading of the business,
+     * which is a new report. Only they know which, so they are asked. With no
+     * report yet there is nothing to add to and the run is the first report.
+     */
+    if (kind === 'question' && report) {
+      setAsk(payload)
+      return
+    }
+
+    dispatch({ ...payload, kind, target: undefined })
+  }
+
+  /** Sending is what clears the box — a cancelled dialog leaves what was typed. */
+  const dispatch = (run: {
+    prompt: string
+    assessments: Array<{ id: string; name: string; instructions: string }>
+    attachments: Attachment[]
+    skills: string[]
+    typed: string
+    kind: 'report' | 'question'
+    target?: string
+  }) => {
+    onSend({
+      ...run,
+      // A question is answered on its own terms, in one section — it does not
+      // fan out across the workflow's assessments.
+      assessments: run.kind === 'report' ? run.assessments : []
+    })
+    setAsk(null)
     setPrompt('')
     setAttachments([])
   }
@@ -686,6 +730,44 @@ export const AnalysisDock = ({
           Middesk's own open read-only: they are defaults, and a textarea that
           accepted typing it would then refuse to save is worse than one that
           says plainly it cannot be changed. */}
+      {/* Where the answer goes.
+          Both choices run the same question; they differ in what it is read
+          against. Added, it is answered against the report already on screen
+          and files under it. New, the business is read again from scratch and
+          the answer opens its own report. Two affirmatives, so neither is the
+          `ConfirmDialog` shape of "do it / do not". */}
+      <Dialog
+        isOpen={ask !== null}
+        onClose={() => setAsk(null)}
+        size="sm"
+        title="Where should this answer go?"
+        description={
+          report
+            ? `Add it to ${report.label}, which reads what that report read — or start a new report, read against the business as it is now.`
+            : undefined
+        }
+        footer={
+          <div className="flex justify-end gap-2">
+            <ActionButton
+              variant="secondary"
+              onClick={() => ask && dispatch({ ...ask, kind: 'report', target: undefined })}
+            >
+              Start a new report
+            </ActionButton>
+            <ActionButton
+              onClick={() => ask && dispatch({ ...ask, kind: 'question', target: report?.id })}
+            >
+              Add to this report
+            </ActionButton>
+          </div>
+        }
+      >
+        <span className="sr-only">
+          Choose whether this question is answered inside the report you are
+          reading or as a new one.
+        </span>
+      </Dialog>
+
       <Dialog
         isOpen={inspect !== null}
         onClose={() => setInspect(null)}

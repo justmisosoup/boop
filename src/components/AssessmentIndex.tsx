@@ -374,55 +374,28 @@ export const AssessmentIndex = ({
 
   return (
     <>
-      <nav
-        aria-label="Assessment contents"
-        className={cn(
-          // A column of the document, shown only at `desk` (1504px), which is
-          // the width at which the rail, an 800px report and the reference
-          // panel all fit. It used to appear at `lg`, where all three were
-          // present and the report paid for it, down to 224px of prose. Below
-          // `desk` the collapsed strip below carries the list instead.
-          'hidden',
-          // No ground of its own. It is margin furniture, not a panel — a white
-          // card here made it compete with the report for the same reading, and
-          // the page behind it is what marks it as apart from the document.
-          // `pt-7` matches the report card's own top padding, so the rail's
-          // first line sits on the same baseline as the report's rather than
-          // 28px above it.
-          'desk:flex desk:w-56 desk:shrink-0 desk:flex-col desk:gap-y-1 desk:overflow-y-auto desk:pt-[51px] panel-scroll'
-        )}
-      >
-        {contents}
-      </nav>
-
       {/*
-        * The same list, collapsed to its marks.
+        * The contents, collapsed to their marks.
         *
-        * Below `desk` there is no margin to put a 224px rail in, and the rail
-        * was simply dropped — so at the width most windows actually are, the
-        * report had no jump list and nothing saying where in it you were. A
-        * mark per section keeps both: where you are, and a way to somewhere
-        * else. The names come back on hover.
+        * A dot per section: where you are, and a way to somewhere else. The
+        * names come back on hover, which is the whole list — so the list is
+        * there when it is wanted and costs 24px when it is not. A 224px rail
+        * standing open beside the prose spent the width permanently to say
+        * what five dots say.
         *
-        * Pinned to the window rather than the document: at `wide` the report
-        * scrolls inside its own column, and a strip that scrolled with the
-        * prose would leave the screen exactly when it is wanted. It ends 6px
-        * short of the report card, in the page's own gutter — there is no slack
-        * anywhere below `desk`, so this is the only place it can go without
-        * taking width from the prose.
+        * It belongs to the assessment it indexes, so it sits inside that tab
+        * and sticks to the top of the report's scroller while the prose moves
+        * past it.
         */}
       <HoverCard openDelay={120} closeDelay={160}>
         <HoverCardTrigger asChild>
           <div
             className={cn(
-              // 24px wide from the nav's edge: the page's own gutter, which is
-              // all the room there is below `desk`. `top-[108px]` is the fixed
-              // name bar (57px) plus the report's own top padding (51px) — the
-              // same arithmetic the rail does with `desk:pt-[51px]`, so the
-              // first dot sits level with the report's first line rather than
-              // floating in the middle of the window.
-              'fixed left-[var(--nav-w)] top-[108px] z-20 w-6',
-              'flex flex-col items-center gap-0.5 desk:hidden'
+              // In the document's own left padding, not in the column: the
+              // prose keeps the measure the tabs above it set. Sticky, so the
+              // marks hold while the prose moves past them.
+              'sticky top-0 z-20 -ml-7 w-6',
+              'flex flex-col items-center gap-0.5'
             )}
           >
             {sections.map(({ id, heading }) => {
@@ -432,12 +405,16 @@ export const AssessmentIndex = ({
                  are on by setting its label in semibold, and a dot has no label
                  to embolden. The vocabulary is `StateDot`'s — filled for what
                  is on the page, a ring for what has not started. */
+              /* Empty at rest — a column of filled dots beside the prose read
+                 as a second piece of content. They are an outline, and an
+                 outline is the quietest thing that can still be pointed at.
+                 Where you are is the one that is darker and a size up, not the
+                 one that is filled in. */
               const mark = cn(
-                'block rounded-full transition-all duration-200',
-                current && 'size-2 bg-foreground',
-                !current && state === 'pending' &&
-                  'size-1.5 border border-solid border-[var(--core-color-border-bold)]',
-                !current && state !== 'pending' && 'size-1.5 bg-[var(--core-color-border-bold)]',
+                'block rounded-full border border-solid transition-all duration-200',
+                current
+                  ? 'size-2 border-foreground'
+                  : 'size-1.5 border-[var(--core-color-border-bold)]',
                 state === 'running' && 'motion-safe:animate-pulse'
               )
               /* A section that has not landed is not a button — and not a

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import reportStore from '../../analysis/reports.json'
 
-import type { AnalysisDraft, AnalysisResult } from '../types'
+import type { AnalysisDraft, AnalysisResult, ReportSnapshot, StoredReport } from '../types'
 
 /**
  * The reports written for this prototype, bundled.
@@ -15,14 +15,11 @@ import type { AnalysisDraft, AnalysisResult } from '../types'
  * In dev this changes nothing — the endpoint answers first and the live run
  * replaces it. Deployed, it is the whole of what the page can show.
  */
-const BUNDLED_REPORTS: Record<
-  string,
-  { report: AnalysisResult; policy?: Array<{ id: string; name: string }> }
-> = (reportStore as { reports?: Record<string, { report: AnalysisResult; policy?: Array<{ id: string; name: string }> }> })
-  .reports ?? {}
+const BUNDLED_REPORTS: Record<string, StoredReport[]> =
+  (reportStore as unknown as { reports?: Record<string, StoredReport[]> }).reports ?? {}
 
-const bundledReport = (name: string) =>
-  BUNDLED_REPORTS[name.toLowerCase().replace(/\s+/g, ' ').trim()] ?? null
+const bundledReports = (name: string): StoredReport[] =>
+  BUNDLED_REPORTS[(name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()] ?? []
 import type { BusinessRecord, Derived } from './deriveResults'
 
 /** One run. Re-running produces another, so a reading can be compared with the
@@ -54,53 +51,99 @@ export const POLICY = {
   name: 'SMB account opening'
 }
 
-/** The report kept for a business, as the one version to show. Static: it is on
- *  screen from the first paint rather than arriving after a round trip. */
-const heldVersions = (name: string, insightCount: number): AnalysisVersion[] => {
-  const held = bundledReport(name)
-  if (!held) return []
-  return [
-    {
-      id: `held:${name}`,
-      kind: 'report',
-      prompt: '',
-      skills: [],
-      typed: '',
-      policy: held.policy ?? [],
-      result: held.report,
-      pinned: [],
-      durationMs: 0,
-      insightCount,
-      at: new Date().toISOString()
-    }
-  ]
+/**
+ * A report, in the page's hands.
+ *
+ * What it concluded and what it was reading, together — the assessment prose
+ * and the record and insight list the three tabs are built from. A business has
+ * a list of these; a run appends to it. The questions asked of a report belong
+ * to it, because they were answered against its snapshot.
+ */
+export type Report = {
+  id: string
+  /** The assessment it was run from — what the report is called. */
+  name: string
+  /** When it was asked. Empty only for a report kept before this was recorded. */
+  at: string
+  policy: Array<{ id: string; name: string }>
+  result: AnalysisResult
+  /** Null for a report kept before snapshots existed — the page falls back to
+   *  the live record for those, which is what it always did. */
+  snapshot: ReportSnapshot | null
+  questions: AnalysisVersion[]
 }
+
+/** The reports kept for a business. Static: on screen from the first paint
+ *  rather than arriving a round trip later. */
+const heldReports = (name: string): Report[] =>
+  bundledReports(name).map((r) => ({
+    id: r.id,
+    name: r.name || 'Assessment',
+    at: r.at,
+    policy: r.policy ?? [],
+    result: r.report,
+    snapshot: r.snapshot ?? null,
+    questions: (r.questions ?? []).map((q) => ({
+      id: q.id,
+      kind: 'question' as const,
+      prompt: q.prompt,
+      skills: q.skills,
+      typed: q.typed,
+      result: q.result,
+      pinned: q.pinned ?? [],
+      durationMs: q.durationMs ?? 0,
+      insightCount: r.snapshot?.results.length ?? 0,
+      at: q.at
+    }))
+  }))
+
+/**
+ * A report, as the turn the panel renders.
+ *
+ * The panel reads `AnalysisVersion`s — a report and the questions asked of it
+ * are turns in the same thread, and it does not need to know which came from
+ * where.
+ */
+const reportTurn = (r: Report): AnalysisVersion => ({
+  id: r.id,
+  kind: 'report',
+  prompt: '',
+  skills: [],
+  typed: '',
+  policy: r.policy,
+  result: r.result,
+  pinned: [],
+  durationMs: 0,
+  insightCount: r.snapshot?.results.length ?? 0,
+  at: r.at
+})
+
+/** Newest last, so the page opens on the one at the end. */
+const newestId = (reports: Report[]) =>
+  reports.length > 0 ? reports[reports.length - 1].id : null
 
 export const useAnalysis = (
   record: BusinessRecord,
   results: Derived[]
 ) => {
   /**
-   * The bundled report is on screen from the first paint.
+   * Every report this business has, on screen from the first paint.
    *
-   * It used to seed behind a `fetch` probe, so the report arrived a round trip
-   * after the page did and visibly dropped in. It is held state, so a live run
-   * still replaces it.
+   * They used to seed behind a `fetch` probe, so the report arrived a round
+   * trip after the page did and visibly dropped in.
    */
-  const [versions, setVersions] = useState<AnalysisVersion[]>(() =>
-    heldVersions(record.name, results.length)
-  )
-
+  const [reports, setReports] = useState<Report[]>(() => heldReports(record.name))
   /**
-   * Reports a re-run replaced, newest first.
+   * The one being read.
    *
-   * A re-run against an edited workflow answers a different question, so it
-   * takes the report's place rather than stacking beneath it — but the one it
-   * replaced is the only way to see what the edit changed, so it is kept and
-   * readable rather than dropped.
+   * A report is a moment, so a business accumulates them rather than
+   * overwriting one slot: opening an earlier report is how you see what a
+   * re-run changed. Everything the page shows — the assessment and all three
+   * tabs — resolves from this one id, so they cannot disagree.
    */
-  const [superseded, setSuperseded] = useState<AnalysisVersion[]>([])
-  const [current, setCurrent] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    newestId(heldReports(record.name))
+  )
   const [pinned, setPinned] = useState<string[]>([])
   const [slow, setSlow] = useState(false)
   /** Stage one, while stage two is still outstanding. The assessments are on
@@ -134,6 +177,11 @@ export const useAnalysis = (
     kind: 'report' | 'question'
     pinnedIds: string[]
     startedAt: number
+    /** Which report a question was asked of. Null on a report. */
+    reportId: string | null
+    /** What the page was reading when it was sent. Frozen then, not on landing:
+     *  a four-minute run belongs to the inputs it was asked with. */
+    snapshot: ReportSnapshot | null
   } | null>(null)
   const slowTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   /** A run nobody answers stops waiting rather than spinning for the session. */
@@ -152,9 +200,9 @@ export const useAnalysis = (
 
   // A different business is a different analysis.
   useEffect(() => {
-    setVersions(heldVersions(record.name, results.length))
-    setSuperseded([])
-    setCurrent(0)
+    const held = heldReports(record.name)
+    setReports(held)
+    setSelectedId(newestId(held))
     setPinned([])
     setError(null)
     setPending(null)
@@ -223,22 +271,38 @@ export const useAnalysis = (
         result: data,
         pinned: pending.pinnedIds,
         durationMs: Date.now() - pending.startedAt,
-        insightCount: results.length,
+        insightCount: pending.snapshot?.results.length ?? results.length,
         at: new Date().toISOString()
       }
 
-      setVersions((prev) => {
-        // A question is a turn and stacks. A report is THE report: a re-run
-        // against an edited workflow replaces it in place, so the transcript
-        // never shows two reports disagreeing about the same business.
-        if (landed.kind !== 'report') return [...prev, landed]
-
-        const at = prev.findIndex((v) => v.kind === 'report')
-        if (at === -1) return [...prev, landed]
-
-        setSuperseded((old) => [prev[at], ...old])
-        return prev.map((v, i) => (i === at ? landed : v))
-      })
+      /*
+       * A report arrives as a report; a question is filed into the one it was
+       * asked of.
+       *
+       * These used to be the same list, with a landing report replacing the one
+       * already in it — so a re-run destroyed the reading it was being compared
+       * against, and a question about an older report landed against whatever
+       * was on screen.
+       */
+      if (pending.kind === 'report') {
+        const made: Report = {
+          id: pending.id,
+          name: pending.skills?.[0] ?? 'Assessment',
+          at: new Date().toISOString(),
+          policy: pending.policy ?? [],
+          result: data,
+          snapshot: pending.snapshot,
+          questions: []
+        }
+        setReports((prev) => [...prev, made])
+        setSelectedId(made.id)
+      } else {
+        setReports((prev) =>
+          prev.map((r) =>
+            r.id === pending.reportId ? { ...r, questions: [...r.questions, landed] } : r
+          )
+        )
+      }
       setPending(null)
       setSlow(false)
       setDraft(null)
@@ -254,6 +318,22 @@ export const useAnalysis = (
       clearTimeout(giveUpTimer.current)
     }
   }, [pending, record.id, results.length])
+
+  /**
+   * The report being read, and the turns under it.
+   *
+   * `versions` is what the panel renders: the report first, then the questions
+   * asked of it. Switch report and the thread changes with it — a question
+   * asked of March's report is not part of September's.
+   */
+  const selected = useMemo(
+    () => reports.find((r) => r.id === selectedId) ?? null,
+    [reports, selectedId]
+  )
+  const versions = useMemo<AnalysisVersion[]>(
+    () => (selected ? [reportTurn(selected), ...selected.questions] : []),
+    [selected]
+  )
 
   const run = useCallback(
     (
@@ -273,7 +353,12 @@ export const useAnalysis = (
        * recommendation could be served against a report quietly missing a
        * section.
        */
-      policy?: Array<{ id: string; name: string; instructions: string }>
+      policy?: Array<{ id: string; name: string; instructions: string }>,
+      /**
+       * Which report a question is asked of. Defaults to the one being read; a
+       * report ignores it, because a report always starts its own.
+       */
+      target?: string
     ) => {
       const asked = prompt.trim()
       if (!asked) return
@@ -292,6 +377,7 @@ export const useAnalysis = (
           },
           kind,
           prompt: asked,
+          skills,
           assessments: policy ?? [],
           // Every insight, with its id — the session picks from these.
           insights: results.map((r) => ({
@@ -304,7 +390,12 @@ export const useAnalysis = (
           })),
           pinned: pinnedIds,
           attachments,
-          history: versions.map((v) => ({ prompt: v.prompt, result: v.result }))
+          history: versions.map((v) => ({ prompt: v.prompt, result: v.result })),
+          // What the page is reading, frozen at the moment it is asked. Only on
+          // a report: a question inherits the snapshot of the report it joins.
+          snapshot:
+            kind === 'report' ? { recordId: record.id, record, results } : undefined,
+          reportId: kind === 'question' ? (target ?? selectedId ?? undefined) : undefined
         })
       })
         .then((res) => res.json() as Promise<{ id: string }>)
@@ -318,14 +409,16 @@ export const useAnalysis = (
             policy: policy?.map(({ id, name }) => ({ id, name })),
             kind,
             pinnedIds,
-            startedAt: Date.now()
+            startedAt: Date.now(),
+            reportId: kind === 'question' ? (target ?? selectedId) : null,
+            snapshot: kind === 'report' ? { recordId: record.id, record, results } : null
           })
         )
         .catch((e: unknown) =>
           setError(e instanceof Error ? e.message : 'Could not reach the dev server.')
         )
     },
-    [pinned, record, results, versions]
+    [pinned, record, results, selectedId, versions]
   )
 
   /**
@@ -341,20 +434,6 @@ export const useAnalysis = (
     (prompt: string) => run(prompt, [], [], 'report'),
     [run]
   )
-
-  /**
-   * Show the newest version as it lands.
-   *
-   * This used to be a `setCurrent` call inside the `setVersions` updater, which
-   * does not reliably apply — a setter invoked from inside another setter's
-   * updater. It went unnoticed for as long as a business only ever had one
-   * version, because `current` is 0 either way; the moment a second landed, the
-   * panel kept rendering the first. Keyed on the count rather than the array so
-   * that stepping back through versions by hand is not undone on every render.
-   */
-  useEffect(() => {
-    if (versions.length > 0) setCurrent(versions.length - 1)
-  }, [versions.length])
 
   /** Add an insight the session did not pick, and re-ask the same question. */
   const addAndRerun = useCallback(
@@ -385,10 +464,12 @@ export const useAnalysis = (
     waitingSkills: pending?.skills ?? [],
     waitingTyped: pending?.typed ?? '',
     versions,
-    superseded,
+    /** Every report this business has, oldest first. */
+    reports,
+    /** The one being read — its assessment, and the snapshot the tabs render. */
+    selected,
+    select: setSelectedId,
     rerunReport,
-    current,
-    setCurrent,
     pinned,
     waiting,
     slow,
@@ -396,6 +477,6 @@ export const useAnalysis = (
     run,
     addAndRerun,
     unpin,
-    active: versions[current]
+    active: versions[versions.length - 1]
   }
 }

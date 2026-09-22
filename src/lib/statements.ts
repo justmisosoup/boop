@@ -81,6 +81,12 @@ export const statementFor = (
 
   if (message) return sentenceCase(message)
 
+  // Nothing to key the catalog with. A sub-label is on every review task in
+  // `records.json` today, but that file is rewritten wholesale by `bun run
+  // pull` — a row with nothing to say should say nothing, not take the page's
+  // derivation down with it.
+  if (!subLabel) return ''
+
   const fromCatalog =
     OUTCOME[`${key}|${subLabel}`] ??
     OUTCOME[`${key}|${subLabel.toLowerCase().replace(/\s+/g, '_')}`]

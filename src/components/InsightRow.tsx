@@ -1,19 +1,14 @@
 import { useEffect, useState } from 'react'
 
-import { ActionButton, MutedText, Tag, Text, TruncatedText } from '@/core'
+import { ActionButton, MutedText, Text, TruncatedText } from '@/core'
 
 import { attributesFor, type AttributeRow } from '../lib/attributes'
 import type { BusinessRecord } from '../lib/deriveResults'
 import type { InsightResult } from '../types'
-import { AttributeSources, SubmittedChip } from './AttributesTab'
+import { AttributeCells, cell } from './AttributeGrid'
+import { cellsFromRows } from './attributeCells'
+import { DisclosureChevron } from './DisclosureChevron'
 import { StateMark } from './StateMark'
-
-/** Colour follows the provider's confidence, not our reading of it. */
-const RISK_TONE: Record<string, 'subtle' | 'warning' | 'danger'> = {
-  'Low risk': 'subtle',
-  'Moderate risk': 'warning',
-  'High risk': 'danger'
-}
 
 /**
  * The display grammar (concept/assessment.md), built on @/core primitives.
@@ -96,16 +91,20 @@ export const InsightRow = ({
   // row grows and everything aligns to the top instead.
   const hasSubtext = showBecause
 
-  /**
-   * The order requirement, lifted out of `evidence`.
-   *
-   * It is carried there so the assessment layer sees it too, but in the row it
-   * belongs at the end rather than interleaved with the attributes the check
-   * actually read.
-   */
-  const producedBy = (result.evidence ?? []).find(
-    (e) => e.startsWith('Requires Order package:') || e.startsWith('Produced by a signal')
-  )
+  const cells = [
+    ...cellsFromRows(attributes, {
+      domesticState: record.formation?.state,
+      onJumpToSource,
+      // The reading this check is making — a property type, a count of
+      // businesses at an address — is the finding here and nowhere else.
+      evidence: true
+    }),
+    // "Produced by …" is not rendered. It is the same sentence under every
+    // insight — the Order packages a check needs — so on a page of 35 it was 35
+    // copies of one fact about our plumbing, in the slot where the evidence for
+    // THIS business goes. It stays on `result.evidence`, which is what the
+    // assessment layer reads, so nothing downstream loses it.
+  ]
 
   return (
     <div
@@ -113,17 +112,34 @@ export const InsightRow = ({
       className={[
         // `group`: the row's own actions are revealed by hovering it, so they
         // stop holding width in a column that has none to spare.
-        'group border-l-2 border-solid px-4 py-1.5 transition-colors',
+        // Solid divider, not the dashed one the attribute lists use — see
+        // `.insight-row` in theme.css.
+        'insight-row group px-4 py-3 transition-colors',
+        // No left bar. It said what the mark at the head of the row already
+        // says — result, no result, adverse — in a second vocabulary, and on a
+        // card whose own frame is a hard graphite rule it read as a fourth
+        // edge. The background still carries the two states that are about the
+        // reader's position rather than the finding: what a citation landed on,
+        // and what came back adverse.
+        //
         // Mutually exclusive rather than layered: two utilities setting the same
         // property are resolved by stylesheet order, not by the order they are
         // written here, so an override that merely comes later is a coin toss.
+        // Open, the statement line is tinted: `surface-subtle`, the system's
+        // own soft grey. A row that has been opened is a row the reader is
+        // working in, and with the evidence bled to the card's edges there was
+        // nothing saying where the row it belongs to begins. The evidence keeps
+        // the card colour below, so the tint reads as the header of what is
+        // open rather than as a highlight over the whole thing.
         cited
-          ? 'border-l-[var(--core-color-state-selected-border)] bg-[var(--core-color-state-selected-bg)]'
-          : isResult
-            ? 'border-l-border bg-card'
-            : adverse
-              ? 'border-l-[var(--core-color-status-danger-border)] bg-[var(--core-color-status-danger-bg)]'
-              : 'border-l-transparent bg-transparent'
+          ? 'bg-[var(--core-color-state-selected-bg)]'
+          : open
+            ? 'bg-[var(--core-color-surface-subtle)]'
+            : isResult
+              ? 'bg-card'
+              : adverse
+                ? 'bg-[var(--core-color-status-danger-bg)]'
+                : 'bg-transparent'
       ].join(' ')}
     >
       <div className={['flex gap-3', hasSubtext ? 'items-start' : 'items-center'].join(' ')}>
@@ -143,11 +159,22 @@ export const InsightRow = ({
               what made this column unscannable; `TruncatedText` clips it and
               puts the full sentence in a tooltip, but only when it actually
               clips. Opening the row gives it all the lines it wants. */}
+          {/* The grid's value type, in both states. They were 14/20 collapsed
+              and 14/24 open, so a row shifted under the cursor as it opened. */}
           {open ? (
-            <Text tone={isResult ? 'primary' : 'secondary'}>{result.statement}</Text>
+            <span
+              className={[
+                'block text-sm leading-snug',
+                isResult ? '' : 'text-text-secondary'
+              ].join(' ')}
+            >
+              {result.statement}
+            </span>
           ) : (
             <TruncatedText
-              className={isResult ? 'text-sm' : 'text-sm text-muted-foreground'}
+              className={
+                isResult ? 'text-sm leading-snug' : 'text-sm leading-snug text-muted-foreground'
+              }
             >
               {result.statement}
             </TruncatedText>
@@ -256,125 +283,21 @@ export const InsightRow = ({
               'focus-visible:ring-[var(--core-color-focus-ring)]'
             ].join(' ')}
           >
-            <svg
-              viewBox="0 0 12 12"
-              aria-hidden="true"
-              className={['h-3 w-3 transition-transform duration-200', open ? 'rotate-180' : ''].join(
-                ' '
-              )}
-              fill="none"
-            >
-              <path
-                d="M3 4.5 6 7.5 9 4.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {/* Colour from the button, so the row's hover still reaches it. */}
+            <DisclosureChevron open={open} className="text-inherit" />
           </button>
         </div>
       </div>
 
-      {open && (
-        <ul className="ml-6 mt-2 space-y-1.5 border-l border-solid border-border pl-3">
-          {attributes.map((a: AttributeRow, i) => (
-            // Detail sits UNDER the row it supports, indented and quiet. Flat,
-            // fourteen articles read as fourteen findings and the four names
-            // they belong to disappeared into them. The label goes too — the
-            // indent already says what these are, and "Article" fourteen times
-            // is the loudest thing in the list.
-            <li
-              key={`${a.label}-${i}`}
-              className={
-                a.detail
-                  ? 'ml-4 flex flex-wrap items-baseline gap-x-2 border-l border-solid border-border pl-3'
-                  : 'mt-2 flex flex-wrap items-baseline gap-x-2 first:mt-0'
-              }
-            >
-              {!a.detail && (
-                <MutedText className="text-caption font-semibold">{a.label}</MutedText>
-              )}
-              {a.lead && (
-                <MutedText className="text-caption tabular-nums">{a.lead}</MutedText>
-              )}
-              {a.value &&
-                (a.href ? (
-                  <a
-                    href={a.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs leading-4 underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
-                  >
-                    {a.value}
-                  </a>
-                ) : (
-                  <Text size="xs">{a.value}</Text>
-                ))}
-              {/* A reading OF the value, immediately after it — a case's status
-                  and filing date, how a lien stands. Same placement as the
-                  Attributes tab. Without it ten court records read as ten
-                  identical rows when half are open and half are closed. */}
-              {a.qualifier && (
-                <MutedText className="text-caption">{a.qualifier}</MutedText>
-              )}
-              {/* Whether the customer gave us this value or we found it. An
-                  address list where seven are ours and two are theirs reads as
-                  one undifferentiated list without it, and which is which is
-                  what the check turns on. */}
-              {a.submitted && <SubmittedChip />}
-              {/* Our reading of the value — a property type, how many
-                  businesses share the address. Here rather than in Attributes:
-                  no source stated it, and judging the address is what the
-                  insight is for. */}
-              {a.evidenceNote && (
-                <MutedText className="text-caption">· {a.evidenceNote}</MutedText>
-              )}
-              {/* The provider's rating of what it found, beside the finding.
-                  Without it "Kyle Mack" reads the same whether the flags came
-                  back low or high. */}
-              {a.trailing &&
-                (RISK_TONE[a.trailing] ? (
-                  <Tag tone={RISK_TONE[a.trailing]} size="compact">
-                    {a.trailing}
-                  </Tag>
-                ) : (
-                  <MutedText className="w-full text-caption">{a.trailing}</MutedText>
-                ))}
-              {/* Every article behind this name, in one chip. Listed as rows
-                  instead, nine headlines pushed the four names being screened
-                  off the top of the list — and the name is what is being
-                  judged, not the article. */}
-              {/* The same chip the Attributes tab shows, so an insight cites
-                  what the attribute cites. Rendering only `registrations` here
-                  dropped every other attestation: a legal name on six records
-                  read as one, because five of them were not filings. */}
-              <AttributeSources
-                sources={a.sources ?? (a.source ? [a.source] : [])}
-                links={a.links}
-                registrations={a.registrations}
-                domesticState={record.formation?.state}
-                href={a.href}
-                note={a.sourceNote}
-                title={a.sourceTitle}
-                label={a.label}
-                onJumpToSource={onJumpToSource}
-              />
-            </li>
-          ))}
-
-          {/* What had to be ordered for this check to run.
-              Last, and quiet: it is the same fact for every insight and says
-              nothing about this business — but for a check that returned
-              nothing it is the only actionable thing on the row, because
-              ordering the package is what closes it. */}
-          {producedBy && (
-            <li className="mt-2 flex flex-wrap items-baseline gap-x-2">
-              <MutedText className="text-caption font-semibold">Produced by</MutedText>
-              <MutedText className="text-caption">{producedBy}</MutedText>
-            </li>
-          )}
-        </ul>
+      {/* The evidence, in the same cells as everything else the report states
+          — bled to the card's edges so its rules line up with the rows above
+          and below. It was an indented list inside the row, with a second
+          indent for detail; the cell frame says both of those things without
+          drawing either. */}
+      {open && cells.length > 0 && (
+        <div className="attribute-row-top -mx-4 -mb-3 mt-3 bg-card">
+          <AttributeCells items={cells} />
+        </div>
       )}
     </div>
   )
