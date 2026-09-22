@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { HoverCard, HoverCardContent, HoverCardTrigger, MutedText } from '@/core'
 
@@ -26,6 +26,10 @@ import { cn } from '../utils/twUtils'
  * plus a little, not past the top of the window.
  */
 const LINE = 140
+
+/** Within this of the foot of the scroller, the reader is in the last section
+ *  — the travel has run out, not the sections. */
+const BOTTOM = 8
 
 /** The scrolling ancestor an element actually lives in — the report column. */
 const scrollParent = (el: HTMLElement): HTMLElement | null => {
@@ -145,6 +149,54 @@ export const AssessmentIndex = ({
    * once it has settled under the pinned name bar rather than the moment it
    * appears at the bottom of the screen.
    */
+  /**
+   * Which heading was most recently crossed — and, at the foot of the report,
+   * the last one whether it was crossed or not.
+   *
+   * The end of the document is the end of the last section, but its heading may
+   * never reach the line: the scroller runs out of travel first, so on a short
+   * final section you could be reading nothing but Ownership with the dot still
+   * on Compliance. Clicking the entry worked, because a click sets the answer
+   * directly; scrolling to the same place did not.
+   */
+  const measure = useCallback(() => {
+    // A jump is in flight and its destination is already marked.
+    if (jumpingTo.current) return
+
+    const first = document.getElementById(`section-${sections[0]?.id}`)
+    const scroller = first ? scrollParent(first) : null
+    if (
+      scroller &&
+      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < BOTTOM
+    ) {
+      setHere(sections[sections.length - 1].id)
+      return
+    }
+
+    let current: { id: string } | undefined
+    for (const s of sections) {
+      const el = document.getElementById(`section-${s.id}`)
+      if (el && el.getBoundingClientRect().top <= LINE) current = s
+    }
+    // Above the first heading, the first section is the one you are in.
+    setHere((current ?? sections[0]).id)
+  }, [sections])
+
+  /**
+   * The observer says WHEN a heading crosses; the scroll says when the travel
+   * ends. Neither alone answers both — an observer fires nothing once the last
+   * heading has settled, which is exactly where the bottom of the report is.
+   */
+  useEffect(() => {
+    if (sections.length === 0) return
+    const first = document.getElementById(`section-${sections[0].id}`)
+    const scroller = first ? scrollParent(first) : null
+    if (!scroller) return
+
+    scroller.addEventListener('scroll', measure, { passive: true })
+    return () => scroller.removeEventListener('scroll', measure)
+  }, [sections, measure])
+
   useEffect(() => {
     if (sections.length === 0) return
 
@@ -169,17 +221,7 @@ export const AssessmentIndex = ({
          * headings are read, and only when one of them crosses the band, rather
          * than every section on every frame of a scroll.
          */
-        // A jump is in flight and its destination is already marked.
-        if (jumpingTo.current) return
-
-        const line = LINE
-        let current: { id: string } | undefined
-        for (const s of sections) {
-          const el = document.getElementById(`section-${s.id}`)
-          if (el && el.getBoundingClientRect().top <= line) current = s
-        }
-        // Above the first heading, the first section is the one you are in.
-        setHere((current ?? sections[0]).id)
+        measure()
       },
       // A band rather than a single line, so the callback fires as headings
       // approach and leave; the decision itself is made against `LINE`.

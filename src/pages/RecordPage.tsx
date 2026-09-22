@@ -30,6 +30,8 @@ import { PanelGroup } from '../components/PanelGroup'
 import { negativesFor } from '../lib/identityScore'
 import { AnalysisChat } from '../components/AnalysisChat'
 import { ColumnResizer } from '../components/ColumnResizer'
+import { AnalysisTimeline } from '../components/AnalysisTimeline'
+import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
 import { useWide } from '../hooks/useWide'
 import { BusinessIdentity } from '../components/BusinessIdentity'
 import { IdentityScoreCard } from '../components/IdentityScore'
@@ -78,6 +80,10 @@ const CONTEXT = [
  * simply run to the right edge.
  */
 const PANEL_W = 0
+
+/** Put away, the column is a strip of icons — the same width the global nav
+ *  rail collapses to, because it is the same gesture on the other edge. */
+const RAIL_W = '49px'
 
 /**
  * The report's measure, wherever something has to line up with it.
@@ -289,6 +295,20 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * Below `wide` nothing reads `--chat-w`, so a set width is simply inert there.
    */
   const [chatW, setChatW] = useState<number | null>(null)
+
+  /**
+   * Whether the assistant is on screen.
+   *
+   * Open by default — it is the thing a reviewer acts with, and a report you
+   * cannot ask about is a document. Dismissing it gives the whole width back to
+   * the report, and the control that dismissed it is what brings it back, in
+   * the corner it was dismissed from.
+   */
+  const [chatOpen, setChatOpen] = useState(true)
+
+  /** What the right-hand column is showing. The picker in its own header, and
+   *  the rail it collapses to, both set this. */
+  const [panelView, setPanelView] = useState<PanelView>('assistant')
 
   /** The insights the score read as a point against the identity, marked in the
    *  report where they are argued. */
@@ -638,7 +658,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       style={
         {
           '--panel-w': `${PANEL_W}px`,
-          ...(chatW === null ? {} : { '--chat-w': `${chatW}px` })
+          ...(chatOpen ? {} : { '--chat-w': RAIL_W }),
+          ...(chatOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
         } as React.CSSProperties
       }
     >
@@ -779,7 +800,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * scrolled through the gap above it — content passing over the
               * tabs. Outside the scroller it cannot be passed at all.
               */}
-            <div className="flex shrink-0 items-center border-b border-solid border-border bg-card pt-3">
+            <div className="relative flex shrink-0 items-center border-b border-solid border-border bg-card pt-3">
               <div className={cn(MEASURE, 'flex items-center gap-4 px-12')}>
                 <TabsList className="min-w-0 flex-1 border-0">
                   {assessmentTab}
@@ -797,6 +818,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                   </TabsTrigger>
                 </TabsList>
               </div>
+
             </div>
 
             {/*
@@ -1038,7 +1060,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         {/* The seam is a handle. It is inside the column so it moves with it,
             and it is the column's own left edge — the one the report is on the
             other side of. */}
-        {isWide && (
+        {isWide && chatOpen && (
           <ColumnResizer
             width={chatW ?? (window.innerWidth >= 1504 ? 460 : 400)}
             onResize={setChatW}
@@ -1046,7 +1068,29 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           />
         )}
 
-        {isWide && analysis.selected && (
+        {isWide && !chatOpen && (
+          <ChatRail view={panelView} onOpen={(v) => { setPanelView(v); setChatOpen(true) }} />
+        )}
+
+        {isWide && chatOpen && (
+          <ChatPanelHeader
+            view={panelView}
+            onView={setPanelView}
+            onHide={() => setChatOpen(false)}
+          />
+        )}
+
+        {isWide && chatOpen && panelView === 'timeline' && (
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 panel-scroll">
+            <AnalysisTimeline
+              reports={analysis.reports}
+              selectedId={analysis.selected?.id}
+              onSelect={selectReport}
+            />
+          </div>
+        )}
+
+        {isWide && chatOpen && panelView === 'assistant' && analysis.selected && (
           <AnalysisChat
             // A different report is a different conversation: remounting resets
             // the log's stick-to-bottom, which would otherwise stay detached
@@ -1071,6 +1115,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           />
         )}
 
+      {(!isWide || (chatOpen && panelView === 'assistant')) && (
       <AnalysisDock
         docked={isWide}
         open={dockOpen}
@@ -1111,6 +1156,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         onUnpin={(id) => analysis.unpin(id)}
         hasAnalysis={analysis.versions.length > 0}
       />
+      )}
       </aside>
     </div>
     </ScreenshotViewerProvider>
