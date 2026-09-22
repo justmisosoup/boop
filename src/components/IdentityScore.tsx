@@ -126,15 +126,6 @@ const componentCell = (
  * because the number is invented and must never travel without its working. See
  * `src/lib/identityScore.ts` for what is being asserted and what is not.
  */
-/** "a, b and c" — a list a sentence can contain. */
-const listOf = (items: string[]) =>
-  items.length <= 1
-    ? (items[0] ?? '')
-    : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
-
-/** At or above this, an assessment is not what is holding the score down. */
-const CLEAR = 90
-
 /**
  * How the business performed against what it was assessed by, in one line.
  *
@@ -150,17 +141,11 @@ const CLEAR = 90
 const summarise = (score: IdentityScore): string | null => {
   const read = score.components.filter((c) => c.subScore !== null)
   if (read.length === 0) return null
+  if (score.findings === 0) return `All ${read.length} assessments came back clear.`
 
-  const held = read
-    .filter((c) => (c.subScore as number) < CLEAR)
-    .sort((a, b) => (a.subScore as number) - (b.subScore as number))
-
-  if (held.length === 0)
-    return `All ${read.length} assessments came back clear.`
-
-  return `${read.length - held.length} of ${read.length} assessments came back clear; ${listOf(
-    held.map((c) => c.label.toLowerCase())
-  )} ${held.length === 1 ? 'is' : 'are'} holding the score down.`
+  return `${read.length} assessments read; ${score.findings} finding${
+    score.findings === 1 ? '' : 's'
+  } to resolve, marked below.`
 }
 
 export const IdentityScoreCard = ({

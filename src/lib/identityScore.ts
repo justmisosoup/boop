@@ -76,6 +76,9 @@ export type IdentityScore = {
   ceilings: ScoreCeiling[]
   /** Declared weight that was evaluable, 0–100. Printed on the card. */
   coverage: number
+  /** Distinct insights read as a point against the identity — counted once
+   *  across the report, not once per assessment that cited them. */
+  findings: number
 }
 
 /**
@@ -142,7 +145,12 @@ type Polarity = 'positive' | 'negative' | 'neutral'
 
 const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity> = {
   // Identity: does a source of record agree with what was submitted?
-  name: (r) => (r.state === 'result' ? 'positive' : 'negative'),
+  // `Verified` and `Similar Match` both stand; anything else is a name nobody
+  // matched to a filing.
+  name: (_r, record) => {
+    const verdict = (sub(record, 'name') ?? '').toLowerCase()
+    return verdict.startsWith('verified') || verdict.startsWith('similar') ? 'positive' : 'negative'
+  },
   sos_active: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   sos_match: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   sos_domestic: (r) => (r.state === 'result' ? 'positive' : 'negative'),
@@ -174,14 +182,23 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   web_address_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   web_email_address_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   web_phone_number_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
-  // The record's own flag, not the fact that a check ran: the site presenting a
-  // different name from the application is a name to reconcile.
+  // The check's own verdict, not the fact that it ran. `business_name_match` is
+  // null on this record even where the task says `Mismatch`, so the flag cannot
+  // be the reading: a site presenting a different name from the application is
+  // a name to reconcile, and `Similar Match` is not a mismatch.
   web_business_name_verification: (_r, record) =>
-    record.website?.businessNameMatch === false ? 'negative' : 'positive',
+    (sub(record, 'web_business_name_verification') ?? '').toLowerCase().startsWith('mismatch')
+      ? 'negative'
+      : 'positive',
 
   // People. A submitted person nobody can match to a filing or to the site is
   // the gap a CIP file cannot close by itself.
-  person_verification: (r) => (r.value || r.state === 'result' ? 'positive' : 'negative'),
+  // `Unverified` is a result in the data and a gap in substance: the record
+  // returned an answer, and the answer is that nobody could be matched.
+  person_verification: (_r, record) =>
+    (sub(record, 'person_verification') ?? '').toLowerCase().startsWith('verified')
+      ? 'positive'
+      : 'negative',
   web_person_verification: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   // Connections are found, not cleared. Two businesses sharing this one's
   // addresses is a question about who is behind them.
@@ -225,6 +242,16 @@ const polarityOf = (r: Derived, record: BusinessRecord): Polarity => {
   return r.state === 'result' ? 'positive' : 'negative'
 }
 
+/**
+ * What one finding costs a clean assessment.
+ *
+ * Four points: a file with three things to resolve sits at 91 and passes, a
+ * file with six sits at 76 and gets read, a file with thirteen fails. The
+ * serious findings do not travel through this number at all — they cap it, in
+ * `ceilingsFor`, because a weighted arithmetic turns an OFAC hit into rounding.
+ */
+const FINDING_COST = 4
+
 /** Neither penalises nor credits: a fact about the registry, not the business. */
 const NEUTRAL: ReadonlySet<string> = new Set(['not_published', 'not_required'])
 
@@ -258,19 +285,43 @@ const scoreArea = (
   const neutral = read.filter((x) => x.polarity === 'neutral')
   const counted = positive.length + negative.length
 
-  const reasons: string[] = []
-  if (counted > 0) reasons.push(`${positive.length} of ${counted} checks positive`)
-  // The negatives by name. They are what the score is short by, and a count
-  // hides the one thing a reviewer would act on.
-  for (const x of negative) reasons.push(x.r.statement)
-  if (neutral.length > 0) reasons.push(`${neutral.length} not counted`)
+  /*
+   * Three counts, and nothing else.
+   *
+   * The cell used to name every finding, which put the same three statements in
+   * all four cells — they are cited by all four assessments — and made the card
+   * a second copy of the report under it. The findings are marked where they
+   * are argued: the rows the score read as negative carry the mark in the
+   * assessment itself, so the cell counts and the section shows.
+   */
+  const reasons = [
+    `${positive.length} positive`,
+    `${negative.length} negative`,
+    `${neutral.length} unknown`
+  ]
 
   return {
     id: area.id,
     label: area.name,
     weight,
     appliedWeight: 0,
-    subScore: counted === 0 ? null : Math.round((positive.length / counted) * 100),
+    /*
+     * A clean assessment is 100, and each finding costs `FINDING_COST`.
+     *
+     * It was the SHARE of an assessment's checks that came back positive, which
+     * is the wrong shape twice over. A small assessment was punished for being
+     * small — two findings in a five-check screening read as 60, beside the
+     * same two findings in a sixteen-check identity reading as 81 — and the
+     * three findings on this record are cited by every assessment, so each one
+     * was charged four times and a file with three things to resolve came out
+     * at 73. A reviewer looking at thirty-two clean checks and three open ones
+     * does not read that as a third of a business.
+     *
+     * The deduction says what a reviewer actually counts: the number of things
+     * they have to go and do. Nothing is invented beyond the one constant, and
+     * each finding is printed by name in the cell it cost.
+     */
+    subScore: counted === 0 ? null : clamp(100 - FINDING_COST * negative.length),
     reasons,
     missing: counted === 0 ? ['nothing this assessment cited could be read'] : [],
     insightIds: cited.map((r) => r.insightId)
@@ -334,6 +385,21 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
 }
 
 /**
+ * The insights this record reads as a point AGAINST the identity.
+ *
+ * The report marks them where they are cited, so a reader scanning the argument
+ * sees the three things holding the score down without first working out which
+ * of twenty rows they were. Same table the score uses — one judgement, read in
+ * two places.
+ */
+export const negativesFor = (record: BusinessRecord, results: Derived[]): Set<string> =>
+  new Set(
+    results
+      .filter((r) => !r.notReported && polarityOf(r, record) === 'negative')
+      .map((r) => r.insightId)
+  )
+
+/**
  * The score for one report.
  *
  * Takes `(record, results)` and nothing else, so an old report's snapshot
@@ -383,6 +449,7 @@ export const identityScore = (
     band: bandFor(clamp(value)),
     components: applied,
     ceilings: ceilings.filter((c) => c.at < Math.round(weighted)),
-    coverage
+    coverage,
+    findings: negativesFor(record, results).size
   }
 }

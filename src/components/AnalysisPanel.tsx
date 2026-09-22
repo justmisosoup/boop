@@ -204,10 +204,13 @@ const thinkingSteps = (
 const CiteList = ({
   cited,
   record,
+  negatives,
   onJumpToSource
 }: {
   cited: Derived[]
   record?: BusinessRecord
+  /** Insight ids the assessment score read as a point against the identity. */
+  negatives?: ReadonlySet<string>
   /** An evidence chip names a source record, and following it opens that
    *  source's card — the behaviour the same chip has in the Insights tab. */
   onJumpToSource?: (cardId: string) => void
@@ -230,6 +233,7 @@ const CiteList = ({
             key={r.insightId}
             result={r}
             record={record}
+            negative={negatives?.has(r.insightId)}
             onJumpToSource={onJumpToSource}
           />
         ))}
@@ -333,6 +337,7 @@ export const Para = ({
   cites,
   results,
   record,
+  negatives,
   onJumpToSource,
   aside,
   children
@@ -341,6 +346,7 @@ export const Para = ({
   cites?: string[]
   results: Derived[]
   record?: BusinessRecord
+  negatives?: ReadonlySet<string>
   onJumpToSource?: (cardId: string) => void
   /** Rendered between the sentence and the insights it rests on — the one slot
    *  the identity card can occupy without separating a claim from its own
@@ -382,7 +388,12 @@ export const Para = ({
       {body}
       {aside}
       {cited.length > 0 && (
-        <CiteList cited={cited} record={record} onJumpToSource={onJumpToSource} />
+        <CiteList
+          cited={cited}
+          record={record}
+          negatives={negatives}
+          onJumpToSource={onJumpToSource}
+        />
       )}
     </div>
   )
@@ -405,12 +416,14 @@ export const SectionBody = ({
   section,
   results,
   record,
+  negatives,
   identity,
   onJumpToSource
 }: {
   section: AssessmentSection
   results: Derived[]
   record?: BusinessRecord
+  negatives?: ReadonlySet<string>
   /**
    * The business identity card, under this section's opening claim.
    *
@@ -431,6 +444,7 @@ export const SectionBody = ({
         cites={b.cites}
         results={results}
         record={record}
+        negatives={negatives}
         onJumpToSource={onJumpToSource}
         aside={i === 0 ? identity : undefined}
       >
@@ -460,6 +474,7 @@ export const SectionBody = ({
           cites={g.cites}
           results={results}
           record={record}
+          negatives={negatives}
           onJumpToSource={onJumpToSource}
         >
           {g.point}
@@ -528,6 +543,7 @@ const ReportBody = ({
   identity,
   score,
   stream = false,
+  negatives,
   onJumpToSource
 }: {
   result: AnalysisResult | AnalysisDraft
@@ -548,6 +564,8 @@ const ReportBody = ({
   score?: React.ReactNode
   /** A run is being written, so sections not yet here are coming. */
   stream?: boolean
+  /** Insight ids the assessment score read as a point against the identity. */
+  negatives?: ReadonlySet<string>
   /** An evidence chip under a cited insight opens that source's card. */
   onJumpToSource?: (cardId: string) => void
 }) => {
@@ -567,7 +585,7 @@ const ReportBody = ({
    */
   const isQuestion = byId.has('answer')
 
-  const pass = { results, record, onJumpToSource }
+  const pass = { results, record, negatives, onJumpToSource }
 
   /**
    * Which section the identity card goes under: the first assessment in the
@@ -629,8 +647,12 @@ const ReportBody = ({
                five section titles compete with the report they label. Every
                section's heading is this one line: the assessment's name, and a
                rule carrying it across. */}
+            {/* H2. It was body size and bold, set down so five section titles
+                would not compete with the report they label — but with the
+                score card carrying the head of the page, the assessments are
+                the page's own divisions and were reading as paragraph leads. */}
             <div className="mb-10 flex items-center gap-4">
-              <Text className="font-semibold">{heading}</Text>
+              <Heading level={2}>{heading}</Heading>
               <span aria-hidden="true" className="section-rule h-px flex-1" />
             </div>
             {section && (
@@ -654,6 +676,7 @@ const Answer = ({
   results,
   categories,
   record,
+  negatives,
   onJumpToGroup,
   onJumpToSource,
   wrapRun
@@ -664,6 +687,7 @@ const Answer = ({
   results: Derived[]
   record?: BusinessRecord
   categories: Map<string, string>
+  negatives?: ReadonlySet<string>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   onJumpToSource?: (cardId: string) => void
   /** Puts the workflow disclosure on the run's summary line. Only on the report
@@ -696,6 +720,7 @@ const Answer = ({
         identity={identity}
         score={score}
         policy={version.policy ?? []}
+        negatives={negatives}
         onJumpToSource={onJumpToSource}
       />
     </ChatMessage>
@@ -730,7 +755,8 @@ export const AnalysisPanel = ({
   slow,
   error,
   onJumpToGroup,
-  onJumpToSource
+  onJumpToSource,
+  negatives
 }: {
   versions: AnalysisVersion[]
   /** The business identity card, rendered under the recommendations. */
@@ -765,6 +791,9 @@ export const AnalysisPanel = ({
   /** Follow an evidence chip on a cited insight to that source's card, the way
    *  the Insights tab does. */
   onJumpToSource?: (cardId: string) => void
+  /** Insight ids the assessment score read as a point against the identity —
+   *  marked where they are argued. See `negativesFor`. */
+  negatives?: ReadonlySet<string>
 }) => {
   const kind = waitingKind ?? 'report'
 
@@ -796,6 +825,7 @@ export const AnalysisPanel = ({
             record={record}
             onJumpToGroup={onJumpToGroup}
             onJumpToSource={onJumpToSource}
+            negatives={negatives}
           />
         </div>
       ))}
@@ -818,6 +848,7 @@ export const AnalysisPanel = ({
               record={record}
               policy={policy}
               stream
+              negatives={negatives}
               onJumpToSource={onJumpToSource}
             />
           )}

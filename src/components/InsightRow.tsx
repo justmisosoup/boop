@@ -27,6 +27,7 @@ export const InsightRow = ({
   result,
   record,
   onJumpToSource,
+  negative,
   reveal,
   attributes: attributesOverride,
   onEdit,
@@ -46,6 +47,15 @@ export const InsightRow = ({
    *  Without it a single-source chip has no destination and renders as static
    *  text — the same chip is clickable in the Attributes tab and was not here. */
   onJumpToSource?: (cardId: string) => void
+  /**
+   * Read as a point AGAINST the identity by the assessment score.
+   *
+   * Not the same as `adverse`, which is the record's own "should exist, not
+   * found". This is the score's reading — `Unverified`, `Mismatch`, connections
+   * found — and it is marked here so the three rows holding the number down are
+   * findable in a stack of twenty that all carry the same filled dot.
+   */
+  negative?: boolean
   /** Opened and flashed when the sources roll-up jumps here. */
   reveal?: boolean
 }) => {
@@ -135,7 +145,9 @@ export const InsightRow = ({
           ? 'bg-[var(--core-color-state-selected-bg)]'
           : open
             ? 'bg-[var(--core-color-surface-subtle)]'
-            : isResult
+            : negative
+              ? 'bg-[var(--core-color-status-danger-bg)]'
+              : isResult
               ? 'bg-card'
               : adverse
                 ? 'bg-[var(--core-color-status-danger-bg)]'
@@ -145,7 +157,11 @@ export const InsightRow = ({
       <div className={['flex gap-3', hasSubtext ? 'items-start' : 'items-center'].join(' ')}>
         <span
           className={
-            adverse ? 'text-danger' : isResult ? 'text-foreground' : 'text-muted-foreground'
+            adverse || negative
+              ? 'text-danger'
+              : isResult
+                ? 'text-foreground'
+                : 'text-muted-foreground'
           }
         >
           <StateMark state={result.state} className={hasSubtext ? 'mt-[7px]' : ''} />

@@ -27,6 +27,7 @@ import { AttributesTab, countAttributes } from '../components/AttributesTab'
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { AssessmentIndex } from '../components/AssessmentIndex'
 import { PanelGroup } from '../components/PanelGroup'
+import { negativesFor } from '../lib/identityScore'
 import { BusinessIdentity } from '../components/BusinessIdentity'
 import { IdentityScoreCard } from '../components/IdentityScore'
 import { BusinessLede } from '../components/BusinessLede'
@@ -259,6 +260,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         ]
       }))
   }, [analysis.selected, policy])
+
+  /** The insights the score read as a point against the identity, marked in the
+   *  report where they are argued. */
+  const negatives = useMemo(() => negativesFor(record, results), [record, results])
 
   /** What the index lists: the pillars this report is laid out in. */
   const reportSections = useMemo(() => {
@@ -837,6 +842,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               error={analysis.error}
               onJumpToGroup={jumpToGroup}
               onJumpToSource={jumpToSource}
+              negatives={negatives}
             />
                   </div>
                           </div>
