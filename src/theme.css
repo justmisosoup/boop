@@ -150,6 +150,45 @@ body,
  * wherever the report draws one. The colour is `--rule-color` at the use site,
  * graphite where nothing sets it.
  */
+/* `--radius`, which the app defines in its own `index.css` and this prototype
+ * never did.
+ *
+ * `tailwind.config.cjs` maps `rounded-lg|md|sm` onto it, so without it every
+ * one of those utilities computed to 0 — including `navItemVariants`' own
+ * `rounded-lg`, which is why the global nav's selected row is a hard square
+ * here and a rounded pill in the app. One value fixes both rails.
+ */
+:root {
+  --radius: 0.5rem;
+}
+
+/* The categorical ramp, forward-ported.
+ *
+ * `--core-color-categorical-*` arrived in the app's `theme.css` with the
+ * rebuilt Timeline (`c4379d1cd`); this prototype's `src/core` clone predates
+ * it, and core is read-only (PARITY.md). So the five values sit here, copied
+ * exactly, and this block should be deleted the next time core is re-cloned.
+ *
+ * They are for distinguishing kinds — officer, name, address, registration,
+ * standing — not for grading them. Nothing here means good or bad.
+ */
+.core-theme {
+  --core-color-categorical-1: #0077bd;
+  --core-color-categorical-2: #008b6d;
+  --core-color-categorical-3: #795dba;
+  --core-color-categorical-4: #787700;
+  --core-color-categorical-5: #a84b84;
+}
+
+.core-theme[data-theme='dark'],
+.dark .core-theme {
+  --core-color-categorical-1: #288dd4;
+  --core-color-categorical-2: #00a081;
+  --core-color-categorical-3: #8d73d1;
+  --core-color-categorical-4: #8c8c00;
+  --core-color-categorical-5: #c06099;
+}
+
 /* The claim chip.
  *
  * "Submitted" is the only chip on a row that is not a source — it is the

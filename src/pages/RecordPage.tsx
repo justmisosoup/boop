@@ -30,7 +30,7 @@ import { PanelGroup } from '../components/PanelGroup'
 import { negativesFor } from '../lib/identityScore'
 import { AnalysisChat } from '../components/AnalysisChat'
 import { ColumnResizer } from '../components/ColumnResizer'
-import { AnalysisTimeline } from '../components/AnalysisTimeline'
+import { Timeline } from '../components/Timeline'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
 import { useWide } from '../hooks/useWide'
 import { BusinessIdentity } from '../components/BusinessIdentity'
@@ -309,6 +309,20 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   /** What the right-hand column is showing. The picker in its own header, and
    *  the rail it collapses to, both set this. */
   const [panelView, setPanelView] = useState<PanelView>('assistant')
+
+  /**
+   * Written out rather than composed from `wide:` variants.
+   *
+   * The three states are `display: contents`, `display: flex` and
+   * `display: none`, and Tailwind resolves two utilities setting one property
+   * by stylesheet order rather than by the order they are written — so
+   * `contents wide:hidden` is a coin toss. One string, one display.
+   */
+  const panelClass = !isWide
+    ? 'contents'
+    : chatOpen
+      ? 'flex min-w-0 flex-1 flex-col border-l border-solid border-border'
+      : 'hidden'
 
   /** The insights the score read as a point against the identity, marked in the
    *  report where they are argued. */
@@ -659,6 +673,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         {
           '--panel-w': `${PANEL_W}px`,
           ...(chatOpen ? {} : { '--chat-w': RAIL_W }),
+          // The timeline is a chart with a year axis and a 144px label column:
+          // at the assistant's width it is a sparkline with truncated values,
+          // so opening it takes the half of the window it needs. A width the
+          // reader has dragged wins over both — they have said what they want.
+          ...(chatOpen && chatW === null && panelView === 'timeline'
+            ? { '--chat-w': '50%' }
+            : {}),
           ...(chatOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
         } as React.CSSProperties
       }
@@ -1055,7 +1076,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         */}
       <aside
         aria-label="Analysis conversation"
-        className="contents wide:fixed wide:bottom-0 wide:right-0 wide:top-[45px] wide:flex wide:w-[var(--chat-w)] wide:flex-col wide:border-l wide:border-solid wide:border-border"
+        className="contents wide:fixed wide:bottom-0 wide:right-0 wide:top-[45px] wide:flex wide:w-[var(--chat-w)] wide:flex-row"
       >
         {/* The seam is a handle. It is inside the column so it moves with it,
             and it is the column's own left edge — the one the report is on the
@@ -1068,54 +1089,51 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           />
         )}
 
-        {isWide && !chatOpen && (
-          <ChatRail view={panelView} onOpen={(v) => { setPanelView(v); setChatOpen(true) }} />
-        )}
+        {/* The panel. Grey, because it is a surface you work in; the rail
+            beside it and the report beyond it are white, because they are
+            surfaces you read.
 
-        {isWide && chatOpen && (
-          <ChatPanelHeader
-            view={panelView}
-            onView={setPanelView}
-            onHide={() => setChatOpen(false)}
-          />
-        )}
+            `hidden` rather than unmounted when the panel is put away, and
+            `contents` below `wide` where there is no column at all — either way
+            the composer inside it is never thrown away, so what someone has
+            half-typed survives both. */}
+        <div className={panelClass}>
+            {isWide && chatOpen && (
+            <ChatPanelHeader view={panelView} />
+            )}
 
-        {isWide && chatOpen && panelView === 'timeline' && (
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 panel-scroll">
-            <AnalysisTimeline
-              reports={analysis.reports}
-              selectedId={analysis.selected?.id}
-              onSelect={selectReport}
-            />
-          </div>
-        )}
+            {panelView === 'timeline' && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 panel-scroll">
+                <Timeline businessId={selected.id} />
+              </div>
+            )}
 
-        {isWide && chatOpen && panelView === 'assistant' && analysis.selected && (
-          <AnalysisChat
-            // A different report is a different conversation: remounting resets
-            // the log's stick-to-bottom, which would otherwise stay detached
-            // from where the reader had scrolled in the last one.
-            key={analysis.selected.id}
-            turns={analysis.questions}
-            marker={
-              running
-                ? `Running ${analysis.waitingSkills[0] ?? standing?.name ?? 'the assessment'}`
-                : `${reportLabel(analysis.selected)} · ${reportDate(analysis.selected)}`
-            }
-            waiting={analysis.waiting && analysis.waitingKind === 'question'}
-            waitingTyped={analysis.waitingTyped}
-            waitingSkills={analysis.waitingSkills}
-            error={analysis.error}
-            results={results}
-            record={record}
-            categories={categories}
-            negatives={negatives}
-            onJumpToGroup={jumpToGroup}
-            onJumpToSource={jumpToSource}
-          />
-        )}
+            {panelView === 'assistant' && analysis.selected && (
+              <AnalysisChat
+                // A different report is a different conversation: remounting
+                // resets the log's stick-to-bottom, which would otherwise stay
+                // detached from where the reader had scrolled in the last one.
+                key={analysis.selected.id}
+                turns={analysis.questions}
+                marker={
+                  running
+                    ? `Running ${analysis.waitingSkills[0] ?? standing?.name ?? 'the assessment'}`
+                    : `${reportLabel(analysis.selected)} · ${reportDate(analysis.selected)}`
+                }
+                waiting={analysis.waiting && analysis.waitingKind === 'question'}
+                waitingTyped={analysis.waitingTyped}
+                waitingSkills={analysis.waitingSkills}
+                error={analysis.error}
+                results={results}
+                record={record}
+                categories={categories}
+                negatives={negatives}
+                onJumpToGroup={jumpToGroup}
+                onJumpToSource={jumpToSource}
+              />
+            )}
 
-      {(!isWide || (chatOpen && panelView === 'assistant')) && (
+      {(!isWide || panelView === 'assistant') && (
       <AnalysisDock
         docked={isWide}
         open={dockOpen}
@@ -1157,6 +1175,27 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         hasAnalysis={analysis.versions.length > 0}
       />
       )}
+        </div>
+
+        {/* The rail, always. Putting the panel away leaves the list of what it
+            could show rather than a bare edge. */}
+        {isWide && (
+          <ChatRail
+            open={chatOpen}
+            onHide={() => setChatOpen(false)}
+            view={panelView}
+            onOpen={(v) => {
+              // Picking the view you are already on puts the column away, the
+              // way a nav rail's current entry does nothing but this one has
+              // somewhere to go.
+              if (chatOpen && v === panelView) setChatOpen(false)
+              else {
+                setPanelView(v)
+                setChatOpen(true)
+              }
+            }}
+          />
+        )}
       </aside>
     </div>
     </ScreenshotViewerProvider>
