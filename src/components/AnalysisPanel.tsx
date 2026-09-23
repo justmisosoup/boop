@@ -1,7 +1,7 @@
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
+import type { AssessmentWeight } from '../lib/identityScore'
 import type { AnalysisVersion } from '../lib/useAnalysis'
 import type { AnalysisDraft } from '../types'
-import { AnalysisSources } from './AnalysisSources'
 import { ReportBody } from './ReportBody'
 
 /**
@@ -22,11 +22,11 @@ export const AnalysisPanel = ({
   draft,
   waiting,
   policy,
-  score,
   results,
   categories,
   record,
   negatives,
+  tiers,
   onJumpToGroup,
   onJumpToSource
 }: {
@@ -38,8 +38,6 @@ export const AnalysisPanel = ({
   waiting: boolean
   /** The assessments inside the run in flight, for the draft's layout. */
   policy: Array<{ id: string; name: string }>
-  /** The assessment score card, under the recommendations. */
-  score?: React.ReactNode
   results: Derived[]
   categories: Map<string, string>
   /** The record itself, so a cited check can show the value behind it. */
@@ -47,6 +45,8 @@ export const AnalysisPanel = ({
   /** Insight ids the assessment score read as a point against the identity —
    *  marked where they are argued. See `negativesFor`. */
   negatives?: ReadonlySet<string>
+  /** Each area's weight in the assessment, for its card's header. */
+  tiers?: ReadonlyMap<string, AssessmentWeight>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   /** Follow an evidence chip on a cited insight to that source's card, the way
    *  the Insights tab does. */
@@ -61,9 +61,9 @@ export const AnalysisPanel = ({
           result={version.result}
           results={results}
           record={record}
-          score={score}
           policy={version.policy ?? []}
           negatives={negatives}
+          tiers={tiers}
           onJumpToSource={onJumpToSource}
         />
       )}
@@ -87,18 +87,6 @@ export const AnalysisPanel = ({
         </div>
       )}
 
-      {/* What the whole report rested on, at the end of it. It hung off the
-          message bubble's footer, which put it level with the report's first
-          line and made it read as a header on the conversation. */}
-      {version && (
-        <AnalysisSources
-          className="mt-12 border-t border-solid border-border pt-4"
-          used={version.result.used}
-          results={results}
-          categories={categories}
-          onSelect={onJumpToGroup}
-        />
-      )}
     </div>
   )
 }

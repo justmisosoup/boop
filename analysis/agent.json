@@ -4,7 +4,7 @@
   "skills": [
     {
       "id": "smb-account-opening",
-      "name": "Onboarding General",
+      "name": "Bank account opening",
       "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
       "kind": "workflow",
       "createdBy": "Sara Menefee",

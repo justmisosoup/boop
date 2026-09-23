@@ -4,6 +4,7 @@ import { CircleAlert, CircleCheck } from 'lucide-react'
 import { Hint, Surface, Text } from '@/core'
 
 import { cn } from '../utils/twUtils'
+import { CardHeader } from './CardHeader'
 
 /** One fact under a cell's label. */
 export type AttributeValue = {
@@ -227,22 +228,26 @@ export const AttributeCells = ({
   )
 }
 
-/** The cells in a card of their own: a hard square in graphite. */
+/** The cells in a card of their own: the card surface and radius, the default
+ *  border — the same frame every other stack on the report sits in. It was a
+ *  hard square in graphite. */
 export const AttributeGrid = ({
   items,
+  title,
+  trailing,
   className
 }: {
   items: AttributeCell[]
+  /** The card's own name, in a header row inside it (see `CardHeader`). */
+  title?: ReactNode
+  trailing?: ReactNode
   className?: string
 }) => {
   if (items.length === 0) return null
 
   return (
-    <Surface
-      variant="default"
-      padding="none"
-      className={cn('overflow-hidden rounded-none border-text-primary', className)}
-    >
+    <Surface variant="card" padding="none" className={cn('overflow-hidden', className)}>
+      {title && <CardHeader title={title} trailing={trailing} />}
       <AttributeCells items={items} className="-mb-px" />
     </Surface>
   )

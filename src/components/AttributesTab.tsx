@@ -1,5 +1,3 @@
-import { PanelGroup } from './PanelGroup'
-
 import { attributesFor, licenseRows, type AttributeRow } from '../lib/attributes'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
@@ -146,44 +144,47 @@ export const countAttributes = (
   return n
 }
 
-/**
- * The layer beneath the insights: the addresses, registrations, people and
- * filings the statements were built from.
- */
-export const AttributesTab = ({
-  record,
-  results,
-  groupFor,
-  onJumpToSource
-}: {
-  record: BusinessRecord
-  results: Derived[]
-  groupFor: (insightId: string) => GroupId
-  /** Follow a source chip to that source's card in the Sources tab. */
-  onJumpToSource?: (cardId: string) => void
-}) => {
-  const byGroup = attributeRowsByGroup(record, results, groupFor)
+export type AttributeGroup = { id: GroupId; label: string; rows: AttributeRow[] }
 
-  const groups = GROUPS.map((g) => ({
+/**
+ * The attribute groupings, in the order the groups are laid out, empty ones
+ * dropped — what the Attributes tab's column lists, and what its pane shows
+ * one of. Only the groups with a declared order are reordered; elsewhere the
+ * producer's order is the meaningful one — a filing's fields follow the filing
+ * they belong to.
+ */
+export const attributeGroups = (
+  record: BusinessRecord,
+  results: Derived[],
+  groupFor: (insightId: string) => GroupId
+): AttributeGroup[] => {
+  const byGroup = attributeRowsByGroup(record, results, groupFor)
+  return GROUPS.map((g) => ({
     ...g,
-    // Only the groups with a declared order are reordered. Elsewhere the
-    // producer's order is the meaningful one — a filing's fields follow the
-    // filing they belong to.
     rows: ordered(g.id, [...(byGroup.get(g.id)?.values() ?? [])])
   })).filter((g) => g.rows.length > 0)
-
-  return (
-    <>
-      {groups.map((group) => (
-        <PanelGroup key={group.id} label={group.label}>
-          <AttributeGrid
-            items={cellsFromRows(group.rows, {
-              domesticState: record.formation?.state,
-              onJumpToSource
-            })}
-          />
-        </PanelGroup>
-      ))}
-    </>
-  )
 }
+
+/**
+ * The layer beneath the insights: one grouping of the addresses, registrations,
+ * people and filings the statements were built from, in the pane beside the
+ * column that lists the groupings.
+ */
+export const AttributeGroupDetail = ({
+  group,
+  record,
+  onJumpToSource
+}: {
+  group: AttributeGroup
+  record: BusinessRecord
+  /** Follow a source chip to that source's card in the Sources tab. */
+  onJumpToSource?: (cardId: string) => void
+}) => (
+  <AttributeGrid
+    title={group.label}
+    items={cellsFromRows(group.rows, {
+      domesticState: record.formation?.state,
+      onJumpToSource
+    })}
+  />
+)

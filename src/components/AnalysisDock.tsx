@@ -837,14 +837,14 @@ export const AnalysisDock = ({
                   {(inspect.history?.length ?? 0) > 1 && (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button
-                          type="button"
+                        <IconActionButton
                           aria-label="Change history"
                           title="Change history"
-                          className="rounded-control p-0.5 text-muted-foreground hover:text-foreground"
+                          variant="quiet"
+                          size="compact"
                         >
                           <History aria-hidden="true" className="size-3.5" />
-                        </button>
+                        </IconActionButton>
                       </PopoverTrigger>
                       <PopoverContent align="start" className="z-popover w-64 p-2">
                         <MutedText className="mb-1 block text-caption font-semibold">

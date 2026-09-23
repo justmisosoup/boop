@@ -145,10 +145,14 @@ body,
  * A 1px `dotted` border and a `dotted` text-decoration both draw single-pixel
  * dots, and the treatment these views follow is a 4px dash against a 4px gap.
  * Nothing in `border-style` or `text-decoration-style` produces that, so the
- * rule is painted, and the card's dividers, the prose underline and the rule
- * across a section heading all read from these declarations — one line,
- * wherever the report draws one. The colour is `--rule-color` at the use site,
- * graphite where nothing sets it.
+ * rule is painted, and the cells of every attribute grid read from these
+ * declarations — one line, wherever the report draws one.
+ *
+ * In the card border's colour, not graphite. The dashes used to be drawn in
+ * the text colour, the same pixel as a hard black frame around every stack,
+ * and the report read as a ruled form. The frames are core's card now and the
+ * rows between insights are its hairline divider, so the dashes take the one
+ * line colour the design system draws its own edges in.
  */
 /* `--radius`, which the app defines in its own `index.css` and this prototype
  * never did.
@@ -215,12 +219,12 @@ body,
 .core-theme {
   --dash-rule-x: repeating-linear-gradient(
     to right,
-    var(--rule-color, var(--core-color-text-primary)) 0 4px,
+    var(--core-color-border-default) 0 4px,
     transparent 4px 8px
   );
   --dash-rule-y: repeating-linear-gradient(
     to bottom,
-    var(--rule-color, var(--core-color-text-primary)) 0 4px,
+    var(--core-color-border-default) 0 4px,
     transparent 4px 8px
   );
 }
@@ -235,89 +239,21 @@ body,
   background-size: 1px 100%, 100% 1px;
 }
 
-/* A row in a list card — insights, attributes, a source's payload — ruled the
-   way the grid's cells are. The grid splits two ways and these lists split one,
-   so only the horizontal gradient is painted, and the list hangs a pixel past
-   the card (`-mb-px`) so the last row's rule is clipped with the grid's. */
-.attribute-row {
-  background-image: var(--dash-rule-x);
-  background-position: left bottom;
-  background-repeat: no-repeat;
-  background-size: 100% 1px;
-}
-
-/* Cells that divide a CARD rather than a record.
- *
- * The assessments on the score card are the report's own sections, not values
- * read off a filing — so they take the solid rule the insight rows take, and
- * the dashes stay where the attributes are. Same colour, same pixel; only the
- * style carries the distinction. The grid hangs a pixel past its card
- * (`-mr-px -mb-px`) so the last column's and last row's rules are clipped,
- * exactly as the painted ones were.
- */
-.cells-solid .attribute-cell {
-  background-image: none;
-  border-right: 1px solid var(--rule-color, var(--core-color-text-primary));
-  border-bottom: 1px solid var(--rule-color, var(--core-color-text-primary));
-}
-
-/* An insight in a stack of insights, divided by a SOLID rule.
- *
- * The dashed rule is this report's line for a value: a cell of the identity
- * grid, an attribute under a statement, a word in the prose pointing at one.
- * An insight is not a value — it is a reading, and a stack of them is a list of
- * separate findings rather than one record split into fields. So the divisions
- * between insights are solid, and the dashes begin where the attributes do:
- * inside the row, under the chevron, where `.attribute-row-top` opens the
- * evidence.
- *
- * Same colour and same pixel as the dashed rules, so only the style carries the
- * distinction. The stack hangs a pixel past its card (`-mb-px`) so the last
- * row's rule is clipped, exactly as `.attribute-row` does.
- */
-.insight-row {
-  border-bottom: 1px solid var(--rule-color, var(--core-color-text-primary));
-}
-
 /* An attribute where the prose says it: the card's own rule, run under the
    words. Painted rather than underlined so the dots keep the same rhythm, and
    dotted rather than solid because a solid underline in running text reads as
    a link — these words do not go anywhere, they point at the card holding the
-   same value. */
+   same value. A step darker than the cell rules: an 8px run of dashes in the
+   border colour disappears into the paper under 14px text. */
 .attribute-mention {
-  background-image: var(--dash-rule-x);
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--core-color-border-strong) 0 4px,
+    transparent 4px 8px
+  );
   background-position: left calc(100% - 1px);
   background-repeat: repeat-x;
   background-size: 8px 1px;
-}
-
-/* The rule that carries a section heading into its assessment.
- *
- * The sections were separated by a solid rule above the heading, which drew a
- * line the report did not need twice — the heading already says a section has
- * started. The rule now runs out of the heading itself, on its line and at its
- * middle, so the break and the label are one gesture. Lighter than the
- * attribute rules: this one divides the report, it does not carry a value.
- *
- * Solid. It was dashed, and the dash is this report's line for a value — a cell
- * of the identity grid, an attribute under a statement, a word in the prose
- * pointing at one. Nothing about a section heading is a value, so the dashes
- * were borrowing a meaning the rule does not have.
- */
-.section-rule {
-  --rule-color: var(--core-color-border-strong);
-  background-image: none;
-  border-top: 1px solid var(--rule-color);
-}
-
-/* The rule above an inset region — an insight's evidence under the statement it
-   belongs to. `.attribute-row` paints the line under a row; the statement above
-   this one is not a row, so nothing would draw the line between them. */
-.attribute-row-top {
-  background-image: var(--dash-rule-x);
-  background-position: left top;
-  background-repeat: no-repeat;
-  background-size: 100% 1px;
 }
 
 /* Row dividers in the data table, restored under the last column.

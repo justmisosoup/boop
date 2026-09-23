@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState, type MouseEvent } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 import { ActionButton, MutedText, Text, TruncatedText } from '@/core'
 
 import { attributesFor, type AttributeRow } from '../lib/attributes'
 import type { BusinessRecord } from '../lib/deriveResults'
 import type { InsightResult } from '../types'
-import { AttributeCells, cell } from './AttributeGrid'
+import { cn } from '../utils/twUtils'
+import { AttributeCells } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
-import { DisclosureChevron } from './DisclosureChevron'
+import { Collapsible } from './Collapsible'
 import { StateMark } from './StateMark'
 
 /**
  * The display grammar (concept/assessment.md), built on @/core primitives.
  *
- *   result     — card surface, full weight, the value in the insight's own terms
+ *   result     — full weight, the value in the insight's own terms
  *   unknown    — marked, not coloured
  *   no result  — LIGHTER than a result. No surface fill, no chip, no status tone.
  *
@@ -22,6 +24,12 @@ import { StateMark } from './StateMark'
  * because those are the states an analyst must not misread.
  *
  * DIVERGENCE from @/core, recorded in PARITY.md: no badge is used for state.
+ *
+ * The row's anatomy is the dashboard's own insight row
+ * (`app/src/containers/BusinessHome/Insights/InsightRow.tsx`): a 16px status
+ * column and a content column, 12px apart, 16/12 padding, the row's hover in
+ * the list-item token. The dashboard's rows navigate; these open, so the
+ * disclosure is the house one (`Collapsible`) rather than a link.
  */
 export const InsightRow = ({
   result,
@@ -42,7 +50,6 @@ export const InsightRow = ({
    *  the catalog and are regenerated on every dev start. */
   onEdit?: () => void
   onRemove?: () => void
-  /** Offered once an analysis exists, on rows it did not use. */
   /** Follow an evidence row's source chip to that source's card in Sources.
    *  Without it a single-source chip has no destination and renders as static
    *  text — the same chip is clickable in the Attributes tab and was not here. */
@@ -69,6 +76,7 @@ export const InsightRow = ({
    * Held until they close the row, which is them saying they are done with it.
    */
   const [cited, setCited] = useState(false)
+  const regionId = useId()
 
   // Jumped to from the analysis's citations: open the evidence so the citation
   // lands on something rather than just scrolling.
@@ -80,6 +88,15 @@ export const InsightRow = ({
   }, [reveal])
   const adverse = result.reason === 'should_exist_not_found'
   const isResult = result.state === 'result'
+  /**
+   * Flagged: the record came back adverse, or the score read it against the
+   * identity. The dashboard's convention for a flagged insight — the mark
+   * takes the danger colour and the statement goes bold; the row itself is not
+   * tinted. It used to be: a red wash over the whole row, which made three
+   * findings in a stack of twenty read as three alarms rather than three
+   * sentences to read first.
+   */
+  const flagged = adverse || Boolean(negative)
   const attributes = attributesOverride ?? attributesFor(result.insightId, record)
 
   // The source's message earns a line only when it says something the statement
@@ -97,222 +114,218 @@ export const InsightRow = ({
    */
   const showBecause = Boolean(!isResult && because && (adverse || open))
 
-  // A single-line row centres in the card; once there is a line of sub-text the
-  // row grows and everything aligns to the top instead.
-  const hasSubtext = showBecause
+  const cells = cellsFromRows(attributes, {
+    domesticState: record.formation?.state,
+    onJumpToSource,
+    // The reading this check is making — a property type, a count of
+    // businesses at an address — is the finding here and nowhere else.
+    evidence: true
+  })
+  // "Produced by …" is not rendered. It is the same sentence under every
+  // insight — the Order packages a check needs — so on a page of 35 it was 35
+  // copies of one fact about our plumbing, in the slot where the evidence for
+  // THIS business goes. It stays on `result.evidence`, which is what the
+  // assessment layer reads, so nothing downstream loses it.
 
-  const cells = [
-    ...cellsFromRows(attributes, {
-      domesticState: record.formation?.state,
-      onJumpToSource,
-      // The reading this check is making — a property type, a count of
-      // businesses at an address — is the finding here and nowhere else.
-      evidence: true
-    }),
-    // "Produced by …" is not rendered. It is the same sentence under every
-    // insight — the Order packages a check needs — so on a page of 35 it was 35
-    // copies of one fact about our plumbing, in the slot where the evidence for
-    // THIS business goes. It stays on `result.evidence`, which is what the
-    // assessment layer reads, so nothing downstream loses it.
-  ]
+  /** A row with nothing behind it does not pretend to open. */
+  const expandable = cells.length > 0
+
+  const toggle = () =>
+    setOpen((v) => {
+      if (v) setCited(false)
+      return !v
+    })
+
+  /**
+   * The whole row opens it, the dashboard's way.
+   *
+   * `InsightsPanel` puts the click on the row and lets it through unless it
+   * landed on a control of its own. Here the controls that keep their clicks
+   * are the row's actions (Edit, Remove) and anything inside the evidence —
+   * a source chip in an open band must not close the band it is in. The
+   * statement is not a control: `TruncatedText` wraps it in a tooltip trigger
+   * when it clips, and that trigger is a `<button>`, which is why the header is
+   * not a button itself — a button in a button is invalid HTML.
+   */
+  const delegateClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!(event.target instanceof Element)) return
+    if (event.target.closest('[data-row-actions], [data-evidence]')) return
+    toggle()
+  }
+
+  const statement = open ? (
+    <span className={cn('block text-sm leading-5', !isResult && 'text-text-secondary', flagged && 'font-semibold')}>
+      {result.statement}
+    </span>
+  ) : (
+    /* One line while collapsed. A statement wrapping to four lines is what made
+       this column unscannable; `TruncatedText` clips it and puts the full
+       sentence in a tooltip, but only when it actually clips. Opening the row
+       gives it all the lines it wants. Same 14/20 in both states, so the row
+       does not shift under the cursor as it opens. */
+    <TruncatedText
+      className={cn('text-sm leading-5', !isResult && 'text-muted-foreground', flagged && 'font-semibold')}
+    >
+      {result.statement}
+    </TruncatedText>
+  )
+
+  const body = (
+    <span className="min-w-0 flex-1">
+      {/* The statement IS the finding — "Submitted DBA verified against a
+          filing" or "…not verified against a filing" — not a check name with
+          the answer on a second line. */}
+      {statement}
+      {/* On a result the value already carries the outcome; repeating the
+          source's message under it says the same thing twice. The message
+          earns its place only where the state needs explaining. */}
+      {showBecause &&
+        (adverse ? (
+          <Text size="sm" tone="danger" className="mt-0.5">
+            {because}
+          </Text>
+        ) : (
+          <MutedText className="mt-0.5 block text-caption">{because}</MutedText>
+        ))}
+    </span>
+  )
 
   return (
     <div
       id={`insight-${result.insightId}`}
-      className={[
+      onClick={expandable ? delegateClick : undefined}
+      className={cn(
         // `group`: the row's own actions are revealed by hovering it, so they
-        // stop holding width in a column that has none to spare.
-        // Solid divider, not the dashed one the attribute lists use — see
-        // `.insight-row` in theme.css.
-        'insight-row group px-4 py-3 transition-colors',
-        // No left bar. It said what the mark at the head of the row already
-        // says — result, no result, adverse — in a second vocabulary, and on a
-        // card whose own frame is a hard graphite rule it read as a fourth
-        // edge. The background still carries the two states that are about the
-        // reader's position rather than the finding: what a citation landed on,
-        // and what came back adverse.
-        //
-        // Mutually exclusive rather than layered: two utilities setting the same
-        // property are resolved by stylesheet order, not by the order they are
-        // written here, so an override that merely comes later is a coin toss.
-        // Open, the statement line is tinted: `surface-subtle`, the system's
-        // own soft grey. A row that has been opened is a row the reader is
-        // working in, and with the evidence bled to the card's edges there was
-        // nothing saying where the row it belongs to begins. The evidence keeps
-        // the card colour below, so the tint reads as the header of what is
-        // open rather than as a highlight over the whole thing.
+        // stop holding width in a column that has none to spare. `pt-3` only:
+        // the content column carries the bottom padding, so the evidence band
+        // under it can sit flush on the row's bottom edge.
+        'group grid grid-cols-[16px_minmax(0,1fr)] gap-x-3 px-4 pt-3',
+        'transition-colors duration-fast motion-reduce:transition-none',
+        'hover:bg-[var(--core-color-list-item-hover-bg)]',
+        expandable && 'cursor-pointer',
+        // Two states about the reader's position, not the finding: what a
+        // citation landed on, and what is open. Open, the statement line is
+        // tinted `surface-subtle` so there is something saying where the row
+        // the evidence belongs to begins. Mutually exclusive rather than
+        // layered — two utilities on one property resolve by stylesheet
+        // order, not by the order written here.
         cited
           ? 'bg-[var(--core-color-state-selected-bg)]'
           : open
             ? 'bg-[var(--core-color-surface-subtle)]'
-            : negative
-              ? 'bg-[var(--core-color-status-danger-bg)]'
-              : isResult
-              ? 'bg-card'
-              : adverse
-                ? 'bg-[var(--core-color-status-danger-bg)]'
-                : 'bg-transparent'
-      ].join(' ')}
+            : 'bg-card'
+      )}
     >
-      <div className={['flex gap-3', hasSubtext ? 'items-start' : 'items-center'].join(' ')}>
-        <span
-          className={
-            adverse || negative
-              ? 'text-danger'
-              : isResult
-                ? 'text-foreground'
-                : 'text-muted-foreground'
-          }
-        >
-          <StateMark state={result.state} className={hasSubtext ? 'mt-[7px]' : ''} />
+      {/* `h-5` is the statement line's 20px strut, so the 12px mark centres on
+          the first line however far the row wraps. */}
+      <span
+        className={cn(
+          'flex h-5 w-4 items-center justify-center',
+          // The status token in its arbitrary form: this config maps no `danger`
+          // colour key, so `text-danger` (which this used to be) was a no-op
+          // and a flagged mark drew in the text colour.
+          flagged
+            ? 'text-[var(--core-color-status-danger-fg)]'
+            : isResult
+              ? 'text-foreground'
+              : 'text-muted-foreground'
+        )}
+      >
+        <StateMark state={result.state} />
+      </span>
+
+      <div className="flex min-w-0 items-start gap-3 pb-3">
+        <span data-statement className="flex min-w-0 flex-1">
+          {body}
         </span>
 
-        <div className="min-w-0 flex-1">
-          {/* The statement IS the finding — "Submitted DBA verified against a
-              filing" or "…not verified against a filing" — not a check name
-              with the answer on a second line. */}
-          {/* One line while collapsed. A statement wrapping to four lines is
-              what made this column unscannable; `TruncatedText` clips it and
-              puts the full sentence in a tooltip, but only when it actually
-              clips. Opening the row gives it all the lines it wants. */}
-          {/* The grid's value type, in both states. They were 14/20 collapsed
-              and 14/24 open, so a row shifted under the cursor as it opened. */}
-          {open ? (
-            <span
-              className={[
-                'block text-sm leading-snug',
-                isResult ? '' : 'text-text-secondary'
-              ].join(' ')}
-            >
-              {result.statement}
-            </span>
-          ) : (
-            <TruncatedText
-              className={
-                isResult ? 'text-sm leading-snug' : 'text-sm leading-snug text-muted-foreground'
-              }
-            >
-              {result.statement}
-            </TruncatedText>
-          )}
-
-          {/* On a result the value already carries the outcome; repeating the
-              source's message under it says the same thing twice. The message
-              earns its place only where the state needs explaining. */}
-          {showBecause &&
-            (adverse ? (
-              <Text size="sm" tone="danger" className="mt-0.5">
-                {because}
-              </Text>
-            ) : (
-              <MutedText className="mt-0.5 block text-caption">{because}</MutedText>
-            ))}
-        </div>
-
-        {/* Far right: the evidence disclosure.
-            No state tag — the mark on the left already carries the state by
-            shape, and the statement says it in words ("... could not be
-            resolved"). A third copy, set in caps, was the loudest thing in a row
-            whose actual content is the sentence. */}
-        <div
-          className={[
-            'flex shrink-0 items-center gap-2',
-            hasSubtext ? 'self-start' : 'self-center'
-          ].join(' ')}
-        >
-          {/*
-            * The row's actions, which take no width until you want them.
-            *
-            * A button is ~110px of permanent furniture on every row; beside a
-            * Signal chip it left the statement about 150px to wrap into, which
-            * is how a one-sentence row reached four lines. Hiding them outright
-            * would take them off the keyboard, so
-            * the track they sit in is collapsed to zero instead: the buttons
-            * stay in the DOM and stay focusable, and `group-focus-within`
-            * opens the track when tabbing reaches them.
-            */}
-          {(onEdit || onRemove) && (
-            <div
-              className={[
-                'grid grid-cols-[0fr] transition-[grid-template-columns] duration-200',
-                'group-hover:grid-cols-[1fr] group-focus-within:grid-cols-[1fr]'
-              ].join(' ')}
-            >
-              <div className="overflow-hidden">
-                <div className="flex items-center gap-2 whitespace-nowrap pl-1">
-                  {onEdit && (
-                    <ActionButton
-                      aria-label="Edit this insight"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onEdit()
-                      }}
-                      size="compact"
-                      variant="quiet"
-                      className="!h-6 !min-h-0"
-                    >
-                      Edit
-                    </ActionButton>
-                  )}
-                  {onRemove && (
-                    <ActionButton
-                      aria-label="Remove this insight"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onRemove()
-                      }}
-                      size="compact"
-                      variant="quiet"
-                      className="!h-6 !min-h-0"
-                    >
-                      Remove
-                    </ActionButton>
-                  )}
-                </div>
+        {/*
+          * The row's actions, which take no width until you want them.
+          *
+          * A button is ~110px of permanent furniture on every row; the track
+          * they sit in is collapsed to zero instead: they stay in the DOM and
+          * stay focusable, and `group-focus-within` opens the track when
+          * tabbing reaches them. `data-row-actions` keeps their clicks from
+          * opening the row.
+          */}
+        {(onEdit || onRemove) && (
+          <div
+            data-row-actions
+            className={cn(
+              'grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-standard',
+              'group-hover:grid-cols-[1fr] group-focus-within:grid-cols-[1fr]'
+            )}
+          >
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-2 whitespace-nowrap pl-1">
+                {onEdit && (
+                  <ActionButton
+                    aria-label="Edit this insight"
+                    onClick={onEdit}
+                    size="compact"
+                    variant="quiet"
+                    className="!h-6 !min-h-0"
+                  >
+                    Edit
+                  </ActionButton>
+                )}
+                {onRemove && (
+                  <ActionButton
+                    aria-label="Remove this insight"
+                    onClick={onRemove}
+                    size="compact"
+                    variant="quiet"
+                    className="!h-6 !min-h-0"
+                  >
+                    Remove
+                  </ActionButton>
+                )}
               </div>
             </div>
-          )}
-          {/*
-            * A plain button, not `ActionButton`.
-            *
-            * The core action carries a 32px min-height and its own padding, and
-            * at this density every one of those had to be fought off with an
-            * `!important` — three of them, to get a 24px square. A disclosure
-            * chevron is not an action button anyway: it has no label, it does
-            * not act on anything, it opens the row it sits in.
-            */}
+          </div>
+        )}
+
+        {/* The one real control on the row: it carries the disclosure's ARIA
+            contract and the keyboard, and the chevron the house disclosure
+            draws (`ChatThinking`): 14px, turned a quarter when closed. No
+            handler of its own — its click bubbles to the row, which is what
+            opens it, so pointer and keyboard take the same path. */}
+        {expandable && (
           <button
             type="button"
-            onClick={() =>
-              setOpen((v) => {
-                if (v) setCited(false)
-                return !v
-              })
-            }
             aria-expanded={open}
-            aria-label={open ? 'Hide evidence' : 'Show evidence'}
-            className={[
-              'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
-              'text-muted-foreground transition-colors',
-              'hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-2',
-              'focus-visible:ring-[var(--core-color-focus-ring)]'
-            ].join(' ')}
+            aria-controls={regionId}
+            // `h-5`: the statement line's strut, so the 14px chevron centres on
+            // the first line the way the mark does — no optical nudge needed.
+            className="flex h-5 w-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground group-hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {/* Colour from the button, so the row's hover still reaches it. */}
-            <DisclosureChevron open={open} className="text-inherit" />
+            <span className="sr-only">{open ? 'Hide evidence' : 'Show evidence'}</span>
+            <ChevronDown
+              aria-hidden="true"
+              size={14}
+              strokeWidth={2}
+              className={cn(
+                'transition-transform duration-standard ease-emphasized motion-reduce:transition-none',
+                !open && '-rotate-90'
+              )}
+            />
           </button>
-        </div>
+        )}
       </div>
 
-      {/* The evidence, in the same cells as everything else the report states
-          — bled to the card's edges so its rules line up with the rows above
-          and below. It was an indented list inside the row, with a second
-          indent for detail; the cell frame says both of those things without
-          drawing either. */}
-      {open && cells.length > 0 && (
-        <div className="attribute-row-top -mx-4 -mb-3 mt-3 bg-card">
-          <AttributeCells items={cells} />
+      {/* The evidence, in the same cells as everything else the report states,
+          bled to the row's edges (`-mx-4`, across both columns) and set on the
+          inset surface under a hairline — a band inside the row, not a second
+          card. The cells hang a pixel past the band (`-mb-px`) so the last
+          row's dashed rule is clipped and the next row's hairline is the only
+          line between them. */}
+      {expandable && (
+        <div data-evidence className="col-span-2 -mx-4 cursor-auto">
+          <Collapsible id={regionId} open={open}>
+            <div className="overflow-hidden border-t border-[var(--core-color-border-divider)] bg-[var(--core-color-surface-inset)]">
+              <AttributeCells items={cells} className="-mb-px" />
+            </div>
+          </Collapsible>
         </div>
       )}
     </div>

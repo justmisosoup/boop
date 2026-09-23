@@ -19,7 +19,7 @@ import type { BusinessRecord } from '@/lib/deriveResults'
 import { ALL, assessmentOf } from '@/lib/records'
 
 import { InsightCounts } from '../components/InsightCounts'
-import { RecommendationChip } from '../components/RecommendationChip'
+import { DeterminationChip } from '../components/DeterminationChip'
 
 /**
  * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`
@@ -35,7 +35,7 @@ const COLUMN_WIDTHS = {
 }
 
 /**
- * Column order: the assessment's number and its recommendation first, then the
+ * Column order: the assessment's number and its determination first, then the
  * name, then what the report rested on, then when the record was ordered.
  *
  * The app leads with `created`. Here the list is a list of assessments rather
@@ -55,7 +55,7 @@ const columns: DataTableColumnDef<BusinessRecord>[] = [
      * reading, and split across a column rule the reader had to join them
      * back up. The number leads because it is what the column is sorted and
      * scanned by; the chip beside it is the decision it points to, in the same
-     * compact chip the app's Status column uses — see `RecommendationChip`.
+     * compact chip the app's Status column uses — see `DeterminationChip`.
      * Tabular figures so 49 and 100 hold the chip at the same offset down the
      * column. No report is a dash and the neutral chip.
      */
@@ -66,7 +66,7 @@ const columns: DataTableColumnDef<BusinessRecord>[] = [
           <span className="w-7 text-caption tabular-nums">
             {assessed ? assessed.score.value : <span className="text-text-disabled">—</span>}
           </span>
-          <RecommendationChip band={assessed?.score.band ?? null} />
+          <DeterminationChip band={assessed?.score.band ?? null} />
         </span>
       )
     },
@@ -81,7 +81,7 @@ const columns: DataTableColumnDef<BusinessRecord>[] = [
     // `truncate` meta: it would cap the column at `max-w-64` and steal its
     // grow share; `TruncatedText` clips itself.
     cell: ({ row }) => (
-      <TruncatedText style={{ fontWeight: 'var(--core-font-weight-bold)' }}>
+      <TruncatedText className="font-semibold">
         {row.original.name ?? ''}
       </TruncatedText>
     ),
@@ -202,7 +202,7 @@ export const BusinessesPage = () => {
         * page background rather than stray lines. From the app's Toolbar.
         */}
       <div ref={stickyRef} className="sticky top-0 z-[3] bg-surface-canvas pt-6">
-        <Toolbar className="flex-nowrap gap-3 rounded-t-[10px] border border-border bg-card px-3 py-1.5">
+        <Toolbar className="flex-nowrap gap-3 rounded-t-card border border-border bg-card px-3 py-1.5">
           <ToolbarSection className="min-w-0 flex-wrap">
             <search aria-label="Search businesses" className="relative shrink-0">
               <SearchInput

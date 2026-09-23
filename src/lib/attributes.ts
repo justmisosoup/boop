@@ -695,6 +695,59 @@ export const identityRows = (record: BusinessRecord): AttributeRow[] => {
   ].map(nameTheFiling(record))
 }
 
+/**
+ * The domestic filing's identity, for the head of the report.
+ *
+ * What the Secretary of State says this business IS: the name it is registered
+ * under, its form, where and when it was formed, whether the filing is live and
+ * in standing, and who it names as agent. Nothing that merely identifies the
+ * filing — no file number — that is the Attributes tab's. This is the short
+ * list a reviewer reads before the report starts arguing, in place of the
+ * paragraph that used to describe the business in prose.
+ *
+ * The name leads, and it is the filing's own spelling: the registry's casing is
+ * the identifying fact, and the submitted spelling is what the Names group is
+ * for. Standing is stated even when the state does not publish it — an absence
+ * a reviewer has to act on, said as a sentence with what to do about it, the
+ * way every no-result on this report is said.
+ *
+ * Six facts after the name, so they pair: the card is read as one lead fact
+ * over three rows of two.
+ */
+export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] => {
+  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const names = nameRows(record).filter((r) => r.label !== 'DBA')
+  const registered = names.find((r) => r.domesticOnly) ?? names[0]
+  // The name alone in a sentence — "Not published by New York" — where the
+  // Formation state cell carries the code too.
+  const state = record.formation ? stateName(record.formation.state) : undefined
+
+  const row = (label: string, value: string | null | undefined, extra?: Partial<AttributeRow>): AttributeRow[] =>
+    value
+      ? [{ group: 'formation' as const, label, value, source: REGISTRY, domesticOnly: true, ...extra }]
+      : []
+
+  const FIELDS = new Set(['Entity type', 'Formation state', 'Formation date', 'Status'])
+  const formation = formationRows(record)
+    .filter((r) => FIELDS.has(r.label))
+    // "Formed", not "Formation date": the card is about one filing, and the
+    // date is the only one on it.
+    .map((r) => (r.label === 'Formation date' ? { ...r, label: 'Formed' } : r))
+
+  return [
+    ...row('Legal name', domestic?.name ?? registered?.value),
+    ...formation,
+    ...(domestic
+      ? domestic.subStatus
+        ? row('Standing', sentence(domestic.subStatus))
+        : row('Standing', `Not published by ${state ?? 'the state'}`, {
+            evidenceNote: 'Order a Certificate of Good Standing to confirm.'
+          })
+      : []),
+    ...row('Registered agent', domestic?.registeredAgent)
+  ].map(nameTheFiling(record))
+}
+
 /** `submitted` separates who the customer gave us from who we found on filings.
  *  Collapsing the two makes a found entity look like a submitted person — which
  *  is exactly the error this split exists to prevent. */

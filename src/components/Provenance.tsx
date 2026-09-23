@@ -102,7 +102,7 @@ export const StreetViewChip = ({ address }: { address: string }) => {
             <img
               src={faviconFor('https://maps.google.com')}
               alt=""
-              className="size-3 rounded-[2px]"
+              className="size-3 rounded-xxs"
               loading="lazy"
               onError={(e) => {
                 e.currentTarget.style.visibility = 'hidden'
@@ -227,7 +227,7 @@ export const AttributeSources = ({
         <img
           src={faviconFor(href)}
           alt=""
-          className="size-3 rounded-[2px]"
+          className="size-3 rounded-xxs"
           loading="lazy"
           // A host with no favicon should leave the chip clean rather than show
           // a broken-image glyph.

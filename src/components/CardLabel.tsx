@@ -48,7 +48,7 @@ export const CardLabelRow = ({
   as?: 'div' | 'h4'
   children: ReactNode
 }) => (
-  <div className="attribute-row px-4 py-3">
+  <div className="border-b border-[var(--core-color-border-divider)] px-4 py-3">
     <CardLabel as={as}>{children}</CardLabel>
   </div>
 )

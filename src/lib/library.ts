@@ -71,7 +71,7 @@ export const MIDDESK_CONTEXTS: LibraryItem[] = []
 export const SEED_WORKFLOW = {
     id: 'smb-account-opening',
     name: 'SMB account opening',
-    description: 'The full KYB assessment and an onboarding recommendation',
+    description: 'The full KYB assessment and a determination',
     instructions:
       'Core KYB for a financial institution opening a business bank account. Work the stages an ' +
       'onboarding file is built from, in this order\n\n' +

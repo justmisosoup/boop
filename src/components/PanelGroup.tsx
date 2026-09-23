@@ -23,13 +23,20 @@ export const PanelGroup = ({
 }: {
   /** The scroll target, so a citation can jump to a group. */
   id?: string
-  label: string
+  /**
+   * A name over the group, for a group of several cards (the Sources tab's
+   * bands). A group that is one card names itself on the card — `CardHeader`
+   * — and passes nothing here.
+   */
+  label?: string
   children: ReactNode
 }) => (
   <section id={id} className="scroll-mt-6">
-    <CardLabel as="h4" className="mb-2 font-semibold">
-      {label}
-    </CardLabel>
+    {label && (
+      <CardLabel as="h4" className="mb-2 font-semibold">
+        {label}
+      </CardLabel>
+    )}
     {children}
   </section>
 )

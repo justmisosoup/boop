@@ -1,18 +1,20 @@
 import { Fragment, cloneElement, isValidElement, useMemo } from 'react'
 
-import { ChatSources, Heading, Surface, Text } from '@/core'
+import { ChatSources, InlineAlert, MetaChip, Text } from '@/core'
 
 import { attributesFor } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
+import type { AssessmentWeight } from '../lib/identityScore'
 import type {
   AnalysisDraft,
   AnalysisResult,
   AssessmentSection,
   CouldNotConfirmReason
 } from '../types'
-import { CardLabel } from './CardLabel'
+import { cn } from '../utils/twUtils'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 import { InsightRow } from './InsightRow'
+import { InsightStack } from './InsightStack'
 
 /**
  * How a report reads, wherever it is read.
@@ -34,6 +36,9 @@ import { InsightRow } from './InsightRow'
  * twice with 40px between them. What the recommendation carries is rendered
  * above the assessments by `ReportBody`, without a heading over it.
  */
+/** The weight's word. Two tiers, as `identityScore` counts them. */
+const TIER_LABEL: Record<AssessmentWeight, string> = { critical: 'Critical', high: 'High' }
+
 const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
   policy.map(({ id, name }) => ({ id, heading: name }))
 
@@ -79,40 +84,42 @@ const CiteList = ({
   cited,
   record,
   negatives,
+  title,
+  trailing,
+  intro,
   onJumpToSource
 }: {
   cited: Derived[]
   record?: BusinessRecord
   /** Insight ids the assessment score read as a point against the identity. */
   negatives?: ReadonlySet<string>
+  /** The assessment's name and its band, as the card's header. */
+  title?: React.ReactNode
+  trailing?: React.ReactNode
+  /** What the assessment says it could not find, above the rows of what it did. */
+  intro?: React.ReactNode
   /** An evidence chip names a source record, and following it opens that
    *  source's card — the behaviour the same chip has in the Insights tab. */
   onJumpToSource?: (cardId: string) => void
 }) => {
   // The rows read the record for their evidence; without one there is nothing
   // for them to open.
-  if (!record || cited.length === 0) return null
+  if (!record) return null
 
   return (
-    // The Insights tab's own frame, verbatim: one rule around the stack, rows
-    // divided by their own top border, the last one's bled off the bottom.
-    <Surface
-      variant="default"
-      padding="none"
-      className="mt-3 overflow-hidden rounded-none border-text-primary"
-    >
-      <div className="-mb-px">
-        {cited.map((r) => (
-          <InsightRow
-            key={r.insightId}
-            result={r}
-            record={record}
-            negative={negatives?.has(r.insightId)}
-            onJumpToSource={onJumpToSource}
-          />
-        ))}
-      </div>
-    </Surface>
+    // The Insights tab's own frame, the same component: one card, named in its
+    // own header, rows divided by the inset hairline.
+    <InsightStack title={title} trailing={trailing} intro={intro}>
+      {cited.map((r) => (
+        <InsightRow
+          key={r.insightId}
+          result={r}
+          record={record}
+          negative={negatives?.has(r.insightId)}
+          onJumpToSource={onJumpToSource}
+        />
+      ))}
+    </InsightStack>
   )
 }
 
@@ -219,19 +226,30 @@ export const Para = ({
   sources,
   results,
   record,
+  inline = false,
+  className,
   children
 }: {
   sources?: Array<{ title: string; url: string }>
   results: Derived[]
   record?: BusinessRecord
+  /**
+   * A line inside someone else's paragraph.
+   *
+   * `InlineAlert`'s body is already a `<p>`, and a `<p>` inside it is invalid;
+   * the sentence is set as a block span instead, with the same marking and
+   * the same sources chip.
+   */
+  inline?: boolean
+  className?: string
   children: React.ReactNode
 }) => {
   // Memoised on the report's own inputs: the matcher walks every insight's
   // attributes, and a paragraph is not the right place to do that per render.
   const pattern = useMemo(() => attributePattern(results, record), [results, record])
 
-  const body = (
-    <Text>
+  const content = (
+    <>
       {markAttributes(children, pattern)}
       {/* The chip is the disclosure: one labelled "Public sources", opening the
           pages the claim came from. It reads the same way as an insight citation
@@ -251,10 +269,16 @@ export const Para = ({
           />
         </span>
       )}
-    </Text>
+    </>
   )
 
-  return <div className="mt-3">{body}</div>
+  if (inline) return <span className={cn('block', className)}>{content}</span>
+
+  return (
+    <div className={cn('mt-3', className)}>
+      <Text>{content}</Text>
+    </div>
+  )
 }
 
 /**
@@ -272,6 +296,8 @@ export const Para = ({
  */
 export const SectionBody = ({
   section,
+  heading,
+  tier,
   results,
   record,
   negatives,
@@ -279,11 +305,15 @@ export const SectionBody = ({
   onJumpToSource
 }: {
   section: AssessmentSection
+  /** The area's name, for the card's header. A question's answer has none. */
+  heading?: string
+  /** The area's weight in the assessment, beside the name. */
+  tier?: AssessmentWeight
   results: Derived[]
   record?: BusinessRecord
   negatives?: ReadonlySet<string>
   /**
-   * Gap ids a follow-up on the recommendation card already closes.
+   * Gap ids a follow-up on the determination already closes.
    *
    * A gap that has a step written for it is said once, on the card, as the
    * step. Saying it again here as "X is not on the record" repeated the
@@ -306,49 +336,63 @@ export const SectionBody = ({
     results
   )
 
+  /* Only the gaps nobody has written a step for. A `noAction` gap is one
+     nobody is going to act on, and a closed one is already an instruction on
+     the determination — see `closed`. Both stay in the data (the open
+     ones are what hold an assessment for review); neither is repeated here as
+     a sentence. Out-of-band gaps are printed under the card, not here.
+
+     Inside the card, as its intro: they are the assessment's own sentences
+     about this record, and a paragraph floating between the card's header and
+     the card read as belonging to neither. */
+  const gaps = (section.gaps ?? []).filter(
+    (g) => g.why !== 'no_insight_covers_it' && !g.noAction && !closed?.has(g.id)
+  )
+  const intro =
+    gaps.length > 0
+      ? gaps.map((g, i) => {
+          const tail = [g.why === 'not_published' ? null : WHY[g.why], g.wouldAnswer]
+            .filter(Boolean)
+            .join('. ')
+          return (
+            <Para key={g.point} inline className={i > 0 ? 'mt-2' : undefined} results={results} record={record}>
+              {g.point}
+              {tail && (
+                <>
+                  {' '}
+                  <span className="text-[var(--core-color-text-muted)]">— {tail}</span>
+                </>
+              )}
+            </Para>
+          )
+        })
+      : undefined
+
   return (
-  <>
-    {/* Only the gaps nobody has written a step for. A `noAction` gap is one
-        nobody is going to act on, and a closed one is already an instruction
-        on the recommendation card — see `closed`. Both stay in the data (the
-        open ones are what hold an assessment for review); neither is repeated
-        here as a sentence. Out-of-band gaps are printed above, not here. */}
-    {section.gaps
-      ?.filter((g) => g.why !== 'no_insight_covers_it' && !g.noAction && !closed?.has(g.id))
-      .map((g) => {
-      /*
-       * The reason, unless the evidence under the claim already states it.
-       *
-       * `not_published` cites a check whose own Sub status cell now reads "The
-       * state does not publish sub status", two lines below the sentence — so
-       * the clause was saying it twice, once in prose and once on the value it
-       * is about. The other three reasons have no such cell and keep theirs.
-       */
-      const tail = [g.why === 'not_published' ? null : WHY[g.why], g.wouldAnswer]
-        .filter(Boolean)
-        .join('. ')
-      return (
-        <Para key={g.point} results={results} record={record}>
-          {g.point}
-          {tail && (
-            <>
-              {' '}
-              <span className="text-[var(--core-color-text-muted)]">— {tail}</span>
-            </>
-          )}
-        </Para>
-      )
-    })}
+    <>
+      <CiteList
+        cited={cited}
+        record={record}
+        negatives={negatives}
+        title={heading}
+        trailing={
+          /* Its weight, not a verdict of its own. An area used to carry an
+             Approve / Review chip as if it reached a determination by itself;
+             the determination belongs to the assessment, and what an area
+             contributes is how much it counts. Neutral: a weight is a fact
+             about the policy. */
+          heading && tier ? (
+            <MetaChip size="compact" tone="neutral">
+              {TIER_LABEL[tier]}
+            </MetaChip>
+          ) : undefined
+        }
+        intro={intro}
+        onJumpToSource={onJumpToSource}
+      />
 
-    <CiteList
-      cited={cited}
-      record={record}
-      negatives={negatives}
-      onJumpToSource={onJumpToSource}
-    />
-
-    <OutOfBand gaps={section.gaps} results={results} record={record} />
-  </>
+      <OutOfBand gaps={section.gaps} results={results} record={record} />
+    </>
   )
 }
 
@@ -382,14 +426,12 @@ const OutOfBand = ({
   if (out.length === 0) return null
 
   return (
-    <Surface
-      variant="default"
-      padding="none"
-      className="mt-4 rounded-none border-[var(--core-color-status-info-fg)] bg-[var(--core-color-status-info-bg)] px-4 pb-4 pt-3"
-    >
-      <CardLabel className="mb-1 text-[var(--core-color-status-info-fg)]">Out of band</CardLabel>
-      {out.map((g) => (
-        <Para key={g.id} results={results} record={record}>
+    /* Core's own info alert, icon on: the tone says "authored, not looked up",
+       and the icon says it without the colour having to. It was a square card
+       tinted by hand in the same two tokens. */
+    <InlineAlert tone="info" title="Out of band" showIcon className="mt-4">
+      {out.map((g, i) => (
+        <Para key={g.id} inline className={i > 0 ? 'mt-1' : undefined} results={results} record={record}>
           {g.point}
           {g.wouldAnswer && (
             <>
@@ -399,7 +441,7 @@ const OutOfBand = ({
           )}
         </Para>
       ))}
-    </Surface>
+    </InlineAlert>
   )
 }
 
@@ -408,9 +450,9 @@ export const ReportBody = ({
   results,
   policy,
   record,
-  score,
   stream = false,
   negatives,
+  tiers,
   onJumpToSource
 }: {
   result: AnalysisResult | AnalysisDraft
@@ -418,12 +460,12 @@ export const ReportBody = ({
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
   record?: BusinessRecord
-  /** How well the identity stands up, under the actions it justifies. */
-  score?: React.ReactNode
   /** A run is being written, so sections not yet here are coming. */
   stream?: boolean
   /** Insight ids the assessment score read as a point against the identity. */
   negatives?: ReadonlySet<string>
+  /** Each area's weight in the assessment, for its card's header. */
+  tiers?: ReadonlyMap<string, AssessmentWeight>
   /** An evidence chip under a cited insight opens that source's card. */
   onJumpToSource?: (cardId: string) => void
 }) => {
@@ -450,7 +492,7 @@ export const ReportBody = ({
     <>
       {/* The lede is not rendered here. It describes the business rather than
           the assessment, so it leads the report under its own heading, above
-          everything a run wrote — see BusinessLede. */}
+          everything a run wrote. */}
 
       {/* A question has no recommendation to land in, so its one-sentence answer
           leads instead — the same sentence, in the only place it can go. */}
@@ -459,13 +501,6 @@ export const ReportBody = ({
       {/* A follow-up question is answered on its own terms — running it through
           the standing headings would be filing, not answering. */}
       {answer && <SectionBody section={answer} {...pass} />}
-
-      {/* The number behind the call, and what a reviewer does before the
-          account opens — one card, above the argument. The follow-ups used to
-          sit above the card as a bare list; they are the card's own content
-          now, beside the ring (see IdentityScoreCard), so the decision and its
-          conditions are read as one object. */}
-      {score}
 
       {sectionsOf(policy)
         .filter(({ id }) => byId.has(id))
@@ -490,20 +525,17 @@ export const ReportBody = ({
             // flush on the card's bottom rule.
             className="mt-10 scroll-mt-6"
           >
-            {/* Body size, bold. `Heading level={3}` sets these at 18px, which made
-               five section titles compete with the report they label. Every
-               section's heading is this one line: the assessment's name, and a
-               rule carrying it across. */}
-            {/* H3. One step above the assessment's own cell on the score card,
-                which is H4: the same assessment is named in both places, and
-                over the argument it is a division of the page rather than a
-                label on a number. */}
-            <div className="mb-10 flex items-center gap-4">
-              <Heading level={3}>{heading}</Heading>
-              <span aria-hidden="true" className="section-rule h-px flex-1" />
-            </div>
+            {/* No heading over the card. The area's name is the card's own
+                header (see `CardHeader`), with its weight beside it — the
+                section IS the card, so a heading and a rule above it named the
+                same thing twice. */}
             {section && (
-              <SectionBody section={section} {...pass} />
+              <SectionBody
+                section={section}
+                heading={heading}
+                tier={tiers?.get(id)}
+                {...pass}
+              />
             )}
           </div>
         )

@@ -58,9 +58,9 @@ const ScreenshotDialog = ({ shot, onClose }: { shot: SourceScreenshot; onClose: 
     <div
       aria-label={shot.alt}
       aria-modal="true"
-      className="core-theme fixed inset-0 z-overlay flex flex-col items-center overflow-y-auto overscroll-contain p-6"
+      // The system's own backdrop: the same neutral scrim a dialog puts down.
+      className="core-theme fixed inset-0 z-overlay flex flex-col items-center overflow-y-auto overscroll-contain bg-[var(--core-color-overlay-backdrop)] p-6"
       role="dialog"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
       onClick={onClose}
     >
       <div
@@ -70,10 +70,13 @@ const ScreenshotDialog = ({ shot, onClose }: { shot: SourceScreenshot; onClose: 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between gap-4">
-          <span className="text-caption text-white">{shot.alt}</span>
+          <span className="text-caption text-text-inverse">{shot.alt}</span>
+          {/* Plain, not `IconActionButton`: the quiet action's colours are for a
+              light surface, and this sits on the backdrop. Inverse text, the
+              scrim token for hover, the ordinary focus ring. */}
           <button
             aria-label="Close"
-            className="rounded-control p-1 text-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="rounded-control p-1 text-text-inverse hover:bg-[var(--core-color-overlay-scrim)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             ref={closeRef}
             type="button"
             onClick={onClose}
@@ -81,7 +84,7 @@ const ScreenshotDialog = ({ shot, onClose }: { shot: SourceScreenshot; onClose: 
             <X className="size-4" />
           </button>
         </div>
-        <img alt={shot.alt} className="w-full rounded-control bg-white" src={shot.src} />
+        <img alt={shot.alt} className="w-full rounded-control bg-card" src={shot.src} />
       </div>
     </div>,
     document.body

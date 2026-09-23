@@ -69,31 +69,57 @@ export type Assessed = {
   counts: { positive: number; negative: number; neutral: number }
 }
 
+const ASSESSED_REPORT = new Map<string, Assessed | null>()
+
+/**
+ * Score one report, against its own snapshot.
+ *
+ * The arithmetic the record view runs for the report it has open, made
+ * callable for any report — the Reports tab scores every run a business has
+ * had, and the list scores the newest. Memoised by report id: a report never
+ * changes once written, so its score does not either.
+ */
+export const assessReport = (
+  report: {
+    id: string
+    sections: Parameters<typeof areasOf>[0]
+    policy: Array<{ id: string; name: string }>
+    snapshot?: { record: BusinessRecord; results: ReturnType<typeof deriveResults> } | null
+  },
+  fallback: BusinessRecord
+): Assessed | null => {
+  if (ASSESSED_REPORT.has(report.id)) return ASSESSED_REPORT.get(report.id) ?? null
+
+  const record = report.snapshot?.record ?? fallback
+  const results = report.snapshot?.results ?? deriveResults(fallback)
+  const areas = areasOf(
+    report.sections,
+    report.policy.map((p) => ({ ...p, weight: TIER_OF.get(p.id) }))
+  )
+  const score = identityScore(record, results, areas)
+  const out: Assessed | null = score
+    ? {
+        score,
+        counts: polarityCounts(record, results, score.components.flatMap((c) => c.insightIds))
+      }
+    : null
+  ASSESSED_REPORT.set(report.id, out)
+  return out
+}
+
 const ASSESSED = new Map<string, Assessed | null>()
 
+/** The newest report's reading, for the list. */
 export const assessmentOf = (r: BusinessRecord): Assessed | null => {
   if (ASSESSED.has(r.id)) return ASSESSED.get(r.id) ?? null
 
   const held = newestReportFor(r.name)
-  let out: Assessed | null = null
-  if (held?.report) {
-    const record = held.snapshot?.record ?? r
-    const results = held.snapshot?.results ?? deriveResults(r)
-    const areas = areasOf(
-      held.report.sections,
-      held.policy.map((p) => ({ ...p, weight: TIER_OF.get(p.id) }))
-    )
-    const score = identityScore(record, results, areas)
-    if (score)
-      out = {
-        score,
-        counts: polarityCounts(
-          record,
-          results,
-          score.components.flatMap((c) => c.insightIds)
-        )
-      }
-  }
+  const out = held?.report
+    ? assessReport(
+        { id: held.id, sections: held.report.sections, policy: held.policy, snapshot: held.snapshot },
+        r
+      )
+    : null
   ASSESSED.set(r.id, out)
   return out
 }
