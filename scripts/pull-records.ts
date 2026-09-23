@@ -343,6 +343,29 @@ const normalise = (b: Any) => ({
     courtState: x.jurisdiction_state ?? null
   })),
 
+  // The businesses connected to this one, strongest first. The review task
+  // only says Found; `/connections` names them and says what is shared. Fetched
+  // per business below and attached before normalising; absent when the
+  // account is not entitled to it, which the record then carries as no field
+  // rather than as an empty list.
+  ...(Array.isArray(b.connections)
+    ? {
+        connections: b.connections.map((c: Any) => ({
+          id: c.id,
+          name: c.name,
+          confidence: typeof c.confidence === 'number' ? c.confidence : null,
+          connectedBusinessId: c.connected_business_id ?? null,
+          people: (c.connecting_people ?? []).map((p: Any) => p.name ?? p).filter(Boolean),
+          addresses: (c.connecting_addresses ?? []).map((a: Any) => ({
+            fullAddress: a.full_address,
+            labels: a.labels ?? [],
+            sources: a.sources ?? []
+          })),
+          businesses: (c.connecting_businesses ?? []).map((x: Any) => x.name ?? x).filter(Boolean)
+        }))
+      }
+    : {}),
+
   // The insight surface. `status` (success/warning/failure) is deliberately NOT
   // carried across: it is a judgement, and the assessment layer is where
   // judgement belongs (catalog/decompositions.md).
@@ -377,7 +400,16 @@ if (args[0] === '--id' && args[1]) {
 const full: Any[] = []
 for (const s of summaries) {
   try {
-    full.push(await call(`/businesses/${s.id}`))
+    const business = await call(`/businesses/${s.id}`)
+    // Names behind the connections review task. A 403 means the account is not
+    // entitled to it, not that there are none — leave the field off.
+    try {
+      const connections = await call(`/businesses/${s.id}/connections`)
+      business.connections = connections.data ?? []
+    } catch {
+      /* not entitled, or no connections for this business */
+    }
+    full.push(business)
   } catch (e) {
     console.warn(`skipped ${s.id}: ${(e as Error).message}`)
   }

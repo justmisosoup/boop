@@ -79,6 +79,18 @@ export const statementFor = (
     if (form && form !== record.formation?.entityType) return `Entity type is a ${form}`
   }
 
+  /**
+   * The other place. `business_connections` reports a count — "2 connections
+   * found" — and a count of businesses is not something a reviewer can act on
+   * or follow. Where the record carries the connections themselves, the row
+   * names them: the same fact, with the part that matters left in.
+   */
+  if (key === 'business_connections') {
+    const names = (record.connections ?? []).map((c) => c.name).filter(Boolean)
+    if (names.length > 0)
+      return `${names.length} ${names.length === 1 ? 'connection' : 'connections'} found: ${names.join(', ')}`
+  }
+
   if (message) return sentenceCase(message)
 
   // Nothing to key the catalog with. A sub-label is on every review task in

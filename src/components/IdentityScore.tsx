@@ -1,20 +1,22 @@
 import { useMemo } from 'react'
 
-import { Heading, MutedText, Surface, Text } from '@/core'
+import { Heading, Surface } from '@/core'
 
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import {
-  BANDS,
   identityScore,
   type BandId,
-  type IdentityScore,
   type ScoreArea,
   type ScoreBand,
   type ScoreComponent
 } from '../lib/identityScore'
+import type { AnalysisResult } from '../types'
 import { cn } from '../utils/twUtils'
 import { AttributeCells, type AttributeCell } from './AttributeGrid'
 import { CardLabel } from './CardLabel'
+import { FollowUps } from './FollowUps'
+import { InsightCounts } from './InsightCounts'
+import { RecommendationChip } from './RecommendationChip'
 
 /**
  * The band's colour.
@@ -33,12 +35,6 @@ const BAND_INK: Record<BandId, string> = {
   established: 'text-[var(--core-color-status-success-fg)]',
   conditions: 'text-[var(--core-color-status-warning-fg)]',
   not_established: 'text-[var(--core-color-status-danger-fg)]'
-}
-
-const BAND_DOT: Record<BandId, string> = {
-  established: 'bg-[var(--core-color-status-success-fg)]',
-  conditions: 'bg-[var(--core-color-status-warning-fg)]',
-  not_established: 'bg-[var(--core-color-status-danger-fg)]'
 }
 
 /** 2πr at r=42, as a constant rather than a computation on every render. */
@@ -96,7 +92,16 @@ export const ScoreRing = ({ value, band }: { value: number; band: ScoreBand }) =
   )
 }
 
-/** One assessment, as a cell: what it scored, what it is worth, and why. */
+/**
+ * One assessment, as a cell: its name, and the band it came back in.
+ *
+ * It used to print the sub-score, its weight and three counts. That was the
+ * arithmetic, and the arithmetic is still in `identityScore.ts` for anyone
+ * auditing the number — but a reviewer reading the card wants to know which
+ * stages are clear and which are not, and a word says that where a row of
+ * numbers made them work it out. The chip is the same one the businesses
+ * list uses for the whole report, so a band reads the same at both zooms.
+ */
 const componentCell = (
   c: ScoreComponent,
   onSelect?: (component: ScoreComponent) => void
@@ -104,21 +109,20 @@ const componentCell = (
   key: c.id,
   label: c.label,
   // H4: the cell names a section of the report, not a field of the record —
-  // set as a field name it read as a caption on the number under it.
+  // set as a field name it read as a caption on the chip under it.
   labelNode: <Heading level={4}>{c.label}</Heading>,
   values: [
     {
-      value: c.subScore === null ? 'Not evaluated' : `${c.subScore} / 100`,
-      qualifier: c.subScore === null ? undefined : `(${c.appliedWeight}% of the score)`,
-      note:
-        c.subScore === null
-          ? `Nothing to read — ${c.missing.join(', ')}`
-          : [...c.reasons, ...c.missing.map((m) => `not counted: ${m}`)].join(' · ')
+      value: <RecommendationChip band={c.band} />,
+      // What the band rests on: the insights this assessment cited, split the
+      // way the score read them, as the three glyphs the businesses list has
+      // already taught. Glyphs alone — the words three times over crowded a
+      // cell whose subject is the chip. The tier is not printed either; it
+      // still weights the ring (see `WEIGHT`), but under every cell it
+      // labelled the card's own machinery.
+      note: <InsightCounts counts={c.counts} labels={false} />
     }
   ],
-  // No submitted/verified mark. An assessment's score is not an attribute, and
-  // a tick beside "Identity" would claim a source of record attested our own
-  // arithmetic.
   onSelect: onSelect ? () => onSelect(c) : undefined
 })
 
@@ -129,37 +133,24 @@ const componentCell = (
  * because the number is invented and must never travel without its working. See
  * `src/lib/identityScore.ts` for what is being asserted and what is not.
  */
-/**
- * How the business performed against what it was assessed by, in one line.
- *
- * It read "5 of 5 assessments made", which counted the work rather than
- * reporting it — a reader looking at five cells already knows there are five,
- * and none of them learns anything from being told they exist. This names which
- * assessments came back clear and which one is holding the number down, so the
- * line is a reading of the card under it rather than a tally of it.
- *
- * Nothing is invented: the count is the report's own findings, counted once
- * each — the three that are cited by all four assessments are three things to
- * do, not twelve.
- */
-const summarise = (score: IdentityScore): string | null => {
-  const read = score.components.filter((c) => c.subScore !== null)
-  if (read.length === 0) return null
-  if (score.findings === 0) return `All ${read.length} assessments came back clear.`
-
-  return `${read.length} assessments read; ${score.findings} finding${
-    score.findings === 1 ? '' : 's'
-  } to resolve, marked below.`
-}
-
 export const IdentityScoreCard = ({
   record,
   results,
   areas,
+  followUps = [],
   trailing
 }: {
   record: BusinessRecord
   results: Derived[]
+  /**
+   * What a reviewer does before the account opens, ranked.
+   *
+   * On the card rather than above it: the band is the call and these are its
+   * conditions, and separated by a card edge they read as two things. They
+   * replace the summary line and the band legend, which described the card to
+   * a reader who was looking at it.
+   */
+  followUps?: NonNullable<AnalysisResult['followUps']>
   /** The assessments this report was laid out in, and what each one cited. The
    *  cells are these; see `scoreArea`. */
   areas?: ScoreArea[]
@@ -178,7 +169,6 @@ export const IdentityScoreCard = ({
 
   if (!score) return null
 
-  const summary = summarise(score)
   /**
    * A cell opens the assessment it scored, where it is.
    *
@@ -220,28 +210,16 @@ export const IdentityScoreCard = ({
 
             {/* No "held at 89 from 91". The ceiling that capped the score is
                 the finding it was capped for, and that finding is written out
-                below in the component it belongs to — saying it again in
-                arithmetic, above the band, put the reader in the machinery
-                before they had read the reasons. `score.ceilings` still carries
-                it for anyone auditing the number. */}
+                in the assessment it belongs to — saying it again in arithmetic,
+                above the band, put the reader in the machinery before they had
+                read the reasons. `score.ceilings` still carries it for anyone
+                auditing the number. */}
 
-            {/* What the card below it says, said once — see `summarise`. Body
-                size and graphite, not the caption grey: it is the sentence a
-                reviewer reads off this card, and it was set smaller and lighter
-                than the legend under it. */}
-            {summary && <Text className="mt-1 block">{summary}</Text>}
-
-            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-              {BANDS.map((b) => (
-                <li
-                  key={b.id}
-                  className="flex items-center gap-1.5 text-caption leading-snug text-muted-foreground"
-                >
-                  <span aria-hidden="true" className={cn('size-2 rounded-full', BAND_DOT[b.id])} />
-                  {b.range} {b.label}
-                </li>
-              ))}
-            </ul>
+            {/* The conditions, under the call they condition. Nothing else: no
+                sentence summarising the cells below, no legend spelling out the
+                bands — the cells say which stages are clear, and the band is
+                the legend's one entry that matters. */}
+            {followUps.length > 0 && <FollowUps items={followUps} className="mt-2" />}
           </div>
         </div>
 

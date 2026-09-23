@@ -319,3 +319,20 @@ body,
   background-repeat: no-repeat;
   background-size: 100% 1px;
 }
+
+/* Row dividers in the data table, restored under the last column.
+
+   The cloned `DataTable` drops the LAST ROW's dividers with
+   `last:[&>td]:border-b-0`. Tailwind 4, which the app runs, reads the stacked
+   variants outside-in and compiles that to `tr:last-child > td`. Tailwind 3,
+   which this prototype runs (prototype.md §3), reads them the other way and
+   compiles it to `tr > td:last-child` — so every row lost the divider under
+   its last cell, and the rules stopped short of the final column. `src/core`
+   is read-only, so the two selectors are restated here in the order the class
+   meant them. */
+.core-theme table > tbody > tr:not(:last-child) > td.border-b:last-child {
+  border-bottom-width: 1px;
+}
+.core-theme table > tbody > tr:last-child > td.border-b {
+  border-bottom-width: 0;
+}

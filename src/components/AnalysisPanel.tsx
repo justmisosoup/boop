@@ -22,7 +22,6 @@ export const AnalysisPanel = ({
   draft,
   waiting,
   policy,
-  identity,
   score,
   results,
   categories,
@@ -39,8 +38,6 @@ export const AnalysisPanel = ({
   waiting: boolean
   /** The assessments inside the run in flight, for the draft's layout. */
   policy: Array<{ id: string; name: string }>
-  /** The business identity card, rendered under the recommendations. */
-  identity?: React.ReactNode
   /** The assessment score card, under the recommendations. */
   score?: React.ReactNode
   results: Derived[]
@@ -64,7 +61,6 @@ export const AnalysisPanel = ({
           result={version.result}
           results={results}
           record={record}
-          identity={identity}
           score={score}
           policy={version.policy ?? []}
           negatives={negatives}

@@ -10,7 +10,7 @@ import type {
   AssessmentSection,
   CouldNotConfirmReason
 } from '../types'
-import { AttributeGrid, cell } from './AttributeGrid'
+import { CardLabel } from './CardLabel'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 import { InsightRow } from './InsightRow'
 
@@ -258,24 +258,24 @@ export const Para = ({
 }
 
 /**
- * One section's prose: what the record establishes, then what it could not.
+ * One section: its insights, and nothing else.
  *
- * The gap sits immediately beneath the finding it undercuts rather than in a
- * pooled list at the end — a reader judging ownership needs to see what is
- * missing from ownership while they are still reading about it.
+ * It opened with prose, then with a card of every attribute it cited. Both
+ * restated what the rows beneath already carried: the statement is the
+ * finding, and the attributes are one expand away inside it, with their
+ * provenance. The section is the stack of checks the assessment rested on,
+ * in the order the assessment cited them, and the reader opens what they want
+ * to see behind.
  *
- * It is not announced. The first gap used to open with a bold "Not
- * established.", which made the absence a labelled feature of the page and let
- * the sentence after it be a fragment hanging off the label. A gap is a
- * sentence like any other in the report: it says what is not known, in its own
- * words, and reads as prose rather than as a filed exception.
+ * A gap prints only when nothing acts on it — see `closed` — and then as a
+ * sentence, since an open question is not a value the record holds.
  */
 export const SectionBody = ({
   section,
   results,
   record,
   negatives,
-  identity,
+  closed,
   onJumpToSource
 }: {
   section: AssessmentSection
@@ -283,29 +283,20 @@ export const SectionBody = ({
   record?: BusinessRecord
   negatives?: ReadonlySet<string>
   /**
-   * The business identity card, under this section's opening claim.
+   * Gap ids a follow-up on the recommendation card already closes.
    *
-   * It used to sit above the first heading, between the recommendations and the
-   * argument, where it was a block of filing facts nothing on either side was
-   * talking about. Identity is the section those facts ARE the subject of, so
-   * it lands there: the sentence that says the name and address match a filing,
-   * then the filing's own values, then the checks behind them.
+   * A gap that has a step written for it is said once, on the card, as the
+   * step. Saying it again here as "X is not on the record" repeated the
+   * recommendation in the passive voice, one screen down. Only a gap nothing
+   * acts on is left for the section to state.
    */
-  identity?: React.ReactNode
+  closed?: ReadonlySet<string>
   onJumpToSource?: (cardId: string) => void
 }) => {
   /*
-   * One stack of insights for the whole assessment, at the end of it.
-   *
-   * Each paragraph used to carry its own — five sentences, five cards, and the
-   * prose arrived a paragraph at a time between them. The reader could not read
-   * the assessment without stopping at every break, and the same check cited by
-   * two sentences appeared twice. The prose is one summary now and the checks
-   * are one card under it: the argument reads through, and what it rests on is
-   * in one place.
-   *
-   * The gaps' citations go in too — a gap is part of what the assessment found,
-   * and splitting its checks off would be the same interleaving one level down.
+   * One stack of insights for the whole assessment, at the end of it, and one
+   * card of data at the head of it — both over the same cited set. The gaps'
+   * citations go in too: a gap is part of what the assessment found.
    */
   const cited = useCited(
     [
@@ -317,17 +308,14 @@ export const SectionBody = ({
 
   return (
   <>
-    {section.body.map((b) => (
-      <Para key={b.text} sources={b.sources} results={results} record={record}>
-        {b.text}
-      </Para>
-    ))}
-
-    {/* Only the open ones. A `noAction` gap is one nobody is going to act on,
-        and printing it read as "Not established. X, and also nothing will be
-        done about it" — a line that costs the reader attention and changes
-        nothing they do. It stays in the data; it is not part of the report. */}
-    {section.gaps?.filter((g) => !g.noAction).map((g, i) => {
+    {/* Only the gaps nobody has written a step for. A `noAction` gap is one
+        nobody is going to act on, and a closed one is already an instruction
+        on the recommendation card — see `closed`. Both stay in the data (the
+        open ones are what hold an assessment for review); neither is repeated
+        here as a sentence. Out-of-band gaps are printed above, not here. */}
+    {section.gaps
+      ?.filter((g) => g.why !== 'no_insight_covers_it' && !g.noAction && !closed?.has(g.id))
+      .map((g) => {
       /*
        * The reason, unless the evidence under the claim already states it.
        *
@@ -352,71 +340,74 @@ export const SectionBody = ({
       )
     })}
 
-    {/* The filing's own values, between the summary and the checks behind it.
-        Only under the assessment this card is the subject of — see ReportBody. */}
-    {identity}
-
     <CiteList
       cited={cited}
       record={record}
       negatives={negatives}
       onJumpToSource={onJumpToSource}
     />
+
+    <OutOfBand gaps={section.gaps} results={results} record={record} />
   </>
   )
 }
 
 /**
- * The follow-ups, in priority order.
+ * Out of band: what the assessment knows that no insight carries.
  *
- * A numbered list would imply a sequence that has to be worked through in order;
- * these are independent items that merely happen to be ranked, so they are
- * bulleted and the ranking is carried by the order alone.
+ * A gap whose reason is `no_insight_covers_it` is not a missing value — it is
+ * a fact about the form or the jurisdiction that the catalog has no check
+ * for. A New York PLLC may only be owned by licensed practitioners; no review
+ * task reaches a licence. That is exactly the sentence the rows cannot say,
+ * so it is the one prose a section keeps.
+ *
+ * Its own card, after the rows and set apart from them: the rows are what the
+ * record returned, this is what the assessment brought to it, and the two
+ * must not read as one list. The info surface marks it as authored rather than
+ * looked up — the one place on the report that colour says "this came from
+ * us" — and the muted clause names the check that would answer it, which is
+ * the product asking for an insight it does not yet have. It prints whether
+ * or not a follow-up acts on it: it is a statement of a blind spot, not a step.
  */
-const FollowUps = ({
-  items
+const OutOfBand = ({
+  gaps,
+  results,
+  record
 }: {
-  items: NonNullable<AnalysisResult['followUps']>
-}) => (
-  /*
-   * No citations here.
-   *
-   * A follow-up is an instruction, and the finding behind it has already been
-   * made and evidenced in the assessment above. Repeating the evidence on the
-   * action attached it to a sentence that is not claiming anything.
-   */
-  /*
-   * Bulleted, now that they are the section.
-   *
-   * They were set flush and unbulleted while they sat under a paragraph of
-   * prose, where a disc and an indent made them read as its footnotes. With the
-   * prose gone there is nothing for them to hang off: the marker is what says
-   * this is a list of separate things to do rather than one long instruction.
-   */
-  <ul className="mt-3 list-disc space-y-3 pl-5">
-    {items.map((f) => (
-      <li key={f.text} className="pl-1">
-        <Text className="font-semibold">{f.text}</Text>
-        {/* The things the step acts on, named. A step that says "establish who
-            is behind the connected businesses" is not actionable until the
-            businesses are on screen. */}
-        {f.entities && f.entities.length > 0 && (
-          <AttributeGrid
-            className="mt-2"
-            items={f.entities.map((e) => cell(undefined, e.name, { key: e.name, note: e.note }))}
-          />
-        )}
-      </li>
-    ))}
-  </ul>
-)
+  gaps: AssessmentSection['gaps']
+  results: Derived[]
+  record?: BusinessRecord
+}) => {
+  const out = (gaps ?? []).filter((g) => g.why === 'no_insight_covers_it')
+  if (out.length === 0) return null
+
+  return (
+    <Surface
+      variant="default"
+      padding="none"
+      className="mt-4 rounded-none border-[var(--core-color-status-info-fg)] bg-[var(--core-color-status-info-bg)] px-4 pb-4 pt-3"
+    >
+      <CardLabel className="mb-1 text-[var(--core-color-status-info-fg)]">Out of band</CardLabel>
+      {out.map((g) => (
+        <Para key={g.id} results={results} record={record}>
+          {g.point}
+          {g.wouldAnswer && (
+            <>
+              {' '}
+              <span className="text-[var(--core-color-text-muted)]">— {g.wouldAnswer}</span>
+            </>
+          )}
+        </Para>
+      ))}
+    </Surface>
+  )
+}
 
 export const ReportBody = ({
   result,
   results,
   policy,
   record,
-  identity,
   score,
   stream = false,
   negatives,
@@ -427,15 +418,6 @@ export const ReportBody = ({
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
   record?: BusinessRecord
-  /**
-   * What the record holds, between the actions and the argument.
-   *
-   * The recommendations are what a reviewer does next, so they come first; the
-   * identity card is what they are about to act on; the assessments are why.
-   * It is passed in rather than rendered here because it is the business's, not
-   * the run's — see RecordPage.
-   */
-  identity?: React.ReactNode
   /** How well the identity stands up, under the actions it justifies. */
   score?: React.ReactNode
   /** A run is being written, so sections not yet here are coming. */
@@ -446,10 +428,8 @@ export const ReportBody = ({
   onJumpToSource?: (cardId: string) => void
 }) => {
   const verdict = 'headline' in result ? result : null
-  const followUps = verdict?.followUps ?? []
   const byId = new Map(result.sections.map((s) => [s.id, s]))
   const answer = byId.get('answer')
-  const hasRecs = followUps.length > 0
   /**
    * A typed question, which is the only turn the headline belongs on.
    *
@@ -461,18 +441,10 @@ export const ReportBody = ({
    */
   const isQuestion = byId.has('answer')
 
-  const pass = { results, record, negatives, onJumpToSource }
-
-  /**
-   * Which section the identity card goes under: the first assessment in the
-   * manifest that actually landed — Identity, in every workflow that has one.
-   *
-   * Keyed on position rather than on a section id, because the manifest is the
-   * customer's and its ids are theirs. The first assessment a report opens with
-   * is the one establishing who the business is; that is where the filing's own
-   * values belong.
-   */
-  const identityUnder = sectionsOf(policy).find(({ id }) => byId.has(id))?.id
+  // What the recommendation already says to do, so the sections do not say
+  // it again as what is missing.
+  const closed = new Set((verdict?.followUps ?? []).flatMap((f) => f.closes ?? []))
+  const pass = { results, record, negatives, closed, onJumpToSource }
 
   return (
     <>
@@ -488,12 +460,11 @@ export const ReportBody = ({
           the standing headings would be filing, not answering. */}
       {answer && <SectionBody section={answer} {...pass} />}
 
-      {/* What a reviewer does before the account opens, and the number behind
-          the call — both above the argument, neither under a heading. They were
-          a "Recommendations" section, then an "Approve" one; the score card's
-          own band is the call, and the follow-ups are a list of actions that
-          needs no label to be read as one. */}
-      {hasRecs && <FollowUps items={followUps} />}
+      {/* The number behind the call, and what a reviewer does before the
+          account opens — one card, above the argument. The follow-ups used to
+          sit above the card as a bare list; they are the card's own content
+          now, beside the ring (see IdentityScoreCard), so the decision and its
+          conditions are read as one object. */}
       {score}
 
       {sectionsOf(policy)
@@ -532,11 +503,7 @@ export const ReportBody = ({
               <span aria-hidden="true" className="section-rule h-px flex-1" />
             </div>
             {section && (
-              <SectionBody
-                section={section}
-                {...pass}
-                identity={id === identityUnder ? identity : undefined}
-              />
+              <SectionBody section={section} {...pass} />
             )}
           </div>
         )

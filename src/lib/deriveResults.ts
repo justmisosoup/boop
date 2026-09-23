@@ -172,6 +172,23 @@ export type BusinessRecord = {
     officers?: string[]
   }>
   tin: unknown
+  /**
+   * The businesses connected to this one, strongest first.
+   *
+   * From `list_connections`, which names what the `business_connections`
+   * review task only counts as Found. The pull does not fetch it, so it is on
+   * a report's snapshot where a session looked it up, and absent elsewhere.
+   */
+  connections?: Array<{
+    id: string
+    name: string
+    confidence?: number | null
+    /** Set when the connected entity is itself a business in this account. */
+    connectedBusinessId?: string | null
+    people?: string[]
+    addresses?: Array<{ fullAddress: string; labels?: string[]; sources?: string[] }>
+    businesses?: string[]
+  }>
   website?: {
     id?: string | null
     url: string | null

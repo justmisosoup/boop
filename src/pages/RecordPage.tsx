@@ -27,13 +27,12 @@ import { AttributesTab, countAttributes } from '../components/AttributesTab'
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { AssessmentIndex } from '../components/AssessmentIndex'
 import { PanelGroup } from '../components/PanelGroup'
-import { negativesFor } from '../lib/identityScore'
+import { areasOf, negativesFor } from '../lib/identityScore'
 import { AnalysisChat } from '../components/AnalysisChat'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { Timeline } from '../components/Timeline'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
 import { useWide } from '../hooks/useWide'
-import { BusinessIdentity } from '../components/BusinessIdentity'
 import { IdentityScoreCard } from '../components/IdentityScore'
 import { BusinessLede } from '../components/BusinessLede'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
@@ -265,21 +264,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const scoreAreas = useMemo(() => {
     const version = analysis.selected
     if (!version) return []
-    const named = new Map((version.policy ?? policy).map((p) => [p.id, p.name]))
-
-    return version.result.sections
-      .filter((section) => named.has(section.id))
-      .map((section) => ({
-        id: section.id,
-        name: named.get(section.id) as string,
-        insightIds: [
-          ...new Set([
-            ...section.body.flatMap((b) => b.cites ?? []),
-            ...(section.gaps ?? []).flatMap((g) => g.cites ?? [])
-          ])
-        ]
-      }))
-  }, [analysis.selected, policy])
+    // The stored policy names the assessments; their tiers are the agent's,
+    // read by id so a report kept before tiers existed still gets them.
+    const tierOf = new Map(agent.skills.map((x) => [x.id, x.weight]))
+    return areasOf(
+      version.result.sections,
+      (version.policy ?? policy).map((p) => ({ ...p, weight: tierOf.get(p.id) }))
+    )
+  }, [analysis.selected, policy, agent.skills])
 
   /** The chat has a column of its own only when the page is wide enough for a
    *  third region. CSS sizes it; this decides whether its log is mounted. */
@@ -350,7 +342,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       // business's name, which is on the fixed bar above and in 30px type just
       // below — three copies of one word, and the only one that had to be read
       // was the heading. The index says what the entry IS.
-      { id: 'lede', heading: 'Assessment' },
+      { id: 'lede', heading: 'Report' },
       { id: 'recommendation', heading: 'Recommendation' },
       ...live.map(({ id, name }) => ({ id, heading: name }))
     ]
@@ -531,7 +523,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           'font-semibold !text-[var(--core-color-tab-fg-active)] shadow-[inset_0_-2px_0_0_var(--core-color-tab-indicator)]'
       )}
     >
-      Assessment
+      Report
       {analysis.selected && (
         <ChevronDown
           aria-hidden="true"
@@ -550,7 +542,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         <MenuContent align="start" className="w-64">
           {/* What the list is, before what is in it: these are the assessments
               this business has had run on it, each with when it ran. */}
-          <MenuLabel>Assessments</MenuLabel>
+          <MenuLabel>Reports</MenuLabel>
           {/* Newest first: the one you almost always want is at the top, and
               the order they are kept in is the order they were written. A radio
               dot beside each one made a list of five assessments read as a
@@ -921,17 +913,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             )}
             <AnalysisPanel
               version={analysis.reportVersion}
-              // Under the recommendations: what to do first, then what the
-              // record says about the business you are doing it to.
-              identity={
-                view ? <BusinessIdentity record={record} onJumpToSource={jumpToSource} /> : null
-              }
               score={
                 view ? (
                   <IdentityScoreCard
                     record={record}
                     results={results}
                     areas={scoreAreas}
+                    followUps={analysis.selected?.result.followUps ?? []}
                     trailing={analysedWith}
                   />
                 ) : null

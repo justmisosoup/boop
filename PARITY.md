@@ -98,6 +98,16 @@ before it starts editing rather than after being asked to.
 Not caused by the clone, and not fixed here, because fixing it would mean modifying
 a cloned file.
 
+## Known Tailwind 3 / 4 selector difference
+
+`DataTable` drops the last row's dividers with `last:[&>td]:border-b-0`. Tailwind 4
+reads stacked variants outside-in (`tr:last-child > td`); Tailwind 3, which this
+prototype runs, reads them the other way (`tr > td:last-child`), so every row lost
+the divider under its final column. The core file is untouched; `src/theme.css`
+restates the two selectors as the class meant them, under "Row dividers in the
+data table". Re-cloning core does not disturb it. If the prototype ever moves to
+Tailwind 4, delete that block.
+
 ## The deliberate divergence: the result-state grammar
 
 Everything visual comes from `@/core` except this, and the reasons are in

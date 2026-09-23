@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import agentStore from '../../analysis/agent.json'
 
+import type { AssessmentWeight } from './identityScore'
 import { SEED_WORKFLOW } from './library'
 import { CURRENT_USER } from './user'
 
@@ -17,6 +18,14 @@ export type CustomerSkill = {
    * record as — and is the customer's counterpart to Middesk's own.
    */
   kind: 'workflow' | 'assessment' | 'context'
+  /**
+   * How much the assessment counts, in the one-pager's two words.
+   *
+   * Identity, Ownership & Control and Compliance Screenings are critical;
+   * Activity & Permission is high. Absent on a workflow, and on anything
+   * written before this existed, which the score reads as critical.
+   */
+  weight?: AssessmentWeight
   /** Who wrote it. Absent on anything seeded before this was recorded. */
   createdBy?: string
   /**

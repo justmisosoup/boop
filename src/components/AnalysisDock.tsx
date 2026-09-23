@@ -566,7 +566,12 @@ export const AnalysisDock = ({
   }
 
   return (
-    <div className="fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)] wide:static wide:z-auto wide:shrink-0">
+    // Docked, it is the foot of the column whatever is above it. The log is
+    // what fills the column, and a business with no report has no log — so
+    // without `mt-auto` the composer sat directly under the panel's header,
+    // where it read as the first thing in an empty conversation rather than as
+    // the place to start one.
+    <div className="fixed bottom-0 right-0 z-floating pb-4 left-[var(--nav-w)] wide:static wide:z-auto wide:shrink-0 wide:mt-auto">
       {/* Centred on the viewport at a fixed width — it is the same object
           whatever width the report is dragged to. */}
       <div className="mx-auto w-full max-w-[676px] px-6 wide:max-w-none wide:px-4">

@@ -1,6 +1,22 @@
 import rawRecords from '../data/records.json'
 import licenseStore from '../data/licenses.json'
 import { deriveResults, trueEntityType, type BusinessRecord } from './deriveResults'
+import agentStore from '../../analysis/agent.json'
+import { newestReportFor } from './heldReports'
+import {
+  areasOf,
+  identityScore,
+  polarityCounts,
+  type AssessmentWeight,
+  type IdentityScore
+} from './identityScore'
+
+/** The assessments' tiers, from the bundled agent — the list has no hook. */
+const TIER_OF = new Map(
+  ((agentStore as { skills?: Array<{ id: string; weight?: AssessmentWeight }> }).skills ?? []).map(
+    (x) => [x.id, x.weight]
+  )
+)
 
 /**
  * The records the prototype runs on, and the few things both the list and the
@@ -40,18 +56,44 @@ export const describe = (r: BusinessRecord) =>
     : 'No formation record'
 
 /**
- * How many insights a record actually reported.
+ * What the list says about a business's assessment: its score, and how the
+ * insights the report rests on read.
  *
- * The same number the record view's Insights tab shows — derived the same way,
- * so the list and the tab can't disagree. Deriving runs the whole catalog, so
- * results are held per record: the list asks for all 25 at once.
+ * Scored against the report's OWN snapshot, the way the record view scores it
+ * — so the number in the list is the number in the ring, not a re-read of the
+ * live record that the report never saw. A business with no stored report has
+ * nothing to say here and returns null; the list shows that as absence.
  */
-const INSIGHT_COUNTS = new Map<string, number>()
+export type Assessed = {
+  score: IdentityScore
+  counts: { positive: number; negative: number; neutral: number }
+}
 
-export const insightCountOf = (r: BusinessRecord) => {
-  const cached = INSIGHT_COUNTS.get(r.id)
-  if (cached !== undefined) return cached
-  const count = deriveResults(r).filter((x) => !x.notReported).length
-  INSIGHT_COUNTS.set(r.id, count)
-  return count
+const ASSESSED = new Map<string, Assessed | null>()
+
+export const assessmentOf = (r: BusinessRecord): Assessed | null => {
+  if (ASSESSED.has(r.id)) return ASSESSED.get(r.id) ?? null
+
+  const held = newestReportFor(r.name)
+  let out: Assessed | null = null
+  if (held?.report) {
+    const record = held.snapshot?.record ?? r
+    const results = held.snapshot?.results ?? deriveResults(r)
+    const areas = areasOf(
+      held.report.sections,
+      held.policy.map((p) => ({ ...p, weight: TIER_OF.get(p.id) }))
+    )
+    const score = identityScore(record, results, areas)
+    if (score)
+      out = {
+        score,
+        counts: polarityCounts(
+          record,
+          results,
+          score.components.flatMap((c) => c.insightIds)
+        )
+      }
+  }
+  ASSESSED.set(r.id, out)
+  return out
 }

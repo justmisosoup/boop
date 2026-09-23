@@ -16,46 +16,61 @@ import {
   type DataTableColumnDef
 } from '@/core'
 import type { BusinessRecord } from '@/lib/deriveResults'
-import { ALL, insightCountOf } from '@/lib/records'
+import { ALL, assessmentOf } from '@/lib/records'
 
-import { MetaTagStatus } from '../components/MetaTagStatus'
+import { InsightCounts } from '../components/InsightCounts'
+import { RecommendationChip } from '../components/RecommendationChip'
 
 /**
- * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`.
- * Only the four columns the prototype has data for are here; the app's
- * `agent_runs` (158) and `assignee` (144) have nothing to show.
+ * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`
+ * where the app has the column. `assessment` is this prototype's own: the
+ * app's `status` (132) plus room for a three-digit number ahead of the chip.
+ * The app's `agent_runs` (158) and `assignee` (144) have nothing to show here.
  */
 const COLUMN_WIDTHS = {
-  created: 148,
-  status: 132,
+  assessment: 180,
   name: 232,
-  insights: 304
+  insights: 304,
+  created: 148
 }
 
 /**
- * Column order is the app's: `created` leads at the far left, then status, the
- * name, and the insights. See the note on `BUSINESS_COLUMNS` in the app's
- * `columns.ts` — order there drives render order too.
+ * Column order: the assessment's number and its recommendation first, then the
+ * name, then what the report rested on, then when the record was ordered.
+ *
+ * The app leads with `created`. Here the list is a list of assessments rather
+ * than of orders — every row opens on a report — so the decision leads and the
+ * date, which no longer says anything about the decision, goes to the far
+ * right where a reader who wants it can still find it.
  */
 const columns: DataTableColumnDef<BusinessRecord>[] = [
   {
-    id: 'created',
-    header: 'Created',
-    accessorFn: (row) => row.createdAt ?? '',
-    // Keep the relative time on one line; the column is sized to fit it.
-    cell: ({ row }) => (
-      <DateTime className="whitespace-nowrap text-caption text-text-secondary">
-        {row.original.createdAt ?? undefined}
-      </DateTime>
-    ),
-    meta: { width: COLUMN_WIDTHS.created, grow: true }
-  },
-  {
-    id: 'status',
-    header: 'Status',
-    accessorFn: (row) => row.status,
-    cell: ({ row }) => <MetaTagStatus status={row.original.status} />,
-    meta: { width: COLUMN_WIDTHS.status, grow: true }
+    id: 'assessment',
+    header: 'Assessment score',
+    accessorFn: (row) => assessmentOf(row)?.score.value ?? -1,
+    /**
+     * The number in the ring, then the band it lands in.
+     *
+     * One cell rather than two columns: the number and the word are one
+     * reading, and split across a column rule the reader had to join them
+     * back up. The number leads because it is what the column is sorted and
+     * scanned by; the chip beside it is the decision it points to, in the same
+     * compact chip the app's Status column uses — see `RecommendationChip`.
+     * Tabular figures so 49 and 100 hold the chip at the same offset down the
+     * column. No report is a dash and the neutral chip.
+     */
+    cell: ({ row }) => {
+      const assessed = assessmentOf(row.original)
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span className="w-7 text-caption tabular-nums">
+            {assessed ? assessed.score.value : <span className="text-text-disabled">—</span>}
+          </span>
+          <RecommendationChip band={assessed?.score.band ?? null} />
+        </span>
+      )
+    },
+    meta: { width: COLUMN_WIDTHS.assessment, grow: true }
   },
   {
     id: 'name',
@@ -75,29 +90,35 @@ const columns: DataTableColumnDef<BusinessRecord>[] = [
   {
     id: 'insights',
     header: 'Insights',
-    accessorFn: (row) => insightCountOf(row),
+    accessorFn: (row) => assessmentOf(row)?.counts.negative ?? -1,
     /**
-     * How many insights the record reported.
+     * How the insights the report rests on read: positive, negative, neutral.
      *
-     * The app shows a Success / Warning / Failure triplet here (its `TaskList`),
-     * read off `review.tasks[].status`. These records carry no per-task status,
-     * and this prototype's insight grammar is deliberately two-state — a result
-     * or no result, see `StateMark` — so there is no third count to show. One
-     * number until there is.
+     * The app's `TaskList` triplet, with the score's own reading in place of the
+     * review task's status the records do not carry — see `InsightCounts`. The
+     * counts are over the insights the report cited, which is what the score
+     * card counts too, so the three numbers here are the card's, added up.
+     * A record with no report has nothing the score has read, so it reads as a
+     * dash rather than as three zeros.
      */
     cell: ({ row }) => {
-      const count = insightCountOf(row.original)
-      // Plain text, no chip — the app's `InsightStat` says why: the Insights
-      // cell stays quiet so the Status chip beside it stays the loud thing in
-      // the row. Zero takes the recede grey, as its counts do; and nothing
-      // derived is not zero insights, it is a record the catalog had nothing to
-      // say about, so it reads as a dash.
-      if (!count) {
-        return <span className="text-caption text-text-disabled">—</span>
-      }
-      return <span className="text-caption tabular-nums">{count}</span>
+      const assessed = assessmentOf(row.original)
+      if (!assessed) return <span className="text-caption text-text-disabled">—</span>
+      return <InsightCounts counts={assessed.counts} />
     },
     meta: { align: 'start', width: COLUMN_WIDTHS.insights, grow: true }
+  },
+  {
+    id: 'created',
+    header: 'Created',
+    accessorFn: (row) => row.createdAt ?? '',
+    // Keep the relative time on one line; the column is sized to fit it.
+    cell: ({ row }) => (
+      <DateTime className="whitespace-nowrap text-caption text-text-secondary">
+        {row.original.createdAt ?? undefined}
+      </DateTime>
+    ),
+    meta: { width: COLUMN_WIDTHS.created, grow: true }
   }
 ]
 

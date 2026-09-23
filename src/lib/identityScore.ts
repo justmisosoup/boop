@@ -32,6 +32,19 @@ import type { BusinessRecord, Derived } from './deriveResults'
 
 export type BandId = 'established' | 'conditions' | 'not_established'
 
+/**
+ * How much an assessment counts, in the one-pager's words.
+ *
+ * Identity, Ownership & Control and Compliance Screenings are critical;
+ * Activity & Permission is high. Two tiers, and a critical assessment counts
+ * twice what a high one does — the smallest ratio that makes the tiers mean
+ * anything, and one a reviewer can hold in their head. Nothing on the record
+ * ranks the assessments; this is the product's ranking, declared once.
+ */
+export type AssessmentWeight = 'critical' | 'high'
+
+export const WEIGHT: Record<AssessmentWeight, number> = { critical: 2, high: 1 }
+
 export type ScoreBand = {
   id: BandId
   label: string
@@ -43,12 +56,26 @@ export type ScoreBand = {
 
 /** What the report was laid out in: one assessment, and the insights it cited.
  *  Built from the sections themselves — see `RecordPage`. */
-export type ScoreArea = { id: string; name: string; insightIds: string[] }
+export type ScoreArea = {
+  id: string
+  name: string
+  insightIds: string[]
+  /**
+   * Questions the assessment left open that are OURS to close — see
+   * `openQuestions`. An assessment with one cannot come back Approve: the file
+   * it describes is incomplete, whatever its checks scored.
+   */
+  openQuestions?: string[]
+  /** Its tier. Absent reads as critical. */
+  tier?: AssessmentWeight
+}
 
 export type ScoreComponent = {
   /** The assessment's id, which is also its anchor in the report. */
   id: string
   label: string
+  /** Its tier, for the card. */
+  tier: AssessmentWeight
   /** The declared weight, before absent components are reweighted away. */
   weight: number
   /** The weight actually applied. 0 when the component had nothing to read. */
@@ -57,8 +84,13 @@ export type ScoreComponent = {
   subScore: number | null
   /** One clause per test, in the order tested — the arguable part. */
   reasons: string[]
+  /** The same three counts as numbers, for the card's glyphs. */
+  counts: { positive: number; negative: number; neutral: number }
   /** Named inputs that could not be evaluated, so the card can say which. */
   missing: string[]
+  /** Where the sub-score lands, in the same three bands as the whole. Null
+   *  when there was nothing to read. */
+  band: ScoreBand | null
   /** The insights behind it. Primary group first: the cell jumps to that one. */
   insightIds: string[]
 }
@@ -101,6 +133,58 @@ export const BANDS: readonly ScoreBand[] = [
 
 const bandFor = (value: number) =>
   [...BANDS].reverse().find((b) => value >= b.from) ?? BANDS[0]
+
+/** The top of the Review band: what an assessment is held to while a question
+ *  of ours is open in it. */
+const HELD_AT = (BANDS.find((b) => b.id === 'established')?.from ?? 90) - 1
+
+/**
+ * The gaps in a section that hold its assessment for review.
+ *
+ * Only the open ones that are ours to close. A `not_published` gap is a fact
+ * about a registry and a `not_required` one is a fact about the form — neither
+ * says anything is missing from the file. A gap written off with `noAction` is
+ * a decision already taken. What is left is a question the file is waiting on:
+ * something we do not hold, or something no check reaches.
+ */
+export const openQuestions = (
+  gaps: Array<{ point: string; why: string; noAction?: unknown }> | undefined
+): string[] =>
+  (gaps ?? [])
+    .filter((g) => !g.noAction && (g.why === 'not_held_or_unreachable' || g.why === 'no_insight_covers_it'))
+    .map((g) => g.point)
+
+/**
+ * The areas a report is scored in, from its own sections.
+ *
+ * One assessment, the insights its prose and gaps cite, and the questions it
+ * left open. Built here rather than in the page so the record view and the
+ * businesses list score a report the same way.
+ */
+export const areasOf = (
+  sections: Array<{
+    id: string
+    body: Array<{ cites?: string[] }>
+    gaps?: Array<{ point: string; why: string; cites?: string[]; noAction?: unknown }>
+  }>,
+  policy: Array<{ id: string; name: string; weight?: AssessmentWeight }>
+): ScoreArea[] => {
+  const named = new Map(policy.map((p) => [p.id, p]))
+  return sections
+    .filter((section) => named.has(section.id))
+    .map((section) => ({
+      id: section.id,
+      name: (named.get(section.id) as { name: string }).name,
+      tier: named.get(section.id)?.weight ?? 'critical',
+      insightIds: [
+        ...new Set([
+          ...section.body.flatMap((b) => b.cites ?? []),
+          ...(section.gaps ?? []).flatMap((g) => g.cites ?? [])
+        ])
+      ],
+      openQuestions: openQuestions(section.gaps)
+    }))
+}
 
 const task = (record: BusinessRecord, key: string) =>
   record.reviewTasks.find((t) => t.key === key)
@@ -162,15 +246,25 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   sos_domestic_sub_status: () => 'neutral',
 
   // The office. Deliverable and commercial are points for it; a residential
-  // suite is not a finding on its own, and the frequency bands are context
-  // until the address is shared with a hundred businesses.
+  // suite is not a finding on its own.
   address_deliverability: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   address_property_type: (_r, record) =>
     record.addresses.some((a) => a.submitted && a.propertyType === 'Commercial')
       ? 'positive'
       : 'neutral',
   address_registered_agent: () => 'neutral',
-  location_frequency: (r) => (r.insightId.endsWith(':high') ? 'negative' : 'neutral'),
+  /*
+   * Every frequency band is context, the high one included.
+   *
+   * The high band used to count against the identity. But an address a
+   * hundred businesses file from is, on this record set, a registered agent's
+   * office or a co-working floor — the ordinary footprint of a Delaware
+   * corporation or a start-up — and nothing in the check says which. What a
+   * shared address means is the assessment's reading to make in prose, with
+   * the address in front of it; a table that scores it has decided in advance
+   * that a crowded floor is a mark against, which it is not.
+   */
+  location_frequency: () => 'neutral',
 
   // The web presence. Discovery says who supplied the URL, which is provenance;
   // what the site then says about the business is the finding.
@@ -266,9 +360,21 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
     (record.industry ?? []).some((i) => i.highRisk) ? 'negative' : 'positive',
   risky_keywords: (r) => (r.state === 'result' ? 'positive' : 'positive'),
 
-  // Encumbrance. Nothing found is the point.
-  liens: (r) => (r.reason === 'should_exist_not_found' ? 'negative' : 'positive'),
-  litigations: (r) => (r.reason === 'should_exist_not_found' ? 'negative' : 'positive'),
+  /*
+   * Financial standing. Nothing found is a point for the file. Something found
+   * is context, not a finding: five open UCCs on a bakery are equipment
+   * finance, and a lawsuit names an employer as often as a debtor. What a lien
+   * or a suit means is the Financial Standing assessment's reading to make
+   * against the business's age and line of work, and a table that scored it
+   * had already decided. "Found" used to read as POSITIVE here — a check that
+   * returned five liens counted for the business — which was wrong in the
+   * other direction.
+   *
+   * A bankruptcy is the exception: it is adverse under any policy, and the
+   * record-level ceiling already treats it so.
+   */
+  liens: (_r, record) => ((record.liens ?? []).length > 0 ? 'neutral' : 'positive'),
+  litigations: (_r, record) => ((record.litigations ?? []).length > 0 ? 'neutral' : 'positive'),
   bankruptcies: (_r, record) => ((record.bankruptcies ?? []).length > 0 ? 'negative' : 'positive')
 }
 
@@ -308,9 +414,9 @@ const NEUTRAL: ReadonlySet<string> = new Set(['not_published', 'not_required'])
  * themselves now, scored on what each one actually rested on: its paragraphs'
  * citations and its gaps'.
  *
- * Every assessment carries the same weight. Nothing in the record ranks one
- * above another, and inventing a ranking here would be the kind of unstated
- * judgement the rest of this file refuses to make.
+ * Each assessment carries the weight its tier declares — see `WEIGHT`. The
+ * ranking is the product's, stated once in the one-pager and once here, not
+ * something inferred from the record.
  */
 const scoreArea = (
   area: ScoreArea,
@@ -337,17 +443,41 @@ const scoreArea = (
    * are argued: the rows the score read as negative carry the mark in the
    * assessment itself, so the cell counts and the section shows.
    */
+  const open = area.openQuestions ?? []
   const reasons = [
     `${positive.length} positive`,
     `${negative.length} negative`,
-    `${neutral.length} unknown`
+    `${neutral.length} unknown`,
+    // The clause that held it, beside the counts that did not: a reader seeing
+    // 89 over five clean checks has to be told which rule put it there.
+    ...(open.length > 0
+      ? [`held for review: ${open.length === 1 ? 'one question' : `${open.length} questions`} the file leaves open`]
+      : [])
   ]
+
+  /*
+   * A clean assessment is 100, each finding costs `FINDING_COST` — and an
+   * assessment with a question of ours still open is held at the top of the
+   * Review band, whatever its checks scored.
+   *
+   * The two are different shapes of incompleteness. A finding is something a
+   * check came back with; an open question is something no check reached — a
+   * beneficial owner the state does not publish and the customer has not yet
+   * certified. Deducting for it would price the unknown, which the header of
+   * this file forbids; ignoring it put a 100 over an ownership stage whose own
+   * prose says ownership is unestablished. So it caps, the way the serious
+   * findings do at the top: not above Review until the question is closed.
+   */
+  const raw = counted === 0 ? null : clamp(100 - FINDING_COST * negative.length)
+  const subScore = raw === null ? null : open.length > 0 ? Math.min(raw, HELD_AT) : raw
 
   return {
     id: area.id,
     label: area.name,
+    tier: area.tier ?? 'critical',
     weight,
     appliedWeight: 0,
+    counts: { positive: positive.length, negative: negative.length, neutral: neutral.length },
     /*
      * A clean assessment is 100, and each finding costs `FINDING_COST`.
      *
@@ -364,9 +494,10 @@ const scoreArea = (
      * they have to go and do. Nothing is invented beyond the one constant, and
      * each finding is printed by name in the cell it cost.
      */
-    subScore: counted === 0 ? null : clamp(100 - FINDING_COST * negative.length),
+    subScore,
     reasons,
     missing: counted === 0 ? ['nothing this assessment cited could be read'] : [],
+    band: subScore === null ? null : bandFor(subScore),
     insightIds: cited.map((r) => r.insightId)
   }
 }
@@ -435,6 +566,29 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
  * of twenty rows they were. Same table the score uses — one judgement, read in
  * two places.
  */
+/**
+ * How the insights a report rests on read, counted once each.
+ *
+ * The same table `scoreArea` counts per assessment, over the union of what
+ * every assessment cited — so the businesses list shows the same three numbers
+ * a reader would get by adding up the score card's cells, minus the
+ * double-counting of an insight cited by more than one assessment.
+ */
+export const polarityCounts = (
+  record: BusinessRecord,
+  results: Derived[],
+  insightIds: Iterable<string>
+): { positive: number; negative: number; neutral: number } => {
+  const byId = new Map(results.map((r) => [r.insightId, r]))
+  const counts = { positive: 0, negative: 0, neutral: 0 }
+  for (const id of new Set(insightIds)) {
+    const r = byId.get(id)
+    if (!r || r.notReported) continue
+    counts[polarityOf(r, record)] += 1
+  }
+  return counts
+}
+
 export const negativesFor = (record: BusinessRecord, results: Derived[]): Set<string> =>
   new Set(
     results
@@ -466,8 +620,13 @@ export const identityScore = (
   if (areas.length === 0) return null
 
   const byId = new Map(results.map((r) => [r.insightId, r]))
-  const weight = Math.round((100 / areas.length) * 10) / 10
-  const components = areas.map((a) => scoreArea(a, byId, record, weight))
+  // A hundred points shared out by tier: a critical assessment takes twice a
+  // high one's share. With four assessments, three critical and one high,
+  // that is 28.6 / 14.3 / 28.6 / 28.6 rather than four equal quarters.
+  const total = areas.reduce((n, a) => n + WEIGHT[a.tier ?? 'critical'], 0)
+  const components = areas.map((a) =>
+    scoreArea(a, byId, record, Math.round(((100 * WEIGHT[a.tier ?? 'critical']) / total) * 10) / 10)
+  )
 
   const read = components.filter((c) => c.subScore !== null)
   const coverage = Math.round(read.reduce((n, c) => n + c.weight, 0))

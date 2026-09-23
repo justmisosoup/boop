@@ -1,26 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import reportStore from '../../analysis/reports.json'
-
-import type { AnalysisDraft, AnalysisResult, ReportSnapshot, StoredReport } from '../types'
-
-/**
- * The reports written for this prototype, bundled.
- *
- * `/api/analyse` is dev-server middleware: it does not exist in a `vite build`,
- * so a deployed copy cannot ask a Claude Code session for a report. It carries
- * the ones already written instead, keyed by business name because a re-pull
- * mints new business ids.
- *
- * In dev this changes nothing — the endpoint answers first and the live run
- * replaces it. Deployed, it is the whole of what the page can show.
- */
-const BUNDLED_REPORTS: Record<string, StoredReport[]> =
-  (reportStore as unknown as { reports?: Record<string, StoredReport[]> }).reports ?? {}
-
-const bundledReports = (name: string): StoredReport[] =>
-  BUNDLED_REPORTS[(name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()] ?? []
+import type { AnalysisDraft, AnalysisResult, ReportSnapshot } from '../types'
 import type { BusinessRecord, Derived } from './deriveResults'
+// The bundled store, shared with the businesses list — see `heldReports.ts`.
+// In dev this changes nothing: the endpoint answers first and the live run
+// replaces it. Deployed, it is the whole of what the page can show.
+import { heldReportsFor as bundledReports } from './heldReports'
 
 /** One run. Re-running produces another, so a reading can be compared with the
  *  one it replaced rather than overwriting it. */

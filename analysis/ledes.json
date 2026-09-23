@@ -2,30 +2,10 @@
   "_comment": "Ledes that survive a re-pull. Keyed by business name, not business id — re-ordering the same company mints a new id every time, and an id-keyed lede comes back empty for a business that already had one. FORMAT: lead with the registered business identity name, in full, as it appears on the filing — not a trading or shortened name. A trading name may follow if it differs. Say what kind of business it is with the adjectives that actually characterise it, and where, specifically. Name who founded or runs it. Then what it actually does and sells, in its own terms, including how it is priced or positioned. Two or three sentences. No revenue-model or customer-funds boilerplate — that is compliance filler, not a description of a company.",
   "ledes": {
     "kairos physical therapy pllc": {
-      "text": "KAIROS PHYSICAL THERAPY PLLC is a boutique concierge physical therapy studio on Madison Avenue in NYC's Upper East Side. Founded by Dr. Joshua Gee, it blends orthopedic rehab with strength training in one-on-one sessions led entirely by Doctors of Physical Therapy, and also offers clinician-led personal training at premium pricing.",
-      "sources": [
-        {
-          "title": "kairosphysio.com — Concierge Physical Therapy & Personal Training, Upper East Side",
-          "url": "https://www.kairosphysio.com"
-        },
-        {
-          "title": "NPPES NPI Registry — Joshua Y Gee DPT, Physical Therapist, 801 Madison Ave",
-          "url": "https://npiregistry.cms.hhs.gov/provider-view/1477211969"
-        }
-      ]
+      "text": "KAIROS PHYSICAL THERAPY PLLC is a four-year-old New York physical therapy practice on the third floor of 801 Madison Avenue, run by Joshua Gee from a Bayside home address, with a companion property entity and a Manhattan floor-mate beside it."
     },
     "andytown llc": {
-      "text": "Andytown Coffee Roasters is a specialty coffee roaster and café group in San Francisco's Outer Sunset. Founded in 2014 by Lauren Crabbe and Michael McCrory, it roasts in-house and sells through its own cafés — several in the Sunset and one downtown — alongside pastries baked on site, and supplies wholesale accounts across the city.",
-      "sources": [
-        {
-          "title": "andytownsf.com — Andytown Coffee Roasters",
-          "url": "https://www.andytownsf.com/"
-        },
-        {
-          "title": "Fresh Cup — Do You Know Andytown?",
-          "url": "https://freshcup.com/do-you-know-andytown/"
-        }
-      ]
+      "text": "ANDYTOWN LLC is a San Francisco coffee roaster and cafe operator run by Lauren Crabbe and Michael McCrory since 2012, reorganised into Delaware in 2017, trading from a handful of west-side storefronts and financed through bank and SBA equipment lending."
     },
     "middesk inc": {
       "text": "Middesk is a business identity platform in San Francisco selling verification infrastructure to banks, lenders and fintechs. It pulls filings from state and federal registries behind an API, and sells KYB verification, ongoing monitoring and agent-assisted state registration on top of that data.",
@@ -35,6 +15,75 @@
           "url": "https://www.middesk.com/"
         }
       ]
+    },
+    "kairos 801 llc": {
+      "text": "KAIROS 801 LLC is a two-year-old New York LLC filed through LegalZoom that shares its name, its Madison Avenue floor and its Bayside home address with Kairos Physical Therapy PLLC, and reads as the practice's property or holding vehicle rather than a business anyone would encounter on its own."
+    },
+    "j.l.w. investors, ltd.": {
+      "text": "J.L.W. INVESTORS, LTD. is a New York corporation formed in 1983 and now inactive, classified as an investment and advisory business, whose only trace is a mailing address on the shared third floor of 801 Madison Avenue and no named person behind it."
+    },
+    "jayleaf, llc": {
+      "text": "JAYLEAF, LLC is a Hollister, California farming business run by Jose Ornelas since 2009 with Manuel Rodriguez as its agent, financing its equipment on lease and sitting within the Ornelas and Rodriguez families' wider set of agricultural and equipment companies."
+    },
+    "woo young lee dds inc": {
+      "text": "WOO YOUNG LEE DDS INC is Dr. Woo Young Lee's San Francisco dental practice, incorporated in 2007 and trading as Grace Dental Group at 350 Divisadero Street after an earlier Fillmore Street suite, with its equipment financed on lease and the dentist holding every officer role."
+    },
+    "c & n trucking llc": {
+      "text": "C & N TRUCKING LLC is a small owner-operated freight carrier formed in Indiana in 2018 and run by Nathan Dean Ulery from a home address in Livingston, Tennessee, whose Indiana filing is lapsing and whose Tennessee registration has gone inactive."
+    },
+    "miette cakes, llc": {
+      "text": "MIETTE CAKES, LLC is a twenty-year-old Oakland bakery owned and run by Meg Ray that has moved kitchens at least once, financed its equipment in 2025, and now appears to operate a Marin location the public record has yet to catch up with."
+    },
+    "miette patisserie & confiserie": {
+      "text": "MIETTE PATISSERIE & CONFISERIE is Meg Ray's unincorporated pastry shop on Fillmore Street in San Francisco, with no state filing behind it and a 2020 SBA loan as its only public record, which is the ordinary shape of a sole-proprietor storefront."
+    },
+    "fishmonger don": {
+      "text": "FISHMONGER DON is a small San Francisco seafood business formed as an LLC in 2020 and run by Donald Mayfield from his Fairfax home, with a Taylor Street shop address that no filing yet carries."
+    },
+    "sorenson communications, llc": {
+      "text": "SORENSON COMMUNICATIONS, LLC is a 25-year-old, private-equity-backed provider of communication services for the deaf, headquartered in Salt Lake City, that has changed form and hands more than once and left a trail of lapsed state registrations and refinanced debt behind it."
+    },
+    "firebird yarns": {
+      "text": "FIREBIRD YARNS is Kathryn Bernard's yarn shop on Haight Street in San Francisco, registered with the city in her own name rather than as a company, with a Google listing and two personal debt matters in Illinois as its only other public traces."
+    },
+    "maverick games llc": {
+      "text": "MAVERICK GAMES LLC is a one-member Arizona LLC formed in May 2024 by Christopher Lochte from his Tucson home, with no website, profile or filing beyond its formation to say what it sells."
+    },
+    "supabase, inc.": {
+      "text": "SUPABASE, INC. is a Delaware corporation formed in January 2020 and led by Paul Copplestone with a venture-style board, qualified in Alabama, Arizona and California through registered agents with no office of its own on the record, and carrying one open New York wage claim as its only visible operating footprint."
+    },
+    "modern realty inc": {
+      "text": "MODERN REALTY INC is a Vernal, Utah real estate company incorporated in 2021 by Jacob Selby and Michael Eskelson, one of a cluster of property, construction and management companies the two men run from the same few addresses, with a tail of name-matched lawsuits in New Jersey and Texas."
+    },
+    "change.org, pbc": {
+      "text": "CHANGE.ORG, PBC is a Delaware public benefit corporation formed in 2006 and headquartered on Rhode Island Street in San Francisco, led by Ben Rattray, with a charitable foundation and an international affiliate beside it and a shrinking set of state qualifications behind it."
+    },
+    "checkr, inc.": {
+      "text": "CHECKR, INC. is a San Francisco corporation formed in Delaware in 2014, led by Daniel Yanisse and qualified in nineteen states, sitting atop a group that includes Checkr Group, Tessera Data and the Inflection companies, financed by JPMorgan and defending a steady run of lawsuits."
+    },
+    "zendesk, inc.": {
+      "text": "ZENDESK, INC. is a fifteen-year-old, formerly public, now private-equity-owned enterprise software company headquartered in San Francisco, qualified in almost every state, led by a professional executive team whose careers tie it to much of the Bay Area software industry."
+    },
+    "alliance transfer inc.": {
+      "text": "Alliance Transfer Inc. is the trading name of a Brooklyn relocation and installation business run by the Kawas family since 1976, whose active New York filing now stands under ALLIANCE ENTERPRISES IV, INC. and whose bank and SBA financing points to trucks, inventory and a warehouse on 58th Street."
+    },
+    "zions bank": {
+      "text": "ZIONS BANK is the Idaho-registered trade name of ZB, National Association, the Salt Lake City bank headquartered at 1 South Main Street, whose only filing names the bank itself as owner and whose liens and lawsuits are those of a lender."
+    },
+    "old stuff vintage sales llc": {
+      "text": "OLD STUFF VINTAGE SALES LLC is a one-person Wisconsin vintage-goods seller registered by Jon Bram from his home in Grantsburg in September 2023 and dissolved within the year, with no other public trace."
+    },
+    "the mala market, llc": {
+      "text": "THE MALA MARKET, LLC is a Tennessee LLC formed in 2017 and in good standing, run from a Nashville home address behind a Knoxville registered-agent office, with no website, person or activity on the record and one neighbour, Latex Foam International, sharing the home address."
+    },
+    "meroxa, inc.": {
+      "text": "MEROXA, INC. is a Delaware corporation formed in October 2019 and run from Oakland by Ali Hamidi and DeVaris Brown, with a lapsed Utah qualification and an active California one, and no website or industry on the record to say what it builds."
+    },
+    "sprig technologies inc.": {
+      "text": "SPRIG TECHNOLOGIES INC. is a Delaware corporation formed in 2019 and run by Ryan Glasgow from San Francisco, qualified only in California, also registered with the city under the name Mixboard Inc., and otherwise leaving no website, industry or filing to say what it does."
+    },
+    "charm coffee llc": {
+      "text": "CHARM COFFEE LLC is a two-year-old California LLC in good standing registered by Michael Ellenburg from his San Diego apartment, with no website, storefront or other record beyond the filing itself."
     }
   }
 }

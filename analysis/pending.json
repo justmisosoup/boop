@@ -1,15 +1,15 @@
 {
-  "id": "1790037766072",
-  "requestedAt": "2026-09-22T00:42:46.072Z",
-  "businessId": "13aaf63f-9184-42d5-a051-77cb18e4d8a5",
+  "id": "1790107595405",
+  "requestedAt": "2026-09-22T20:06:35.406Z",
+  "businessId": "4edfeb04-2d51-41df-9a39-b7d51be1164a",
   "business": {
-    "name": "KAIROS PHYSICAL THERAPY PLLC",
+    "name": "CHARM COFFEE LLC",
     "entityType": "LLC",
-    "state": "NY",
-    "formed": "2022-06-13"
+    "state": "CA",
+    "formed": "2022-02-24"
   },
-  "kind": "question",
-  "prompt": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.\n\nsdagsdgadg",
+  "kind": "report",
+  "prompt": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
   "skills": [
     "Onboarding General"
   ],
@@ -25,86 +25,25 @@
       "instructions": "What does this business actually do, and is it allowed to do it?\n\nAlways:\n- Identify whether the industry is a high-risk or prohibited industry\n- Identify whether there is evidence of other industry activity not detected that point to high-risk or prohibited industries\n- Identify presence and status of licenses required of the industry + jurisdiction. \n- Identify license link to officer / owner / person or business entity."
     },
     {
-      "id": "skill-kyb-3",
-      "name": "Compliance",
-      "instructions": "Is this business, or anyone behind it, someone we're prohibited or restricted from doing business with?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits"
-    },
-    {
       "id": "skill-1789767328449",
       "name": "Ownership",
       "instructions": "Who actually controls and benefits from this business?\n\nAlways:\n- Identify unsubmitted officers or people associated\n- Identify unsubmitted business entities listed as owners / officers\n- Identify unsubmitted registered agents listed as owners / officers\n- Identify complexity of ownership structure for the business entity\n\nWhen submitted:\n- Verify business entities listed as owners / officers\n- Verify people listed as owners / officers\n- Verify registered agents listed as owners / officers"
+    },
+    {
+      "id": "skill-kyb-3",
+      "name": "Compliance",
+      "instructions": "Is this business, or anyone behind it, someone we're prohibited or restricted from doing business with?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits"
     }
   ],
   "insights": [
     {
-      "id": "person_verification",
-      "statement": "Unable to identify a match to the submitted person",
+      "id": "address_property_type",
+      "statement": "Submitted office address is a residential property",
       "state": "result",
-      "because": "Unable to identify a match to the submitted person",
+      "because": "Submitted Office Address is a Residential property",
       "evidence": [
-        "Submitted: JOSHUA GEE",
-        "Officers on state registrations: KAIROS PHYSICAL THERAPY PLLC",
-        "Requires Order package: identity, business_verification_qualify, business_verification_verify, international_business_verification"
-      ]
-    },
-    {
-      "id": "business_connections",
-      "statement": "2 connections found",
-      "state": "result",
-      "because": "2 connections found",
-      "evidence": [
-        "Source value: Found",
-        "Requires Order package: business_verification_verify"
-      ]
-    },
-    {
-      "id": "web_business_name_verification",
-      "statement": "We identified a name we believe is different from the submitted business name",
-      "state": "result",
-      "because": "We identified a name we believe is different from the submitted Business Name",
-      "evidence": [
-        "Source value: Mismatch",
-        "Requires Order package: website, merchant_risk"
-      ]
-    },
-    {
-      "id": "web_person_verification",
-      "statement": "Unable to identify a match to the submitted person",
-      "state": "result",
-      "because": "Unable to identify a match to the submitted person",
-      "evidence": [
-        "Registrations on file: 1",
-        "Requires Order package: website, merchant_risk"
-      ]
-    },
-    {
-      "id": "location_frequency:low",
-      "statement": "2 addresses in the low band",
-      "state": "result",
-      "evidence": [
-        "21611 48th Ave Apt 3B, Bayside, NY 11364-1311 — 2 businesses at this location",
-        "40 Little Neck Rd # 1B, Little Neck, NY 11363-1332 — 2 businesses at this location",
-        "Requires Order package: identity"
-      ]
-    },
-    {
-      "id": "location_frequency:moderate",
-      "statement": "1 address in the moderate band",
-      "state": "result",
-      "evidence": [
-        "801 Madison Ave Fl 3, New York, NY 10065-5930 — 21 businesses at this location",
-        "Requires Order package: identity"
-      ]
-    },
-    {
-      "id": "sos_domestic_sub_status",
-      "statement": "The domestic sub-status is not provided by state.",
-      "state": "no_result",
-      "reason": "not_published",
-      "because": "The domestic sub-status is Not Provided by State.",
-      "evidence": [
-        "Registration state: NY",
-        "Requires Order package: identity, business_verification_verify, merchant_risk"
+        "Source value: Residential",
+        "Requires Order package: identity, business_verification_verify"
       ]
     },
     {
@@ -148,13 +87,22 @@
       ]
     },
     {
-      "id": "address_property_type",
-      "statement": "Submitted office address is a commercial property",
+      "id": "location_frequency:low",
+      "statement": "1 address in the low band",
       "state": "result",
-      "because": "Submitted Office Address is a Commercial property",
       "evidence": [
-        "Source value: Commercial",
-        "Requires Order package: identity, business_verification_verify"
+        "7980 Linda Vista Rd Apt 46, San Diego, CA 92111-5159 — 1 businesses at this location",
+        "Requires Order package: identity"
+      ]
+    },
+    {
+      "id": "person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result",
+      "because": "Match identified to the submitted person",
+      "evidence": [
+        "Source value: Verified",
+        "Requires Order package: identity, business_verification_qualify, business_verification_verify, international_business_verification"
       ]
     },
     {
@@ -178,6 +126,16 @@
       ]
     },
     {
+      "id": "sos_domestic_sub_status",
+      "statement": "The domestic registration is in good standing.",
+      "state": "result",
+      "because": "The domestic registration is in Good Standing.",
+      "evidence": [
+        "Source value: Good Standing",
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
+      ]
+    },
+    {
       "id": "sos_domestic",
       "statement": "Active domestic filing found",
       "state": "result",
@@ -185,16 +143,6 @@
       "evidence": [
         "Source value: Domestic Active",
         "Requires Order package: identity, business_verification_verify, merchant_risk"
-      ]
-    },
-    {
-      "id": "tin",
-      "statement": "The IRS has a record for the submitted TIN and business name combination",
-      "state": "result",
-      "because": "The IRS has a record for the submitted TIN and Business Name combination",
-      "evidence": [
-        "Source value: Found",
-        "Requires Order package: business_verification_verify, tin"
       ]
     },
     {
@@ -208,66 +156,6 @@
       ]
     },
     {
-      "id": "industry",
-      "statement": "This business likely does not operate in a high risk industry",
-      "state": "result",
-      "because": "This business likely does not operate in a high risk industry",
-      "evidence": [
-        "Source value: No Hits",
-        "Requires Order package: industry_classification"
-      ]
-    },
-    {
-      "id": "website_status",
-      "statement": "Website was online when the business record was ordered",
-      "state": "result",
-      "because": "Website was Online when the business record was ordered",
-      "evidence": [
-        "Source value: Online",
-        "Requires Order package: identity, website, merchant_risk"
-      ]
-    },
-    {
-      "id": "website_url_domain_ownership",
-      "statement": "We have high confidence that the submitted website URL belongs to the business.",
-      "state": "result",
-      "because": "We have high confidence that the submitted website URL belongs to the business.",
-      "evidence": [
-        "Source value: High Confidence",
-        "Requires Order package: website"
-      ]
-    },
-    {
-      "id": "adverse_media",
-      "statement": "No adverse media was found",
-      "state": "result",
-      "because": "No adverse media was found",
-      "evidence": [
-        "Source value: Low risk",
-        "Requires Order package: adverse_media"
-      ]
-    },
-    {
-      "id": "bankruptcies",
-      "statement": "The business has no bankruptcy filings",
-      "state": "result",
-      "because": "The business has no bankruptcy filings",
-      "evidence": [
-        "Source value: None Found",
-        "Requires Order package: bankruptcies, identity, business_verification_verify"
-      ]
-    },
-    {
-      "id": "entity_type",
-      "statement": "Entity type is a PLLC",
-      "state": "result",
-      "because": "Entity type is a LLC",
-      "evidence": [
-        "Source value: Verified",
-        "Requires Order package: identity, business_verification_verify, merchant_risk"
-      ]
-    },
-    {
       "id": "litigations",
       "statement": "The business has no related litigations",
       "state": "result",
@@ -278,120 +166,33 @@
       ]
     },
     {
-      "id": "politically_exposed_persons",
-      "statement": "There were no hits on submitted individuals or their relatives and close associates",
+      "id": "entity_type",
+      "statement": "Entity type is a LLC",
       "state": "result",
-      "because": "There were no hits on submitted individuals or their relatives and close associates",
-      "evidence": [
-        "Source value: No hits",
-        "Requires Order package: enhanced_screenings"
-      ]
-    },
-    {
-      "id": "profile_discovery",
-      "statement": "Third party profiles submitted",
-      "state": "result",
-      "because": "Third party profiles submitted",
-      "evidence": [
-        "Source value: Submitted",
-        "Requires Order package: website"
-      ]
-    },
-    {
-      "id": "profile_status",
-      "statement": "All third party profiles are online",
-      "state": "result",
-      "because": "All third party profiles are online",
-      "evidence": [
-        "Source value: Online",
-        "Requires Order package: website"
-      ]
-    },
-    {
-      "id": "risky_keywords",
-      "statement": "No risky keywords found.",
-      "state": "result",
-      "because": "No risky keywords found.",
-      "evidence": [
-        "Source value: None",
-        "Requires Order package: industry_classification"
-      ]
-    },
-    {
-      "id": "web_address_verification",
-      "statement": "Match identified to the submitted office address",
-      "state": "result",
-      "because": "Match identified to the submitted Office Address",
+      "because": "Entity type is a LLC",
       "evidence": [
         "Source value: Verified",
-        "Requires Order package: website, merchant_risk"
+        "Requires Order package: identity, business_verification_verify, merchant_risk"
       ]
     },
     {
-      "id": "web_email_address_verification",
-      "statement": "Successfully verified the submitted email address",
+      "id": "business_connections",
+      "statement": "No connections found",
       "state": "result",
-      "because": "Successfully verified the submitted Email Address",
+      "because": "No connections found",
       "evidence": [
-        "Source value: Verified",
-        "Requires Order package: website, merchant_risk"
+        "Source value: Not Found",
+        "Requires Order package: business_verification_verify"
       ]
     },
     {
-      "id": "web_phone_number_verification",
-      "statement": "Successfully verified the submitted phone number",
+      "id": "bankruptcies",
+      "statement": "The business has no bankruptcy filings",
       "state": "result",
-      "because": "Successfully verified the submitted Phone Number",
+      "because": "The business has no bankruptcy filings",
       "evidence": [
-        "Source value: Verified",
-        "Requires Order package: website, merchant_risk"
-      ]
-    },
-    {
-      "id": "website_url_discovery",
-      "statement": "Website URL was submitted",
-      "state": "result",
-      "because": "Website URL was submitted",
-      "evidence": [
-        "Source value: Submitted",
-        "Requires Order package: website"
-      ]
-    },
-    {
-      "id": "license:npi-1477211969",
-      "statement": "NPI Registry holds a Physical Therapist licence for JOSHUA Y GEE, DPT, status Active",
-      "state": "result",
-      "evidence": [
-        "Physical Therapist",
-        "taxonomy 225100000X",
-        "NY licence 048266",
-        "status Active",
-        "registry updated 2024-03-11",
-        "https://npiregistry.cms.hhs.gov/provider-view/1477211969"
-      ]
-    },
-    {
-      "id": "license_person_match:npi-1477211969",
-      "statement": "An NPI Registry record was found whose holder name matches the submitted person",
-      "state": "result",
-      "because": "Submitted JOSHUA GEE; NPI Registry holds 1477211969 under JOSHUA Y GEE",
-      "evidence": [
-        "Submitted person: JOSHUA GEE",
-        "Licence holder: JOSHUA Y GEE, DPT",
-        "NPI Registry 1477211969",
-        "Name match only. No filing on this record names a natural person, so this does not establish that the licence holder is a member, owner or the practising clinician of this entity."
-      ]
-    },
-    {
-      "id": "license_address_match:npi-1477211969",
-      "statement": "The NPI Registry record's practice address matches the submitted office address",
-      "state": "result",
-      "because": "NPI Registry lists 801 Madison Ave, New York, NY 10065-5930; the submitted office is 801 Madison Ave Fl 3, New York, NY 10065-5930",
-      "evidence": [
-        "Submitted office: 801 Madison Ave Fl 3, New York, NY 10065-5930",
-        "Licence practice address: 801 Madison Ave, New York, NY 10065-5930",
-        "Practice phone: 646-300-0954",
-        "Shared address only. It does not establish a relationship between the licence holder and this entity."
+        "Source value: None Found",
+        "Requires Order package: bankruptcies, identity, business_verification_verify"
       ]
     },
     {
@@ -440,6 +241,22 @@
       "state": "unknown",
       "evidence": [
         "Requires Order package: identity, business_verification_verify"
+      ]
+    },
+    {
+      "id": "risky_keywords",
+      "statement": "Risky keywords — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: industry_classification"
+      ]
+    },
+    {
+      "id": "industry",
+      "statement": "Industry — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: industry_classification"
       ]
     },
     {
@@ -531,6 +348,22 @@
       ]
     },
     {
+      "id": "profile_discovery",
+      "statement": "Third party profiles — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website"
+      ]
+    },
+    {
+      "id": "profile_status",
+      "statement": "Third party profile status — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website"
+      ]
+    },
+    {
       "id": "sos_inactive",
       "statement": "sos inactive — no result on this record",
       "state": "unknown",
@@ -587,6 +420,30 @@
       ]
     },
     {
+      "id": "adverse_media",
+      "statement": "Adverse media — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: adverse_media"
+      ]
+    },
+    {
+      "id": "politically_exposed_persons",
+      "statement": "Politically exposed persons — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: enhanced_screenings"
+      ]
+    },
+    {
+      "id": "tin",
+      "statement": "TIN match — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: business_verification_verify, tin"
+      ]
+    },
+    {
       "id": "tin_error",
       "statement": "TIN error — no result on this record",
       "state": "unknown",
@@ -611,6 +468,14 @@
       ]
     },
     {
+      "id": "website_url_domain_ownership",
+      "statement": "Domain ownership — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website"
+      ]
+    },
+    {
       "id": "domain_redirect",
       "statement": "Domain redirect — no result on this record",
       "state": "unknown",
@@ -619,11 +484,67 @@
       ]
     },
     {
+      "id": "web_address_verification",
+      "statement": "Web - office address — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_business_name_verification",
+      "statement": "Web - business name — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_email_address_verification",
+      "statement": "Web - email address — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_person_verification",
+      "statement": "Web - people — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
+      "id": "web_phone_number_verification",
+      "statement": "Web - phone number — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website, merchant_risk"
+      ]
+    },
+    {
       "id": "website_parked",
       "statement": "website parked — no result on this record",
       "state": "unknown",
       "evidence": [
         "Requires Order package: identity, website, merchant_risk"
+      ]
+    },
+    {
+      "id": "website_status",
+      "statement": "website status — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: identity, website, merchant_risk"
+      ]
+    },
+    {
+      "id": "website_url_discovery",
+      "statement": "Website — no result on this record",
+      "state": "unknown",
+      "evidence": [
+        "Requires Order package: website"
       ]
     },
     {
@@ -1388,117 +1309,60 @@
         "by": "claude-code-session",
         "used": [
           "name",
+          "address_verification",
           "sos_domestic",
           "sos_active",
           "sos_match",
-          "address_verification",
-          "tin",
+          "sos_domestic_sub_status",
           "entity_type",
           "address_property_type",
           "address_deliverability",
-          "location_frequency:moderate",
           "location_frequency:low",
-          "website_status",
-          "website_url_domain_ownership",
-          "website_url_discovery",
-          "web_address_verification",
-          "web_email_address_verification",
-          "web_phone_number_verification",
-          "profile_discovery",
-          "profile_status",
-          "web_business_name_verification",
           "person_verification",
-          "web_person_verification",
           "business_connections",
-          "sos_domestic_sub_status",
-          "address_registered_agent",
-          "industry",
-          "risky_keywords",
-          "license:npi-1477211969",
-          "license_person_match:npi-1477211969",
-          "license_address_match:npi-1477211969",
-          "operating_as_claimed",
-          "complaint_themes",
           "watchlist",
-          "adverse_media",
-          "politically_exposed_persons",
-          "people_criminal_history",
-          "people_litigations",
-          "people_liens",
-          "people_bankruptcies"
+          "litigations",
+          "liens",
+          "bankruptcies"
         ],
-        "headline": "Onboard subject to conditions.",
+        "headline": "Onboard subject to conditions: a beneficial ownership certification, a statement of activity and permits, and PEP and adverse media screening.",
         "sections": [
           {
             "id": "skill-kyb-identification",
             "body": [
               {
-                "text": "KAIROS PHYSICAL THERAPY PLLC matches an active domestic New York filing, and the submitted office address matches that filing. One registration is on file and it is the only one, so there is no foreign qualification to reconcile. The IRS holds a record for the submitted TIN and business name combination.",
+                "text": "The name, the address and the one person submitted all resolve to a single California filing made in February 2022. There is no foreign registration and no second record to reconcile, and the state publishes a sub-status, so standing is settled rather than inferred from the filing being active.",
                 "cites": [
                   "name",
+                  "address_verification",
+                  "sos_domestic",
                   "sos_active",
                   "sos_match",
-                  "tin"
-                ]
-              },
-              {
-                "text": "The entity is a PLLC, a licensed professional practice organised as an LLC. Membership is restricted by statute to individuals licensed in the profession practised, so the beneficial ownership certification on this file has to evidence each member's licence and not only their identity and percentage. A policy keyed on entity type alone will not ask for that.",
-                "cites": [
+                  "sos_domestic_sub_status",
                   "entity_type"
                 ]
               },
               {
-                "text": "The office at 801 Madison Ave Fl 3 is a commercial property and deliverable by USPS, and carries 21 businesses, which is what a shared clinical floor on Madison Avenue looks like. Two further addresses on the record, in Bayside and Little Neck, carry two businesses each.",
+                "text": "The only address on the record is an apartment that no other business files from, which is the ordinary footprint for a small owner-operated LLC formed from home. It places the filer, not the trade: nothing on the record carries a second location, a website or a third-party profile.",
                 "cites": [
                   "address_property_type",
                   "address_deliverability",
-                  "location_frequency:moderate",
                   "location_frequency:low"
                 ]
               },
               {
-                "text": "The submitted website was online when the record was ordered and the domain is held with high confidence by the business; the submitted address, email and phone each verify against it, and the submitted third-party profiles are all online. The name presented on the web differs from the submitted business name. The record returns the mismatch without the differing name, so it cannot be read as a trading name or as anything else.",
-                "cites": [
-                  "website_status",
-                  "website_url_domain_ownership",
-                  "website_url_discovery",
-                  "web_address_verification",
-                  "web_email_address_verification",
-                  "web_phone_number_verification",
-                  "profile_discovery",
-                  "profile_status",
-                  "web_business_name_verification"
-                ]
-              },
-              {
-                "text": "No natural person is named. The submitted person, JOSHUA GEE, could not be matched to the state registration, which lists only the entity itself, and the web check returned no match either. Two business connections are recorded without detail. The record therefore establishes the entity, its address and its tax identity, but not who stands behind it.",
+                "text": "MICHAEL N ELLENBURG is on the filing in the registered-agent capacity and matches there. No member or manager appears anywhere on the record, so the entity is established and the people behind it are not; that is taken up under Ownership.",
                 "cites": [
                   "person_verification",
-                  "web_person_verification",
-                  "business_connections"
+                  "entity_type"
                 ]
               }
             ],
             "gaps": [
               {
-                "id": "domestic_good_standing",
-                "point": "Whether the New York registration is in good standing, beyond being active, is not on the record.",
-                "why": "not_published",
-                "cites": [
-                  "sos_domestic_sub_status"
-                ]
-              },
-              {
-                "id": "registered_agent",
-                "point": "Who the registered agent of record is, and whether the submitted office is a registered agent or CMRA address",
-                "why": "not_held_or_unreachable",
-                "noAction": true
-              },
-              {
-                "id": "web_name_difference",
-                "point": "What name the website presents, so the mismatch can be read",
-                "why": "not_held_or_unreachable",
-                "noAction": true
+                "id": "id_web_presence",
+                "point": "No website or third-party profile is on the record, so nothing outside the state filing corroborates that the business is trading",
+                "why": "not_held_or_unreachable"
               }
             ]
           },
@@ -1506,84 +1370,30 @@
             "id": "skill-kyb-activity",
             "body": [
               {
-                "text": "The industry screen returned no high-risk or prohibited hits, and the keyword screen returned none.",
+                "text": "Nothing on the record classifies the activity. The registered name is the only account of the line of work, and coffee is neither a restricted nor a prohibited line; but with no industry classification, website or profile behind it, there is equally nothing that would surface a second activity if one existed.",
                 "cites": [
-                  "industry",
-                  "risky_keywords"
-                ]
-              },
-              {
-                "text": "The website was online when the record was ordered and is attributed to the business with high confidence, and the address on it matches the submitted office address. It trades under a shorter name, Kairos Physio, than the registered KAIROS PHYSICAL THERAPY PLLC. Nothing on the site or in the screens points to a second line of business.",
-                "cites": [
-                  "website_status",
-                  "website_url_domain_ownership",
-                  "web_address_verification",
-                  "web_business_name_verification",
-                  "risky_keywords"
-                ]
-              },
-              {
-                "text": "A licence record is on file. The NPI Registry holds an Active Physical Therapist licence.",
-                "cites": [
-                  "license:npi-1477211969"
-                ]
-              },
-              {
-                "text": "That record matches on two things: the holder's name matches the submitted person, and the registry's practice address, 801 Madison Ave, matches the submitted office address. Both are matches only. No filing on this record names a natural person (state registrations list KAIROS PHYSICAL THERAPY PLLC as its own officer), and the website check did not match the submitted person either, so nothing here establishes that the licence holder is a member of this entity, an owner of it, or the clinician practising through it.",
-                "cites": [
-                  "license_person_match:npi-1477211969",
-                  "license_address_match:npi-1477211969",
-                  "person_verification",
-                  "web_person_verification"
-                ]
-              },
-              {
-                "text": "A New York PLLC may only practise a licensed profession, and statute restricts its members to people licensed in it. The licence is a condition of the business operating, not a detail about it. The record types this entity as an LLC, so a rule keyed on entity type alone will not ask for licence evidence.",
-                "cites": [
+                  "name",
                   "entity_type"
                 ]
-              }
-            ],
-            "gaps": [
-              {
-                "id": "act_licence_link",
-                "point": "Whether the NPI licence holder is a member of this PLLC or the clinician practising through it, and whether every member holds a New York physical therapy licence",
-                "why": "not_held_or_unreachable",
-                "noAction": true
               },
               {
-                "id": "act_operating_as_claimed",
-                "point": "Whether the business is operating as it claims, and whether any complaint themes attach to it",
-                "why": "not_held_or_unreachable",
-                "noAction": true
-              }
-            ]
-          },
-          {
-            "id": "skill-kyb-3",
-            "body": [
-              {
-                "text": "Watchlist, sanctions and PEP screening returned no hits, on the entity or on JOSHUA GEE. Adverse media returned one match against the name JOSHUA GEE: a grand jury indictment reported in Lawrence County, carrying fraud, narcotics and weapons risks. It is scored on the name, not the person, and nothing on the record ties the article to this practice or to New York. The match is unresolved rather than clear.",
+                "text": "No licence data was returned for this record, so whether the county health and state seller's permits a food and beverage operation needs are held, and in whose name, is not established. The residential filing address gives no trading premises to check them against.",
                 "cites": [
-                  "watchlist",
-                  "adverse_media",
-                  "politically_exposed_persons"
-                ]
-              },
-              {
-                "text": "Coverage is the entity and JOSHUA GEE, the only person submitted. He is not matched to the New York filing, whose sole listed officer is the entity itself, so no further individual was retrieved to put through screening; nobody else connected to the business has been screened for sanctions, PEP or adverse media. The two connected entities on the record were not screened either.",
-                "cites": [
-                  "person_verification",
-                  "business_connections"
+                  "address_property_type",
+                  "location_frequency:low"
                 ]
               }
             ],
             "gaps": [
               {
-                "id": "comp_unscreened_owners",
-                "point": "Whether anyone who holds or controls the business, beyond JOSHUA GEE, is on a sanctions, PEP or adverse media list",
-                "why": "not_held_or_unreachable",
-                "noAction": true
+                "id": "act_line_of_business",
+                "point": "What the business actually sells and where it trades from, beyond what its registered name implies",
+                "why": "not_held_or_unreachable"
+              },
+              {
+                "id": "act_licences",
+                "point": "Whether the permits a San Diego food and beverage operation requires are held, and whether they are held by the entity or by an individual",
+                "why": "not_held_or_unreachable"
               }
             ]
           },
@@ -1591,42 +1401,60 @@
             "id": "skill-1789767328449",
             "body": [
               {
-                "text": "The New York filing names no natural person. The only officer carried on the registration is the entity itself, for service of process, so JOSHUA GEE, submitted as the individual behind the business, is not matched to it, and the web check did not match him either. Ownership and control are unestablished on the record.",
+                "text": "The single person the customer submitted is the agent of record. An agent appointment is a service-of-process obligation and says nothing about who holds or controls the LLC, so the only verified individual on this file is verified in a capacity that does not answer the question.",
                 "cites": [
                   "person_verification",
-                  "web_person_verification"
+                  "entity_type"
                 ]
               },
               {
-                "text": "There is a lead, and it does not close the question. An active New York physical therapy licence is held by JOSHUA Y GEE, DPT, whose name matches the submitted person and whose practice address matches the submitted office. A matching name at a matching address is consistent with the application; it is not evidence of membership, and nothing on the record makes him a member, owner or officer of this entity.",
-                "cites": [
-                  "license_person_match:npi-1477211969",
-                  "license_address_match:npi-1477211969"
-                ]
-              },
-              {
-                "text": "The form narrows who may lawfully hold it. A PLLC is restricted by statute to individuals licensed in the profession practised, so the beneficial ownership certification here has to evidence each member's licence alongside identity and percentage. None has been collected. The registered office at 801 Madison Ave Fl 3 is shared with 21 businesses, and the registered-agent check on that address returned nothing.",
-                "cites": [
-                  "entity_type",
-                  "location_frequency:moderate",
-                  "address_registered_agent"
-                ]
-              },
-              {
-                "text": "Two connected entities sit on the record, KAIROS 801 LLC and J.L.W. INVESTORS, LTD. Both link by shared address only, with no shared person: J.L.W. at the practice address, and KAIROS 801 LLC at both that address and 21611 48th Ave Apt 3B in Bayside, which this business's own registration carries. Who holds either is not on the record, so neither confirms nor contradicts a common owner.",
+                "text": "Nothing else stands behind the entity: no member or manager is published, and no corporate owner, parent or affiliate sits above it. The structure is therefore single-layer and simple to certify, but ownership and control rest entirely on what the customer attests to.",
                 "cites": [
                   "business_connections",
-                  "location_frequency:moderate",
-                  "location_frequency:low"
+                  "entity_type"
                 ]
               }
             ],
             "gaps": [
               {
                 "id": "own_beneficial_owners",
-                "point": "Who holds 25 percent or more and who exercises control, whether JOSHUA GEE is among them, and the licence standing behind each member",
+                "point": "Who holds 25 percent or more of the LLC and who exercises control, and whether MICHAEL N ELLENBURG is among them or is only the agent of record",
                 "why": "not_held_or_unreachable",
-                "noAction": true
+                "cites": [
+                  "person_verification",
+                  "entity_type"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "skill-kyb-3",
+            "body": [
+              {
+                "text": "CHARM COFFEE LLC and MICHAEL N ELLENBURG were screened against sanctions and watchlists, and the entity was checked for litigation, liens and bankruptcy. PEP and adverse media screening has not been run against either name, and no other person is named on the record to screen.",
+                "cites": [
+                  "watchlist",
+                  "person_verification",
+                  "litigations",
+                  "liens",
+                  "bankruptcies"
+                ]
+              }
+            ],
+            "gaps": [
+              {
+                "id": "comp_pep_adverse_media",
+                "point": "Whether CHARM COFFEE LLC or MICHAEL N ELLENBURG appears on a PEP list or in adverse media",
+                "why": "not_held_or_unreachable",
+                "cites": [
+                  "watchlist",
+                  "person_verification"
+                ]
+              },
+              {
+                "id": "comp_unscreened_owners",
+                "point": "Whether anyone who holds or controls the business, beyond the agent of record, is on a sanctions, PEP or adverse media list",
+                "why": "not_held_or_unreachable"
               }
             ]
           },
@@ -1635,9 +1463,46 @@
             "body": []
           }
         ],
-        "followUps": []
+        "followUps": [
+          {
+            "text": "Collect the beneficial ownership certification and screen each individual it names. The filing carries MICHAEL N ELLENBURG as registered agent only, no member or manager is published, and the screening on file therefore reaches the entity and its agent and nobody who owns or controls it.",
+            "cites": [
+              "person_verification",
+              "entity_type",
+              "business_connections",
+              "watchlist"
+            ],
+            "closes": [
+              "own_beneficial_owners",
+              "comp_unscreened_owners"
+            ]
+          },
+          {
+            "text": "Obtain a written statement of the business's activity, its trading location, and any county health or seller's permit held. No industry classification, website or profile is on the record, and the only address on file is the residential one the LLC was formed at.",
+            "cites": [
+              "name",
+              "address_verification",
+              "address_property_type",
+              "location_frequency:low"
+            ],
+            "closes": [
+              "id_web_presence",
+              "act_line_of_business",
+              "act_licences"
+            ]
+          },
+          {
+            "text": "Order PEP and adverse media screening for CHARM COFFEE LLC and MICHAEL N ELLENBURG. Only the watchlist screen was run, so nothing on the record speaks to political exposure or to negative news against either name.",
+            "cites": [
+              "watchlist",
+              "person_verification"
+            ],
+            "closes": [
+              "comp_pep_adverse_media"
+            ]
+          }
+        ]
       }
     }
-  ],
-  "reportId": "held:kairos physical therapy pllc"
+  ]
 }

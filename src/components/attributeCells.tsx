@@ -171,7 +171,9 @@ export const cellsFromRows = (rows: AttributeRow[], ctx: CellContext = {}): Attr
       // qualify: every row a crawl produced carries the site it was read from,
       // and spanning on that put a one-word title across the whole card.
       span:
-        row.links?.length || (typeof value === 'string' && /^https?:\/\//.test(value))
+        row.span === 'full' ||
+        row.links?.length ||
+        (typeof value === 'string' && /^https?:\/\//.test(value))
           ? 'full'
           : undefined
     })
