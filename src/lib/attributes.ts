@@ -13,7 +13,7 @@
 import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
 import { entityFormLabel } from './normalise'
-import { stateLabel, stateName } from './states'
+import { STATUS_NOT_PUBLISHED, stateLabel, stateName } from './states'
 import { frequencyBand } from './statements'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
@@ -207,6 +207,7 @@ const SOURCE_LABELS: Record<string, string> = {
   adverse_media_screening_result: 'Adverse media screening',
   watchlist_screening_result: 'Watchlist screening',
   submitted: 'Submitted by the customer',
+  city_registration: 'City registration',
   website: 'Website',
   profile: 'Third-party profile',
   tin: 'IRS TIN record'
@@ -610,6 +611,29 @@ const registrationRows = (record: BusinessRecord): AttributeRow[] => {
  * twice. Read from the filing itself, everything it states belongs here: its
  * standing, its file number, the agent it names.
  */
+/**
+ * The entity type as a short word — `LLC`, `PLLC`, `Corporation` — or nothing
+ * when the record has no formation or the filing says Unknown. The filing
+ * shouts every type in capitals; an initialism stays that way, a word does
+ * not.
+ */
+export const entityTypeCode = (record: BusinessRecord): string | undefined => {
+  if (!record.formation) return undefined
+  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const raw = trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType
+  if (!raw || raw.toUpperCase() === 'UNKNOWN') return undefined
+  // Five letters or fewer is an initialism (LLC, PLLC, LP, INC); longer is a word.
+  return raw.length <= 5 ? raw.toUpperCase() : raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase()
+}
+
+/** The entity type as the Formation card spells it — `PLLC` written out — or
+ *  nothing when the record has no formation. */
+export const entityTypeOf = (record: BusinessRecord): string | undefined => {
+  if (!record.formation) return undefined
+  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  return entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType) || undefined
+}
+
 const formationRows = (record: BusinessRecord): AttributeRow[] => {
   if (!record.formation)
     return [{ group: 'formation', label: 'Formation', value: 'No formation record', source: REGISTRY }]
@@ -649,7 +673,13 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       longDate(record.formation.date),
       filingAge(record.formation.date)
     ),
-    ...field('Status', sentence(domestic?.status)),
+    // A Delaware filing's Unknown is the state not publishing, and says so.
+    ...field(
+      'Status',
+      domestic && /unknown/i.test(domestic.status ?? '') && STATUS_NOT_PUBLISHED.has(record.formation.state)
+        ? `Not published by ${stateName(record.formation.state)}`
+        : sentence(domestic?.status)
+    ),
     ...field('Sub status', sentence(domestic?.subStatus)),
     ...field('File number', domestic?.fileNumber)
     // No registered agent: an agent is a person, and People lists every one of
@@ -882,10 +912,20 @@ const nameRows = (record: BusinessRecord): AttributeRow[] => {
   return [...groups.entries()].map(([key, group]) => {
     const submitted = group.find((n) => n.submitted)
     const primary = submitted ?? group[0]
+    // "Legal name" is a claim a filing makes. A name the customer gave that no
+    // source carries is just the business's name, and is labelled as that.
+    const confirmed = group.some((n) => (n.sources ?? []).length > 0)
 
     return {
       group: 'name' as const,
-      label: primary.type === 'dba' ? 'DBA' : submitted ? 'Legal name' : 'Name on file',
+      label:
+        primary.type === 'dba'
+          ? 'DBA'
+          : submitted
+            ? confirmed
+              ? 'Legal name'
+              : 'Business name'
+            : 'Name on file',
       matchValue: key,
       value: primary.name,
       // No source on a submitted name: the label already says where it came
@@ -1062,7 +1102,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   const nameRow: AttributeRow = submittedNames.length
     ? {
         group: 'name',
-        label: 'Legal name',
+        // "Legal name" is a filing's word. A submitted name no source carries
+        // is the business's name, and says so.
+        label: submittedNames.some((n) => (n.sources ?? []).length > 0) ? 'Legal name' : 'Business name',
         matchValue: `legal:${nameKey(submittedNames.map((n) => n.name).join(', '))}`,
         value: submittedNames.map((n) => n.name).join(', '),
         source: '',
@@ -1076,7 +1118,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       }
     : {
         group: 'name',
-        label: 'Legal name',
+        label: 'Business name',
         matchValue: `legal:${nameKey(record.name)}`,
         value: record.name,
         source: '',
@@ -1153,7 +1195,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       const differs = Boolean(onFile) && nameKey(onFile as string) !== nameKey(name)
       return {
         group: 'name' as const,
-        label: 'Legal name',
+        label: onFile ? 'Legal name' : 'Business name',
         value: differs ? (onFile as string) : name,
         matchValue: `legal:${nameKey(name)}`,
         source: '',

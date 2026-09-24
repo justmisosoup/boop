@@ -19,8 +19,21 @@ const BUNDLED: Record<string, StoredReport[]> =
 
 export const reportKey = (name: string) => (name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
 
-/** Every stored report for a business, oldest first. */
-export const heldReportsFor = (name: string): StoredReport[] => BUNDLED[reportKey(name)] ?? []
+/**
+ * One assessment per business, for now.
+ *
+ * The store holds two runs of the same assessment for every business, and the
+ * page grew a list, a switcher and a diff to move between them. That has been
+ * set aside: a business shows its newest assessment and nothing else. The
+ * older runs stay in the store, so turning this off brings them back.
+ */
+const ONE_ASSESSMENT_PER_BUSINESS = true
+
+/** Every stored report for a business, oldest first — or just the newest, see above. */
+export const heldReportsFor = (name: string): StoredReport[] => {
+  const all = BUNDLED[reportKey(name)] ?? []
+  return ONE_ASSESSMENT_PER_BUSINESS ? all.slice(-1) : all
+}
 
 /** The one the page opens on. */
 export const newestReportFor = (name: string): StoredReport | null => {

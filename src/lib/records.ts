@@ -5,6 +5,7 @@ import agentStore from '../../analysis/agent.json'
 import { newestReportFor } from './heldReports'
 import {
   areasOf,
+  type ScoreArea,
   identityScore,
   polarityCounts,
   type AssessmentWeight,
@@ -65,7 +66,13 @@ export const describe = (r: BusinessRecord) =>
  * nothing to say here and returns null; the list shows that as absence.
  */
 export type Assessed = {
+  /** The report this reading is of, so a decision can be looked up by it. */
+  reportId: string
+  /** When it ran. Empty for a report kept before this was recorded. */
+  at: string
   score: IdentityScore
+  /** The areas it was scored in, with the questions each left open. */
+  areas: ScoreArea[]
   counts: { positive: number; negative: number; neutral: number }
 }
 
@@ -82,6 +89,7 @@ const ASSESSED_REPORT = new Map<string, Assessed | null>()
 export const assessReport = (
   report: {
     id: string
+    at?: string
     sections: Parameters<typeof areasOf>[0]
     policy: Array<{ id: string; name: string }>
     snapshot?: { record: BusinessRecord; results: ReturnType<typeof deriveResults> } | null
@@ -99,7 +107,10 @@ export const assessReport = (
   const score = identityScore(record, results, areas)
   const out: Assessed | null = score
     ? {
+        reportId: report.id,
+        at: report.at ?? '',
         score,
+        areas,
         counts: polarityCounts(record, results, score.components.flatMap((c) => c.insightIds))
       }
     : null
@@ -116,7 +127,13 @@ export const assessmentOf = (r: BusinessRecord): Assessed | null => {
   const held = newestReportFor(r.name)
   const out = held?.report
     ? assessReport(
-        { id: held.id, sections: held.report.sections, policy: held.policy, snapshot: held.snapshot },
+        {
+          id: held.id,
+          at: held.at,
+          sections: held.report.sections,
+          policy: held.policy,
+          snapshot: held.snapshot
+        },
         r
       )
     : null

@@ -1,8 +1,10 @@
 import { Fragment, cloneElement, isValidElement, useMemo } from 'react'
 
-import { ChatSources, InlineAlert, MetaChip, Text } from '@/core'
+import { ChatSources, Text } from '@/core'
 
 import { attributesFor } from '../lib/attributes'
+import { categoriesOf } from '../lib/deriveResults'
+import { GROUPS, makeGroupFor } from '../lib/groups'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type { AssessmentWeight } from '../lib/identityScore'
 import type {
@@ -36,9 +38,6 @@ import { InsightStack } from './InsightStack'
  * twice with 40px between them. What the recommendation carries is rendered
  * above the assessments by `ReportBody`, without a heading over it.
  */
-/** The weight's word. Two tiers, as `identityScore` counts them. */
-const TIER_LABEL: Record<AssessmentWeight, string> = { critical: 'Critical', high: 'High' }
-
 const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
   policy.map(({ id, name }) => ({ id, heading: name }))
 
@@ -106,11 +105,49 @@ const CiteList = ({
   // for them to open.
   if (!record) return null
 
+  /*
+   * Flagged insights first, and every row on the page. An area's rows were
+   * in citation order, which put the three a reviewer has to act on in the
+   * middle of sixteen that all carry the same dot; the flagged rows lead now.
+   * They used to fold the rest under "Show n other insights" — hiding
+   * insights a reviewer is here to read.
+   */
+  const isFlagged = (r: Derived) => r.reason === 'should_exist_not_found' || Boolean(negatives?.has(r.insightId))
+  const flagged = cited.filter(isFlagged)
+  /*
+   * Then by topic, then by what came back. Citation order scattered one
+   * subject across the card — a filing, an address, the filing again — so the
+   * rest follow the Insights panel's grouping (names, formation,
+   * registrations, addresses, people…), and inside a topic a result reads
+   * before an unknown, an unknown before a no-result.
+   */
+  const groupFor = makeGroupFor(categoriesOf(record))
+  const topic = new Map(GROUPS.map((g, i) => [g.id, i]))
+  const STATE_RANK: Record<string, number> = { result: 0, unknown: 1, no_result: 2 }
+  const rank = (r: Derived) => [topic.get(groupFor(r.insightId)) ?? 99, STATE_RANK[r.state] ?? 3]
+  const byTopic = (a: Derived, b: Derived) => {
+    const [ta, sa] = rank(a)
+    const [tb, sb] = rank(b)
+    return ta - tb || sa - sb
+  }
+  const ordered = [...[...flagged].sort(byTopic), ...cited.filter((r) => !isFlagged(r)).sort(byTopic)]
+
   return (
     // The Insights tab's own frame, the same component: one card, named in its
     // own header, rows divided by the inset hairline.
-    <InsightStack title={title} trailing={trailing} intro={intro}>
-      {cited.map((r) => (
+    <InsightStack
+      title={title}
+      trailing={
+        <span className="flex items-center gap-2">
+          {flagged.length > 0 && (
+            <span className="text-caption tabular-nums text-text-secondary">{flagged.length} flagged</span>
+          )}
+          {trailing}
+        </span>
+      }
+      intro={intro}
+    >
+      {ordered.map((r) => (
         <InsightRow
           key={r.insightId}
           result={r}
@@ -297,7 +334,6 @@ export const Para = ({
 export const SectionBody = ({
   section,
   heading,
-  tier,
   results,
   record,
   negatives,
@@ -307,8 +343,6 @@ export const SectionBody = ({
   section: AssessmentSection
   /** The area's name, for the card's header. A question's answer has none. */
   heading?: string
-  /** The area's weight in the assessment, beside the name. */
-  tier?: AssessmentWeight
   results: Derived[]
   record?: BusinessRecord
   negatives?: ReadonlySet<string>
@@ -340,7 +374,7 @@ export const SectionBody = ({
      nobody is going to act on, and a closed one is already an instruction on
      the determination — see `closed`. Both stay in the data (the open
      ones are what hold an assessment for review); neither is repeated here as
-     a sentence. Out-of-band gaps are printed under the card, not here.
+     a sentence. Out-of-band gaps are not printed at all.
 
      Inside the card, as its intro: they are the assessment's own sentences
      about this record, and a paragraph floating between the card's header and
@@ -348,7 +382,7 @@ export const SectionBody = ({
   const gaps = (section.gaps ?? []).filter(
     (g) => g.why !== 'no_insight_covers_it' && !g.noAction && !closed?.has(g.id)
   )
-  const intro =
+  const gapIntro =
     gaps.length > 0
       ? gaps.map((g, i) => {
           const tail = [g.why === 'not_published' ? null : WHY[g.why], g.wouldAnswer]
@@ -366,7 +400,8 @@ export const SectionBody = ({
             </Para>
           )
         })
-      : undefined
+      : null
+  const intro = gapIntro ?? undefined
 
   return (
     <>
@@ -375,73 +410,13 @@ export const SectionBody = ({
         record={record}
         negatives={negatives}
         title={heading}
-        trailing={
-          /* Its weight, not a verdict of its own. An area used to carry an
-             Approve / Review chip as if it reached a determination by itself;
-             the determination belongs to the assessment, and what an area
-             contributes is how much it counts. Neutral: a weight is a fact
-             about the policy. */
-          heading && tier ? (
-            <MetaChip size="compact" tone="neutral">
-              {TIER_LABEL[tier]}
-            </MetaChip>
-          ) : undefined
-        }
+        /* No weight on the header. An area's weight is how the policy counts
+           it — background for whoever reads the policy, not something a
+           reviewer reading this business needs beside the area's name. */
         intro={intro}
         onJumpToSource={onJumpToSource}
       />
-
-      <OutOfBand gaps={section.gaps} results={results} record={record} />
     </>
-  )
-}
-
-/**
- * Out of band: what the assessment knows that no insight carries.
- *
- * A gap whose reason is `no_insight_covers_it` is not a missing value — it is
- * a fact about the form or the jurisdiction that the catalog has no check
- * for. A New York PLLC may only be owned by licensed practitioners; no review
- * task reaches a licence. That is exactly the sentence the rows cannot say,
- * so it is the one prose a section keeps.
- *
- * Its own card, after the rows and set apart from them: the rows are what the
- * record returned, this is what the assessment brought to it, and the two
- * must not read as one list. The info surface marks it as authored rather than
- * looked up — the one place on the report that colour says "this came from
- * us" — and the muted clause names the check that would answer it, which is
- * the product asking for an insight it does not yet have. It prints whether
- * or not a follow-up acts on it: it is a statement of a blind spot, not a step.
- */
-const OutOfBand = ({
-  gaps,
-  results,
-  record
-}: {
-  gaps: AssessmentSection['gaps']
-  results: Derived[]
-  record?: BusinessRecord
-}) => {
-  const out = (gaps ?? []).filter((g) => g.why === 'no_insight_covers_it')
-  if (out.length === 0) return null
-
-  return (
-    /* Core's own info alert, icon on: the tone says "authored, not looked up",
-       and the icon says it without the colour having to. It was a square card
-       tinted by hand in the same two tokens. */
-    <InlineAlert tone="info" title="Out of band" showIcon className="mt-4">
-      {out.map((g, i) => (
-        <Para key={g.id} inline className={i > 0 ? 'mt-1' : undefined} results={results} record={record}>
-          {g.point}
-          {g.wouldAnswer && (
-            <>
-              {' '}
-              <span className="text-[var(--core-color-text-muted)]">— {g.wouldAnswer}</span>
-            </>
-          )}
-        </Para>
-      ))}
-    </InlineAlert>
   )
 }
 
@@ -464,7 +439,7 @@ export const ReportBody = ({
   stream?: boolean
   /** Insight ids the assessment score read as a point against the identity. */
   negatives?: ReadonlySet<string>
-  /** Each area's weight in the assessment, for its card's header. */
+  /** Accepted for callers that still pass it; the weight is not shown. */
   tiers?: ReadonlyMap<string, AssessmentWeight>
   /** An evidence chip under a cited insight opens that source's card. */
   onJumpToSource?: (cardId: string) => void
@@ -523,19 +498,14 @@ export const ReportBody = ({
             // is spacing alone. Every section takes it, including the first:
             // the score card sits above it, and the first heading was landing
             // flush on the card's bottom rule.
-            className="mt-10 scroll-mt-6"
+            className="mt-4 scroll-mt-6"
           >
             {/* No heading over the card. The area's name is the card's own
                 header (see `CardHeader`), with its weight beside it — the
                 section IS the card, so a heading and a rule above it named the
                 same thing twice. */}
             {section && (
-              <SectionBody
-                section={section}
-                heading={heading}
-                tier={tiers?.get(id)}
-                {...pass}
-              />
+              <SectionBody section={section} heading={heading} {...pass} />
             )}
           </div>
         )

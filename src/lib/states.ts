@@ -6,6 +6,14 @@
  * reader to expand it, and half the codes are guessable only if you already know
  * the answer (MI/MN/MO/MS/MT).
  */
+/**
+ * States whose Secretary of State publishes no entity status. Delaware is the
+ * known one: its public search returns the filing and nothing about its
+ * standing, so a Delaware filing reading Unknown is the registry's habit, not
+ * a fact about the business.
+ */
+export const STATUS_NOT_PUBLISHED: ReadonlySet<string> = new Set(['DE'])
+
 export const STATE_NAMES: Record<string, string> = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
   CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',

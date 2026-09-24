@@ -10,6 +10,7 @@
  * band, so `derive` returns a list.
  */
 import catalog from '../data/catalog.json'
+import { STATUS_NOT_PUBLISHED, stateName } from './states'
 import { addressFrequencyInsights, statementFor } from './statements'
 
 const CATALOG_SUBJECTS = (
@@ -378,6 +379,39 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
         evidence: [`Registration state: ${record.formation?.state ?? 'unknown'}`]
       }
     ]
+  }
+
+  /*
+   * A filing with no status, in a state that publishes none.
+   *
+   * Delaware does not publish an entity's status or sub-status; the record
+   * says so on the sub-status check ("Not Provided by State"). An Unknown
+   * status on that filing is then the registry's habit, not a finding about
+   * the business, and it reads the way the sub-status does: not published,
+   * neutral, unflagged. Only when every filing with no status is the domestic
+   * one — a foreign filing's Unknown in a state that does publish is still a
+   * question.
+   */
+  if ((task.key === 'sos_domestic' || task.key === 'sos_unknown') && /Unknown/i.test(task.subLabel)) {
+    const subStatusUnpublished = record.reviewTasks.some(
+      (t) => t.key === 'sos_domestic_sub_status' && t.subLabel === 'Not Provided by State'
+    )
+    const knownSilent = STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '')
+    const noStatus = record.registrations.filter((r) => !r.status || /unknown/i.test(r.status))
+    const allDomestic =
+      noStatus.length > 0 && noStatus.every((r) => r.state === record.formation?.state)
+    if ((subStatusUnpublished || knownSilent) && allDomestic) {
+      const where = stateName(record.formation?.state)
+      return [
+        {
+          ...base,
+          state: 'no_result',
+          reason: 'not_published' as NoResultReason,
+          because: `${where} does not publish filing status.`,
+          evidence: [`Registration state: ${record.formation?.state ?? 'unknown'}`]
+        }
+      ]
+    }
   }
 
   // Unknown: ran against real material and reached no conclusion.

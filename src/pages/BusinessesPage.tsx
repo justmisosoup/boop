@@ -13,121 +13,121 @@ import {
   ToolbarSection,
   ToolbarSpacer,
   TruncatedText,
-  type DataTableColumnDef
+  type DataTableColumnDef,
+  type DataTableSortState
 } from '@/core'
 import type { BusinessRecord } from '@/lib/deriveResults'
-import { ALL, assessmentOf } from '@/lib/records'
+import { ALL, assessmentOf, type Assessed } from '@/lib/records'
 
-import { InsightCounts } from '../components/InsightCounts'
 import { DeterminationChip } from '../components/DeterminationChip'
+import { InsightCounts } from '../components/InsightCounts'
+
 
 /**
  * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`
- * where the app has the column. `assessment` is this prototype's own: the
- * app's `status` (132) plus room for a three-digit number ahead of the chip.
- * The app's `agent_runs` (158) and `assignee` (144) have nothing to show here.
+ * where the app has the column. The name, the determination as the app's
+ * Status chip, how its insights read, and when the business was last assessed.
  */
 const COLUMN_WIDTHS = {
-  assessment: 180,
   name: 232,
+  status: 132,
   insights: 304,
-  created: 148
+  assessed: 148
 }
 
-/**
- * Column order: the assessment's number and its determination first, then the
- * name, then what the report rested on, then when the record was ordered.
- *
- * The app leads with `created`. Here the list is a list of assessments rather
- * than of orders — every row opens on a report — so the decision leads and the
- * date, which no longer says anything about the decision, goes to the far
- * right where a reader who wants it can still find it.
- */
-const columns: DataTableColumnDef<BusinessRecord>[] = [
-  {
-    id: 'assessment',
-    header: 'Assessment score',
-    accessorFn: (row) => assessmentOf(row)?.score.value ?? -1,
-    /**
-     * The number in the ring, then the band it lands in.
-     *
-     * One cell rather than two columns: the number and the word are one
-     * reading, and split across a column rule the reader had to join them
-     * back up. The number leads because it is what the column is sorted and
-     * scanned by; the chip beside it is the decision it points to, in the same
-     * compact chip the app's Status column uses — see `DeterminationChip`.
-     * Tabular figures so 49 and 100 hold the chip at the same offset down the
-     * column. No report is a dash and the neutral chip.
-     */
-    cell: ({ row }) => {
-      const assessed = assessmentOf(row.original)
-      return (
-        <span className="inline-flex items-center gap-2">
-          <span className="w-7 text-caption tabular-nums">
-            {assessed ? assessed.score.value : <span className="text-text-disabled">—</span>}
-          </span>
-          <DeterminationChip band={assessed?.score.band ?? null} />
-        </span>
-      )
-    },
-    meta: { width: COLUMN_WIDTHS.assessment, grow: true }
-  },
+/** What a row holds: the record and its newest assessment. */
+type Row = {
+  record: BusinessRecord
+  assessed: Assessed | null
+}
+
+const columns: DataTableColumnDef<Row>[] = [
   {
     id: 'name',
     header: 'Business Name',
-    accessorFn: (row) => row.name,
+    accessorFn: (row) => row.record.name,
     // The name is the row's primary identifier, so it's bold. `TruncatedText`
-    // shows the full name in a tooltip when it's actually clipped. No
-    // `truncate` meta: it would cap the column at `max-w-64` and steal its
-    // grow share; `TruncatedText` clips itself.
-    cell: ({ row }) => (
-      <TruncatedText className="font-semibold">
-        {row.original.name ?? ''}
-      </TruncatedText>
-    ),
+    // shows the full name in a tooltip when it's actually clipped.
+    cell: ({ row }) => <TruncatedText className="font-semibold">{row.original.record.name ?? ''}</TruncatedText>,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    accessorFn: (row) => row.assessed?.score.value ?? -1,
+    /**
+     * The determination the newest assessment reached — Approve, Needs review,
+     * Reject — in the app's own Status chip, at the app's own width. A business
+     * with no assessment reads Not assessed.
+     */
+    cell: ({ row }) => <DeterminationChip band={row.original.assessed?.score.band ?? null} />,
+    meta: { width: COLUMN_WIDTHS.status }
   },
   {
     id: 'insights',
     header: 'Insights',
-    accessorFn: (row) => assessmentOf(row)?.counts.negative ?? -1,
+    accessorFn: (row) => row.assessed?.counts.negative ?? -1,
     /**
-     * How the insights the report rests on read: positive, negative, neutral.
-     *
-     * The app's `TaskList` triplet, with the score's own reading in place of the
-     * review task's status the records do not carry — see `InsightCounts`. The
-     * counts are over the insights the report cited, which is what the score
-     * card counts too, so the three numbers here are the card's, added up.
-     * A record with no report has nothing the score has read, so it reads as a
-     * dash rather than as three zeros.
+     * How the insights the assessment rests on read: positive, negative,
+     * neutral. The app's `TaskList` triplet, with the score's own reading in
+     * place of the review task's status the records do not carry — see
+     * `InsightCounts`. A record with no report has nothing the score has read,
+     * so it reads as a dash rather than as three zeros.
      */
     cell: ({ row }) => {
-      const assessed = assessmentOf(row.original)
+      const assessed = row.original.assessed
       if (!assessed) return <span className="text-caption text-text-disabled">—</span>
       return <InsightCounts counts={assessed.counts} />
     },
     meta: { align: 'start', width: COLUMN_WIDTHS.insights, grow: true }
   },
   {
-    id: 'created',
-    header: 'Created',
-    accessorFn: (row) => row.createdAt ?? '',
-    // Keep the relative time on one line; the column is sized to fit it.
-    cell: ({ row }) => (
-      <DateTime className="whitespace-nowrap text-caption text-text-secondary">
-        {row.original.createdAt ?? undefined}
-      </DateTime>
-    ),
-    meta: { width: COLUMN_WIDTHS.created, grow: true }
+    id: 'assessed',
+    header: 'Last assessed',
+    accessorFn: (row) => row.assessed?.at ?? '',
+    // When the newest report ran — not when the record was created, which is
+    // what the column said before and which no decision turns on.
+    cell: ({ row }) =>
+      row.original.assessed?.at ? (
+        <DateTime className="whitespace-nowrap text-caption text-text-secondary" relative>
+          {row.original.assessed.at}
+        </DateTime>
+      ) : (
+        <span className="text-caption text-text-disabled">—</span>
+      ),
+    meta: { width: COLUMN_WIDTHS.assessed, grow: true }
   }
 ]
+
+/** What a column sorts by — the same value its cell prints. */
+const sortKey = (row: Row, id: string): number | string => {
+  switch (id) {
+    case 'name':
+      return row.record.name
+    case 'status':
+      return row.assessed?.score.value ?? -1
+    case 'insights':
+      return row.assessed?.counts.negative ?? -1
+    case 'assessed':
+      return row.assessed?.at ?? ''
+    default:
+      return ''
+  }
+}
+
+const compare = (a: Row, b: Row, id: string) => {
+  const x = sortKey(a, id)
+  const y = sortKey(b, id)
+  if (typeof x === 'number' && typeof y === 'number') return x - y
+  return String(x).localeCompare(String(y))
+}
 
 /**
  * Every business the prototype has ingested.
  *
  * The 25 rows in `records.json` and nothing else — no placeholder rows, no
- * synthesised entries. A row opens the assessment that has been the whole
- * prototype until now.
+ * synthesised entries. A row opens the business and its assessment. Searched
+ * by name, sorted by either column, names A to Z by default.
  *
  * The shell is the app's businesses page: a page heading over one bordered
  * card, where the toolbar owns the rounded top and the table drops its top
@@ -139,6 +139,7 @@ export const BusinessesPage = () => {
   // Seeded from ?q= so the palette's "See all results" lands on a filtered
   // list rather than the full one.
   const [query, setQuery] = useState(() => params.get('q') ?? '')
+  const [sort, setSort] = useState<DataTableSortState>({ id: 'name', direction: 'asc' })
 
   /**
    * Dock the table's sticky column header to the sticky filter bar.
@@ -155,10 +156,7 @@ export const BusinessesPage = () => {
     const el = stickyRef.current
     if (!el) return
     const publish = () =>
-      document.documentElement.style.setProperty(
-        '--bus-thead-top',
-        `${el.offsetHeight}px`
-      )
+      document.documentElement.style.setProperty('--bus-thead-top', `${el.offsetHeight}px`)
     publish()
     if (typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(publish)
@@ -169,11 +167,15 @@ export const BusinessesPage = () => {
     }
   }, [])
 
+  /** Every record, read once, with its newest assessment. */
+  const all = useMemo<Row[]>(() => ALL.map((record) => ({ record, assessed: assessmentOf(record) })), [])
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return ALL
-    return ALL.filter((record) => record.name.toLowerCase().includes(q))
-  }, [query])
+    const out = all.filter((row) => !q || row.record.name.toLowerCase().includes(q))
+    if (sort) out.sort((a, b) => (sort.direction === 'asc' ? 1 : -1) * compare(a, b, sort.id))
+    return out
+  }, [all, query, sort])
 
   const onQueryChange = (value: string) => {
     setQuery(value)
@@ -183,6 +185,8 @@ export const BusinessesPage = () => {
     else next.delete('q')
     setParams(next, { replace: true })
   }
+
+  const filtered = Boolean(query.trim())
 
   return (
     <PageContainer width="wide">
@@ -203,7 +207,7 @@ export const BusinessesPage = () => {
         */}
       <div ref={stickyRef} className="sticky top-0 z-[3] bg-surface-canvas pt-6">
         <Toolbar className="flex-nowrap gap-3 rounded-t-card border border-border bg-card px-3 py-1.5">
-          <ToolbarSection className="min-w-0 flex-wrap">
+          <ToolbarSection className="min-w-0 flex-wrap gap-2">
             <search aria-label="Search businesses" className="relative shrink-0">
               <SearchInput
                 aria-label="Search by business name"
@@ -217,9 +221,7 @@ export const BusinessesPage = () => {
           <ToolbarSpacer />
           <div className="flex shrink-0 items-center gap-2 text-caption text-muted-foreground">
             <span className="whitespace-nowrap tabular-nums">
-              {rows.length === ALL.length
-                ? `${ALL.length} businesses`
-                : `${rows.length} of ${ALL.length}`}
+              {!filtered ? `${ALL.length} businesses` : `${rows.length} of ${ALL.length}`}
             </span>
           </div>
         </Toolbar>
@@ -232,11 +234,15 @@ export const BusinessesPage = () => {
         data={rows}
         density="compact"
         empty={`No businesses match “${query.trim()}”`}
-        getRowId={(row) => row.id}
+        getRowId={(row) => row.record.id}
         rowIntent={{
           kind: 'detail',
-          onOpen: (row) => navigate(`/businesses/${row.id}`)
+          // The business — the container — with its assessments listed under
+          // it. The row's number and chip are the newest of those.
+          onOpen: (row) => navigate(`/businesses/${row.record.id}`)
         }}
+        sort={sort}
+        onSortChange={setSort}
         stickyHeader
         stickyHeaderTop='var(--bus-thead-top, 74px)'
       />

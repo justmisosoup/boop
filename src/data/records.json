@@ -39160,9 +39160,266 @@
       }
     ],
     "tin": null,
-    "website": null,
-    "profiles": [],
-    "industry": [],
+    "website": {
+      "id": "64950903-2356-466b-bbf6-28ae7a230ad7",
+      "url": "https://meroxa.com",
+      "submitted": false,
+      "status": "online",
+      "httpStatusCode": 200,
+      "title": "Meroxa - The Low-Code Real-Time Data Streaming Platform",
+      "platform": null,
+      "category": "Standard",
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": true,
+      "domain": "MEROXA.COM",
+      "domainId": "1963662551_DOMAIN_COM-VRSN",
+      "domainCreated": "2015-09-25T19:53:05.000Z",
+      "domainExpires": "2026-09-25T19:53:05.000Z",
+      "registrar": "NameSilo, LLC",
+      "pages": [
+        {
+          "url": "https://meroxa.com/about/",
+          "category": "about"
+        },
+        {
+          "url": "https://meroxa.com/terms-and-conditions/",
+          "category": "terms"
+        },
+        {
+          "url": "https://meroxa.com/privacy-notice/",
+          "category": "privacy"
+        },
+        {
+          "url": "https://meroxa.com/blog/rss.xml",
+          "category": "news"
+        },
+        {
+          "url": "https://meroxa.com/",
+          "category": "home"
+        },
+        {
+          "url": "https://meroxa.com/contact/",
+          "category": "contact"
+        }
+      ],
+      "emails": [
+        {
+          "email": "support@meroxa.com",
+          "submitted": false,
+          "sources": [
+            "website"
+          ],
+          "sourceRefs": [
+            {
+              "id": "64950903-2356-466b-bbf6-28ae7a230ad7",
+              "type": "website",
+              "metadata": {
+                "url": "https://meroxa.com"
+              }
+            }
+          ]
+        },
+        {
+          "email": "info@meroxa.com",
+          "submitted": false,
+          "sources": [
+            "profile"
+          ],
+          "sourceRefs": [
+            {
+              "id": "225f5500-352a-45d8-a58d-d690d8c5a288",
+              "type": "profile",
+              "metadata": {
+                "url": "https://facebook.com/meroxadata",
+                "name": "Meroxa",
+                "type": "facebook",
+                "address": "2261 Market St. #4146",
+                "website": "http://meroxa.com",
+                "followers": 12,
+                "categories": [
+                  "Software Company"
+                ],
+                "rating_count": 0,
+                "recent_posts": [
+                  {
+                    "text": "We honor you today. Thank you for your service. Happy Veterans Day!",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-11-10T20:31:44.000Z"
+                  },
+                  {
+                    "text": "We're expanding our team! Are you or do you know someone that is a Software Engineer, with government clearance, and resides in the Colorado Springs area? \n\nIf the answer is yes, please take a look at our job opening: https://hubs.la/Q024vZYJ0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-10-05T17:30:06.000Z"
+                  },
+                  {
+                    "text": "We are hiring! If you have government clearance, live in the Colorado Springs area and are interested in building game-changing data solutions then check out our public sector openings: https://hubs.la/Q023ldQ00",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-09-25T21:26:28.000Z"
+                  },
+                  {
+                    "text": "Major Accomplishment Alert 🚨 #ConduitIO accredited in Iron Bank #DoD Centralized Artifacts Repository under #PlatformOne initiative: https://hubs.la/Q020pNpp0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "hashtags": [
+                      "conduitio",
+                      "dod",
+                      "platformone"
+                    ],
+                    "posted_at": "2023-08-28T16:41:35.000Z"
+                  },
+                  {
+                    "text": "Did you check out our CEO, DeVaris Brown, featured in insideBIGDATA, where he detailed some best practices implemented to solve data-driven decision-making problems themed around Centralized Data, Decentralized Consumption?\nRead more here: ",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 1,
+                    "posted_at": "2023-06-15T18:10:04.000Z"
+                  },
+                  {
+                    "text": "At Meroxa, we've taken the initiative to simplify implementation while providing you with full control over your data security, compliance, and performance requirements. Say goodbye to complexity while maintaining complete operational control.\n\nRead more: https://hubs.la/Q01Tbsdn0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-06-12T20:18:37.000Z"
+                  },
+                  {
+                    "text": "Learn about the genuine threat of vendor lock-in when companies shift to the cloud. In our VP of Product's article, Rimas Silkaitis explains the risks involved and provides practical tips on how to steer clear of this issue. \n\nRead more here: https://hubs.ly/Q01SVMxQ0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-06-08T20:05:18.000Z"
+                  },
+                  {
+                    "text": "In a recent interview, our VP of Engineering Simon Lawrence, and Ian Zink, the Senior Developer Advocate at #Replicated, discussed the significance of having an on-premises offering and how it has opened doors for our small yet ambitious team.\n\nDon't miss out Watch Now: https://hubs.la/Q01SG-XY0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "hashtags": [
+                      "replicated"
+                    ],
+                    "posted_at": "2023-06-07T15:58:13.000Z"
+                  },
+                  {
+                    "text": "📢 BIG ANNOUNCEMENT!🚀 @NASA has selected @Meroxa as one of the small businesses that will assist in the development of new technologies designed to protect the health of astronauts, lower risk of collision damage to spacecraft, and more. \nLearn more here: https://hubs.la/Q01Syq1Z0",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "posted_at": "2023-06-06T19:00:01.000Z"
+                  },
+                  {
+                    "text": "Today is World Environment Day, and Meroxa continues to reduce its carbon footprint by being a fully remote company and helping teams get to innovation faster by enhancing data in no time! Learn more about Meroxa: https://hubs.la/Q01Sntwp0  🌍 🌱\n\n#WorldEnvironmentDay",
+                    "likes": 0,
+                    "shares": 0,
+                    "comments": 0,
+                    "hashtags": [
+                      "worldenvironmentday"
+                    ],
+                    "posted_at": "2023-06-05T21:55:00.000Z"
+                  }
+                ],
+                "recent_reviews": []
+              }
+            }
+          ]
+        }
+      ],
+      "phones": []
+    },
+    "profiles": [
+      {
+        "url": "https://facebook.com/meroxadata",
+        "type": "facebook",
+        "status": "online",
+        "submitted": false,
+        "rating": null,
+        "ratingCount": null,
+        "followers": 12,
+        "categories": [
+          "Software Company"
+        ]
+      },
+      {
+        "url": "https://linkedin.com/company/meroxa",
+        "type": "linkedin",
+        "status": "online",
+        "submitted": false,
+        "rating": null,
+        "ratingCount": null,
+        "followers": 2818,
+        "categories": []
+      }
+    ],
+    "industry": [
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 1,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Computer Programming",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "7372"
+        ],
+        "sector": null,
+        "score": 0.9500000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "Software Publishers",
+        "naicsCodes": [
+          "513210"
+        ],
+        "sicCodes": [
+          "7372"
+        ],
+        "mccCodes": [],
+        "sector": "INFORMATION",
+        "score": 0.85,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Computer Repair",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "7379"
+        ],
+        "sector": null,
+        "score": 0.8,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "Custom Computer Programming Services",
+        "naicsCodes": [
+          "541511"
+        ],
+        "sicCodes": [
+          "7371"
+        ],
+        "mccCodes": [],
+        "sector": "PROFESSIONAL_SCIENTIFIC_TECHNICAL_SERVICES",
+        "score": 0.6,
+        "highRisk": false
+      }
+    ],
     "watchlist": {
       "hitCount": 1,
       "lists": [
@@ -39468,6 +39725,12 @@
         "category": "sos"
       },
       {
+        "key": "web_address_verification",
+        "subLabel": "Approximate Match",
+        "message": "Identified an address within 0.2 miles of the submitted Office Address",
+        "category": "web"
+      },
+      {
         "key": "liens",
         "subLabel": "No Liens",
         "message": "No Liens found",
@@ -39516,10 +39779,28 @@
         "category": "sos"
       },
       {
-        "key": "litigations",
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "website_status",
+        "subLabel": "Online",
+        "message": "Website was Online when the business record was ordered",
+        "category": "website"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Found",
+        "message": "Website URL was found",
+        "category": "web"
+      },
+      {
+        "key": "bankruptcies",
         "subLabel": "None Found",
-        "message": "The business has no related litigations",
-        "category": "litigations"
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
       },
       {
         "key": "entity_type",
@@ -39528,10 +39809,46 @@
         "category": "formation"
       },
       {
-        "key": "bankruptcies",
+        "key": "litigations",
         "subLabel": "None Found",
-        "message": "The business has no bankruptcy filings",
-        "category": "bankruptcies"
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Found",
+        "message": "Third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "profile_status",
+        "subLabel": "Online",
+        "message": "All third party profiles are online",
+        "category": "web"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "web"
+      },
+      {
+        "key": "web_person_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted person",
+        "category": "web"
+      },
+      {
+        "key": "web_presence_quality",
+        "subLabel": "High",
+        "message": "Web presence quality is high",
+        "category": "web"
       }
     ]
   },

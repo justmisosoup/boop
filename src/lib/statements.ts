@@ -91,6 +91,17 @@ export const statementFor = (
       return `${names.length} ${names.length === 1 ? 'connection' : 'connections'} found: ${names.join(', ')}`
   }
 
+  /*
+   * The website name check. The source's sentence — "We identified a name we
+   * believe is different from the submitted business name" — never says
+   * where the name was found, and in an Identity card beside filing matches
+   * it read as a registry finding. It is the website.
+   */
+  if (key === 'web_business_name_verification') {
+    if (/mismatch/i.test(subLabel ?? '')) return 'The website shows a different name from the submitted business name'
+    if (/match|verified/i.test(subLabel ?? '')) return 'The website shows the submitted business name'
+  }
+
   if (message) return sentenceCase(message)
 
   // Nothing to key the catalog with. A sub-label is on every review task in

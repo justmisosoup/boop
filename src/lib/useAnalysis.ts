@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AnalysisDraft, AnalysisResult, ReportSnapshot } from '../types'
-import type { BusinessRecord, Derived } from './deriveResults'
+import { deriveResults, type BusinessRecord, type Derived } from './deriveResults'
 // The bundled store, shared with the businesses list — see `heldReports.ts`.
 // In dev this changes nothing: the endpoint answers first and the live run
 // replaces it. Deployed, it is the whole of what the page can show.
@@ -67,7 +67,11 @@ const heldReports = (name: string): Report[] =>
     at: r.at,
     policy: r.policy ?? [],
     result: r.report,
-    snapshot: r.snapshot ?? null,
+    // The snapshot's RECORD is the point in time; its rows are re-read from
+    // it with today's rules. Stored rows froze how a check was read the day
+    // the report ran, so a reading rule fixed since — Delaware's Unknown
+    // status is not a finding — never reached an existing report.
+    snapshot: r.snapshot ? { ...r.snapshot, results: deriveResults(r.snapshot.record) } : null,
     questions: (r.questions ?? []).map((q) => ({
       id: q.id,
       kind: 'question' as const,

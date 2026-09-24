@@ -5,7 +5,7 @@
     {
       "id": "smb-account-opening",
       "name": "Bank account opening",
-      "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
+      "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out \u2014 a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
       "kind": "workflow",
       "createdBy": "Sara Menefee",
       "createdAt": "2026-09-17T00:39:29.869Z",
@@ -118,6 +118,34 @@
       "weight": "critical"
     },
     {
+      "id": "skill-kyb-3",
+      "name": "Compliance Screenings",
+      "instructions": "Does the business, any UBO, or any signer trigger a sanctions or enforcement obligation?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits",
+      "kind": "assessment",
+      "createdBy": "Sara Menefee",
+      "createdAt": "2026-09-17T00:59:54.491981Z",
+      "history": [
+        {
+          "at": "2026-09-17T00:59:54.491981Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T20:05:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-17T22:40:00.000Z",
+          "by": "Sara Menefee"
+        },
+        {
+          "at": "2026-09-18T21:34:19.224Z",
+          "by": "Sara Menefee"
+        }
+      ],
+      "editedAt": "2026-09-18T21:34:19.224Z",
+      "weight": "critical"
+    },
+    {
       "id": "skill-kyb-activity",
       "name": "Activity & Permission",
       "instructions": "Is the industry eligible under policy, and is the business licensed where it operates?\n\nAlways:\n- Identify whether the industry is a high-risk or prohibited industry\n- Identify whether there is evidence of other industry activity not detected that point to high-risk or prohibited industries\n- Identify presence and status of licenses required of the industry + jurisdiction. \n- Identify license link to officer / owner / person or business entity.",
@@ -171,34 +199,6 @@
           "by": "smenefee@middesk.com"
         }
       ]
-    },
-    {
-      "id": "skill-kyb-3",
-      "name": "Compliance Screenings",
-      "instructions": "Does the business, any UBO, or any signer trigger a sanctions or enforcement obligation?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits",
-      "kind": "assessment",
-      "createdBy": "Sara Menefee",
-      "createdAt": "2026-09-17T00:59:54.491981Z",
-      "history": [
-        {
-          "at": "2026-09-17T00:59:54.491981Z",
-          "by": "Sara Menefee"
-        },
-        {
-          "at": "2026-09-17T20:05:00.000Z",
-          "by": "Sara Menefee"
-        },
-        {
-          "at": "2026-09-17T22:40:00.000Z",
-          "by": "Sara Menefee"
-        },
-        {
-          "at": "2026-09-18T21:34:19.224Z",
-          "by": "Sara Menefee"
-        }
-      ],
-      "editedAt": "2026-09-18T21:34:19.224Z",
-      "weight": "critical"
     }
   ]
 }

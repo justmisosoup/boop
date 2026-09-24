@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
-import { Clock, MessageSquare, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { Clock, Database, LayoutList, ListChecks, MessageSquare, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 import { AppShellNavItem, Hint, IconActionButton, Text } from '@/core'
 
 
 /** What the right-hand column can be showing. */
-export type PanelView = 'assistant' | 'timeline'
+export type PanelView = 'assistant' | 'timeline' | 'insights' | 'attributes' | 'sources'
 
 export const PANEL_VIEWS: Array<{
   id: PanelView
@@ -21,6 +21,24 @@ export const PANEL_VIEWS: Array<{
     id: 'timeline',
     label: 'Timeline',
     icon: <Clock aria-hidden="true" size={16} strokeWidth={1.5} />
+  },
+  // The assessment's evidence, beside it rather than under tabs of its own:
+  // the insights it read, grouped; the attributes behind them; the sources
+  // they came from.
+  {
+    id: 'insights',
+    label: 'Insights',
+    icon: <ListChecks aria-hidden="true" size={16} strokeWidth={1.5} />
+  },
+  {
+    id: 'attributes',
+    label: 'Attributes',
+    icon: <LayoutList aria-hidden="true" size={16} strokeWidth={1.5} />
+  },
+  {
+    id: 'sources',
+    label: 'Sources',
+    icon: <Database aria-hidden="true" size={16} strokeWidth={1.5} />
   }
 ]
 

@@ -1,33 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
-import { Link, Navigate, useParams } from 'react-router'
+import { ArrowLeft } from 'lucide-react'
+import { Navigate, useNavigate, useParams } from 'react-router'
 
 import {
   ActionButton,
   ChatSources,
   EmptyState,
   Heading,
+  IconActionButton,
   MetaChip,
   MutedText,
-  PageBreadcrumb,
-  PageBreadcrumbItem,
   PageHeader,
   PageHeaderBand,
+  PageHeaderActions,
   PageHeading,
-  SegmentedControl,
-  SegmentedControlItem,
   Surface,
+  Text,
   TabsContent,
-  TabsCount,
-  TabsList,
-  TabsRoot,
-  TabsTrigger
+  TabsRoot
 } from '@/core'
 
 import { AnalysisDock } from '../components/AnalysisDock'
 import { AttributeGroupDetail, attributeGroups, countAttributes } from '../components/AttributesTab'
 import { AnalysisPanel } from '../components/AnalysisPanel'
-import { AnalysisSources } from '../components/AnalysisSources'
 import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
 import { AnalysisChat } from '../components/AnalysisChat'
 import { ColumnResizer } from '../components/ColumnResizer'
@@ -36,15 +31,21 @@ import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPan
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 import { DeterminationCard } from '../components/DeterminationCard'
-import { ReportSwitcher } from '../components/ReportSwitcher'
-import { reportDate, reportLabel } from '../lib/reportLabels'
+import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
+import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
+import { statusForBand, useReview } from '../lib/review'
+import { scoreLine } from '../lib/scoreReasons'
+import { changedInsights } from '../lib/diff'
+import { reportDate, reportLabel, reportStamp } from '../lib/reportLabels'
 import { FormationCard } from '../components/FormationCard'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
-import { SourceDetail, sourceSections, sourceSummary, sourcesFor } from '../components/SourcesTab'
-import { ListColumn, RowCount } from '../components/ListColumn'
+import { SourceDetail, sourceSections, sourcesFor } from '../components/SourcesTab'
 import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
+import { entityTypeCode } from '../lib/attributes'
+import { stateName } from '../lib/states'
+import { industrySectorOf } from '../lib/naics'
 import { byId } from '../lib/records'
 import { GROUPS, type GroupId, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
@@ -110,22 +111,6 @@ const RAIL_W = '49px'
  * empty. At 1200 the report gets about 830px — the two-column grids and the
  * insight rows fill without a line running long.
  */
-type ReportFace = 'report' | 'insights' | 'attributes' | 'sources'
-/** The faces of one report — the report, and its own snapshot of the three. */
-const FACES: Array<{ value: ReportFace; label: string }> = [
-  { value: 'report', label: 'Report' },
-  { value: 'insights', label: 'Insights' },
-  { value: 'attributes', label: 'Attributes' },
-  { value: 'sources', label: 'Sources' }
-]
-
-/** The top-level tabs, as the pane's breadcrumb names them. */
-const TAB_LABEL: Record<string, string> = {
-  assessment: 'Reports',
-  insights: 'Insights',
-  attributes: 'Attributes',
-  sources: 'Sources'
-}
 
 const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
 
@@ -144,10 +129,19 @@ export function RecordPage() {
   // a half-rendered screen.
   if (!selected) return <Navigate replace to='/businesses' />
 
-  return <Record record={selected} />
+  return <Record key={selected.id} record={selected} />
 }
 
+/**
+ * One business, one assessment.
+ *
+ * The page is the business's newest assessment: the report under the
+ * Assessment tab, and the insights, attributes and sources that run read
+ * under the other three. A business used to list several runs with a page
+ * each; that has been set aside, see `heldReports.ts`.
+ */
 function Record({ record: selected }: { record: BusinessRecord }) {
+  const navigate = useNavigate()
   /** What the business is now. What a new report is run against. */
   const live = useMemo(() => deriveResults(selected), [selected])
 
@@ -176,6 +170,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   )
   const analysis = useAnalysis(selected, live)
 
+
   /**
    * Everything on this page is the report being read.
    *
@@ -196,39 +191,50 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const results: Derived[] = view?.results ?? []
 
   /**
-   * What the report was read from, at the head of the page.
-   *
-   * It used to sit on the recommendation's heading line, which put it a third
-   * of the way down a report it describes the whole of — and a follow-up
-   * printed a second copy further down. One roll-up, at the top, naming the
-   * latest run's workflow: the skills it was composed from, and the record it
-   * was read against. Nothing to say before a run has happened, so it is not
-   * rendered then.
+   * The context the run was read in. The use case it was assessed for, the
+   * customer asking, what kind of entity the business is, and the industry it
+   * is in — the four things the assessment holds the insights against. Core's
+   * own `ChatSources` roll-up, which stacks the tiles and opens to the list.
+   * On the determination card, to the right of the run's date.
    */
-  const latestRun = analysis.selected
-  // A held report carries no skills, so the workflow the page knows about
-  // stands in for it — otherwise a reload loses the name.
-  const runSkills = standing?.name ? [standing.name] : []
-  const analysedWith = latestRun ? (
-    // The roll-up, not a chip: core's own `ChatSources`, which stacks the
-    // sources' tiles and opens to the list.
+  /**
+   * Where the business is registered: the domestic state by name, then how
+   * many other states hold a foreign registration. "Delaware · 2 foreign
+   * registrations" says what a list of codes made the reader count.
+   */
+  const domesticState = record.formation?.state ?? record.registrations.find((r) => r.jurisdiction === 'DOMESTIC')?.state
+  const foreignCount = record.registrations.filter((r) => r.state && r.state !== domesticState).length
+  const jurisdiction = domesticState
+    ? [
+        stateName(domesticState),
+        foreignCount > 0 ? `${foreignCount} foreign ${foreignCount === 1 ? 'registration' : 'registrations'}` : ''
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : record.registrations.length > 0
+      ? `No domestic filing · ${record.registrations.length} ${record.registrations.length === 1 ? 'registration' : 'registrations'}`
+      : 'No registrations'
+  const analysedWith = analysis.selected ? (
     <ChatSources
-      // Opens from its own left edge: hung to the right, the list swung out
-      // over the reports panel beside the card.
+      // Opens from its own left edge, so the list does not swing out over the ring.
       align="start"
-      label="Processed"
+      label="Context"
+      // The dimension leads and the value sits under it: a reader scanning the
+      // list is looking for "Jurisdiction", not for "DE, CA, UT".
       sources={[
-        ...runSkills.map((name) => ({
-          id: `skill:${name}`,
-          label: name,
-          title: name,
-          annotation: 'Assessment workflow'
-        })),
+        { id: 'use-case', label: 'Use case', title: 'Use case', annotation: reportLabel(analysis.selected) },
+        { id: 'customer', label: 'Business', title: 'Business', annotation: 'Neobank' },
+        // As the filing abbreviates it — LLC, PLLC — or Unknown when the
+        // record has no formation.
+        { id: 'entity', label: 'Entity', title: 'Entity', annotation: entityTypeCode(record) ?? 'Unknown' },
+        // The domestic state, and how many others hold a foreign registration.
+        { id: 'jurisdiction', label: 'Jurisdiction', title: 'Jurisdiction', annotation: jurisdiction },
+        // The top of the NAICS scheme the business's classification sits in.
         {
-          id: 'middesk-context',
-          label: 'Middesk Context',
-          title: 'Middesk Context',
-          annotation: 'Industries, entities, jurisdictions, ages...'
+          id: 'customer-industry',
+          label: 'Industry',
+          title: 'Industry',
+          annotation: industrySectorOf(record) ?? 'Unknown'
         }
       ]}
     />
@@ -267,6 +273,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     () => (view ? identityScore(record, results, scoreAreas) : null),
     [view, record, results, scoreAreas]
   )
+  /** The status the determination implies, and the reviewer's review of it. */
+  const determined = statusForBand(score?.band.id)
+  const review = useReview(selected.id, determined)
+
   /**
    * Each area's weight, keyed by its section, for the card headers.
    *
@@ -302,12 +312,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   /**
    * Whether the assistant is on screen.
    *
-   * Open by default — it is the thing a reviewer acts with, and a report you
-   * cannot ask about is a document. Dismissing it gives the whole width back to
-   * the report, and the control that dismissed it is what brings it back, in
-   * the corner it was dismissed from.
+   * Open when there is a conversation to show, closed otherwise: on a report
+   * nobody has asked about it was 460px of white beside the thing being read.
+   * The rail's button brings it back, and dismissing it gives the whole width
+   * to the report again.
    */
-  const [chatOpen, setChatOpen] = useState(true)
+  const [chatOpen, setChatOpen] = useState(() => analysis.questions.length > 0)
 
   /** What the right-hand column is showing. The picker in its own header, and
    *  the rail it collapses to, both set this. */
@@ -434,108 +444,80 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     )
   }
 
-  /** Switching report is landing on a different page: start at the top of it,
-   *  with nothing revealed from the one before. */
-  const selectReport = (id: string) => {
-    analysis.select(id)
-    setRevealed([])
-    panelRef.current?.scrollTo({ top: 0 })
-  }
-
-  /** A row on the reports panel: read that report, here. */
-  const openReport = (id: string) => selectReport(id)
 
 
-  /**
-   * What the tabs say when there is no report.
-   *
-   * These are a report's insights, attributes and sources, so without one there
-   * is nothing to show — not an empty record, an unassessed one. Guarded on the
-   * report rather than on a row count: `attributeRowsByGroup` seeds a
-   * business's licences before it reads the insight list, so counting rows
-   * would have put attributes under a business nobody has assessed.
-   */
-  const nothingYet = (what: string) => (
-    <EmptyState
-      title="No report yet"
-      description={`Run the assessment to see the ${what} it read.`}
-    />
-  )
 
-  const [filter] = useState<'all' | 'found' | 'not_found'>('found')
-
-  const visible = useMemo(
-    () =>
-      filter === 'all'
-        ? results
-        : results.filter((r) => (filter === 'found' ? !r.notReported : r.notReported)),
-    [results, filter]
-  )
-
-  /** The open report's insights, by grouping: what its Insights face shows. */
-  const grouped = useMemo(
-    () =>
-      GROUPS.map((g) => ({
-        ...g,
-        rows: visible.filter((r) => groupOf(r) === g.id)
-      })).filter((g) => g.rows.length > 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible, groupFor]
-  )
-  /** The open report's attributes, by grouping: what its Attributes face shows. */
-  const snapshotAttributeGroups = useMemo(
-    () => (view ? attributeGroups(record, results, groupFor) : []),
-    [view, record, results, groupFor]
-  )
 
   /*
-   * The business identity, live.
+   * What the tabs read: the assessment's snapshot.
    *
-   * A report is a snapshot: it carries its own copy of the insights,
-   * attributes and sources it read, and its faces show that copy. The
-   * top-level Insights, Attributes and Sources tabs are not a report's —
-   * they are the identity's, read from the record as it is now, whichever
-   * report is open. Same groupings, same cells, different moment.
+   * A report carries its own copy of the insights, attributes and sources it
+   * read, and the determination was made on that copy — so that is what the
+   * three tabs show. The live record stands in only when no report exists.
    */
-  const liveGroupFor = useMemo(() => makeGroupFor(categoriesOf(selected)), [selected])
-  const liveGrouped = useMemo(
+  const scopeRecord = view ? record : selected
+  const scopeResults: Derived[] = view ? results : live
+  const scopeGroupFor = useMemo(() => makeGroupFor(categoriesOf(scopeRecord)), [scopeRecord])
+  const scopeGrouped = useMemo(
     () =>
       GROUPS.map((g) => ({
         ...g,
-        rows: live.filter((r) => !r.notReported && liveGroupFor(r.insightId) === g.id)
+        rows: scopeResults.filter((r) => !r.notReported && scopeGroupFor(r.insightId) === g.id)
       })).filter((g) => g.rows.length > 0),
-    [live, liveGroupFor]
+    [scopeResults, scopeGroupFor]
   )
-  const liveInsightCount = useMemo(() => live.filter((r) => !r.notReported).length, [live])
-  const liveAttributeGroups = useMemo(
-    () => attributeGroups(selected, live, liveGroupFor),
-    [selected, live, liveGroupFor]
-  )
-  const liveAttributeCount = useMemo(
-    () => countAttributes(selected, live, liveGroupFor),
-    [selected, live, liveGroupFor]
-  )
-  const liveSources = useMemo(() => sourcesFor(selected, live, liveGroupFor), [selected, live, liveGroupFor])
-  const liveSourceBands = useMemo(() => sourceSections(liveSources), [liveSources])
-
-  /** What each live tab's column has picked. Unset falls to the first. */
-  const [insightGroup, setInsightGroup] = useState<GroupId | null>(null)
-  const [attributeGroup, setAttributeGroup] = useState<GroupId | null>(null)
-  const [sourceId, setSourceId] = useState<string | null>(null)
-  const openInsightGroup = liveGrouped.find((g) => g.id === insightGroup) ?? liveGrouped[0]
-  const openAttributeGroup =
-    liveAttributeGroups.find((g) => g.id === attributeGroup) ?? liveAttributeGroups[0]
-  const openSource = liveSources.find((s) => s.id === sourceId) ?? liveSources[0]
-
+  /** What the assessment flagged in this moment's reading, marked in the rows
+   *  the way the report marks them. */
+  const scopeNegatives = useMemo(() => negativesFor(scopeRecord, scopeResults), [scopeRecord, scopeResults])
   /**
-   * Which face of the open report the pane shows: the report itself, or its
-   * own snapshot of the insights, attributes or sources. Back to the report
-   * when another report opens.
+   * What has moved since the open report was written.
+   *
+   * Reading a report's snapshot, a reviewer needs to know whether the record
+   * still says what the report read. Empty when the report has no snapshot,
+   * or when nothing has changed.
    */
-  const [reportFace, setReportFace] = useState<ReportFace>('report')
-  useEffect(() => {
-    setReportFace('report')
-  }, [analysis.selected?.id])
+  const changedSince = useMemo(
+    () => (view && analysis.selected?.snapshot ? changedInsights(results, live) : []),
+    [view, analysis.selected?.snapshot, results, live]
+  )
+  const scopeAttributeGroups = useMemo(
+    () => attributeGroups(scopeRecord, scopeResults, scopeGroupFor),
+    [scopeRecord, scopeResults, scopeGroupFor]
+  )
+  const scopeSources = useMemo(
+    () => sourcesFor(scopeRecord, scopeResults, scopeGroupFor),
+    [scopeRecord, scopeResults, scopeGroupFor]
+  )
+  const scopeSourceBands = useMemo(() => sourceSections(scopeSources), [scopeSources])
+
+  /** What moved since the report, said once at the head of an evidence panel. */
+  const drift =
+    changedSince.length > 0 ? (
+      <MutedText className="block text-caption">
+        {changedSince.length} {changedSince.length === 1 ? 'insight has' : 'insights have'} changed in the current
+        identity since this report
+      </MutedText>
+    ) : null
+
+  /** The decision card, stacked for the left column or wide for the flow. */
+  const decisionCard = (stacked: boolean) => (
+              <DeterminationCard
+                stacked={stacked}
+                score={score}
+                running={running}
+                /* The dashboard's own status control as the determination's
+                   word. Before anyone sets it, it reads what the assessment
+                   determined — Approve as Approved, Reject as Rejected. */
+                status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
+                reason={score ? scoreLine(score, scoreAreas) : undefined}
+                determinedAt={analysis.selected ? reportStamp(analysis.selected) : undefined}
+                context={analysedWith}
+                /* Only a change away from the determination is a change worth
+                   citing; a status that matches it is the determination. */
+                change={review.change && review.status !== determined ? review.change : undefined}
+              />
+  )
+
   const [dockOpen, setDockOpen] = useState(true)
   const [revealed, setRevealed] = useState<string[]>([])
   /**
@@ -558,37 +540,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * across the row named the same thing twice, at a distance from the tab it
    * described.
    */
-  const assessmentTrigger = (
-    <TabsTrigger
-      value="assessment"
-      className={cn(
-        // Radix's menu writes `data-state="closed"` onto the trigger it shares
-        // with the tab, which is the attribute the tab's own active styling
-        // keys off — so opening the menu made the tab stop looking selected.
-        // Asserted here instead of inferred.
-        tab === 'assessment' &&
-          'font-semibold !text-[var(--core-color-tab-fg-active)] shadow-[inset_0_-2px_0_0_var(--core-color-tab-indicator)]'
-      )}
-    >
-      Reports
-      <TabsCount>{analysis.reports.length}</TabsCount>
-    </TabsTrigger>
-  )
-
-  /* The Report tab is the report; the list of reports is a tab of its own
-     now. The dropdown that used to hang off this trigger listed the runs by
-     name and date and said nothing about what each concluded. */
-  const assessmentTab = assessmentTrigger
-
-  /**
-   * A tab starts at its own top.
-   *
-   * The column scrolls as a whole, so the scroll position belonged to the panel
-   * and not to the tab in it — switching from 1,100px into Insights to Sources,
-   * which is shorter than that, landed the reader past the end of it looking at
-   * blank space. Each tab is a different list; none of them is 1,100px into
-   * another one.
-   */
   const showTab = (next: string) => {
     setTab(next)
     panelRef.current?.scrollTo({ top: 0 })
@@ -597,29 +548,22 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   // Ids the current answer already used — those rows do not offer "add".
   const used = new Set(analysis.active?.result.used ?? [])
 
-  // A citation has to land somewhere: switch to the raw insights, then scroll.
-  const recordSources = useMemo(
-    () => (view ? sourcesFor(record, results, groupFor) : []),
-    [view, record, results, groupFor]
-  )
-  const sourceCount = recordSources.length
+  /** Open the right-hand panel on one of its views. */
+  const showPanel = (view: PanelView) => {
+    setPanelView(view)
+    setChatOpen(true)
+  }
 
   /**
-   * A citation names a category, so following it lands on that category in
-   * the report's own Insights face — the snapshot the citation was made
-   * against, not the identity as it is now. Every insight the paragraph cited
-   * is revealed at once, which is the thing the citation was standing for.
+   * A citation names a category, so following it opens the Insights panel at
+   * that grouping. Every insight the paragraph cited is revealed at once,
+   * which is the thing the citation was standing for.
    */
   const reveal = (ids: string[], groupId: string) => {
-    setTab('assessment')
-    setReportFace('insights')
+    showPanel('insights')
     setRevealed(ids)
     window.setTimeout(() => {
-      // `start`, not `center`: the anchor is a whole group, and centring a
-      // 22-row group puts its heading off the top of the pane.
-      document
-        .getElementById(`group-${groupId}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      document.getElementById(`group-${groupId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 60)
     window.setTimeout(() => setRevealed([]), 2400)
   }
@@ -636,115 +580,19 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     setSourceFocus(id)
     window.setTimeout(() => setSourceFocus(null), 2400)
   }
-  const resolveSource = (sources: typeof liveSources, cardId: string) =>
+  const resolveSource = (sources: typeof scopeSources, cardId: string) =>
     sources.find((x) => x.id === cardId) ?? sources.find((x) => x.id.startsWith(cardId))
-  /** From inside a report: that report's own copy of the source, in its Sources face. */
+  /** The identity's source, picked in the Sources column. */
   const jumpToSource = (cardId: string) => {
-    const hit = resolveSource(recordSources, cardId)
-    setTab('assessment')
-    setReportFace('sources')
+    const hit = resolveSource(scopeSources, cardId)
+    showPanel('sources')
     if (!hit) return
     flashSource(hit.id)
     window.setTimeout(() => {
-      document
-        .getElementById(`source-${hit.id}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      document.getElementById(`source-${hit.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 60)
   }
-  /** From a live tab: the identity's source, picked in the Sources column. */
-  const jumpToLiveSource = (cardId: string) => {
-    const hit = resolveSource(liveSources, cardId)
-    setTab('sources')
-    if (hit) {
-      setSourceId(hit.id)
-      flashSource(hit.id)
-    }
-    panelRef.current?.scrollTo({ top: 0 })
-  }
 
-  /**
-   * The list column, for whichever tab is on: the tab picks the collection,
-   * the column lists it, the pane shows what is picked. Rendered twice —
-   * pinned beside the pane at `desk`, in the flow above it below — with one
-   * of the two hidden, so the choice of where it sits is CSS alone.
-   */
-  const column = (className: string) => {
-    if (tab === 'insights')
-      return (
-        <ListColumn
-          className={className}
-          title="Insights"
-          count={liveInsightCount}
-          sections={[
-            {
-              key: 'insights',
-              items: liveGrouped.map((g) => ({
-                id: g.id,
-                label: g.label,
-                trailing: <RowCount>{g.rows.length}</RowCount>
-              }))
-            }
-          ]}
-          selectedId={openInsightGroup?.id}
-          onSelect={(id) => {
-            setInsightGroup(id as GroupId)
-            panelRef.current?.scrollTo({ top: 0 })
-          }}
-          empty="Nothing on this record reported."
-        />
-      )
-    if (tab === 'attributes')
-      return (
-        <ListColumn
-          className={className}
-          title="Attributes"
-          count={liveAttributeCount}
-          sections={[
-            {
-              key: 'attributes',
-              items: liveAttributeGroups.map((g) => ({
-                id: g.id,
-                label: g.label,
-                trailing: <RowCount>{g.rows.length}</RowCount>
-              }))
-            }
-          ]}
-          selectedId={openAttributeGroup?.id}
-          onSelect={(id) => {
-            setAttributeGroup(id as GroupId)
-            panelRef.current?.scrollTo({ top: 0 })
-          }}
-          empty="No attributes on this record."
-        />
-      )
-    if (tab === 'sources')
-      return (
-        <ListColumn
-          className={className}
-          title="Sources"
-          count={liveSources.length}
-          sections={liveSourceBands.map((band) => ({
-            key: band.key,
-            label: band.label,
-            items: band.items.map((src) => ({
-              id: src.id,
-              label: src.label,
-              sublabel: sourceSummary(src)
-            }))
-          }))}
-          selectedId={openSource?.id}
-          onSelect={(id) => {
-            setSourceId(id)
-            panelRef.current?.scrollTo({ top: 0 })
-          }}
-          empty="No sources on this record."
-        />
-      )
-    // The Reports tab lists nothing beside the pane: the report's name in the
-    // pane's crumb is the switch, so the report has the whole measure.
-    return null
-  }
-  const hasColumn = tab !== 'assessment'
 
   return (
     <ScreenshotViewerProvider>
@@ -763,9 +611,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           // at the assistant's width it is a sparkline with truncated values,
           // so opening it takes the half of the window it needs. A width the
           // reader has dragged wins over both — they have said what they want.
-          ...(chatOpen && chatW === null && panelView === 'timeline'
-            ? { '--chat-w': '50%' }
-            : {}),
+          ...(chatOpen && chatW === null && panelView !== 'assistant' ? { '--chat-w': '50%' } : {}),
           ...(chatOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
         } as React.CSSProperties
       }
@@ -862,32 +708,34 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * across the page. At `wide` the column scrolls inside itself and
               * the band sits above the scroller, so `sticky` is inert there.
               */}
-            <PageHeaderBand className="sticky top-0 z-chrome shrink-0 border-b border-solid border-border bg-surface-canvas px-0 pt-4">
+            <PageHeaderBand className="sticky top-0 z-chrome shrink-0 border-b border-solid border-border bg-surface-canvas px-0 py-4">
               <PageHeader className={cn(MEASURE, 'gap-2')}>
-                <PageBreadcrumb>
-                  <PageBreadcrumbItem asChild>
-                    <Link to="/businesses" className="inline-flex items-center gap-1 no-underline">
-                      <ChevronLeft aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.5} />
-                      All businesses
-                    </Link>
-                  </PageBreadcrumbItem>
-                </PageBreadcrumb>
-                <PageHeading weight="normal">{selected.name}</PageHeading>
-                <TabsList className="min-w-0 border-0">
-                  {assessmentTab}
-                  <TabsTrigger value="insights">
-                    Insights
-                    <TabsCount>{liveInsightCount}</TabsCount>
-                  </TabsTrigger>
-                  <TabsTrigger value="attributes">
-                    Attributes
-                    <TabsCount>{liveAttributeCount}</TabsCount>
-                  </TabsTrigger>
-                  <TabsTrigger value="sources">
-                    Sources
-                    <TabsCount>{liveSources.length}</TabsCount>
-                  </TabsTrigger>
-                </TabsList>
+                {/* A back arrow beside the name, not a breadcrumb: the only
+                    place up is the list, and a crumb that named the business
+                    over a heading that named it again said it twice. */}
+                {/* The arrow hangs in the left margin — 32px button plus the
+                    8px gap — so the name starts where the tabs start. At the
+                    far right, who owns this review; where it stands is on the
+                    determination itself. */}
+                <div className="-ml-10 flex min-w-0 items-center justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {/* A button that navigates, not `asChild` over a Link: the
+                        core button renders its icon slots beside the child, so
+                        Radix's Slot sees several children and throws. */}
+                    <IconActionButton
+                      variant="quiet"
+                      size="compact"
+                      aria-label="All businesses"
+                      onClick={() => navigate('/businesses')}
+                    >
+                      <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
+                    </IconActionButton>
+                    <PageHeading weight="normal">{selected.name}</PageHeading>
+                  </div>
+                  <PageHeaderActions className="shrink-0">
+                    <AssigneeDropdown businessId={selected.id} />
+                  </PageHeaderActions>
+                </div>
               </PageHeader>
             </PageHeaderBand>
 
@@ -908,6 +756,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             >
               <div className={MEASURE}>
                 <div className="flex desk:gap-6">
+                  {/* The decision, beside the report rather than above it: pinned
+                      in the left margin while the evidence scrolls past, so the
+                      call and what it rests on are read side by side. */}
+                  {(view || running) && (
+                    <div className="hidden desk:block desk:w-80 desk:shrink-0">
+                      <div className="sticky top-0">{decisionCard(true)}</div>
+                    </div>
+                  )}
                   {/*
                     * The list column, in the margin.
                     *
@@ -920,88 +776,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     * The Reports tab has no column — its switch is the report's
                     * own name in the pane's crumb.
                     */}
-                  {hasColumn && (
-                    <div className="hidden desk:block desk:w-80 desk:shrink-0">
-                      {column('sticky top-0')}
-                    </div>
-                  )}
                   <div className="min-w-0 flex-1">
-                    {hasColumn && column('mb-6 desk:hidden')}
-                    {/*
-                      * The pane. The selected report — whichever face of it the
-                      * tabs have open — inside one frame, headed by where you
-                      * are: the business, the report, the face. A file
-                      * browser's preview pane; the list on the left is what
-                      * you pick from, this is what you picked.
-                      */}
-                    <Surface variant="card" padding="none" className="overflow-hidden">
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--core-color-border-divider)] px-4 py-3">
-                        {/* A report's own faces: itself, and its snapshot of the
-                            insights, attributes and sources it read. The
-                            identity's live copies are the tabs above. */}
-                        {tab === 'assessment' && (view || running) && (
-                          <SegmentedControl
-                            aria-label="Which face of this report"
-                            size="sm"
-                            value={reportFace}
-                            onValueChange={(v) => setReportFace(v as ReportFace)}
-                          >
-                            {FACES.map((f) => (
-                              <SegmentedControlItem key={f.value} value={f.value}>
-                                {f.label}
-                              </SegmentedControlItem>
-                            ))}
-                          </SegmentedControl>
-                        )}
-                        {/* Where you are, under the business named in the band
-                            above — so not the business again. The segments are
-                            one flat list so the crumb puts its chevron between
-                            every pair. On the Reports tab the report's own
-                            segment is the switch: it names the open run and
-                            opens onto the others. */}
-                        <PageBreadcrumb>
-                          {[
-                            ...(tab === 'assessment'
-                              ? [
-                                  running ? (
-                                    <PageBreadcrumbItem key="running" current>
-                                      {`Running ${analysis.waitingSkills[0] ?? standing?.name ?? 'the assessment'}`}
-                                    </PageBreadcrumbItem>
-                                  ) : (
-                                    <ReportSwitcher
-                                      key="report"
-                                      reports={analysis.reports}
-                                      selectedId={analysis.selected?.id}
-                                      record={record}
-                                      onOpen={openReport}
-                                      onNew={
-                                        standing ? { label: standing.name, run: runStanding, running } : undefined
-                                      }
-                                    />
-                                  ),
-                                  reportFace !== 'report' && (
-                                    <PageBreadcrumbItem key="face" current>
-                                      {FACES.find((f) => f.value === reportFace)?.label}
-                                    </PageBreadcrumbItem>
-                                  )
-                                ]
-                              : [
-                                  <PageBreadcrumbItem key="tab">{TAB_LABEL[tab] ?? tab}</PageBreadcrumbItem>,
-                                  <PageBreadcrumbItem key="item" current>
-                                    {tab === 'insights'
-                                      ? openInsightGroup?.label
-                                      : tab === 'attributes'
-                                        ? openAttributeGroup?.label
-                                        : openSource?.label}
-                                  </PageBreadcrumbItem>
-                                ])
-                          ]}
-                        </PageBreadcrumb>
-                      </div>
-                      <div className="p-4">
-              <TabsContent value="assessment">
-              {reportFace === 'report' && (
-              <>
+                    {/* The tab's content, straight on the canvas. It sat in a
+                        framed pane with a crumb head, and everything inside it
+                        was already a card — a card in a card, with a crumb
+                        repeating what the column's selected row and the card's
+                        own title already said. */}
+                    <div>
+              <TabsContent value="assessment" className="mt-0">
             {/*
               * The call opens the report, at every width.
               *
@@ -1010,36 +792,17 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * a business the report is about to assess. What a reader opens
               * the record for is the decision, so the decision is first.
               */}
-            {(view || running) && (
-              <DeterminationCard
-                score={score}
-                running={running}
-                trailing={
-                  /* What the run was processed with, and what it read: the
-                     two roll-ups side by side. "Insights used" sat at the foot
-                     of the report, under a rule, 2,000px from the call it
-                     supported; it is the call's own footnote. */
-                  <span className="flex flex-wrap items-center gap-3">
-                    {analysedWith}
-                    {analysis.reportVersion && (
-                      <AnalysisSources
-                        className="mt-0"
-                        used={analysis.reportVersion.result.used}
-                        results={results}
-                        categories={categories}
-                        onSelect={jumpToGroup}
-                      />
-                    )}
-                  </span>
-                }
-              />
-            )}
+            {/* Below `desk` there is no room beside the report, so the
+                decision leads it in the flow. */}
+            {(view || running) && <div className="desk:hidden">{decisionCard(false)}</div>}
             {/* What the state holds, under the call and before the argument.
                 With or without a report: these are the record's facts. */}
             <FormationCard
               record={record}
+              results={results}
+              groupFor={groupFor}
               onJumpToSource={jumpToSource}
-              className={view || running ? 'mt-4' : undefined}
+              className={view || running ? 'mt-4 desk:mt-0' : undefined}
             />
             {/* What the record holds about the business, before the report
                 starts reading it. Attributes only — the filing facts an account
@@ -1099,116 +862,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 onJumpToSource={jumpToSource}
               />
             )}
-              </>
-              )}
-
-              {/* The report's own insights: the snapshot it cited, grouped as
-                  the live tab groups them, every group on one page so a
-                  citation can land on its group. */}
-              {reportFace === 'insights' &&
-                (view ? (
-                  <div className="space-y-4">
-                    {grouped.map((group) => (
-                      <div key={group.id} id={`group-${group.id}`} className="scroll-mt-6">
-                        <InsightStack title={group.label}>
-                          {group.rows.map((r) => (
-                            <InsightRow
-                              key={r.insightId}
-                              result={r}
-                              record={record}
-                              reveal={revealed.includes(r.insightId)}
-                              onJumpToSource={jumpToSource}
-                            />
-                          ))}
-                        </InsightStack>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  nothingYet('insights')
-                ))}
-
-              {reportFace === 'attributes' &&
-                (view ? (
-                  <div className="space-y-4">
-                    {snapshotAttributeGroups.map((group) => (
-                      <AttributeGroupDetail
-                        key={group.id}
-                        group={group}
-                        record={record}
-                        onJumpToSource={jumpToSource}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  nothingYet('attributes')
-                ))}
-
-              {reportFace === 'sources' &&
-                (view ? (
-                  <div className="space-y-6">
-                    {sourceSections(recordSources).map((band) => (
-                      <section key={band.key} className="space-y-3">
-                        <CardLabel as="h4" className="font-semibold">
-                          {band.label}
-                        </CardLabel>
-                        {band.items.map((src) => (
-                          <SourceDetail
-                            key={src.id}
-                            source={src}
-                            record={record}
-                            focused={sourceFocus === src.id}
-                          />
-                        ))}
-                      </section>
-                    ))}
-                  </div>
-                ) : (
-                  nothingYet('sources')
-                ))}
               </TabsContent>
 
-          {/* The identity's own insights, attributes and sources — the record
-              as it is now, whichever report is open. The column picks one
-              grouping or one source; this is it. */}
-          <TabsContent value="insights">
-            {openInsightGroup ? (
-              <InsightStack title={openInsightGroup.label}>
-                {openInsightGroup.rows.map((r) => (
-                  <InsightRow
-                    key={r.insightId}
-                    result={r}
-                    record={selected}
-                    onJumpToSource={jumpToLiveSource}
-                  />
-                ))}
-              </InsightStack>
-            ) : (
-              <EmptyState title="No insights" description="Nothing on this record has reported." />
-            )}
-          </TabsContent>
-
-          <TabsContent value="attributes">
-            {openAttributeGroup ? (
-              <AttributeGroupDetail
-                group={openAttributeGroup}
-                record={selected}
-                onJumpToSource={jumpToLiveSource}
-              />
-            ) : (
-              <EmptyState title="No attributes" description="The record holds no attributes yet." />
-            )}
-          </TabsContent>
-
-          <TabsContent value="sources">
-            {openSource ? (
-              <SourceDetail source={openSource} record={selected} focused={sourceFocus === openSource.id} />
-            ) : (
-              <EmptyState title="No sources" description="Nothing on the record cites a source yet." />
-            )}
-          </TabsContent>
-                      </div>
-                    </Surface>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1284,6 +940,67 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             {panelView === 'timeline' && (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 panel-scroll">
                 <Timeline businessId={selected.id} />
+              </div>
+            )}
+
+            {/* The assessment's evidence, beside the assessment: the insights
+                it read, grouped; the attributes behind them; the sources they
+                came from. Each says, first, whether the record has moved since
+                the report was written. */}
+            {panelView === 'insights' && (
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 panel-scroll">
+                {drift}
+                {scopeGrouped.map((group) => (
+                  <div key={group.id} id={`group-${group.id}`} className="scroll-mt-4">
+                    <InsightStack title={group.label}>
+                      {group.rows.map((r) => (
+                        <InsightRow
+                          key={r.insightId}
+                          result={r}
+                          record={scopeRecord}
+                          negative={scopeNegatives.has(r.insightId)}
+                          reveal={revealed.includes(r.insightId)}
+                          onJumpToSource={jumpToSource}
+                        />
+                      ))}
+                    </InsightStack>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {panelView === 'attributes' && (
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 panel-scroll">
+                {drift}
+                {scopeAttributeGroups.map((group) => (
+                  <AttributeGroupDetail
+                    key={group.id}
+                    group={group}
+                    record={scopeRecord}
+                    onJumpToSource={jumpToSource}
+                  />
+                ))}
+              </div>
+            )}
+
+            {panelView === 'sources' && (
+              <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 panel-scroll">
+                {drift}
+                {scopeSourceBands.map((band) => (
+                  <section key={band.key} className="space-y-3">
+                    <CardLabel as="h4" className="font-semibold">
+                      {band.label}
+                    </CardLabel>
+                    {band.items.map((src) => (
+                      <SourceDetail
+                        key={src.id}
+                        source={src}
+                        record={scopeRecord}
+                        focused={sourceFocus === src.id}
+                      />
+                    ))}
+                  </section>
+                ))}
               </div>
             )}
 

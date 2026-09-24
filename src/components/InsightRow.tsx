@@ -12,6 +12,17 @@ import { cellsFromRows } from './attributeCells'
 import { Collapsible } from './Collapsible'
 import { StateMark } from './StateMark'
 
+/** One row per distinct fact: same label, value and sources collapse to one. */
+const dedupe = (rows: AttributeRow[]): AttributeRow[] => {
+  const seen = new Set<string>()
+  return rows.filter((r) => {
+    const key = JSON.stringify(r)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 /**
  * The display grammar (concept/assessment.md), built on @/core primitives.
  *
@@ -97,7 +108,13 @@ export const InsightRow = ({
    * sentences to read first.
    */
   const flagged = adverse || Boolean(negative)
-  const attributes = attributesOverride ?? attributesFor(result.insightId, record)
+  /*
+   * Deduplicated. Two people-checks reaching the same registered agent from
+   * the same filings produced the same evidence row twice, one under the
+   * other; a reviewer reads a repeated row as two facts and looks for the
+   * difference. Same label, same value, same sources — one row.
+   */
+  const attributes = dedupe(attributesOverride ?? attributesFor(result.insightId, record))
 
   // The source's message earns a line only when it says something the statement
   // does not. On a no result the statement often already carries the reason.
@@ -238,6 +255,7 @@ export const InsightRow = ({
         <span data-statement className="flex min-w-0 flex-1">
           {body}
         </span>
+
 
         {/*
           * The row's actions, which take no width until you want them.

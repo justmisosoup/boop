@@ -1,4 +1,5 @@
 import type { BusinessRecord, Derived } from './deriveResults'
+import { stateName } from './states'
 
 /**
  * A weighted reading of how well a business's identity stands up.
@@ -95,7 +96,15 @@ export type ScoreComponent = {
   insightIds: string[]
 }
 
-export type ScoreCeiling = { id: string; at: number; because: string }
+export type ScoreCeiling = {
+  id: string
+  at: number
+  /** The clause, for the model's own reasons list. */
+  because: string
+  /** The same fact as a reviewer would say it: what is wrong, in the record's
+   *  own terms, with no arithmetic in it. */
+  plain: string
+}
 
 export type IdentityScore = {
   /** 0–100, after reweighting and after any ceiling. The number in the ring. */
@@ -127,7 +136,7 @@ export type IdentityScore = {
  */
 export const BANDS: readonly ScoreBand[] = [
   { id: 'not_established', label: 'Reject', range: '0–49', tone: 'danger', from: 0 },
-  { id: 'conditions', label: 'Review', range: '50–89', tone: 'warning', from: 50 },
+  { id: 'conditions', label: 'Needs review', range: '50–89', tone: 'warning', from: 50 },
   { id: 'established', label: 'Approve', range: '90+', tone: 'success', from: 90 }
 ]
 
@@ -237,7 +246,8 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   },
   sos_active: (r) => (r.state === 'result' ? 'positive' : 'negative'),
   sos_match: (r) => (r.state === 'result' ? 'positive' : 'negative'),
-  sos_domestic: (r) => (r.state === 'result' ? 'positive' : 'negative'),
+  // A domestic filing whose status the state does not publish is neither.
+  sos_domestic: (r) => (r.state === 'result' ? 'positive' : NEUTRAL.has(r.reason ?? '') ? 'neutral' : 'negative'),
   // The IRS holding the number is the point; holding it against a DIFFERENT
   // name is the finding, and the record carries that as its own flag.
   tin: (_r, record) =>
@@ -520,20 +530,53 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
     record.registrations.find((r) => r.jurisdiction === 'DOMESTIC') ??
     record.registrations.find((r) => r.state === record.formation?.state)
   const status = (domestic?.status || '').toLowerCase()
+  const subStatus = (domestic?.subStatus || '').toLowerCase()
+  const where = stateName(domestic?.state ?? record.formation?.state)
   const tin = record.tin as { mismatch?: boolean } | null
 
   if (record.registrations.length === 0 && !record.formation)
-    out.push({ id: 'no_filing', at: 49, because: 'no filing on the record' })
+    out.push({
+      id: 'no_filing',
+      at: 49,
+      because: 'no filing on the record',
+      plain: 'No Secretary of State filing was found for this business.'
+    })
   else if (domestic && status && status !== 'active' && status !== 'unknown')
-    out.push({ id: 'filing_not_active', at: 49, because: `the domestic filing is ${status}` })
+    out.push({
+      id: 'filing_not_active',
+      at: 49,
+      because: `the domestic filing is ${status}`,
+      // Named as the domestic registration, not just a filing: a foreign
+      // registration lapsing is a different fact, and a reviewer reading
+      // "the California filing is inactive" cannot tell which this was.
+      plain: `The domestic registration in ${where} is ${status}${
+        subStatus && subStatus !== status ? ` and ${subStatus}` : ''
+      }.`
+    })
 
-  if (tin?.mismatch) out.push({ id: 'tin_mismatch', at: 49, because: 'the TIN does not match the name' })
+  if (tin?.mismatch)
+    out.push({
+      id: 'tin_mismatch',
+      at: 49,
+      because: 'the TIN does not match the name',
+      plain: 'The TIN does not match the business name at the IRS.'
+    })
   if ((record.watchlist?.hitCount ?? 0) > 0)
-    out.push({ id: 'watchlist_hit', at: 69, because: 'an unresolved watchlist hit' })
+    out.push({
+      id: 'watchlist_hit',
+      at: 69,
+      because: 'an unresolved watchlist hit',
+      plain: 'A watchlist hit on the business or a named person has not been resolved.'
+    })
   if ((record.bankruptcies ?? []).length > 0)
-    out.push({ id: 'bankruptcy', at: 69, because: 'a bankruptcy on the record' })
+    out.push({
+      id: 'bankruptcy',
+      at: 69,
+      because: 'a bankruptcy on the record',
+      plain: 'A bankruptcy filing is on the record.'
+    })
   if (sub(record, 'liens') === 'High Risk Liens')
-    out.push({ id: 'liens_high_risk', at: 79, because: 'high-risk liens' })
+    out.push({ id: 'liens_high_risk', at: 79, because: 'high-risk liens', plain: 'High-risk liens are on the record.' })
   /*
    * The provider's grade, not the raw match score under it.
    *
@@ -551,9 +594,19 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
     !mediaGradedLow &&
     (record.adverseMedia?.results ?? []).some((r) => (r.matchScore ?? 0) >= 0.9)
   )
-    out.push({ id: 'adverse_media_match', at: 89, because: 'an adverse-media match on a named person' })
+    out.push({
+      id: 'adverse_media_match',
+      at: 89,
+      because: 'an adverse-media match on a named person',
+      plain: 'Adverse media matched a named person and has not been graded.'
+    })
   if ((record.pep?.results ?? []).length > 0)
-    out.push({ id: 'pep_match', at: 89, because: 'a politically exposed person match' })
+    out.push({
+      id: 'pep_match',
+      at: 89,
+      because: 'a politically exposed person match',
+      plain: 'A named person matched a politically exposed persons list.'
+    })
 
   return out.sort((a, b) => a.at - b.at)
 }

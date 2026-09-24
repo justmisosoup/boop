@@ -61,7 +61,16 @@ export const AnalysisPanel = ({
           result={version.result}
           results={results}
           record={record}
-          policy={version.policy ?? []}
+          /* Laid out in the assessment's current order — the agent's, which
+             `tiers` is keyed in — not the order a stored report happened to
+             run its areas in. Areas the agent no longer lists keep their
+             place at the end. */
+          policy={[...(version.policy ?? [])].sort((a, b) => {
+            const order = [...(tiers?.keys() ?? [])]
+            const ia = order.indexOf(a.id)
+            const ib = order.indexOf(b.id)
+            return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+          })}
           negatives={negatives}
           tiers={tiers}
           onJumpToSource={onJumpToSource}
