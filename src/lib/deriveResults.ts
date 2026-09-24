@@ -164,6 +164,7 @@ export type BusinessRecord = {
     registeredAgent?: string | null
     status: string
     subStatus?: string | null
+    statusDetails?: string | null
     jurisdiction?: string | null
     fileNumber?: string | null
     registrationDate?: string | null
@@ -384,31 +385,31 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
   /*
    * A filing with no status, in a state that publishes none.
    *
-   * Delaware does not publish an entity's status or sub-status; the record
-   * says so on the sub-status check ("Not Provided by State"). An Unknown
-   * status on that filing is then the registry's habit, not a finding about
-   * the business, and it reads the way the sub-status does: not published,
-   * neutral, unflagged. Only when every filing with no status is the domestic
-   * one — a foreign filing's Unknown in a state that does publish is still a
-   * question.
+   * Delaware and New Jersey publish no entity status at all — every filing
+   * there is Unknown, with no status details — so an Unknown in those states
+   * is the registry's habit, not a finding about the business. It reads the
+   * way an unpublished sub status does: not published, neutral, unflagged.
+   * Each filing is judged by its OWN state: the domestic check by the
+   * formation state, the roll-up only when every Unknown filing is in one of
+   * the silent states. An Unknown anywhere else is still a question.
    */
   if ((task.key === 'sos_domestic' || task.key === 'sos_unknown') && /Unknown/i.test(task.subLabel)) {
-    const subStatusUnpublished = record.reviewTasks.some(
-      (t) => t.key === 'sos_domestic_sub_status' && t.subLabel === 'Not Provided by State'
-    )
-    const knownSilent = STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '')
     const noStatus = record.registrations.filter((r) => !r.status || /unknown/i.test(r.status))
-    const allDomestic =
-      noStatus.length > 0 && noStatus.every((r) => r.state === record.formation?.state)
-    if ((subStatusUnpublished || knownSilent) && allDomestic) {
-      const where = stateName(record.formation?.state)
+    const silentStates = [...new Set(noStatus.map((r) => r.state))]
+    const silent =
+      task.key === 'sos_domestic'
+        ? STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '')
+        : noStatus.length > 0 && silentStates.every((st) => STATUS_NOT_PUBLISHED.has(st))
+    if (silent) {
+      const where = task.key === 'sos_domestic' ? [record.formation?.state ?? ''] : silentStates
+      const names = where.map((st) => stateName(st))
       return [
         {
           ...base,
           state: 'no_result',
           reason: 'not_published' as NoResultReason,
-          because: `${where} does not publish filing status.`,
-          evidence: [`Registration state: ${record.formation?.state ?? 'unknown'}`]
+          because: `${names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`} ${names.length === 1 ? 'does' : 'do'} not publish filing status.`,
+          evidence: where.map((st) => `Registration state: ${st}`)
         }
       ]
     }

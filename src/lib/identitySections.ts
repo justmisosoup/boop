@@ -1,6 +1,7 @@
 import { entityTypeCode } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import type { GroupId } from './groups'
+import { article, describeRegistration, domesticOf, isGoodStanding, registrationState } from './registrationStatus'
 import { stateName } from './states'
 
 /**
@@ -36,9 +37,16 @@ export const IDENTITY_SECTIONS: ReadonlyArray<IdentitySection> = [
       if (!r.formation) return 'No formation filing on record'
       const kind = entityTypeCode(r) ?? 'business'
       const noun = /^[A-Z]{2,5}$/.test(kind) ? kind : kind.toLowerCase()
-      return is(r, 'name', /^verified$/i)
-        ? `Registered in ${stateName(r.formation.state)} as a ${noun}, under the submitted name`
-        : `Registered in ${stateName(r.formation.state)} as a ${noun}, under a different name`
+      const base = is(r, 'name', /^verified$/i)
+        ? `Registered in ${stateName(r.formation.state)} as ${article(noun)} ${noun}, under the submitted name`
+        : `Registered in ${stateName(r.formation.state)} as ${article(noun)} ${noun}, under a different name`
+      /* The filing's standing joins the heading only when it is news: an
+         inactive filing, or an active one the state has annotated. Plain
+         Active in good standing is what the heading already implies. */
+      const domestic = domesticOf(r)
+      const st = domestic && registrationState(domestic)
+      const news = st && st.status && (st.status !== 'Active' || (st.subStatus && !isGoodStanding(st.subStatus)))
+      return news ? `${base}; ${describeRegistration(domestic!).toLowerCase()}` : base
     }
   },
   {

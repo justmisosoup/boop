@@ -13,7 +13,8 @@
 import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
 import { entityFormLabel } from './normalise'
-import { STATUS_NOT_PUBLISHED, stateLabel, stateName } from './states'
+import { registrationState } from './registrationStatus'
+import { stateLabel, stateName } from './states'
 import { frequencyBand } from './statements'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
@@ -554,11 +555,12 @@ const registrationRowsFor = (
         FOREIGN_STATUS_ORDER.indexOf(a.value.toLowerCase()) -
         FOREIGN_STATUS_ORDER.indexOf(b.value.toLowerCase())
     ),
-    // A missing sub status is a fact about the STATE, not a gap in the check.
-    // Emitted only where the filing states one, New Jersey and Idaho simply had
-    // no row and read as unexamined — the two states that do not publish
-    // standing look identical to two we never looked at.
-    ...byLabel('Sub status', (r) => sentence(r.subStatus) ?? 'Not published by the state'),
+    // Each of the registry's three fields only where the filing states it. A
+    // filling for the missing ones ("Not published by the state") claimed to
+    // know why a value was absent, which the record does not say — except in
+    // Delaware and New Jersey, whose Status row already says so.
+    ...byLabel('Sub status', (r) => registrationState(r).subStatus),
+    ...byLabel('Status details', (r) => registrationState(r).statusDetails),
     // No file numbers. A file number identifies the filing, not the business —
     // four of them here said only that four filings exist, which the chips
     // beside every other row already say. Each one stays on its own filing's
@@ -673,14 +675,16 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       longDate(record.formation.date),
       filingAge(record.formation.date)
     ),
-    // A Delaware filing's Unknown is the state not publishing, and says so.
+    // The registry's three fields, each only when the filing states it. A
+    // Delaware or New Jersey Unknown is the state not publishing, and says so.
     ...field(
       'Status',
-      domestic && /unknown/i.test(domestic.status ?? '') && STATUS_NOT_PUBLISHED.has(record.formation.state)
+      domestic && registrationState(domestic).silent
         ? `Not published by ${stateName(record.formation.state)}`
-        : sentence(domestic?.status)
+        : domestic && registrationState(domestic).status
     ),
-    ...field('Sub status', sentence(domestic?.subStatus)),
+    ...field('Sub status', domestic && registrationState(domestic).subStatus),
+    ...field('Status details', domestic && registrationState(domestic).statusDetails),
     ...field('File number', domestic?.fileNumber)
     // No registered agent: an agent is a person, and People lists every one of
     // them with the filings that name them.
@@ -737,9 +741,9 @@ export const identityRows = (record: BusinessRecord): AttributeRow[] => {
  *
  * The name leads, and it is the filing's own spelling: the registry's casing is
  * the identifying fact, and the submitted spelling is what the Names group is
- * for. Standing is stated even when the state does not publish it — an absence
- * a reviewer has to act on, said as a sentence with what to do about it, the
- * way every no-result on this report is said.
+ * for. The filing's status, sub status and status details follow, each only
+ * when the filing states it; a Delaware or New Jersey status, never published,
+ * says so rather than reading as missing.
  *
  * Six facts after the name, so they pair: the card is read as one lead fact
  * over three rows of two.
@@ -748,16 +752,13 @@ export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] =>
   const domestic = record.registrations.find((r) => r.state === record.formation?.state)
   const names = nameRows(record).filter((r) => r.label !== 'DBA')
   const registered = names.find((r) => r.domesticOnly) ?? names[0]
-  // The name alone in a sentence — "Not published by New York" — where the
-  // Formation state cell carries the code too.
-  const state = record.formation ? stateName(record.formation.state) : undefined
 
   const row = (label: string, value: string | null | undefined, extra?: Partial<AttributeRow>): AttributeRow[] =>
     value
       ? [{ group: 'formation' as const, label, value, source: REGISTRY, domesticOnly: true, ...extra }]
       : []
 
-  const FIELDS = new Set(['Entity type', 'Formation state', 'Formation date', 'Status'])
+  const FIELDS = new Set(['Entity type', 'Formation state', 'Formation date', 'Status', 'Sub status', 'Status details'])
   const formation = formationRows(record)
     .filter((r) => FIELDS.has(r.label))
     // "Formed", not "Formation date": the card is about one filing, and the
@@ -767,13 +768,6 @@ export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] =>
   return [
     ...row('Legal name', domestic?.name ?? registered?.value),
     ...formation,
-    ...(domestic
-      ? domestic.subStatus
-        ? row('Standing', sentence(domestic.subStatus))
-        : row('Standing', `Not published by ${state ?? 'the state'}`, {
-            evidenceNote: 'Order a Certificate of Good Standing to confirm.'
-          })
-      : []),
     ...row('Registered agent', domestic?.registeredAgent)
   ].map(nameTheFiling(record))
 }

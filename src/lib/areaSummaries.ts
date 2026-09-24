@@ -1,7 +1,8 @@
 import { entityTypeCode } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
-import { STATUS_NOT_PUBLISHED, stateName } from './states'
+import { article, describeRegistration, domesticOf, isGoodStanding, registrationState } from './registrationStatus'
+import { stateName } from './states'
 
 /**
  * What each area checks, for this business.
@@ -68,8 +69,19 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     : 'We cannot confirm what the business does: no industry classification is on the record.'
   const active = [...new Set(record.registrations.filter((r) => /active/i.test(r.status ?? '') && !/inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))]
   const lapsed = [...new Set(record.registrations.filter((r) => /inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))].filter((st) => !active.includes(st))
+  /* An active registration the state has annotated — pending inactive,
+     not in good standing — is active on its way out, and is named with what
+     the state said about it. */
+  const troubled = record.registrations
+    .filter((r) => {
+      const st = registrationState(r)
+      return st.status === 'Active' && st.subStatus && !isGoodStanding(st.subStatus)
+    })
+    .map((r) => `its ${stateName(r.state)} registration is ${describeRegistration(r).toLowerCase()}`)
   const where = active.length
-    ? `Registered to operate in ${list(active)}${lapsed.length ? `; its ${list(lapsed)} registration${lapsed.length === 1 ? ' is' : 's are'} inactive` : ''}.`
+    ? `Registered to operate in ${list(active)}${lapsed.length ? `; its ${list(lapsed)} registration${lapsed.length === 1 ? ' is' : 's are'} inactive` : ''}${
+        troubled.length ? `; ${troubled.join('; ')}` : ''
+      }.`
     : record.registrations.length
       ? 'No active state registration confirms where it operates.'
       : 'No state registration shows where it operates.'
@@ -110,22 +122,33 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
      it all resolves to one entity. One clause each, only where there is
      evidence, and a caveat only where one applies. */
   const is = (key: string, re: RegExp) => re.test(task(key))
+  const cap = (w: string) => w.replace(/^./, (c) => c.toUpperCase())
   const noun = /^[A-Z]{2,5}$/.test(kind) ? kind : kind.toLowerCase()
   const nameOk = is('name', /^verified$/i)
+  /* The domestic filing's state in the registry's own three fields: status,
+     then whatever the sub status and the details add. Delaware and New Jersey
+     publish none of it, and the clause says so rather than going quiet. */
+  const domestic = domesticOf(record)
+  const filingClause = domestic
+    ? registrationState(domestic).status
+      ? `; the filing is ${describeRegistration(domestic).toLowerCase()}`
+      : registrationState(domestic).silent
+        ? `; ${state} doesn't publish filing status`
+        : '; the state reports no status for the filing'
+    : ''
   const entityLine = !state
     ? 'No formation filing was found for the submitted business.'
     : nameOk
-      ? `A ${state} ${noun}, registered under the submitted name.`
+      ? `${cap(article(state))} ${state} ${noun}, registered under the submitted name${filingClause}.`
       : is('name', /similar/i)
-        ? `A ${state} ${noun}, registered under a name similar to the one submitted.`
-        : `A ${state} ${noun} is on file, but not under the submitted name.`
+        ? `${cap(article(state))} ${state} ${noun}, registered under a name similar to the one submitted${filingClause}.`
+        : `${cap(article(state))} ${state} ${noun} is on file, but not under the submitted name${filingClause}.`
   const deliverable = is('address_deliverability', /^deliverable$/i)
   const commercial = is('address_property_type', /commercial/i)
   const activeHere = is('sos_match', /submitted active/i)
   const addressFact = task('address_deliverability')
     ? `${deliverable ? 'a deliverable' : 'an undeliverable'}${commercial ? ' commercial' : is('address_property_type', /residential/i) ? ' residential' : ''} address`
     : ''
-  const silent = STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '') && is('sos_domestic', /unknown/i)
   const standing = activeHere
     ? `Active in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
     : is('sos_match', /inactive/i)
@@ -135,9 +158,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         : addressFact
           ? `At ${addressFact}`
           : ''
-  const standingLine = standing
-    ? `${standing}${silent ? `; ${state} doesn't publish filing status` : ''}.`
-    : ''
+  const standingLine = standing ? `${standing}.` : ''
   const personOk = is('person_verification', /^verified$/i)
   const resolves = !task('person_verification')
     ? ''
@@ -156,7 +177,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       ? `A real ${state} ${noun}, and the one applying`
       : nameOk
         ? `A real ${state} ${noun}; the applicant isn't on its filings`
-        : `A ${state} ${noun} is on file, under a different name`
+        : `${cap(article(state))} ${state} ${noun} is on file, under a different name`
   /* A lien or a bankruptcy is a claim on money; a litigation is a case that
      may or may not become one, so it is named as what it is. */
   const claims = (record.liens ?? []).length + (record.bankruptcies ?? []).length

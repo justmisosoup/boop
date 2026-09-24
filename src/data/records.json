@@ -189,6 +189,7 @@
         "registeredAgent": "UNITED STATES CORPORATION AGENTS, INC.",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "6552607",
         "registrationDate": "2022-08-01",
@@ -700,6 +701,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "862051",
         "registrationDate": "1983-08-17",
@@ -1308,6 +1310,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "6511786",
         "registrationDate": "2022-06-13",
@@ -1384,23 +1387,23 @@
           "phone": "(646) 300-0954",
           "submitted": true,
           "sources": [
-            "website",
-            "profile"
+            "profile",
+            "website"
           ],
           "sourceRefs": [
-            {
-              "id": "cc71c387-6ce9-47a4-8345-0d680ef6225c",
-              "type": "website",
-              "metadata": {
-                "url": "https://www.kairosphysio.com"
-              }
-            },
             {
               "id": "48d3605a-bff8-4df8-8497-8f01a82f79f0",
               "type": "profile",
               "metadata": {
                 "url": "https://maps.google.com/?cid=17547289553437483798",
                 "type": "google"
+              }
+            },
+            {
+              "id": "cc71c387-6ce9-47a4-8345-0d680ef6225c",
+              "type": "website",
+              "metadata": {
+                "url": "https://www.kairosphysio.com"
               }
             }
           ]
@@ -3180,6 +3183,7 @@
         "registeredAgent": "LAUREN CRABBE",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Converted Out",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "201303910168",
         "registrationDate": "2012-12-19",
@@ -3199,6 +3203,7 @@
         "registeredAgent": "COGENCY GLOBAL INC.",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "6308018",
         "registrationDate": "2017-02-07",
@@ -3215,6 +3220,7 @@
         "registeredAgent": "LAUREN CRABBE",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "201707510557",
         "registrationDate": "2017-03-07",
@@ -4443,6 +4449,7 @@
         "registeredAgent": "MANUEL RODRIGUEZ",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "200925110153",
         "registrationDate": "2009-09-04",
@@ -6374,6 +6381,7 @@
         "registeredAgent": "Woo Young Lee",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "2988384",
         "registrationDate": "2007-05-10",
@@ -7527,6 +7535,7 @@
         "registeredAgent": "TIDEWATER INCORPORATED",
         "status": "active",
         "subStatus": "PENDING_INACTIVE",
+        "statusDetails": "Pending Admin Dissolution",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "201803081244923",
         "registrationDate": "2018-03-08",
@@ -7546,6 +7555,7 @@
         "registeredAgent": "C & N TRUCKING, LLC",
         "status": "inactive",
         "subStatus": "NOT_GOOD_STANDING",
+        "statusDetails": "Inactive - Revoked (Administrative)",
         "jurisdiction": "FOREIGN",
         "fileNumber": "001186714",
         "registrationDate": "2021-05-15",
@@ -8386,6 +8396,7 @@
         "registeredAgent": "MEG RAY",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "200308510012",
         "registrationDate": "2003-03-24",
@@ -9416,6 +9427,7 @@
         "registeredAgent": "DONALD B MAYFIELD",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "202035610124",
         "registrationDate": "2020-12-16",
@@ -9698,9 +9710,9 @@
           "form_5500",
           "form_5500",
           "lien",
+          "sales_tax_permit",
+          "sales_tax_permit",
           "sam_entity_extract",
-          "sales_tax_permit",
-          "sales_tax_permit",
           "registration"
         ],
         "sourceRefs": [
@@ -9728,11 +9740,6 @@
             }
           },
           {
-            "id": "6e5231d3-c121-442a-a19c-6f0af786a525",
-            "type": "sam_entity_extract",
-            "metadata": {}
-          },
-          {
             "id": "cc16aac6-4d3d-47c5-9b27-0bf731d6d741",
             "type": "sales_tax_permit",
             "metadata": {
@@ -9747,6 +9754,11 @@
               "state": "TX",
               "status": "ACTIVE"
             }
+          },
+          {
+            "id": "6e5231d3-c121-442a-a19c-6f0af786a525",
+            "type": "sam_entity_extract",
+            "metadata": {}
           },
           {
             "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
@@ -10129,34 +10141,77 @@
         "deliverable": true,
         "submitted": true,
         "sources": [
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
+          "city_registration",
           "form_5500",
           "form_5500",
           "lien",
-          "sam_entity_extract",
-          "city_registration"
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "sam_entity_extract"
         ],
         "sourceRefs": [
+          {
+            "id": "d8993780-aa30-4f02-9e3a-3ea23b43427b",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "mailing"
+              ],
+              "status": "Active",
+              "license_type": null
+            }
+          },
+          {
+            "id": "85f7af38-3443-4fbf-9da7-360c08dce549",
+            "type": "form_5500",
+            "metadata": {
+              "ack_id": "20251002122238NAL0000300323001",
+              "labels": [
+                "mailing"
+              ],
+              "plan_year": 2024
+            }
+          },
+          {
+            "id": "2eb36007-9105-4677-9527-32492cc28179",
+            "type": "form_5500",
+            "metadata": {
+              "ack_id": "20251001115046NAL0013180241001",
+              "labels": [
+                "mailing"
+              ],
+              "plan_year": 2024
+            }
+          },
+          {
+            "id": "b4d76e5a-504d-4181-a18e-72e275184ac2",
+            "type": "lien",
+            "metadata": {
+              "state": "UT",
+              "labels": []
+            }
+          },
           {
             "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
             "type": "registration",
@@ -10413,36 +10468,6 @@
             }
           },
           {
-            "id": "85f7af38-3443-4fbf-9da7-360c08dce549",
-            "type": "form_5500",
-            "metadata": {
-              "ack_id": "20251002122238NAL0000300323001",
-              "labels": [
-                "mailing"
-              ],
-              "plan_year": 2024
-            }
-          },
-          {
-            "id": "2eb36007-9105-4677-9527-32492cc28179",
-            "type": "form_5500",
-            "metadata": {
-              "ack_id": "20251001115046NAL0013180241001",
-              "labels": [
-                "mailing"
-              ],
-              "plan_year": 2024
-            }
-          },
-          {
-            "id": "b4d76e5a-504d-4181-a18e-72e275184ac2",
-            "type": "lien",
-            "metadata": {
-              "state": "UT",
-              "labels": []
-            }
-          },
-          {
             "id": "6e5231d3-c121-442a-a19c-6f0af786a525",
             "type": "sam_entity_extract",
             "metadata": {
@@ -10450,19 +10475,6 @@
                 "physical",
                 "mailing"
               ]
-            }
-          },
-          {
-            "id": "d8993780-aa30-4f02-9e3a-3ea23b43427b",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "mailing"
-              ],
-              "status": "Active",
-              "license_type": null
             }
           }
         ]
@@ -12090,7 +12102,6 @@
         ],
         "submitted": false,
         "sources": [
-          "watchlist_result",
           "registration",
           "registration",
           "registration",
@@ -12100,20 +12111,10 @@
           "registration",
           "registration",
           "registration",
-          "registration"
+          "registration",
+          "watchlist_result"
         ],
         "sourceRefs": [
-          {
-            "id": "106644fe-91fa-422f-bb05-a9c9de452d13",
-            "type": "watchlist_result",
-            "metadata": {
-              "abbr": "SDN",
-              "title": "Specially Designated Nationals",
-              "agency": "Office of Foreign Assets Control",
-              "agency_abbr": "OFAC",
-              "entity_name": "PARK, Jin Hyok"
-            }
-          },
           {
             "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
             "type": "registration",
@@ -12213,6 +12214,17 @@
               "file_number": "10084290",
               "jurisdiction": "FOREIGN"
             }
+          },
+          {
+            "id": "106644fe-91fa-422f-bb05-a9c9de452d13",
+            "type": "watchlist_result",
+            "metadata": {
+              "abbr": "SDN",
+              "title": "Specially Designated Nationals",
+              "agency": "Office of Foreign Assets Control",
+              "agency_abbr": "OFAC",
+              "entity_name": "PARK, Jin Hyok"
+            }
           }
         ]
       },
@@ -12303,23 +12315,12 @@
         ],
         "submitted": false,
         "sources": [
-          "watchlist_result",
           "registration",
           "registration",
-          "registration"
+          "registration",
+          "watchlist_result"
         ],
         "sourceRefs": [
-          {
-            "id": "494d42bd-a1e4-4e35-be4a-915802d50f11",
-            "type": "watchlist_result",
-            "metadata": {
-              "abbr": "DTC",
-              "title": "AECA/ITAR Debarred",
-              "agency": "Directorate of Defense Trade Controls",
-              "agency_abbr": "DDTC",
-              "entity_name": "James Lee"
-            }
-          },
           {
             "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
             "type": "registration",
@@ -12348,6 +12349,17 @@
               "status": "inactive",
               "file_number": "560266",
               "jurisdiction": "FOREIGN"
+            }
+          },
+          {
+            "id": "494d42bd-a1e4-4e35-be4a-915802d50f11",
+            "type": "watchlist_result",
+            "metadata": {
+              "abbr": "DTC",
+              "title": "AECA/ITAR Debarred",
+              "agency": "Directorate of Defense Trade Controls",
+              "agency_abbr": "DDTC",
+              "entity_name": "James Lee"
             }
           }
         ]
@@ -12785,6 +12797,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Expired",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "4737021-0142",
         "registrationDate": "2000-03-24",
@@ -12802,6 +12815,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good",
         "jurisdiction": "FOREIGN",
         "fileNumber": "959722",
         "registrationDate": "2009-12-30",
@@ -12823,6 +12837,7 @@
         "registeredAgent": "THE CORPORATION COMPANY",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Converted",
         "jurisdiction": "FOREIGN",
         "fileNumber": "800060164",
         "registrationDate": "2005-06-03",
@@ -12847,6 +12862,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F11442973",
         "registrationDate": "2005-01-24",
@@ -12872,6 +12888,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Terminated",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2249546",
         "registrationDate": "2000-06-14",
@@ -12893,6 +12910,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0820240",
         "registrationDate": "2005-05-02",
@@ -12914,6 +12932,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "F04000006261",
         "registrationDate": "2004-10-29",
@@ -12935,6 +12954,7 @@
         "registeredAgent": "SORENSON COMMUNICATIONS, INC.",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "41365 F1",
         "registrationDate": "2009-12-07",
@@ -12965,6 +12985,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive-Revoked (Administrative)",
         "jurisdiction": "FOREIGN",
         "fileNumber": "491096",
         "registrationDate": "2005-08-03",
@@ -12985,6 +13006,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive-Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "560266",
         "registrationDate": "2009-12-08",
@@ -13016,6 +13038,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": "DISSOLVED",
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "64323091",
         "registrationDate": "2005-06-14",
@@ -13037,6 +13060,7 @@
         "registeredAgent": "THE CORPORATION COMPANY, INC.",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "3776085",
         "registrationDate": "2005-04-25",
@@ -13054,6 +13078,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "000886195",
         "registrationDate": "2005-01-19",
@@ -13079,6 +13104,7 @@
         "registeredAgent": "THE CORPORATION TRUST INCORPORATED",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "FORFEITED",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F10791085",
         "registrationDate": "2005-08-08",
@@ -13096,6 +13122,7 @@
         "registeredAgent": "THE CORPORATION COMPANY",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "801047871",
         "registrationDate": "2004-12-13",
@@ -13112,6 +13139,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "831493-2",
         "registrationDate": "2004-03-17",
@@ -13132,6 +13160,7 @@
         "registeredAgent": "(Secretary of State)",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F00652209",
         "registrationDate": "2005-04-08",
@@ -13159,6 +13188,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Voluntary Withdrawal",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F058451",
         "registrationDate": "2000-03-24",
@@ -13183,6 +13213,7 @@
         "registeredAgent": "Secretary of State",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn by Merger",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0762650",
         "registrationDate": "2005-01-24",
@@ -13205,6 +13236,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "10084290",
         "registrationDate": "2006-05-02",
@@ -13230,6 +13262,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "3170841",
         "registrationDate": "2005-03-02",
@@ -13251,6 +13284,7 @@
         "registeredAgent": "THE CORPORATION COMPANY",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Converted",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2312107653",
         "registrationDate": "2006-06-13",
@@ -13268,6 +13302,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "INACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "28725596",
         "registrationDate": "2005-06-02",
@@ -13288,6 +13323,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Conversion",
         "jurisdiction": "FOREIGN",
         "fileNumber": "000522434",
         "registrationDate": "2009-12-24",
@@ -13313,6 +13349,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "FB033401",
         "registrationDate": "2009-04-15",
@@ -13330,6 +13367,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "INACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F1660986",
         "registrationDate": "2006-03-15",
@@ -13353,6 +13391,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0088975",
         "registrationDate": "2010-01-07",
@@ -13378,6 +13417,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawal",
         "jurisdiction": "FOREIGN",
         "fileNumber": "S069932",
         "registrationDate": "2005-01-27",
@@ -16277,6 +16317,7 @@
         "registeredAgent": "Christopher S Lochte",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "23681063",
         "registrationDate": "2024-05-14",
@@ -17013,6 +17054,7 @@
         "registeredAgent": "ROCKET LAWYER CORPORATE SERVICES LLC",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "7816270",
         "registrationDate": "2020-01-24",
@@ -17029,6 +17071,7 @@
         "registeredAgent": "ISL INC",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "000948458",
         "registrationDate": "2020-01-24",
@@ -17046,6 +17089,7 @@
         "registeredAgent": "ISL, INC. (FN)",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "23286469",
         "registrationDate": "2021-10-19",
@@ -17068,6 +17112,7 @@
         "registeredAgent": "INCORPORATING SERVICES, LTD.",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4788615",
         "registrationDate": "2021-09-13",
@@ -17615,6 +17660,7 @@
         "registeredAgent": "Michael Eskelson",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "12160647-0142",
         "registrationDate": "2021-02-10",
@@ -19698,6 +19744,7 @@
         "registeredAgent": "CORPORATION SERVICE COMPANY",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "4215439",
         "registrationDate": "2006-09-08",
@@ -19714,6 +19761,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2929488",
         "registrationDate": "2006-09-29",
@@ -19735,6 +19783,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1537513",
         "registrationDate": "2026-01-28",
@@ -19752,6 +19801,7 @@
         "registeredAgent": "THE CORPORATION TRUST INCORPORATED",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "INCORPORATED",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F21697966",
         "registrationDate": "2021-04-21",
@@ -19769,6 +19819,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4213287",
         "registrationDate": "2012-03-07",
@@ -19792,6 +19843,7 @@
         "registeredAgent": "CSC - LAWYERS INCORPORATING SERVICE",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Terminated",
         "jurisdiction": "FOREIGN",
         "fileNumber": "3291512",
         "registrationDate": "2010-05-14",
@@ -19813,6 +19865,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "C00004623690",
         "registrationDate": "2021-10-06",
@@ -19830,6 +19883,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "604741066",
         "registrationDate": "2021-04-22",
@@ -19854,6 +19908,7 @@
         "registeredAgent": "CORPORATION SERVICE COMPANY",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "0450715587",
         "registrationDate": "2021-10-15",
@@ -22729,6 +22784,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Expired",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "12328450-0142",
         "registrationDate": "2021-05-28",
@@ -22751,6 +22807,7 @@
         "registeredAgent": "INCORP SERVICES, INC.",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "5503562",
         "registrationDate": "2014-03-24",
@@ -22767,6 +22824,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "3674614",
         "registrationDate": "2014-05-09",
@@ -22788,6 +22846,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "20191110714",
         "registrationDate": "2019-02-04",
@@ -22805,6 +22864,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2622984",
         "registrationDate": "2022-08-29",
@@ -22826,6 +22886,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "F22000006883",
         "registrationDate": "2022-11-07",
@@ -22848,6 +22909,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1225448",
         "registrationDate": "2022-08-12",
@@ -22869,6 +22931,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "ACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "45081518F",
         "registrationDate": "2022-09-07",
@@ -22891,6 +22954,7 @@
         "registeredAgent": "THE CORPORATION TRUST INCORPORATED",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "INCORPORATED",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F19295112",
         "registrationDate": "2018-12-17",
@@ -22908,6 +22972,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "GOOD STANDING",
         "jurisdiction": "FOREIGN",
         "fileNumber": "202500561 F",
         "registrationDate": "2014-03-24",
@@ -22925,6 +22990,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "802927415",
         "registrationDate": "2022-10-10",
@@ -22946,6 +23012,7 @@
         "registeredAgent": "CT Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Current-Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2479019",
         "registrationDate": "2022-08-30",
@@ -22967,6 +23034,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "6489209",
         "registrationDate": "2022-05-10",
@@ -22987,6 +23055,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4918940",
         "registrationDate": "2022-08-30",
@@ -23004,6 +23073,7 @@
         "registeredAgent": "CT Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "15777127",
         "registrationDate": "2026-08-05",
@@ -23020,6 +23090,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "001057560",
         "registrationDate": "2019-10-17",
@@ -23037,6 +23108,7 @@
         "registeredAgent": "C T Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "IN EXISTENCE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0804711148",
         "registrationDate": "2022-08-31",
@@ -23056,6 +23128,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "12328450-0143",
         "registrationDate": "2021-05-28",
@@ -23083,6 +23156,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "ACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "11476885",
         "registrationDate": "2022-12-28",
@@ -23104,6 +23178,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active - In Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0437844",
         "registrationDate": "2023-11-15",
@@ -23126,6 +23201,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "603465823",
         "registrationDate": "2022-09-29",
@@ -26280,18 +26356,18 @@
         "type": "legal",
         "submitted": true,
         "sources": [
+          "city_registration",
+          "city_registration",
+          "city_registration",
+          "city_registration",
+          "form_5500",
           "lien",
+          "sales_tax_permit",
+          "sales_tax_permit",
+          "sales_tax_permit",
+          "sales_tax_permit",
           "sam_entity_extract",
           "sec_filing",
-          "form_5500",
-          "city_registration",
-          "city_registration",
-          "city_registration",
-          "city_registration",
-          "sales_tax_permit",
-          "sales_tax_permit",
-          "sales_tax_permit",
-          "sales_tax_permit",
           "registration",
           "registration",
           "registration",
@@ -26346,31 +26422,6 @@
         ],
         "sourceRefs": [
           {
-            "id": "4798db8f-2a51-4d3d-a095-99e9b3f2eb37",
-            "type": "lien",
-            "metadata": {
-              "state": "CA"
-            }
-          },
-          {
-            "id": "a44b1a5f-424b-47b8-a143-d0deace9281a",
-            "type": "sam_entity_extract",
-            "metadata": {}
-          },
-          {
-            "id": "85487997-c048-41c2-842a-f606d38ff0d2",
-            "type": "sec_filing",
-            "metadata": {}
-          },
-          {
-            "id": "692ea92b-5ea0-4d69-b6a9-74b5d17f3773",
-            "type": "form_5500",
-            "metadata": {
-              "ack_id": "20251015213449NAL0011316962001",
-              "plan_year": 2024
-            }
-          },
-          {
             "id": "c9c9046f-7393-46b0-bcdc-1331bfc7c1bc",
             "type": "city_registration",
             "metadata": {
@@ -26411,6 +26462,21 @@
             }
           },
           {
+            "id": "692ea92b-5ea0-4d69-b6a9-74b5d17f3773",
+            "type": "form_5500",
+            "metadata": {
+              "ack_id": "20251015213449NAL0011316962001",
+              "plan_year": 2024
+            }
+          },
+          {
+            "id": "4798db8f-2a51-4d3d-a095-99e9b3f2eb37",
+            "type": "lien",
+            "metadata": {
+              "state": "CA"
+            }
+          },
+          {
             "id": "910053ae-99e8-4c98-bcad-25fca57b92b0",
             "type": "sales_tax_permit",
             "metadata": {
@@ -26441,6 +26507,16 @@
               "state": "OH",
               "status": "ACTIVE"
             }
+          },
+          {
+            "id": "a44b1a5f-424b-47b8-a143-d0deace9281a",
+            "type": "sam_entity_extract",
+            "metadata": {}
+          },
+          {
+            "id": "85487997-c048-41c2-842a-f606d38ff0d2",
+            "type": "sec_filing",
+            "metadata": {}
           },
           {
             "id": "97957c55-8dfb-432c-a249-4cf0fc943604",
@@ -26969,41 +27045,110 @@
         "deliverable": true,
         "submitted": true,
         "sources": [
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "parsed_sos_document",
-          "sam_entity_extract",
+          "city_registration",
+          "city_registration",
+          "city_registration",
+          "city_registration",
           "lien",
-          "city_registration",
-          "city_registration",
-          "city_registration",
-          "city_registration"
+          "parsed_sos_document",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "sam_entity_extract"
         ],
         "sourceRefs": [
+          {
+            "id": "c9c9046f-7393-46b0-bcdc-1331bfc7c1bc",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "mailing"
+              ],
+              "status": "Active",
+              "license_type": null
+            }
+          },
+          {
+            "id": "3d9c5edc-4e37-46a8-8b83-894c986b7a49",
+            "type": "city_registration",
+            "metadata": {
+              "city": "Seattle",
+              "state": "WA",
+              "labels": [],
+              "status": "ACTIVE",
+              "license_type": "Custom Computer Programming Services"
+            }
+          },
+          {
+            "id": "f51cb90a-987e-4751-9b38-a783c3b444e1",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "mailing"
+              ],
+              "status": "Inactive",
+              "license_type": null
+            }
+          },
+          {
+            "id": "ccf91ddc-7a3f-4589-a358-56064d1b472a",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "mailing"
+              ],
+              "status": "Inactive",
+              "license_type": null
+            }
+          },
+          {
+            "id": "4798db8f-2a51-4d3d-a095-99e9b3f2eb37",
+            "type": "lien",
+            "metadata": {
+              "state": "CA",
+              "labels": []
+            }
+          },
+          {
+            "id": "7f76e920-4a3d-400b-b52b-32da95e24572",
+            "type": "parsed_sos_document",
+            "metadata": {
+              "state": "VA",
+              "labels": [],
+              "file_number": "11422635",
+              "filing_date": "2026-08-05",
+              "document_type": "SOS Document"
+            }
+          },
           {
             "id": "d5eb725f-3f58-43f9-b463-63800412feb7",
             "type": "registration",
@@ -27333,17 +27478,6 @@
             }
           },
           {
-            "id": "7f76e920-4a3d-400b-b52b-32da95e24572",
-            "type": "parsed_sos_document",
-            "metadata": {
-              "state": "VA",
-              "labels": [],
-              "file_number": "11422635",
-              "filing_date": "2026-08-05",
-              "document_type": "SOS Document"
-            }
-          },
-          {
             "id": "a44b1a5f-424b-47b8-a143-d0deace9281a",
             "type": "sam_entity_extract",
             "metadata": {
@@ -27351,64 +27485,6 @@
                 "physical",
                 "mailing"
               ]
-            }
-          },
-          {
-            "id": "4798db8f-2a51-4d3d-a095-99e9b3f2eb37",
-            "type": "lien",
-            "metadata": {
-              "state": "CA",
-              "labels": []
-            }
-          },
-          {
-            "id": "c9c9046f-7393-46b0-bcdc-1331bfc7c1bc",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "mailing"
-              ],
-              "status": "Active",
-              "license_type": null
-            }
-          },
-          {
-            "id": "3d9c5edc-4e37-46a8-8b83-894c986b7a49",
-            "type": "city_registration",
-            "metadata": {
-              "city": "Seattle",
-              "state": "WA",
-              "labels": [],
-              "status": "ACTIVE",
-              "license_type": "Custom Computer Programming Services"
-            }
-          },
-          {
-            "id": "f51cb90a-987e-4751-9b38-a783c3b444e1",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "mailing"
-              ],
-              "status": "Inactive",
-              "license_type": null
-            }
-          },
-          {
-            "id": "ccf91ddc-7a3f-4589-a358-56064d1b472a",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "mailing"
-              ],
-              "status": "Inactive",
-              "license_type": null
             }
           }
         ]
@@ -27426,6 +27502,7 @@
         "deliverable": true,
         "submitted": true,
         "sources": [
+          "city_registration",
           "registration",
           "registration",
           "registration",
@@ -27437,10 +27514,22 @@
           "registration",
           "registration",
           "registration",
-          "registration",
-          "city_registration"
+          "registration"
         ],
         "sourceRefs": [
+          {
+            "id": "f51cb90a-987e-4751-9b38-a783c3b444e1",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "physical"
+              ],
+              "status": "Inactive",
+              "license_type": null
+            }
+          },
           {
             "id": "920b703a-0c44-4eaa-ab35-af7d25a15557",
             "type": "registration",
@@ -27590,19 +27679,6 @@
               "file_number": "4810559",
               "jurisdiction": "FOREIGN"
             }
-          },
-          {
-            "id": "f51cb90a-987e-4751-9b38-a783c3b444e1",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "physical"
-              ],
-              "status": "Inactive",
-              "license_type": null
-            }
           }
         ]
       },
@@ -27619,20 +27695,31 @@
         "deliverable": true,
         "submitted": true,
         "sources": [
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
-          "registration",
           "form_5500",
-          "sec_filing",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
           "sales_tax_permit",
-          "sales_tax_permit"
+          "sales_tax_permit",
+          "sec_filing"
         ],
         "sourceRefs": [
+          {
+            "id": "692ea92b-5ea0-4d69-b6a9-74b5d17f3773",
+            "type": "form_5500",
+            "metadata": {
+              "ack_id": "20251015213449NAL0011316962001",
+              "labels": [
+                "mailing"
+              ],
+              "plan_year": 2024
+            }
+          },
           {
             "id": "d5eb725f-3f58-43f9-b463-63800412feb7",
             "type": "registration",
@@ -27730,26 +27817,6 @@
             }
           },
           {
-            "id": "692ea92b-5ea0-4d69-b6a9-74b5d17f3773",
-            "type": "form_5500",
-            "metadata": {
-              "ack_id": "20251015213449NAL0011316962001",
-              "labels": [
-                "mailing"
-              ],
-              "plan_year": 2024
-            }
-          },
-          {
-            "id": "85487997-c048-41c2-842a-f606d38ff0d2",
-            "type": "sec_filing",
-            "metadata": {
-              "labels": [
-                "mailing"
-              ]
-            }
-          },
-          {
             "id": "30758031-10bb-42e0-b61f-443d21dde670",
             "type": "sales_tax_permit",
             "metadata": {
@@ -27770,6 +27837,15 @@
               ],
               "status": "ACTIVE"
             }
+          },
+          {
+            "id": "85487997-c048-41c2-842a-f606d38ff0d2",
+            "type": "sec_filing",
+            "metadata": {
+              "labels": [
+                "mailing"
+              ]
+            }
           }
         ]
       },
@@ -27786,14 +27862,27 @@
         "deliverable": true,
         "submitted": false,
         "sources": [
-          "registration",
-          "registration",
-          "registration",
-          "registration",
           "city_registration",
+          "registration",
+          "registration",
+          "registration",
+          "registration",
           "sales_tax_permit"
         ],
         "sourceRefs": [
+          {
+            "id": "ccf91ddc-7a3f-4589-a358-56064d1b472a",
+            "type": "city_registration",
+            "metadata": {
+              "city": "San Francisco",
+              "state": "CA",
+              "labels": [
+                "physical"
+              ],
+              "status": "Inactive",
+              "license_type": null
+            }
+          },
           {
             "id": "6bae94da-6ac0-4d8c-93ba-514ded07ec63",
             "type": "registration",
@@ -27838,19 +27927,6 @@
               "status": "inactive",
               "file_number": "11091276",
               "jurisdiction": "FOREIGN"
-            }
-          },
-          {
-            "id": "ccf91ddc-7a3f-4589-a358-56064d1b472a",
-            "type": "city_registration",
-            "metadata": {
-              "city": "San Francisco",
-              "state": "CA",
-              "labels": [
-                "physical"
-              ],
-              "status": "Inactive",
-              "license_type": null
             }
           },
           {
@@ -31161,6 +31237,7 @@
         "registeredAgent": "RL&F SERVICE CORP.",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "4661237",
         "registrationDate": "2009-03-03",
@@ -31177,6 +31254,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "409355",
         "registrationDate": "2009-03-03",
@@ -31194,6 +31272,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "000409355",
         "registrationDate": "2009-03-03",
@@ -31211,6 +31290,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F22258772",
         "registrationDate": "2017-10-10",
@@ -31233,6 +31313,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "3295670",
         "registrationDate": "2010-04-12",
@@ -31254,6 +31335,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "20208066384",
         "registrationDate": "2020-12-09",
@@ -31271,6 +31353,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1171536",
         "registrationDate": "2015-04-01",
@@ -31293,6 +31376,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active - In Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "C00005657318",
         "registrationDate": "2017-03-30",
@@ -31310,6 +31394,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "F17000004200",
         "registrationDate": "2017-09-19",
@@ -31334,6 +31419,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "76941 F1",
         "registrationDate": "2017-02-01",
@@ -31357,6 +31443,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "694720",
         "registrationDate": "2021-12-15",
@@ -31374,6 +31461,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "201607071148870",
         "registrationDate": "2016-07-07",
@@ -31397,6 +31485,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active and in Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "5437983",
         "registrationDate": "2021-03-29",
@@ -31414,6 +31503,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1022891",
         "registrationDate": "2018-06-04",
@@ -31437,6 +31527,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "001135895",
         "registrationDate": "2014-05-09",
@@ -31460,6 +31551,7 @@
         "registeredAgent": "THE CORPORATION TRUST INCORPORATED",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "INCORPORATED",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F22384457",
         "registrationDate": "2021-12-03",
@@ -31477,6 +31569,7 @@
         "registeredAgent": "THE CORPORATION COMPANY",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "802214917",
         "registrationDate": "2018-07-11",
@@ -31499,6 +31592,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1293136",
         "registrationDate": "2021-07-09",
@@ -31522,6 +31616,7 @@
         "registeredAgent": "CT Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Current-Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "1482584",
         "registrationDate": "2015-11-20",
@@ -31543,6 +31638,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2107241139",
         "registrationDate": "2021-07-13",
@@ -31567,6 +31663,7 @@
         "registeredAgent": "C T Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "880593",
         "registrationDate": "2021-09-10",
@@ -31590,6 +31687,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "6415806",
         "registrationDate": "2021-03-22",
@@ -31619,6 +31717,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM**",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "E0338452018-4",
         "registrationDate": "2018-07-16",
@@ -31658,6 +31757,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4810559",
         "registrationDate": "2015-08-26",
@@ -31681,6 +31781,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2408022",
         "registrationDate": "2015-06-29",
@@ -31698,6 +31799,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "ACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "120431895",
         "registrationDate": "2016-04-05",
@@ -31718,6 +31820,7 @@
         "registeredAgent": "CT Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4342318",
         "registrationDate": "2015-04-01",
@@ -31740,6 +31843,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "001726201",
         "registrationDate": "2021-06-29",
@@ -31763,6 +31867,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "00828188",
         "registrationDate": "2017-01-12",
@@ -31779,6 +31884,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "001237541",
         "registrationDate": "2021-09-13",
@@ -31796,6 +31902,7 @@
         "registeredAgent": "C T Corporation System",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "IN EXISTENCE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0801985968",
         "registrationDate": "2014-05-07",
@@ -31820,6 +31927,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "11633900-0143",
         "registrationDate": "2020-01-27",
@@ -31865,6 +31973,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "ACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "11422635",
         "registrationDate": "2022-08-10",
@@ -31886,6 +31995,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active - In Good Standing",
         "jurisdiction": "FOREIGN",
         "fileNumber": "0393075",
         "registrationDate": "2021-07-08",
@@ -31909,6 +32019,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "603344056",
         "registrationDate": "2015-08-26",
@@ -31931,6 +32042,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Incorporated/Qualified/Registered",
         "jurisdiction": "FOREIGN",
         "fileNumber": "Z008179",
         "registrationDate": "2024-05-15",
@@ -31948,6 +32060,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "545840",
         "registrationDate": "2022-12-01",
@@ -31971,6 +32084,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "F11000004788",
         "registrationDate": "2011-11-29",
@@ -31990,6 +32104,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "11091276",
         "registrationDate": "2011-12-09",
@@ -32011,6 +32126,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": "DISSOLVED",
+        "statusDetails": "Withdrawn",
         "jurisdiction": "FOREIGN",
         "fileNumber": "68160804",
         "registrationDate": "2011-12-19",
@@ -32032,6 +32148,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "INACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "42330682F",
         "registrationDate": "2016-07-18",
@@ -32052,6 +32169,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "001066724",
         "registrationDate": "2011-12-09",
@@ -32071,6 +32189,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "000997415",
         "registrationDate": "2009-03-12",
@@ -32093,6 +32212,7 @@
         "registeredAgent": "(Secretary of State)",
         "status": "inactive",
         "subStatus": "DISSOLVED",
+        "statusDetails": "Admin Diss/Cancel - Repor",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F001324229",
         "registrationDate": "2016-01-29",
@@ -32109,6 +32229,7 @@
         "registeredAgent": "C T Corporation System",
         "status": "inactive",
         "subStatus": "PENDING_INACTIVE",
+        "statusDetails": "Administratively Suspended",
         "jurisdiction": "FOREIGN",
         "fileNumber": "775458",
         "registrationDate": "2017-07-24",
@@ -32130,6 +32251,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Ousted",
         "jurisdiction": "FOREIGN",
         "fileNumber": "2312994095",
         "registrationDate": "2021-08-04",
@@ -32147,6 +32269,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive - Revoked (Administrative)",
         "jurisdiction": "FOREIGN",
         "fileNumber": "000805209",
         "registrationDate": "2015-06-29",
@@ -32164,6 +32287,7 @@
         "registeredAgent": "CT CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "8142788-0143",
         "registrationDate": "2011-12-09",
@@ -32183,6 +32307,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "INACTIVE",
         "jurisdiction": "FOREIGN",
         "fileNumber": "F2005991",
         "registrationDate": "2015-09-11",
@@ -32206,6 +32331,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Certificate of Authority Revoked",
         "jurisdiction": "FOREIGN",
         "fileNumber": "Z005048",
         "registrationDate": "2013-05-20",
@@ -32222,6 +32348,7 @@
         "registeredAgent": "C T CORPORATION SYSTEM",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "0450110747",
         "registrationDate": "2016-10-07",
@@ -32974,6 +33101,16 @@
             ],
             "sources": [
               {
+                "id": "7f76e920-4a3d-400b-b52b-32da95e24572",
+                "type": "parsed_sos_document",
+                "metadata": {
+                  "state": "VA",
+                  "file_number": "11422635",
+                  "filing_date": "2026-08-05",
+                  "document_type": "SOS Document"
+                }
+              },
+              {
                 "id": "d5eb725f-3f58-43f9-b463-63800412feb7",
                 "type": "registration",
                 "metadata": {
@@ -33239,16 +33376,6 @@
                 "metadata": {
                   "state": "OH",
                   "status": "ACTIVE"
-                }
-              },
-              {
-                "id": "7f76e920-4a3d-400b-b52b-32da95e24572",
-                "type": "parsed_sos_document",
-                "metadata": {
-                  "state": "VA",
-                  "file_number": "11422635",
-                  "filing_date": "2026-08-05",
-                  "document_type": "SOS Document"
                 }
               }
             ]
@@ -35711,6 +35838,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": null,
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "3538117",
         "registrationDate": "2007-06-29",
@@ -35734,6 +35862,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "1920863",
         "registrationDate": "1995-05-10",
@@ -35753,6 +35882,7 @@
         "registeredAgent": null,
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "392025",
         "registrationDate": "1976-02-18",
@@ -35769,6 +35899,7 @@
         "registeredAgent": "MICHAEL KAWAS",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "FOREIGN",
         "fileNumber": "0451288348",
         "registrationDate": "2025-05-19",
@@ -36700,6 +36831,7 @@
         "registeredAgent": null,
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active-Current",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "557804",
         "registrationDate": "2016-02-19",
@@ -38044,6 +38176,7 @@
         "registeredAgent": "JON J BRAM",
         "status": "inactive",
         "subStatus": "DISSOLVED",
+        "statusDetails": "Administratively Dissolved",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "O043535",
         "registrationDate": "2023-09-14",
@@ -38407,6 +38540,7 @@
         "registeredAgent": "REGISTERED AGENTS INC",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "000923109",
         "registrationDate": "2017-09-14",
@@ -39108,6 +39242,7 @@
         "registeredAgent": "LEGALINC CORPORATE SERVICES INC.",
         "status": "unknown",
         "subStatus": null,
+        "statusDetails": null,
         "jurisdiction": "DOMESTIC",
         "fileNumber": "7665070",
         "registrationDate": "2019-10-21",
@@ -39124,6 +39259,7 @@
         "registeredAgent": "Ali Hamidi Hamidi",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4528561",
         "registrationDate": "2019-11-06",
@@ -39144,6 +39280,7 @@
         "registeredAgent": "DeVaris Brown",
         "status": "inactive",
         "subStatus": null,
+        "statusDetails": "Inactive",
         "jurisdiction": "FOREIGN",
         "fileNumber": "12039471-0143",
         "registrationDate": "2020-11-30",
@@ -40214,6 +40351,7 @@
         "registeredAgent": "Ryan Glasgow",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "FOREIGN",
         "fileNumber": "4312456",
         "registrationDate": "2019-09-05",
@@ -40742,6 +40880,7 @@
         "registeredAgent": "MICHAEL N ELLENBURG",
         "status": "active",
         "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
         "jurisdiction": "DOMESTIC",
         "fileNumber": "202205910316",
         "registrationDate": "2022-02-24",

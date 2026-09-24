@@ -1,3 +1,4 @@
+import type { AreaSummary } from '../lib/areaSummaries'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type { AssessmentWeight } from '../lib/identityScore'
 import type { AnalysisVersion } from '../lib/useAnalysis'
@@ -49,7 +50,7 @@ export const AnalysisPanel = ({
   /** Each area's weight in the assessment, for its card's header. */
   tiers?: ReadonlyMap<string, AssessmentWeight>
   /** What each area asks, for the head of its card. */
-  summaries?: ReadonlyMap<string, string>
+  summaries?: ReadonlyMap<string, AreaSummary>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   /** Follow an evidence chip on a cited insight to that source's card, the way
    *  the Insights tab does. */

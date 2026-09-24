@@ -117,6 +117,9 @@ const normalise = (b: Any) => ({
       typeof r.registered_agent === 'string' ? r.registered_agent : (r.registered_agent?.name ?? null),
     status: r.status ?? 'unknown',
     subStatus: r.sub_status ?? null,
+    // The registry's own words on the status, where it gives any. Delaware and
+    // New Jersey never do, and never publish a status either.
+    statusDetails: r.status_details ?? null,
     jurisdiction: r.jurisdiction ?? null,
     fileNumber: r.file_number ?? null,
     registrationDate: r.registration_date ?? null,

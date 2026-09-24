@@ -7,12 +7,15 @@
  * the answer (MI/MN/MO/MS/MT).
  */
 /**
- * States whose Secretary of State publishes no entity status. Delaware is the
- * known one: its public search returns the filing and nothing about its
- * standing, so a Delaware filing reading Unknown is the registry's habit, not
- * a fact about the business.
+ * States whose Secretary of State publishes no entity status.
+ *
+ * Delaware and New Jersey, and only them: every registration in those two
+ * states comes back with no normalized status and no status details — six
+ * million and nearly four million filings, 100% Unknown. A filing there reading
+ * Unknown is the registry's habit, not a fact about the business, and it is
+ * never flagged. An Unknown anywhere else is still a question.
  */
-export const STATUS_NOT_PUBLISHED: ReadonlySet<string> = new Set(['DE'])
+export const STATUS_NOT_PUBLISHED: ReadonlySet<string> = new Set(['DE', 'NJ'])
 
 export const STATE_NAMES: Record<string, string> = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',

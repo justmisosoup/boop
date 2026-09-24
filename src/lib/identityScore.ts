@@ -253,7 +253,16 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   tin: (_r, record) =>
     (record.tin as { mismatch?: boolean } | null)?.mismatch ? 'negative' : 'positive',
   entity_type: () => 'positive',
-  sos_domestic_sub_status: () => 'neutral',
+  /* The sub-status is the state's own word on standing. Good standing (or an
+     equivalent) is a point for the file; withheld is nothing; anything else
+     the state bothers to say — pending inactive, dissolved, delinquent — is a
+     point against it, since a state does not annotate a filing it is happy with. */
+  sos_domestic_sub_status: (r, record) => {
+    if (r.state !== 'result') return 'neutral'
+    const word = (sub(record, 'sos_domestic_sub_status') ?? '').toLowerCase()
+    const good = /good standing|current|compliant/.test(word) && !/^not\b|not in/.test(word)
+    return good ? 'positive' : 'negative'
+  },
 
   // The office. Deliverable and commercial are points for it; a residential
   // suite is not a finding on its own.
