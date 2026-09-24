@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+
 import { Heading, MutedText, Surface, Text } from '@/core'
 
 import type { BandId, IdentityScore, ScoreBand } from '../lib/identityScore'
@@ -126,6 +128,9 @@ export const ScoreRing = ({
   )
 }
 
+/** The card's width, in px, under which it takes the stacked layout. */
+const NARROW_AT = 340
+
 /** A review status as the dashboard prints it. */
 const STATUS_WORD: Record<string, string> = { approved: 'Approved', in_review: 'Needs Review', rejected: 'Rejected' }
 
@@ -177,19 +182,34 @@ export const DeterminationCard = ({
   stacked?: boolean
   className?: string
 }) => {
+  /* Below this the ring beside the words leaves the words too little measure,
+     so the card takes the rail's layout wherever it is. Measured, not a
+     breakpoint: the card's width depends on the chat column, not the viewport. */
+  const box = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < NARROW_AT))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  const layout = stacked || narrow
+
   /* The assessment's own lines: its reason, then when and in what context.
      The card's body when nothing has changed; the disclosure's body when
      something has. The date stands alone — the pill above it already says
      what was determined. */
+  const byline = (determinedAt || context) && (
+    <span className={cn('flex items-center', layout ? 'mt-3 flex-nowrap gap-2' : 'mt-2 flex-wrap gap-3')}>
+      {context}
+      {determinedAt && <MutedText className="whitespace-nowrap text-caption">{determinedAt}</MutedText>}
+    </span>
+  )
   const determination = (
     <>
       {reason && <Text>{reason}</Text>}
-      {(determinedAt || context) && (
-        <span className="mt-2 flex flex-wrap items-center gap-3">
-          {context}
-          {determinedAt && <MutedText className="text-caption">{determinedAt}</MutedText>}
-        </span>
-      )}
+      {byline}
     </>
   )
 
@@ -206,50 +226,57 @@ export const DeterminationCard = ({
   ) : null
 
   return (
-    <Surface variant="card" padding="md" className={className}>
-      {/* The score at the far left, standing for the whole card; beside it
-          the card's own header — its name at the left, the decision (the
-          status control) in the top-right corner on the same line — and under
-          that the explanation, then the context and date. The reviewer's
-          status does not change what the assessment measured, so the ring
-          reads the same in both states. */}
-      <div className={cn('flex gap-5', stacked ? 'flex-col items-stretch gap-4' : 'items-start')}>
-        {stacked ? (
-          /* The ring at full size, and beside it the label over the pill —
-             a 64px lead with two lines in it, not a small ring floating
-             opposite a control half its height. */
-          <div className="-mx-[var(--core-spacing-md)] flex items-center gap-4 border-b border-[var(--core-color-border-divider)] px-[var(--core-spacing-md)] pb-4">
-            <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-              <CardLabel as="h4">Decision</CardLabel>
-              {score && status && <div className="flex items-center">{status}</div>}
+    <div ref={box} className={className}>
+      <Surface variant="card" padding="md">
+        {/* The score at the far left, standing for the whole card; beside it
+            the card's own header — its name at the left, the decision (the
+            status control) in the top-right corner on the same line — and under
+            that the explanation, then the context and date. The reviewer's
+            status does not change what the assessment measured, so the ring
+            reads the same in both states. */}
+        {layout ? (
+          /* The label with the status control at the far edge of its line;
+             under them the ring, centred, over the reason and its byline. */
+          <div className="flex flex-col items-stretch gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <CardLabel as="h4">Determination</CardLabel>
+              {score && status && <div className="flex shrink-0 items-center">{status}</div>}
             </div>
-            <ScoreRing score={score} size="sm" />
+            <div>
+              {/* The ring centred as the card's one mark; the prose under it
+                  stays left-aligned, as prose on the rest of the report does. */}
+              <div className="flex justify-center">
+                <ScoreRing score={score} size="lg" />
+              </div>
+              {reason && <Text className="mt-4">{reason}</Text>}
+              {byline}
+            </div>
+            {analystNote}
           </div>
         ) : (
-          <ScoreRing score={score} size="lg" />
-        )}
-        <div className="min-w-0 flex-1">
-          <div className={cn('flex items-center justify-between gap-4', stacked && 'hidden')}>
-            <CardLabel as="h4">Decision</CardLabel>
-            {stacked ? null : score && status ? (
-              <div className="flex shrink-0 items-center gap-3">{status}</div>
-            ) : score ? (
-              <Heading level={3}>{score.band.label}</Heading>
-            ) : (
-              <Heading level={3} className={cn('text-muted-foreground', running && 'shimmer-text')}>
-                {running ? 'Assessing' : 'Not assessed'}
-              </Heading>
-            )}
+          <div className="flex items-center gap-5">
+            <ScoreRing score={score} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-4">
+                <CardLabel as="h4">Determination</CardLabel>
+                {score && status ? (
+                  <div className="flex shrink-0 items-center gap-3">{status}</div>
+                ) : score ? (
+                  <Heading level={3}>{score.band.label}</Heading>
+                ) : (
+                  <Heading level={3} className={cn('text-muted-foreground', running && 'shimmer-text')}>
+                    {running ? 'Assessing' : 'Not assessed'}
+                  </Heading>
+                )}
+              </div>
+              <div className="mt-2">{determination}</div>
+              {/* After the assessment's own lines, ruled off: the analyst's note
+                  adds to the decision, it does not stand in for the reason. */}
+              {analystNote}
+            </div>
           </div>
-
-          {/* Wide layout: the analyst's note under the header row's status. */}
-          <div className={stacked ? undefined : 'mt-2'}>{determination}</div>
-          {/* After the assessment's own lines, ruled off: the analyst's note
-              adds to the decision, it does not stand in for the reason. */}
-          {analystNote}
-        </div>
-      </div>
-
-    </Surface>
+        )}
+      </Surface>
+    </div>
   )
 }

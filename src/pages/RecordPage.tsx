@@ -115,6 +115,9 @@ const RAIL_W = '49px'
 
 const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
 
+/** The report column's width, in px, from which the decision sits in a left rail. */
+const RAIL_AT = 860
+
 /**
  * One business's assessment.
  *
@@ -506,6 +509,21 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       </MutedText>
     ) : null
 
+  /**
+   * The decision moves into the left rail once the report column can spare
+   * 344px for it and still keep a readable measure. Measured, not a viewport
+   * breakpoint: whether the chat has a column decides the width, not the window.
+   */
+  const railBox = useRef<HTMLDivElement>(null)
+  const [railed, setRailed] = useState(false)
+  useEffect(() => {
+    const el = railBox.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => setRailed(entry.contentRect.width >= RAIL_AT))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   /** The decision card, stacked for the left column or wide for the flow. */
   const decisionCard = (stacked: boolean) => (
               <DeterminationCard
@@ -516,7 +534,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                    word. Before anyone sets it, it reads what the assessment
                    determined — Approve as Approved, Reject as Rejected. */
                 status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
-                reason={score ? scoreLine(score, scoreAreas) : undefined}
+                reason={score ? scoreLine(score, scoreAreas, { record, results }) : undefined}
                 determinedAt={analysis.selected ? reportStamp(analysis.selected) : undefined}
                 context={analysedWith}
                 /* Only a change away from the determination is a change worth
@@ -762,12 +780,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-6 wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
             >
               <div className={MEASURE}>
-                <div className="flex desk:gap-6">
+                <div ref={railBox} className={cn('flex', railed && 'gap-6')}>
                   {/* The decision, beside the report rather than above it: pinned
                       in the left margin while the evidence scrolls past, so the
                       call and what it rests on are read side by side. */}
                   {(view || running) && (
-                    <div className="hidden desk:block desk:w-80 desk:shrink-0">
+                    <div className={railed ? 'w-80 shrink-0' : 'hidden'}>
                       <div className="sticky top-0">{decisionCard(true)}</div>
                     </div>
                   )}
@@ -801,7 +819,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               */}
             {/* Below `desk` there is no room beside the report, so the
                 decision leads it in the flow. */}
-            {(view || running) && <div className="desk:hidden">{decisionCard(false)}</div>}
+            {(view || running) && !railed && decisionCard(false)}
             {/* What the state holds, under the call and before the argument.
                 With or without a report: these are the record's facts. */}
             <FormationCard
@@ -809,7 +827,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               results={results}
               groupFor={groupFor}
               onJumpToSource={jumpToSource}
-              className={view || running ? 'mt-4 desk:mt-0' : undefined}
+              className={(view || running) && !railed ? 'mt-4' : undefined}
             />
             {/* What the record holds about the business, before the report
                 starts reading it. Attributes only — the filing facts an account
