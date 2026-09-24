@@ -197,7 +197,7 @@ export const DeterminationCard = ({
      who and when and what it was before. It adds to the decision; it does
      not replace the assessment's reason or its context. */
   const analystNote = change ? (
-    <div className="-mx-[var(--core-spacing-md)] border-b border-[var(--core-color-border-divider)] px-[var(--core-spacing-md)] pb-4">
+    <div className="-mx-[var(--core-spacing-md)] mt-4 border-t border-[var(--core-color-border-divider)] px-[var(--core-spacing-md)] pt-4">
       {change.note && <Text size="sm">{change.note}</Text>}
       <MutedText className={cn('block text-caption', change.note && 'mt-1')}>
         Changed by {change.by} · {stamp(change.at)} · was {STATUS_WORD[change.from] ?? change.from}
@@ -228,7 +228,6 @@ export const DeterminationCard = ({
         ) : (
           <ScoreRing score={score} size="lg" />
         )}
-        {stacked && analystNote}
         <div className="min-w-0 flex-1">
           <div className={cn('flex items-center justify-between gap-4', stacked && 'hidden')}>
             <CardLabel as="h4">Decision</CardLabel>
@@ -244,8 +243,10 @@ export const DeterminationCard = ({
           </div>
 
           {/* Wide layout: the analyst's note under the header row's status. */}
-          {!stacked && analystNote && <div className="mt-2">{analystNote}</div>}
-          <div className="mt-2">{determination}</div>
+          <div className={stacked ? undefined : 'mt-2'}>{determination}</div>
+          {/* After the assessment's own lines, ruled off: the analyst's note
+              adds to the decision, it does not stand in for the reason. */}
+          {analystNote}
         </div>
       </div>
 
