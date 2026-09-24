@@ -4,7 +4,9 @@ import { ChatSources, Text } from '@/core'
 
 import { attributesFor } from '../lib/attributes'
 import { categoriesOf } from '../lib/deriveResults'
-import { GROUPS, makeGroupFor } from '../lib/groups'
+import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
+import type { AreaSummary } from '../lib/areaSummaries'
+import { IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type { AssessmentWeight } from '../lib/identityScore'
 import type {
@@ -14,9 +16,10 @@ import type {
   CouldNotConfirmReason
 } from '../types'
 import { cn } from '../utils/twUtils'
+import { CardLabel } from './CardLabel'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 import { InsightRow } from './InsightRow'
-import { InsightStack } from './InsightStack'
+import { InsightStack, ROW_HAIRLINE } from './InsightStack'
 
 /**
  * How a report reads, wherever it is read.
@@ -86,6 +89,7 @@ const CiteList = ({
   title,
   trailing,
   intro,
+  sections,
   onJumpToSource
 }: {
   cited: Derived[]
@@ -97,6 +101,9 @@ const CiteList = ({
   trailing?: React.ReactNode
   /** What the assessment says it could not find, above the rows of what it did. */
   intro?: React.ReactNode
+  /** The rows under named headings, by topic — one block per heading, in this
+   *  order, empty ones dropped. Anything no heading claims goes under "Other". */
+  sections?: ReadonlyArray<IdentitySection>
   /** An evidence chip names a source record, and following it opens that
    *  source's card — the behaviour the same chip has in the Insights tab. */
   onJumpToSource?: (cardId: string) => void
@@ -132,6 +139,16 @@ const CiteList = ({
   }
   const ordered = [...[...flagged].sort(byTopic), ...cited.filter((r) => !isFlagged(r)).sort(byTopic)]
 
+  const row = (r: Derived) => (
+    <InsightRow
+      key={r.insightId}
+      result={r}
+      record={record}
+      negative={negatives?.has(r.insightId)}
+      onJumpToSource={onJumpToSource}
+    />
+  )
+
   return (
     // The Insights tab's own frame, the same component: one card, named in its
     // own header, rows divided by the inset hairline.
@@ -147,15 +164,28 @@ const CiteList = ({
       }
       intro={intro}
     >
-      {ordered.map((r) => (
-        <InsightRow
-          key={r.insightId}
-          result={r}
-          record={record}
-          negative={negatives?.has(r.insightId)}
-          onJumpToSource={onJumpToSource}
-        />
-      ))}
+      {sections
+        ? [
+            ...sections.map((s) => ({ label: s.headline(record), rows: ordered.filter((r) => s.groups.includes(groupFor(r.insightId) as GroupId)) })),
+            {
+              label: 'Other',
+              rows: ordered.filter((r) => !sections.some((s) => s.groups.includes(groupFor(r.insightId) as GroupId)))
+            }
+          ]
+            .filter((b) => b.rows.length > 0)
+            .map((b) => (
+              <div key={b.label}>
+                <CardLabel as="h4" className="px-4 pb-1 pt-3">
+                  {b.label}
+                </CardLabel>
+                {b.rows.map((r, i) => (
+                  <div key={r.insightId} className={cn(i > 0 && ROW_HAIRLINE)}>
+                    {row(r)}
+                  </div>
+                ))}
+              </div>
+            ))
+        : ordered.map(row)}
     </InsightStack>
   )
 }
@@ -425,6 +455,7 @@ export const SectionBody = ({
            it — background for whoever reads the policy, not something a
            reviewer reading this business needs beside the area's name. */
         intro={intro}
+        sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
         onJumpToSource={onJumpToSource}
       />
     </>
@@ -454,7 +485,7 @@ export const ReportBody = ({
   /** Accepted for callers that still pass it; the weight is not shown. */
   tiers?: ReadonlyMap<string, AssessmentWeight>
   /** What each area asks, shown at the head of its card. */
-  summaries?: ReadonlyMap<string, string>
+  summaries?: ReadonlyMap<string, AreaSummary>
   /** An evidence chip under a cited insight opens that source's card. */
   onJumpToSource?: (cardId: string) => void
 }) => {
@@ -519,7 +550,14 @@ export const ReportBody = ({
                 section IS the card, so a heading and a rule above it named the
                 same thing twice. */}
             {section && (
-              <SectionBody section={section} heading={heading} summary={summaries?.get(id)} {...pass} />
+              <SectionBody
+                section={section}
+                /* What the area found, as its name; the pillar's own name only
+                   while there is no finding yet. */
+                heading={summaries?.get(id)?.headline ?? heading}
+                summary={summaries?.get(id)?.summary}
+                {...pass}
+              />
             )}
           </div>
         )

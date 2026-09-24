@@ -1,7 +1,7 @@
 import { entityTypeCode } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
-import { stateName } from './states'
+import { STATUS_NOT_PUBLISHED, stateName } from './states'
 
 /**
  * What each area checks, for this business.
@@ -13,7 +13,10 @@ import { stateName } from './states'
 /** States whose LLC and PLLC filings name no members or managers. */
 const NAMES_NO_MEMBERS: ReadonlySet<string> = new Set(['NY'])
 
-export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<string, string> => {
+/** One area's finding: the clause on the card, and the sentences under it. */
+export type AreaSummary = { headline: string; summary: string }
+
+export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<string, AreaSummary> => {
   const entity = entityTypeCode(record)
   const kind = entity ?? 'business'
   const upper = (entity ?? '').toUpperCase()
@@ -101,31 +104,113 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         .filter(Boolean)
         .join(' ')
 
-  return new Map([
+  /* Identity answers one question — is this a real business, and the one it
+     claims to be — in four parts: a registered entity, a credible address it
+     is still active at, digital corroboration where there is any, and whether
+     it all resolves to one entity. One clause each, only where there is
+     evidence, and a caveat only where one applies. */
+  const is = (key: string, re: RegExp) => re.test(task(key))
+  const noun = /^[A-Z]{2,5}$/.test(kind) ? kind : kind.toLowerCase()
+  const nameOk = is('name', /^verified$/i)
+  const entityLine = !state
+    ? 'No formation filing was found for the submitted business.'
+    : nameOk
+      ? `A ${state} ${noun}, registered under the submitted name.`
+      : is('name', /similar/i)
+        ? `A ${state} ${noun}, registered under a name similar to the one submitted.`
+        : `A ${state} ${noun} is on file, but not under the submitted name.`
+  const deliverable = is('address_deliverability', /^deliverable$/i)
+  const commercial = is('address_property_type', /commercial/i)
+  const activeHere = is('sos_match', /submitted active/i)
+  const addressFact = task('address_deliverability')
+    ? `${deliverable ? 'a deliverable' : 'an undeliverable'}${commercial ? ' commercial' : is('address_property_type', /residential/i) ? ' residential' : ''} address`
+    : ''
+  const silent = STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '') && is('sos_domestic', /unknown/i)
+  const standing = activeHere
+    ? `Active in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
+    : is('sos_match', /inactive/i)
+      ? `Inactive in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
+      : is('sos_match', /not registered/i)
+        ? `Not registered in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
+        : addressFact
+          ? `At ${addressFact}`
+          : ''
+  const standingLine = standing
+    ? `${standing}${silent ? `; ${state} doesn't publish filing status` : ''}.`
+    : ''
+  const personOk = is('person_verification', /^verified$/i)
+  const resolves = !task('person_verification')
+    ? ''
+    : personOk && nameOk
+      ? 'The submitted person matches the filings, so it resolves to one entity.'
+      : personOk
+        ? 'The submitted person matches the filings.'
+        : 'The submitted person is not on the filings; confirm this is the entity applying.'
+
+  /* The card's own name is what was found, not the pillar that found it: the
+     groupings are the model's, per business, and a fixed label over them
+     would name a category rather than a finding. One clause each. */
+  const identityHeadline = !state
+    ? 'No registered entity matches the applicant'
+    : nameOk && personOk
+      ? `A real ${state} ${noun}, and the one applying`
+      : nameOk
+        ? `A real ${state} ${noun}; the applicant isn't on its filings`
+        : `A ${state} ${noun} is on file, under a different name`
+  /* A lien or a bankruptcy is a claim on money; a litigation is a case that
+     may or may not become one, so it is named as what it is. */
+  const claims = (record.liens ?? []).length + (record.bankruptcies ?? []).length
+  const cases = (record.litigations ?? []).length
+  const standingHeadline =
+    claims > 0
+      ? `${owed} ${owed === 1 ? 'record' : 'records'} of money owed that could reach the account`
+      : cases > 0
+        ? `${cases} litigation ${cases === 1 ? 'record' : 'records'} on file, no liens or bankruptcies`
+        : 'No liens, judgments or bankruptcies'
+
+  return new Map<string, AreaSummary>([
     [
       'skill-kyb-identification',
-      [
-        state
-          ? `Confirms the applicant matches the ${kind} registered with the ${state} Secretary of State.`
-          : 'Confirms the applicant against what the record holds. No formation filing was found.',
-        web
-      ]
-        .filter(Boolean)
-        .join(' ')
+      {
+        headline: identityHeadline,
+        summary: [entityLine, standingLine, web, resolves].filter(Boolean).join(' ')
+      }
     ],
     [
       'skill-kyb-3',
-      hits > 0
-        ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
-        : `No sanctions or watchlist hits on the ${kind} or the individuals named on its filings, so nothing here stands in the way of opening the account.`
+      {
+        headline: hits > 0 ? `${hits} watchlist ${hits === 1 ? 'hit' : 'hits'} to clear before opening` : 'No sanctions or watchlist hits',
+        summary:
+          hits > 0
+            ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
+            : `No sanctions or watchlist hits on the ${kind} or the individuals named on its filings, so nothing here stands in the way of opening the account.`
+      }
     ],
-    ['skill-kyb-activity', [what, where, permission].filter(Boolean).join(' ')],
-    ['skill-1789767328449', ownership],
+    [
+      'skill-kyb-activity',
+      {
+        /* The NAICS sector name can run to a line on its own, so the states it
+           is registered in stay in the sentences under the heading. */
+        headline: industry ? `Operates in ${industry.toLowerCase()}` : "What the business does isn't on the record",
+        summary: [what, where, permission].filter(Boolean).join(' ')
+      }
+    ],
+    [
+      'skill-1789767328449',
+      {
+        headline: professional ? 'Owned by licensed practitioners' : 'Owners come from the customer certification',
+        summary: ownership
+      }
+    ],
     [
       'skill-financial-standing',
-      owed > 0
-        ? `Liens, judgments and bankruptcies show money the ${kind} owes elsewhere, which can reach funds held in the account. The record holds ${owed === 1 ? 'one' : owed}.`
-        : `No liens, judgments or bankruptcies against the ${kind}, so there is no sign of claims that could reach funds in the account.`
+      {
+        headline: standingHeadline,
+        summary:
+          owed > 0
+            ? `Liens, judgments and bankruptcies show money the ${kind} owes elsewhere, which can reach funds held in the account. The record holds ${owed === 1 ? 'one' : owed}.`
+            : `No liens, judgments or bankruptcies against the ${kind}, so there is no sign of claims that could reach funds in the account.`
+      }
     ]
   ])
 }
