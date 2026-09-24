@@ -46,6 +46,7 @@ import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '
 import { entityTypeCode } from '../lib/attributes'
 import { stateName } from '../lib/states'
 import { industrySectorOf } from '../lib/naics'
+import { areaSummaries } from '../lib/areaSummaries'
 import { byId } from '../lib/records'
 import { GROUPS, type GroupId, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
@@ -292,6 +293,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           .map((s) => [s.id, (s.weight as AssessmentWeight | undefined) ?? 'critical'])
       ),
     [agent.skills]
+  )
+
+  /** What each area asks, for this business and this use case, at the head of its card. */
+  const summaries = useMemo(
+    () => areaSummaries(record, analysis.selected ? reportLabel(analysis.selected) : 'Account opening'),
+    [record, analysis.selected]
   )
 
   /** The chat has a column of its own only when the page is wide enough for a
@@ -841,6 +848,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               onJumpToSource={jumpToSource}
               negatives={negatives}
               tiers={tiers}
+              summaries={summaries}
             />
 
             {/* No column at this width, so the turns sit under the report —

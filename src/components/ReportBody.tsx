@@ -334,6 +334,7 @@ export const Para = ({
 export const SectionBody = ({
   section,
   heading,
+  summary,
   results,
   record,
   negatives,
@@ -343,6 +344,8 @@ export const SectionBody = ({
   section: AssessmentSection
   /** The area's name, for the card's header. A question's answer has none. */
   heading?: string
+  /** What the area asks and why it matters, above its insights. */
+  summary?: string
   results: Derived[]
   record?: BusinessRecord
   negatives?: ReadonlySet<string>
@@ -401,7 +404,15 @@ export const SectionBody = ({
           )
         })
       : null
-  const intro = gapIntro ?? undefined
+  /* What the area is asking, first — so a reader knows what the rows under
+     it are evidence for — then any gap the assessment wrote about it. */
+  const intro =
+    summary || gapIntro ? (
+      <>
+        {summary && <span className="block text-sm leading-5 text-text-secondary">{summary}</span>}
+        {gapIntro && <div className={summary ? 'mt-2' : undefined}>{gapIntro}</div>}
+      </>
+    ) : undefined
 
   return (
     <>
@@ -428,6 +439,7 @@ export const ReportBody = ({
   stream = false,
   negatives,
   tiers,
+  summaries,
   onJumpToSource
 }: {
   result: AnalysisResult | AnalysisDraft
@@ -441,6 +453,8 @@ export const ReportBody = ({
   negatives?: ReadonlySet<string>
   /** Accepted for callers that still pass it; the weight is not shown. */
   tiers?: ReadonlyMap<string, AssessmentWeight>
+  /** What each area asks, shown at the head of its card. */
+  summaries?: ReadonlyMap<string, string>
   /** An evidence chip under a cited insight opens that source's card. */
   onJumpToSource?: (cardId: string) => void
 }) => {
@@ -505,7 +519,7 @@ export const ReportBody = ({
                 section IS the card, so a heading and a rule above it named the
                 same thing twice. */}
             {section && (
-              <SectionBody section={section} heading={heading} {...pass} />
+              <SectionBody section={section} heading={heading} summary={summaries?.get(id)} {...pass} />
             )}
           </div>
         )

@@ -27,6 +27,7 @@ export const AnalysisPanel = ({
   record,
   negatives,
   tiers,
+  summaries,
   onJumpToGroup,
   onJumpToSource
 }: {
@@ -47,6 +48,8 @@ export const AnalysisPanel = ({
   negatives?: ReadonlySet<string>
   /** Each area's weight in the assessment, for its card's header. */
   tiers?: ReadonlyMap<string, AssessmentWeight>
+  /** What each area asks, for the head of its card. */
+  summaries?: ReadonlyMap<string, string>
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   /** Follow an evidence chip on a cited insight to that source's card, the way
    *  the Insights tab does. */
@@ -73,6 +76,7 @@ export const AnalysisPanel = ({
           })}
           negatives={negatives}
           tiers={tiers}
+          summaries={summaries}
           onJumpToSource={onJumpToSource}
         />
       )}
