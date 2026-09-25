@@ -1,6 +1,10 @@
 import { Surface } from '@/core'
 
 import { formationIdentityRows, type AttributeRow } from '../lib/attributes'
+import { linkedFormationNote, linkedFormationOf } from '../lib/linkedFormation'
+import { formationConfirmed, formationFilingOf, formationStandingNote, sameName } from '../lib/registrationStatus'
+import { soleProprietorOf } from '../lib/soleProprietor'
+import { stateName } from '../lib/states'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { cn } from '../utils/twUtils'
@@ -73,7 +77,12 @@ export const FormationCard = ({
   onJumpToSource?: (cardId: string) => void
   className?: string
 }) => {
-  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  /* No formation of its own, but one on another record that looks linked —
+     Sprig's Delaware filing sits on the Mixboard Inc. record. The card shows
+     that filing, and the note says it was not found for this business and
+     how it was linked. */
+  const linked = linkedFormationOf(record)
+  const domestic = linked?.filing ?? formationFilingOf(record)
 
   // Which record there is, strongest first.
   const dbaSources = new Set(
@@ -94,11 +103,11 @@ export const FormationCard = ({
 
   const tierRows =
     tier === 'formation'
-      ? formationIdentityRows(record)
+      ? formationIdentityRows(linked?.record ?? record)
       : dedupe(tier === 'dba' ? dbaRows : tier === 'city' ? cityRows : rows.filter((r) => r.submitted))
 
   const cells = cellsFromRows(tierRows, {
-    domesticState: record.formation?.state,
+    domesticState: linked ? linked.filing.state : record.formation?.state,
     onJumpToSource,
     // The source is named once, in the header.
     provenance: false,
@@ -127,7 +136,7 @@ export const FormationCard = ({
         <AttributeSources
           sources={[]}
           registrations={[domestic]}
-          domesticState={record.formation?.state}
+          domesticState={linked ? linked.filing.state : record.formation?.state}
           onJumpToSource={onJumpToSource}
         />
       )
@@ -141,15 +150,48 @@ export const FormationCard = ({
       />
     )
 
+  /* A formation on another record is not this business's formation until
+     someone confirms it; the title says what it is. A formation that is — a
+     domestic filing in the formation state, under the business's own name —
+     says so, and the subtext says whether it is still the filing the business
+     stands on. */
+  const strong =
+    !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
+  // No state filing at all, and a city registration in the submitted person's own name.
+  const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
+  const title = linked
+    ? 'Possible formation found under different business name'
+    : strong
+      ? 'Formation found for this business'
+      : sole
+        ? 'Likely sole proprietorship'
+        : TITLE[tier]
+  const note = linked
+    ? linkedFormationNote(record, linked, stateName)
+    : strong
+      ? formationStandingNote(record)
+      : sole
+        ? sole.tradeNameOnFile
+          ? `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. ${sole.city} registers the business to ${sole.person}, doing business as ${record.name}${
+              sole.since ? ` since ${sole.since.slice(0, 4)}` : ''
+            }${sole.account ? ` (account ${sole.account})` : ''}, at the submitted office address.`
+          : `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. The ${sole.city} city registration at the submitted office address is in ${sole.person}'s own name, so ${sole.person} appears to operate ${record.name} as a sole proprietor.`
+        : undefined
+
   return (
     <Surface
       variant="card"
       padding="none"
       className={cn('overflow-hidden', className)}
-      aria-label={TITLE[tier]}
+      aria-label={title}
       role="region"
     >
-      <CardHeader title={TITLE[tier]} trailing={chip} />
+      <CardHeader title={title} trailing={chip} className={note ? 'border-b-0 pb-1' : undefined} />
+      {note && (
+        <div className="border-b border-[var(--core-color-border-divider)] px-4 pb-3">
+          <span className="block text-sm leading-5 text-text-secondary">{note}</span>
+        </div>
+      )}
       <AttributeCells items={items} className="-mb-px" />
     </Surface>
   )

@@ -1,0 +1,60 @@
+{
+  "api": {
+    "base_url_default": "https://api.middesk.com/v1",
+    "path": "/businesses/{id}",
+    "env_files": [".env.local", ".env"],
+    "key_var": "MIDDESK_API_KEY",
+    "url_var": "MIDDESK_API_URL",
+    "user_agent": "formation-check/0.1",
+    "timeout_s": 8,
+    "cache_hours": 24
+  },
+  "tasks": {
+    "status": ["sos_domestic", "sos_domestic_sub_status"],
+    "type": "entity_type",
+    "labels": {"sos_domestic": "sos_domestic", "sos_domestic_sub_status": "sub_status", "entity_type": "entity_type"}
+  },
+  "entity_types": ["CORPORATION", "LLC", "NON-PROFIT", "SOLE PROPRIETORSHIP", "PARTNERSHIP", "TRUST", "AGENT", "UNKNOWN"],
+  "entity_type_map": {
+    "CORPORATION": "CORPORATION", "CORP": "CORPORATION", "INC": "CORPORATION", "INCORPORATED": "CORPORATION",
+    "S CORP": "CORPORATION", "S-CORP": "CORPORATION", "S CORPORATION": "CORPORATION", "S-CORPORATION": "CORPORATION",
+    "C CORP": "CORPORATION", "C-CORP": "CORPORATION", "C CORPORATION": "CORPORATION", "C-CORPORATION": "CORPORATION",
+    "PROFESSIONAL CORPORATION": "CORPORATION", "PC": "CORPORATION",
+    "LLC": "LLC", "L.L.C.": "LLC", "LIMITED LIABILITY COMPANY": "LLC", "PLLC": "LLC", "PROFESSIONAL LLC": "LLC",
+    "NON-PROFIT": "NON-PROFIT", "NONPROFIT": "NON-PROFIT", "NON PROFIT": "NON-PROFIT", "NONPROFIT CORPORATION": "NON-PROFIT",
+    "SOLE PROPRIETORSHIP": "SOLE PROPRIETORSHIP", "SOLE PROPRIETOR": "SOLE PROPRIETORSHIP",
+    "PARTNERSHIP": "PARTNERSHIP", "GENERAL PARTNERSHIP": "PARTNERSHIP", "GP": "PARTNERSHIP",
+    "LP": "PARTNERSHIP", "LIMITED PARTNERSHIP": "PARTNERSHIP", "LLP": "PARTNERSHIP", "LIMITED LIABILITY PARTNERSHIP": "PARTNERSHIP",
+    "LLLP": "PARTNERSHIP",
+    "TRUST": "TRUST", "AGENT": "AGENT", "UNKNOWN": "UNKNOWN"
+  },
+  "documents": {
+    "formation_types": ["initial filing", "articles of incorporation", "articles of organization"],
+    "certificate_types": ["certificate of good standing", "certificate of status", "certificate of existence"],
+    "min_confidence": 0.80,
+    "cert_max_age_days": 90,
+    "cert_type_only_counts_as_good": false
+  },
+  "standing": {
+    "good": ["in good standing", "good standing", "active", "existing", "exists", "in existence"],
+    "note": "standing_status is matched verbatim after casefold/trim; anything not listed is not good"
+  },
+  "name_suffixes": {
+    "limited liability company": "llc", "l l c": "llc", "llc": "llc",
+    "incorporated": "inc", "inc": "inc",
+    "corporation": "corp", "corp": "corp",
+    "company": "co", "co": "co",
+    "limited": "ltd", "ltd": "ltd",
+    "limited partnership": "lp", "l p": "lp", "lp": "lp",
+    "limited liability partnership": "llp", "l l p": "llp", "llp": "llp",
+    "professional corporation": "pc", "p c": "pc", "pc": "pc"
+  },
+  "filers": [
+    "legalzoom", "united states corporation agents", "registered agents? inc", "registered agent solutions",
+    "northwest registered agent", "ct corporation", "c t corporation", "corporation service company", "\\bcsc\\b",
+    "cogency global", "national registered agents", "incorp services", "harbor compliance", "zenbusiness",
+    "incfile", "bizfilings", "legalinc", "swyft filings", "registered agent", "business filings incorporated",
+    "a registered agent", "capitol services", "vcorp services", "paracorp", "inc authority", "rocket lawyer",
+    "stripe atlas", "clerky", "firstbase", "doola"
+  ]
+}

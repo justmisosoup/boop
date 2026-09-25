@@ -13,13 +13,14 @@
 import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
 import { entityFormLabel } from './normalise'
-import { registrationState } from './registrationStatus'
+import { formationConfirmed, formationFilingOf, registrationState } from './registrationStatus'
+import { judgeHit } from './watchlist'
 import { stateLabel, stateName } from './states'
 import { frequencyBand } from './statements'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
  *  $4,500.37 and the cents column is noise beside a case number. */
-const money = (cents: number) =>
+export const money = (cents: number) =>
   `$${Math.round(cents / 100).toLocaleString('en-US')}`
 
 /**
@@ -621,7 +622,7 @@ const registrationRows = (record: BusinessRecord): AttributeRow[] => {
  */
 export const entityTypeCode = (record: BusinessRecord): string | undefined => {
   if (!record.formation) return undefined
-  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const domestic = formationFilingOf(record)
   const raw = trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType
   if (!raw || raw.toUpperCase() === 'UNKNOWN') return undefined
   // Five letters or fewer is an initialism (LLC, PLLC, LP, INC); longer is a word.
@@ -632,7 +633,7 @@ export const entityTypeCode = (record: BusinessRecord): string | undefined => {
  *  nothing when the record has no formation. */
 export const entityTypeOf = (record: BusinessRecord): string | undefined => {
   if (!record.formation) return undefined
-  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const domestic = formationFilingOf(record)
   return entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType) || undefined
 }
 
@@ -640,7 +641,7 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
   if (!record.formation)
     return [{ group: 'formation', label: 'Formation', value: 'No formation record', source: REGISTRY }]
 
-  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const domestic = formationFilingOf(record)
 
   const field = (
     label: string,
@@ -667,14 +668,16 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       'Entity type',
       entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType)
     ),
-    ...field('Formation state', stateLabel(record.formation.state)),
-    // The same date the domestic filing carries as its registration date; they
-    // dedup to one row rather than stating it twice.
-    ...field(
-      'Formation date',
-      longDate(record.formation.date),
-      filingAge(record.formation.date)
-    ),
+    // Only what a domestic filing confirms. A formation read off a foreign
+    // filing's stated home state is not stated as the formation.
+    ...(formationConfirmed(record)
+      ? [
+          ...field('Formation state', stateLabel(record.formation.state)),
+          // The same date the domestic filing carries as its registration date;
+          // they dedup to one row rather than stating it twice.
+          ...field('Formation date', longDate(record.formation.date), filingAge(record.formation.date))
+        ]
+      : [...field('Formation state', 'Not confirmed', 'no domestic filing on record')]),
     // The registry's three fields, each only when the filing states it. A
     // Delaware or New Jersey Unknown is the state not publishing, and says so.
     ...field(
@@ -749,7 +752,7 @@ export const identityRows = (record: BusinessRecord): AttributeRow[] => {
  * over three rows of two.
  */
 export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] => {
-  const domestic = record.registrations.find((r) => r.state === record.formation?.state)
+  const domestic = formationFilingOf(record)
   const names = nameRows(record).filter((r) => r.label !== 'DBA')
   const registered = names.find((r) => r.domesticOnly) ?? names[0]
 
@@ -1183,7 +1186,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
        * and the submission sits under it, labelled as what it is.
        */
       const domestic =
-        record.registrations.find((r) => r.state === record.formation?.state) ??
+        formationFilingOf(record) ??
         record.registrations[0]
       const onFile = filings[0]?.name ?? domestic?.name
       const differs = Boolean(onFile) && nameKey(onFile as string) !== nameKey(name)
@@ -1597,6 +1600,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       label: string
       title?: string
       url?: string
+      /** A watchlist result's verdict — false when it only collides with a name. */
+      valid?: boolean
+      note?: string
       risks?: Array<{ name: string; confidence: string | null }>
     }
 
@@ -1637,10 +1643,18 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           (l.results ?? [])
             .filter((r) => ids.includes(r.id))
             // The list it is on, linked to the agency's own page for it.
-            .map((r) => ({
-              label: [l.agencyAbbr, l.abbr].filter(Boolean).join(' · ') || (l.title ?? 'Watchlist'),
-              url: r.url ?? undefined
-            }))
+            .map((r) => {
+              const v = judgeHit(record, r)
+              return {
+                label: [l.agencyAbbr, l.abbr].filter(Boolean).join(' · ') || (l.title ?? 'Watchlist'),
+                title: r.entityName ?? undefined,
+                url: r.url ?? undefined,
+                // Said on the hit itself: a returned name is not a match until it
+                // names someone on the record — see watchlist.ts.
+                note: v.valid ? `matches ${v.matchedTo}` : `not a match — ${v.reason}`,
+                valid: v.valid
+              }
+            })
         )
       }
 
@@ -1691,7 +1705,13 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
                 : key === 'politically_exposed_persons'
                   ? 'Politically exposed persons'
                   : 'Screened',
-          value: `${item.name}${found ? '' : outcome}`,
+          value: `${item.name}${
+            found
+              ? articles.every((a) => a.valid === false)
+                ? ` — returned ${[...new Set(articles.map((a) => a.title).filter(Boolean))].join(', ')}, not a match`
+                : ''
+              : outcome
+          }`,
           source: '',
           // On a hit, the list or article it matched. On a clean name, nothing:
           // "no hits" already says every list came back empty, and naming all
@@ -1707,9 +1727,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
                 label: a.label,
                 title: a.title,
                 url: a.url,
-                note: a.risks?.length
-                  ? [...new Set(a.risks.map((r) => r.name.replace(/_/g, ' ')))].join(', ')
-                  : undefined
+                note:
+                  a.note ??
+                  (a.risks?.length ? [...new Set(a.risks.map((r) => r.name.replace(/_/g, ' ')))].join(', ') : undefined)
               }))
             : undefined,
           // No Submitted chip on a screening row. Whether the customer gave us
@@ -2186,6 +2206,82 @@ export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
     if (l.phone) rows.push({ ...base, label: 'Practice phone', value: l.phone, matchValue: l.phone })
   }
 
+  return rows
+}
+
+/**
+ * A city registration, read out of the city's own register.
+ *
+ * Middesk names a city registration only as the source of a name or an
+ * address. The register itself says whose business it is, what it trades as,
+ * its account and when it opened — Firebird Yarns is account 1089962, owned by
+ * Kathryn Bernard, doing business as Firebird Yarns since July 9, 2018. One
+ * business account can hold several locations and several DBAs over time
+ * (Sprig's account 1080965 traded as Mixboard, Userleap, then Sprig), so the
+ * rows are per account, each DBA its own row. Every row cites the Middesk
+ * city_registration reference it stands behind, so the Sources tab files it
+ * under the city registration and the Formation card reads it as that source.
+ */
+export const cityRegistrationRows = (record: BusinessRecord): AttributeRow[] => {
+  const regs = record.cityRegistrations ?? []
+  if (regs.length === 0) return []
+  const byAccount = new Map<string, typeof regs>()
+  for (const r of regs) {
+    const k = r.accountNumber ?? r.locationId ?? r.address
+    byAccount.set(k, [...(byAccount.get(k) ?? []), r])
+  }
+  const rows: AttributeRow[] = []
+  for (const [account, list] of byAccount) {
+    const first = list[0]
+    const openHere = list.filter((r) => !r.locationEnd && !r.businessEnd)
+    const open = openHere.length > 0
+    const refs = [...new Set(list.map((r) => r.refId).filter((x): x is string => Boolean(x)))].map((id) => ({
+      id,
+      type: 'city_registration',
+      metadata: { city: first.city, state: first.state, status: open ? 'Active' : 'Inactive' }
+    }))
+    const base = {
+      source: 'City registration',
+      sources: ['City registration'],
+      refs,
+      href: first.sourceUrl ?? undefined
+    }
+    rows.push({
+      ...base,
+      group: 'licenses' as GroupId,
+      label: 'City business registration',
+      value: `${first.city} · account ${account}`,
+      matchValue: `city:${account}`
+    })
+    if (first.owner)
+      rows.push({ ...base, group: 'people' as GroupId, label: 'Owner', value: first.owner, matchValue: first.owner })
+    // One row per trade name, however the register punctuated it ("Sprig Technologies Inc" / "Inc.").
+    const dbas = new Map<string, string>()
+    for (const d of list.map((r) => r.dba).filter((d): d is string => Boolean(d)))
+      if (!dbas.has(nameKey(d))) dbas.set(nameKey(d), d)
+    for (const dba of dbas.values())
+      rows.push({ ...base, group: 'name' as GroupId, label: 'Doing business as', value: dba, matchValue: dba })
+    if (first.businessStart)
+      rows.push({
+        ...base,
+        group: 'licenses' as GroupId,
+        label: 'Registered with the city',
+        value: longDate(first.businessStart) ?? first.businessStart,
+        qualifier: filingAge(first.businessStart) ?? undefined,
+        matchValue: `city:${account}:start`
+      })
+    rows.push({
+      ...base,
+      group: 'licenses' as GroupId,
+      label: 'City registration status',
+      value: open
+        ? list.length > 1
+          ? `Open · ${openHere.length} of ${list.length} locations open`
+          : 'Open'
+        : `Closed${first.businessEnd ? ` ${longDate(first.businessEnd)}` : ''}`,
+      matchValue: `city:${account}:status`
+    })
+  }
   return rows
 }
 

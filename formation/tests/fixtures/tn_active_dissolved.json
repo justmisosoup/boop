@@ -1,0 +1,58 @@
+{
+ "_fixture": "real TN payload (The Mala Market) with status_details set to the raw label \"Active - Dissolved\"",
+ "id": "da36b902-7c93-4f65-9efa-c2ca64d4a097",
+ "name": "THE MALA MARKET, LLC",
+ "formation": {
+  "entity_type": "LLC",
+  "formation_date": "2017-09-14",
+  "formation_state": "TN"
+ },
+ "submitted": {
+  "name": "THE MALA MARKET, LLC",
+  "entity_type": null
+ },
+ "registrations": [
+  {
+   "id": "ec435d3a-f3ec-435c-bc65-84d65cdb39c7",
+   "name": "THE MALA MARKET, LLC",
+   "status": "active",
+   "sub_status": "GOOD_STANDING",
+   "status_details": "Active - Dissolved",
+   "jurisdiction": "DOMESTIC",
+   "entity_type": "LLC",
+   "file_number": "000923109",
+   "officers": [],
+   "registered_agent": {
+    "name": "REGISTERED AGENTS INC"
+   },
+   "registration_date": "2017-09-14",
+   "state": "TN",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  }
+ ],
+ "review": {
+  "tasks": [
+   {
+    "key": "sos_domestic_sub_status",
+    "status": "success",
+    "sub_label": "Good Standing",
+    "message": "The domestic registration is in Good Standing."
+   },
+   {
+    "key": "sos_domestic",
+    "status": "success",
+    "sub_label": "Domestic Active",
+    "message": "Active domestic filing found"
+   },
+   {
+    "key": "entity_type",
+    "status": "success",
+    "sub_label": "Verified",
+    "message": "Entity type is a LLC"
+   }
+  ]
+ },
+ "documents": []
+}

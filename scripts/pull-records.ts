@@ -369,6 +369,25 @@ const normalise = (b: Any) => ({
       }
     : {}),
 
+  // What was ordered, and when. Industry classification has no package of its
+  // own — it rides as a subproduct of `website` — so without the orders there
+  // is no telling "never ordered" from "ordered, nothing classified". Fetched
+  // per business below; absent, like connections, when the call fails.
+  ...(Array.isArray(b.orders)
+    ? {
+        orders: b.orders
+          .map((o: Any) => ({
+            id: o.id,
+            package: o.package ?? o.product ?? null,
+            subproducts: o.subproducts ?? [],
+            status: o.status ?? null,
+            createdAt: o.created_at ?? null,
+            completedAt: o.completed_at ?? null
+          }))
+          .sort((x: Any, y: Any) => String(y.createdAt ?? '').localeCompare(String(x.createdAt ?? '')))
+      }
+    : {}),
+
   // The insight surface. `status` (success/warning/failure) is deliberately NOT
   // carried across: it is a judgement, and the assessment layer is where
   // judgement belongs (catalog/decompositions.md).
@@ -411,6 +430,12 @@ for (const s of summaries) {
       business.connections = connections.data ?? []
     } catch {
       /* not entitled, or no connections for this business */
+    }
+    try {
+      const orders = await call(`/businesses/${s.id}/orders?per_page=100`)
+      business.orders = orders.data ?? []
+    } catch {
+      /* leave the field off rather than claim there are none */
     }
     full.push(business)
   } catch (e) {

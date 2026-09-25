@@ -2,6 +2,7 @@ import rawRecords from '../data/records.json'
 import licenseStore from '../data/licenses.json'
 import { deriveResults, trueEntityType, type BusinessRecord } from './deriveResults'
 import agentStore from '../../analysis/agent.json'
+import { withCityRegistrations } from './cityRegistrations'
 import { newestReportFor } from './heldReports'
 import {
   areasOf,
@@ -41,7 +42,8 @@ const LICENSES = (licenseStore as { licenses: Record<string, unknown[]> }).licen
 const licenseKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim()
 
 /** Every ingested record. Nothing is synthesised — this is what `pull` wrote. */
-export const ALL: BusinessRecord[] = (rawRecords as BusinessRecord[]).map((r) => {
+export const ALL: BusinessRecord[] = (rawRecords as BusinessRecord[]).map((raw) => {
+  const r = withCityRegistrations(raw)
   const found = LICENSES[licenseKey(r.name)]
   return found ? { ...r, licenses: found as BusinessRecord['licenses'] } : r
 })

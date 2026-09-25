@@ -111,6 +111,31 @@ export type BusinessRecord = {
   }>
   formation: { date: string; entityType: string; state: string } | null
   /**
+   * City registrations, from the city's own register — Middesk supplies only a
+   * reference to one. San Francisco's (DataSF) carries the ownership name, the
+   * DBA, the business account and when it opened. See
+   * scripts/pull-city-registrations.ts; merged in by withCityRegistrations.
+   */
+  cityRegistrations?: Array<{
+    /** The Middesk city_registration source id this row stands behind. */
+    refId: string | null
+    registry: string
+    city: string
+    state: string
+    accountNumber: string | null
+    locationId: string | null
+    owner: string | null
+    dba: string | null
+    address: string
+    businessStart: string | null
+    businessEnd: string | null
+    locationStart: string | null
+    locationEnd: string | null
+    naics: string | null
+    dataAsOf: string | null
+    sourceUrl: string | null
+  }>
+  /**
    * Professional licences held by the people behind the business.
    *
    * A professional entity's members must be licensed in the profession it

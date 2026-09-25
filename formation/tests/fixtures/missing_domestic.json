@@ -1,0 +1,77 @@
+{
+ "_fixture": "real: Sprig Technologies (DE formation, no DE domestic), API 2026-09-25",
+ "id": "941d9efa-802e-42ab-8734-722d70b24a4d",
+ "name": "SPRIG TECHNOLOGIES INC.",
+ "formation": {
+  "entity_type": "CORPORATION",
+  "formation_date": "2019-09-05",
+  "formation_state": "DE"
+ },
+ "submitted": {
+  "name": "SPRIG TECHNOLOGIES INC.",
+  "entity_type": null
+ },
+ "registrations": [
+  {
+   "id": "ca38031a-adc4-4c1e-b660-97fc30e37ff9",
+   "name": "SPRIG TECHNOLOGIES INC.",
+   "status": "active",
+   "sub_status": "GOOD_STANDING",
+   "status_details": "Active",
+   "jurisdiction": "FOREIGN",
+   "entity_type": "CORPORATION",
+   "file_number": "4312456",
+   "officers": [
+    {
+     "name": "RYAN GLASGOW",
+     "roles": [
+      "Chief Financial Officer"
+     ]
+    },
+    {
+     "name": "RYAN GLASGOW",
+     "roles": [
+      "Chief Executive Officer"
+     ]
+    },
+    {
+     "name": "RYAN GLASGOW",
+     "roles": [
+      "Chief Financial Officer"
+     ]
+    },
+    {
+     "name": "RYAN GLASGOW",
+     "roles": [
+      "Secretary"
+     ]
+    }
+   ],
+   "registered_agent": {
+    "name": "Ryan Glasgow"
+   },
+   "registration_date": "2019-09-05",
+   "state": "CA",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  }
+ ],
+ "review": {
+  "tasks": [
+   {
+    "key": "sos_domestic",
+    "status": "failure",
+    "sub_label": "Domestic Missing",
+    "message": "The business has no domestic filing"
+   },
+   {
+    "key": "entity_type",
+    "status": "success",
+    "sub_label": "Verified",
+    "message": "Entity type is a CORPORATION"
+   }
+  ]
+ },
+ "documents": []
+}

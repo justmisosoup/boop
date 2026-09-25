@@ -32,8 +32,10 @@ export const ROW_HAIRLINE = cn(
  * Named on the card, when it is named: `title` and `trailing` are the card's
  * header row (`CardHeader`), and `intro` is a band of prose under it — the
  * sentences an assessment writes about what it could not find, before the
- * rows of what it did. Header and intro rule themselves off with a hairline,
- * so the first row never draws one of its own; only rows after the first do.
+ * rows of what it did. The intro sits directly under the header, unruled — it
+ * is the header's own sentence — and rules itself off from the rows; with no
+ * intro the header does. The first row never draws a line of its own; only
+ * rows after the first do.
  *
  * Renders nothing when there is nothing under the header: a frame around a
  * name is a frame.
@@ -56,11 +58,13 @@ export const InsightStack = ({
 
   return (
     <Surface variant="card" padding="none" className={cn('overflow-hidden', className)}>
-      {title && <CardHeader title={title} trailing={trailing} />}
+      {/* The summary reads as the header's own sentence, so no rule between them. */}
+      {title && <CardHeader title={title} trailing={trailing} className={intro ? 'border-b-0 pb-1' : undefined} />}
       {intro && (
         <div
           className={cn(
-            'px-4 py-3',
+            'px-4 pb-3',
+            title ? 'pt-0' : 'pt-3',
             rows.length > 0 && 'border-b border-[var(--core-color-border-divider)]'
           )}
         >

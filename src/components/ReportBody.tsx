@@ -16,10 +16,9 @@ import type {
   CouldNotConfirmReason
 } from '../types'
 import { cn } from '../utils/twUtils'
-import { CardLabel } from './CardLabel'
 import { ROLLUP_NO_GLYPH } from './chipStyles'
 import { InsightRow } from './InsightRow'
-import { InsightStack, ROW_HAIRLINE } from './InsightStack'
+import { InsightStack } from './InsightStack'
 
 /**
  * How a report reads, wherever it is read.
@@ -139,6 +138,18 @@ const CiteList = ({
   }
   const ordered = [...[...flagged].sort(byTopic), ...cited.filter((r) => !isFlagged(r)).sort(byTopic)]
 
+  /* A part claims an insight outright before topics are read: the
+     domestic-filing checks are Formation-topic insights, but they say whether
+     the filing is live, which is the Domestic filing part's, not the
+     registration's. */
+  const sectionOf = (r: Derived) => {
+    const key = r.insightId.split(':')[0]
+    return (
+      sections?.find((s) => s.insights?.includes(key)) ??
+      sections?.find((s) => s.groups.includes(groupFor(r.insightId) as GroupId))
+    )
+  }
+
   const row = (r: Derived) => (
     <InsightRow
       key={r.insightId}
@@ -149,43 +160,61 @@ const CiteList = ({
     />
   )
 
+  const flaggedChip = (rows: Derived[]) => {
+    const n = rows.filter(isFlagged).length
+    return (
+      <span className="flex items-center gap-2">
+        {n > 0 && <span className="text-caption tabular-nums text-text-secondary">{n} flagged</span>}
+        {trailing}
+      </span>
+    )
+  }
+
+  /*
+   * An area in parts is a card per part, not one card with sub-headings. The
+   * Identity card ran four findings — the registration, the domestic filing,
+   * the office, whether it resolves to one entity — under one header, and a
+   * reader could not tell which insight bore on which. Each part is its own
+   * card now: its finding as the title, its one sentence as the summary, and
+   * only its own insights. Anything the assessment wrote about the area as a
+   * whole (a gap) leads the first card.
+   */
+  if (sections) {
+    const parts = [
+      ...sections.map((s) => ({
+        title: s.headline(record),
+        note: s.note?.(record),
+        // A check the title states is not repeated as a row under it.
+        rows: ordered.filter((r) => sectionOf(r) === s && !s.stated?.(record).includes(r.insightId.split(':')[0]))
+      })),
+      { title: 'Other', note: undefined, rows: ordered.filter((r) => !sectionOf(r)) }
+    ].filter((p) => p.rows.length > 0)
+    return (
+      <div className="flex flex-col gap-4">
+        {parts.map((p, i) => {
+          const lead = i === 0 ? intro : undefined
+          const summary =
+            lead || p.note ? (
+              <>
+                {p.note && <span className="block text-sm leading-5 text-text-secondary">{p.note}</span>}
+                {lead && <div className={p.note ? 'mt-2' : undefined}>{lead}</div>}
+              </>
+            ) : undefined
+          return (
+            <InsightStack key={p.title} title={p.title} trailing={flaggedChip(p.rows)} intro={summary}>
+              {p.rows.map(row)}
+            </InsightStack>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     // The Insights tab's own frame, the same component: one card, named in its
     // own header, rows divided by the inset hairline.
-    <InsightStack
-      title={title}
-      trailing={
-        <span className="flex items-center gap-2">
-          {flagged.length > 0 && (
-            <span className="text-caption tabular-nums text-text-secondary">{flagged.length} flagged</span>
-          )}
-          {trailing}
-        </span>
-      }
-      intro={intro}
-    >
-      {sections
-        ? [
-            ...sections.map((s) => ({ label: s.headline(record), rows: ordered.filter((r) => s.groups.includes(groupFor(r.insightId) as GroupId)) })),
-            {
-              label: 'Other',
-              rows: ordered.filter((r) => !sections.some((s) => s.groups.includes(groupFor(r.insightId) as GroupId)))
-            }
-          ]
-            .filter((b) => b.rows.length > 0)
-            .map((b) => (
-              <div key={b.label}>
-                <CardLabel as="h4" className="px-4 pb-1 pt-3">
-                  {b.label}
-                </CardLabel>
-                {b.rows.map((r, i) => (
-                  <div key={r.insightId} className={cn(i > 0 && ROW_HAIRLINE)}>
-                    {row(r)}
-                  </div>
-                ))}
-              </div>
-            ))
-        : ordered.map(row)}
+    <InsightStack title={title} trailing={flaggedChip(cited)} intro={intro}>
+      {ordered.map(row)}
     </InsightStack>
   )
 }

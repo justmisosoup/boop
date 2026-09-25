@@ -1,0 +1,88 @@
+state,old_label,new_label,n,action
+AR,(see action),INACTIVE / (none) / Good Standing,175,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+AR,INACTIVE / GOOD_STANDING / Good Standing,,175,ORIGINAL conflict row (folded into cleaned label above)
+AZ,(see action),INACTIVE / PENDING_ACTIVE / Pending Active,6923,status UNKNOWN->INACTIVE (pending activation)
+AZ,UNKNOWN / PENDING_ACTIVE / Pending Active,,6923,ORIGINAL conflict row (folded into cleaned label above)
+CT,INACTIVE / PENDING_ACTIVE / Pending Filing,INACTIVE / PENDING_ACTIVE / Pending Filing,5,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+CT,INACTIVE / PENDING_ACTIVE / Registered,INACTIVE / PENDING_ACTIVE / Registered,14,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+CT,INACTIVE / PENDING_ACTIVE / Reserved,INACTIVE / PENDING_ACTIVE / Reserved,885,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+DC,INACTIVE / PENDING_ACTIVE / Redeemed,INACTIVE / PENDING_ACTIVE / Redeemed,3,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+GA,INACTIVE / PENDING_ACTIVE / Filed,INACTIVE / PENDING_ACTIVE / Filed,29,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+IL,(see action),ACTIVE / PENDING_INACTIVE / Unacceptable payment,230,status UNKNOWN->ACTIVE (pending inactivation)
+IL,(see action),ACTIVE / PENDING_INACTIVE / Agent Vacated,119,status UNKNOWN->ACTIVE (pending inactivation)
+IL,(see action),ACTIVE / PENDING_INACTIVE / Agent vacated,103,status UNKNOWN->ACTIVE (pending inactivation)
+IL,(see action),ACTIVE / PENDING_INACTIVE / Hold,56,status UNKNOWN->ACTIVE (pending inactivation)
+IL,(see action),ACTIVE / GOOD_STANDING / Ag-Coop,21,status UNKNOWN->ACTIVE (good standing)
+IL,(see action),INACTIVE / PENDING_ACTIVE / Special Act Corporation,16,status UNKNOWN->INACTIVE (pending activation)
+IL,(see action),ACTIVE / PENDING_INACTIVE / Registered name cancellation,3,status UNKNOWN->ACTIVE (pending inactivation)
+IL,UNKNOWN / GOOD_STANDING / Ag-Coop,,21,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_ACTIVE / Special Act Corporation,,16,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_INACTIVE / Agent Vacated,,119,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_INACTIVE / Agent vacated,,103,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_INACTIVE / Hold,,56,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_INACTIVE / Registered name cancellation,,3,ORIGINAL conflict row (folded into cleaned label above)
+IL,UNKNOWN / PENDING_INACTIVE / Unacceptable payment,,230,ORIGINAL conflict row (folded into cleaned label above)
+IN,INACTIVE / PENDING_ACTIVE / Pending,INACTIVE / PENDING_ACTIVE / Pending,23,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+IN,INACTIVE / PENDING_ACTIVE / Pending Domestication,INACTIVE / PENDING_ACTIVE / Pending Domestication,2,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+IN,INACTIVE / PENDING_ACTIVE / Reserved,INACTIVE / PENDING_ACTIVE / Reserved,2075,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+KS,(see action),INACTIVE / PENDING_ACTIVE / Corporation Is Pending,52,status UNKNOWN->INACTIVE (pending activation)
+KS,(see action),INACTIVE / PENDING_ACTIVE / Active Pending Examination of I/R,17,status UNKNOWN->INACTIVE (pending activation)
+KS,INACTIVE / PENDING_ACTIVE / CORPORATION IS PENDING,,7,ORIGINAL conflict row (folded into cleaned label above)
+KS,UNKNOWN / PENDING_ACTIVE / Active Pending Examination of I/R,,17,ORIGINAL conflict row (folded into cleaned label above)
+KS,UNKNOWN / PENDING_ACTIVE / Corporation Is Pending,,52,ORIGINAL conflict row (folded into cleaned label above)
+KY,INACTIVE / PENDING_ACTIVE / Name Reservation,INACTIVE / PENDING_ACTIVE / Name Reservation,96,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+KY,INACTIVE / PENDING_ACTIVE / On File,INACTIVE / PENDING_ACTIVE / On File,439,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+KY,INACTIVE / PENDING_ACTIVE / Pending Reinstatement,INACTIVE / PENDING_ACTIVE / Pending Reinstatement,11,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+LA,INACTIVE / PENDING_ACTIVE / PENDING,INACTIVE / PENDING_ACTIVE / PENDING,1,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+ME,INACTIVE / PENDING_ACTIVE / PENDING NEW APPLICATION,INACTIVE / PENDING_ACTIVE / PENDING NEW APPLICATION,9,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+MO,INACTIVE / PENDING_ACTIVE / In Process,INACTIVE / PENDING_ACTIVE / In Process,502,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+MS,INACTIVE / PENDING_ACTIVE / Name Reserved,INACTIVE / PENDING_ACTIVE / Name Reserved,15,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+NH,(see action),INACTIVE / DISSOLVED / Administratively Dissolved Name Protection,27500,status UNKNOWN->INACTIVE (dissolved)
+NH,(see action),INACTIVE / DISSOLVED / Dissolved Name Protected,582,status UNKNOWN->INACTIVE (dissolved)
+NH,(see action),INACTIVE / PENDING_ACTIVE / Future Effective,7,status UNKNOWN->INACTIVE (pending activation)
+NH,(see action),INACTIVE / PENDING_ACTIVE / InProcess,5,status UNKNOWN->INACTIVE (pending activation)
+NH,INACTIVE / PENDING_ACTIVE / InProcess,,2,ORIGINAL conflict row (folded into cleaned label above)
+NH,UNKNOWN / DISSOLVED / Administratively Dissolved Name Protection,,27500,ORIGINAL conflict row (folded into cleaned label above)
+NH,UNKNOWN / DISSOLVED / Dissolved Name Protected,,582,ORIGINAL conflict row (folded into cleaned label above)
+NH,UNKNOWN / PENDING_ACTIVE / Future Effective,,7,ORIGINAL conflict row (folded into cleaned label above)
+NH,UNKNOWN / PENDING_ACTIVE / InProcess,,5,ORIGINAL conflict row (folded into cleaned label above)
+NM,INACTIVE / PENDING_ACTIVE / Future Effective,INACTIVE / PENDING_ACTIVE / Future Effective,37,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+PA,(see action),ACTIVE / PENDING_INACTIVE / Active - Dissolved,8582,ACTIVE+DISSOLVED -> PENDING_INACTIVE (winding up)
+PA,ACTIVE / DISSOLVED / Active - Dissolved,,8582,ORIGINAL conflict row (folded into cleaned label above)
+RI,INACTIVE / PENDING_ACTIVE / Name Registration,INACTIVE / PENDING_ACTIVE / Name Registration,324,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+RI,INACTIVE / PENDING_ACTIVE / Name Reservation,INACTIVE / PENDING_ACTIVE / Name Reservation,8223,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+SC,INACTIVE / PENDING_ACTIVE / Registered,INACTIVE / PENDING_ACTIVE / Registered,3079,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+SC,INACTIVE / PENDING_ACTIVE / Reserved,INACTIVE / PENDING_ACTIVE / Reserved,35392,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+TN,(see action),INACTIVE / DISSOLVED / Inactive - Dissolved (Administrative),2923,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Terminated,6537,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Revoked (Revenue),3,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Revoked (Administrative),219,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Withdrawn,762,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Merged,365,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Cancelled,1558,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Expired,42,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Revoked (Labor & Workforce Dept),149,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Converted,246,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / DISSOLVED / Inactive - Dissolved (No Agent),27,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Revoked (No Agent),26,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Inactive - Void Filing Error,241,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,(see action),INACTIVE / (none) / Deleted,2,"stale GOOD_STANDING on INACTIVE entity: sub_status -> DISSOLVED if details say dissolved, else none"
+TN,INACTIVE / GOOD_STANDING / Deleted,,2,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Cancelled,,1558,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Converted,,246,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Dissolved (Administrative),,2923,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Dissolved (No Agent),,27,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Expired,,42,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Merged,,365,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Revoked (Administrative),,219,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Revoked (Labor & Workforce Dept),,149,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Revoked (No Agent),,26,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Revoked (Revenue),,3,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Terminated,,6537,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Void Filing Error,,241,ORIGINAL conflict row (folded into cleaned label above)
+TN,INACTIVE / GOOD_STANDING / Inactive - Withdrawn,,762,ORIGINAL conflict row (folded into cleaned label above)
+VT,(see action),ACTIVE / PENDING_INACTIVE / Pending Withdrawal,1,status UNKNOWN->ACTIVE (pending inactivation)
+VT,UNKNOWN / PENDING_INACTIVE / Pending Withdrawal,,1,ORIGINAL conflict row (folded into cleaned label above)
+WI,INACTIVE / PENDING_ACTIVE / Registered,INACTIVE / PENDING_ACTIVE / Registered,29765,INACTIVE+PENDING_ACTIVE is a valid combo (filing not yet effective): CONFLICT flag removed
+WY,(see action),INACTIVE / (none) / INACTIVE,90647,"WY assumed-inactive override (entity dropped from bulk feed >30d): sub_status cleared, status_details ACTIVE->INACTIVE"
+WY,INACTIVE / GOOD_STANDING / ACTIVE,,85642,ORIGINAL conflict row (folded into cleaned label above)

@@ -1,6 +1,7 @@
 import reportStore from '../../analysis/reports.json'
 
 import type { StoredReport } from '../types'
+import { withCityRegistrations } from './cityRegistrations'
 
 /**
  * The reports written for this prototype, bundled.
@@ -14,8 +15,19 @@ import type { StoredReport } from '../types'
  * list, which scores every row off it — so the lookup lives here rather than
  * inside either.
  */
-const BUNDLED: Record<string, StoredReport[]> =
+const RAW: Record<string, StoredReport[]> =
   (reportStore as unknown as { reports?: Record<string, StoredReport[]> }).reports ?? {}
+
+/** A report's snapshot carries the city registrations the live record does —
+ *  see withCityRegistrations — so the page it opens on can show them. */
+const BUNDLED: Record<string, StoredReport[]> = Object.fromEntries(
+  Object.entries(RAW).map(([k, list]) => [
+    k,
+    list.map((r) =>
+      r.snapshot?.record ? { ...r, snapshot: { ...r.snapshot, record: withCityRegistrations(r.snapshot.record) } } : r
+    )
+  ])
+)
 
 export const reportKey = (name: string) => (name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
 

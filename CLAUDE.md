@@ -57,3 +57,9 @@ Two further contracts, both authoritative:
 `bun run build` fails on `tsc -b`, and has since before this prototype had a
 second screen: the cloned `src/core` ships its colocated tests, and the test
 dependencies aren't installed. `bunx vite build` is the real build check.
+
+## Business formation checks
+
+- For business formation questions, summarize from the "FORMATION CHECK:" block if present.
+- Otherwise run: `python3 formation/check.py <business_id>`
+- Do not call the API directly, open `.cache/`, or read `formation/data/` unless I ask for a refresh or detail.

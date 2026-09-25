@@ -11,3 +11,7 @@ analysis/replay-*.json
 analysis/snapshot-*.json
 analysis/lede-*.json
 analysis/pending.json
+
+# formation check: secrets and raw API responses
+.env
+.cache/

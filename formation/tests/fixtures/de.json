@@ -1,0 +1,180 @@
+{
+ "_fixture": "real: Supabase, Inc. (DE), API 2026-09-25",
+ "id": "e87056fd-33b3-440b-b341-2b80e960c675",
+ "name": "SUPABASE, INC.",
+ "formation": {
+  "entity_type": "CORPORATION",
+  "formation_date": "2020-01-24",
+  "formation_state": "DE"
+ },
+ "submitted": {
+  "name": "SUPABASE, INC.",
+  "entity_type": null
+ },
+ "registrations": [
+  {
+   "id": "94732a5f-202f-427a-8f46-d94b7799b560",
+   "name": "SUPABASE, INC.",
+   "status": "unknown",
+   "sub_status": null,
+   "status_details": null,
+   "jurisdiction": "DOMESTIC",
+   "entity_type": "CORPORATION",
+   "file_number": "7816270",
+   "officers": [],
+   "registered_agent": {
+    "name": "ROCKET LAWYER CORPORATE SERVICES LLC"
+   },
+   "registration_date": "2020-01-24",
+   "state": "DE",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  },
+  {
+   "id": "e0b48b5a-53e3-46a1-bec9-6e5be631838a",
+   "name": "Supabase, Inc.",
+   "status": "active",
+   "sub_status": null,
+   "status_details": null,
+   "jurisdiction": "FOREIGN",
+   "entity_type": "CORPORATION",
+   "file_number": "000948458",
+   "officers": [],
+   "registered_agent": {
+    "name": "ISL INC"
+   },
+   "registration_date": "2020-01-24",
+   "state": "AL",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  },
+  {
+   "id": "8e6715ec-e60b-4f7b-b002-b605eab6ca79",
+   "name": "SUPABASE, INC.",
+   "status": "active",
+   "sub_status": null,
+   "status_details": "Active",
+   "jurisdiction": "FOREIGN",
+   "entity_type": "CORPORATION",
+   "file_number": "23286469",
+   "officers": [
+    {
+     "name": "ANTHONY WILSON",
+     "roles": [
+      "Director"
+     ]
+    },
+    {
+     "name": "ARUN MATHEW",
+     "roles": [
+      "Director"
+     ]
+    },
+    {
+     "name": "CARYN MAROONEY",
+     "roles": [
+      "Director"
+     ]
+    },
+    {
+     "name": "PAUL COPPLESTONE",
+     "roles": [
+      "Director"
+     ]
+    }
+   ],
+   "registered_agent": {
+    "name": "ISL, INC. (FN)"
+   },
+   "registration_date": "2021-10-19",
+   "state": "AZ",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  },
+  {
+   "id": "0e838d1e-4bf5-42e4-b89d-d9c350d05ed6",
+   "name": "SUPABASE, INC.",
+   "status": "active",
+   "sub_status": "GOOD_STANDING",
+   "status_details": "Active",
+   "jurisdiction": "FOREIGN",
+   "entity_type": "CORPORATION",
+   "file_number": "4788615",
+   "officers": [
+    {
+     "name": "PAUL COPPLESTONE",
+     "roles": [
+      "Chief Executive Officer"
+     ]
+    },
+    {
+     "name": "PAUL COPPLESTONE",
+     "roles": [
+      "Chief Financial Officer"
+     ]
+    },
+    {
+     "name": "PAUL COPPLESTONE",
+     "roles": [
+      "Director"
+     ]
+    },
+    {
+     "name": "PAUL COPPLESTONE",
+     "roles": [
+      "Secretary"
+     ]
+    }
+   ],
+   "registered_agent": {
+    "name": "INCORPORATING SERVICES, LTD."
+   },
+   "registration_date": "2021-09-13",
+   "state": "CA",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  }
+ ],
+ "review": {
+  "tasks": [
+   {
+    "key": "sos_domestic_sub_status",
+    "status": "warning",
+    "sub_label": "Not Provided by State",
+    "message": "The domestic sub-status is Not Provided by State."
+   },
+   {
+    "key": "sos_domestic",
+    "status": "warning",
+    "sub_label": "Domestic Unknown",
+    "message": "No domestic filing status provided"
+   },
+   {
+    "key": "entity_type",
+    "status": "success",
+    "sub_label": "Verified",
+    "message": "Entity type is a CORPORATION"
+   }
+  ]
+ },
+ "documents": [
+  {
+   "document_type": "Certificate of good standing",
+   "source": {
+    "type": "registration",
+    "id": "94732a5f-202f-427a-8f46-d94b7799b560",
+    "metadata": {
+     "state": "DE",
+     "status": "unknown",
+     "name": "SUPABASE, INC."
+    }
+   },
+   "filing_date": "2026-09-17T00:00:00.000Z",
+   "metadata": {}
+  }
+ ]
+}

@@ -1,8 +1,10 @@
-import { entityTypeCode } from './attributes'
+import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
-import { article, describeRegistration, domesticOf, isGoodStanding, registrationState } from './registrationStatus'
+import { describeRegistration, isGoodStanding, registrationState } from './registrationStatus'
+import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
+import { validHitCount, watchlistVerdicts } from './watchlist'
 
 /**
  * What each area checks, for this business.
@@ -23,9 +25,9 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const upper = (entity ?? '').toUpperCase()
   const state = record.formation ? stateName(record.formation.state) : undefined
   const industry = industrySectorOf(record)
-  const hits = record.watchlist?.hitCount ?? 0
-  const owed =
-    (record.liens ?? []).length + (record.litigations ?? []).length + (record.bankruptcies ?? []).length
+  const hits = validHitCount(record)
+  const returned = watchlistVerdicts(record)
+  const notMatches = returned.filter((v) => !v.valid)
 
   // A professional entity is owned by licensed practitioners; the licence
   // record answers it, and is named rather than restated.
@@ -48,7 +50,13 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     ? `See the ${licences[0].registry ?? 'licence'} record for the practitioner's licence.`
     : 'No licence record was found; confirm the practitioner is licensed.'
 
-  const ownership = professional
+  // A sole proprietorship has one owner: the person it is registered under.
+  const sole = soleProprietorOf(record)
+  const ownership = sole
+    ? `A sole proprietorship has one owner, the person it is registered under; ${
+        sole.tradeNameOnFile ? `${sole.city}'s business registration lists ${sole.person} as the owner` : `the ${sole.city} city registration is in ${sole.person}'s name`
+      }. Confirm it on the customer certification.`
+    : professional
     ? `A ${entity} is typically owned by one or a few licensed practitioners who also run the practice.${
         people.length
           ? ` Check that ${list(people)} ${people.length === 1 ? 'holds' : 'hold'} the professional licence the practice requires.`
@@ -93,110 +101,76 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         : 'That classification is not a high-risk industry.'
       : ''
 
-  /* The website, where there is one: what it corroborates of the submitted
-     identity, and what it does not. Only the three identity details — name,
-     office, people — and only when the site was online to be read. */
-  const task = (key: string) => record.reviewTasks.find((t) => t.key === key)?.subLabel ?? ''
-  const online = /online/i.test(task('website_status'))
-  const WEB: Array<[string, string]> = [
-    ['web_business_name_verification', 'business name'],
-    ['web_address_verification', 'office address'],
-    ['web_person_verification', 'submitted person']
-  ]
-  const confirmed = WEB.filter(([k]) => /verified|match/i.test(task(k)) && !/mismatch|unverified/i.test(task(k))).map(([, l]) => l)
-  const outstanding = WEB.filter(([k]) => /mismatch|unverified/i.test(task(k))).map(([, l]) => l)
-  const web = !online
-    ? ''
-    : [
-        confirmed.length ? `The website confirms the ${list(confirmed)}.` : '',
-        outstanding.length
-          ? `It does not match the ${list(outstanding)}, which ${outstanding.length === 1 ? 'is' : 'are'} still to corroborate.`
-          : ''
-      ]
-        .filter(Boolean)
-        .join(' ')
-
-  /* Identity answers one question — is this a real business, and the one it
-     claims to be — in four parts: a registered entity, a credible address it
-     is still active at, digital corroboration where there is any, and whether
-     it all resolves to one entity. One clause each, only where there is
-     evidence, and a caveat only where one applies. */
-  const is = (key: string, re: RegExp) => re.test(task(key))
-  const cap = (w: string) => w.replace(/^./, (c) => c.toUpperCase())
-  const noun = /^[A-Z]{2,5}$/.test(kind) ? kind : kind.toLowerCase()
-  const nameOk = is('name', /^verified$/i)
-  /* The domestic filing's state in the registry's own three fields: status,
-     then whatever the sub status and the details add. Delaware and New Jersey
-     publish none of it, and the clause says so rather than going quiet. */
-  const domestic = domesticOf(record)
-  const filingClause = domestic
-    ? registrationState(domestic).status
-      ? `; the filing is ${describeRegistration(domestic).toLowerCase()}`
-      : registrationState(domestic).silent
-        ? `; ${state} doesn't publish filing status`
-        : '; the state reports no status for the filing'
-    : ''
-  const entityLine = !state
-    ? 'No formation filing was found for the submitted business.'
-    : nameOk
-      ? `${cap(article(state))} ${state} ${noun}, registered under the submitted name${filingClause}.`
-      : is('name', /similar/i)
-        ? `${cap(article(state))} ${state} ${noun}, registered under a name similar to the one submitted${filingClause}.`
-        : `${cap(article(state))} ${state} ${noun} is on file, but not under the submitted name${filingClause}.`
-  const deliverable = is('address_deliverability', /^deliverable$/i)
-  const commercial = is('address_property_type', /commercial/i)
-  const activeHere = is('sos_match', /submitted active/i)
-  const addressFact = task('address_deliverability')
-    ? `${deliverable ? 'a deliverable' : 'an undeliverable'}${commercial ? ' commercial' : is('address_property_type', /residential/i) ? ' residential' : ''} address`
-    : ''
-  const standing = activeHere
-    ? `Active in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
-    : is('sos_match', /inactive/i)
-      ? `Inactive in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
-      : is('sos_match', /not registered/i)
-        ? `Not registered in the state of its office${addressFact ? `, at ${addressFact}` : ''}`
-        : addressFact
-          ? `At ${addressFact}`
-          : ''
-  const standingLine = standing ? `${standing}.` : ''
-  const personOk = is('person_verification', /^verified$/i)
-  const resolves = !task('person_verification')
-    ? ''
-    : personOk && nameOk
-      ? 'The submitted person matches the filings, so it resolves to one entity.'
-      : personOk
-        ? 'The submitted person matches the filings.'
-        : 'The submitted person is not on the filings; confirm this is the entity applying.'
-
-  /* The card's own name is what was found, not the pillar that found it: the
-     groupings are the model's, per business, and a fixed label over them
-     would name a category rather than a finding. One clause each. */
-  const identityHeadline = !state
-    ? 'No registered entity matches the applicant'
-    : nameOk && personOk
-      ? `A real ${state} ${noun}, and the one applying`
-      : nameOk
-        ? `A real ${state} ${noun}; the applicant isn't on its filings`
-        : `${cap(article(state))} ${state} ${noun} is on file, under a different name`
   /* A lien or a bankruptcy is a claim on money; a litigation is a case that
      may or may not become one, so it is named as what it is. */
   const claims = (record.liens ?? []).length + (record.bankruptcies ?? []).length
   const cases = (record.litigations ?? []).length
+  /* What is owed, in the amounts the record states. A closed lien is paid or
+     released; a case with no judgment has awarded nothing; a UCC filing secures
+     a loan without saying how much. Counting all of them as money owed read
+     Checkr's 5 liens and 10 lawsuits as "15", when one Florida lien is the only
+     amount on the record. */
+  const liens = record.liens ?? []
+  const liveLiens = liens.filter((l) => (l.status ?? '').toLowerCase() !== 'closed')
+  const lienAmounts = liveLiens
+    .map((l) => l.liabilityCents ?? l.loanPrincipalCents)
+    .filter((c): c is number => c != null && c > 0)
+  const judgments = (record.litigations ?? [])
+    .filter((c) => /defendant/i.test(c.partyType ?? ''))
+    .flatMap((c) => c.judgments ?? [])
+    .map((j) => j.amountCents)
+    .filter((c): c is number => c != null && c > 0)
+  const bankrupt = (record.bankruptcies ?? []).length
+  const stated = [...lienAmounts, ...judgments].reduce((a, b) => a + b, 0)
+  const live = liveLiens.length + bankrupt + judgments.length
+  const unstated = liveLiens.length > lienAmounts.length || bankrupt > 0
+  const plural = (n: number, one: string, many: string) => `${n === 1 ? 'one' : n} ${n === 1 ? one : many}`
   const standingHeadline =
-    claims > 0
-      ? `${owed} ${owed === 1 ? 'record' : 'records'} of money owed that could reach the account`
+    live > 0
+      ? stated > 0
+        ? `${money(stated)} stated owed, across ${plural(live, 'open claim', 'open claims')}`
+        : `${plural(live, 'open claim', 'open claims')} on file, no amount stated`
       : cases > 0
-        ? `${cases} litigation ${cases === 1 ? 'record' : 'records'} on file, no liens or bankruptcies`
-        : 'No liens, judgments or bankruptcies'
+        ? `${cases} litigation ${cases === 1 ? 'record' : 'records'} on file, no open liens or bankruptcies`
+        : claims > 0
+          ? 'Liens on file, all closed'
+          : 'No liens, judgments or bankruptcies'
+  const standingSummary = [
+    live > 0
+      ? `Liens, judgments and bankruptcies show money the ${kind} owes elsewhere, which can reach funds held in the account.`
+      : '',
+    liens.length === 0
+      ? ''
+      : liveLiens.length === 0
+        ? `${liens.length === 1 ? 'Its one lien is' : `All ${liens.length} of its liens are`} closed.`
+        : `${liveLiens.length} of its ${liens.length} liens ${liveLiens.length === 1 ? 'is' : 'are'} not closed${
+            lienAmounts.length === 0
+              ? `, and ${liveLiens.length === 1 ? 'it states no amount' : 'none states an amount'}`
+              : lienAmounts.length < liveLiens.length
+                ? `; ${lienAmounts.length === 1 ? 'one states' : `${lienAmounts.length} state`} an amount`
+                : ''
+          }.`,
+    cases > 0
+      ? `${cases} ${cases === 1 ? 'lawsuit names' : 'lawsuits name'} it, ${
+          judgments.length > 0 ? `with ${money(judgments.reduce((a, b) => a + b, 0))} in judgments against it` : 'none with a money judgment against it'
+        }.`
+      : '',
+    bankrupt > 0 ? `${bankrupt === 1 ? 'One bankruptcy is' : `${bankrupt} bankruptcies are`} on file.` : '',
+    stated > 0
+      ? `The amount stated on the record is ${money(stated)}${unstated ? '; the rest carries no figure' : ''}.`
+      : live > 0
+        ? 'No amount is stated anywhere on the record.'
+        : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return new Map<string, AreaSummary>([
-    [
-      'skill-kyb-identification',
-      {
-        headline: identityHeadline,
-        summary: [entityLine, standingLine, web, resolves].filter(Boolean).join(' ')
-      }
-    ],
+    /* No Identity entry. Its four findings — the registration, the domestic
+       filing, the office, whether it resolves to one entity — each head their
+       own part of the card (see identitySections), and one headline and
+       paragraph over them ran all four together. The card is named for the
+       area, and the parts say what they found. */
     [
       'skill-kyb-3',
       {
@@ -204,7 +178,13 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         summary:
           hits > 0
             ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
-            : `No sanctions or watchlist hits on the ${kind} or the individuals named on its filings, so nothing here stands in the way of opening the account.`
+            : notMatches.length > 0
+              ? `No valid sanctions or watchlist hits. The screen returned ${
+                  notMatches.length === 1
+                    ? `${notMatches[0].entityName}, who ${notMatches[0].reason}`
+                    : `${notMatches.length} names, none of which matches the ${kind} or the individuals named on its filings`
+                }, so it is not counted and nothing here stands in the way of opening the account.`
+              : `No sanctions or watchlist hits on the ${kind} or the individuals named on its filings, so nothing here stands in the way of opening the account.`
       }
     ],
     [
@@ -219,7 +199,11 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     [
       'skill-1789767328449',
       {
-        headline: professional ? 'Owned by licensed practitioners' : 'Owners come from the customer certification',
+        headline: sole
+          ? `Likely owned by ${sole.person}, as a sole proprietor`
+          : professional
+            ? 'Owned by licensed practitioners'
+            : 'Owners come from the customer certification',
         summary: ownership
       }
     ],
@@ -228,9 +212,8 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       {
         headline: standingHeadline,
         summary:
-          owed > 0
-            ? `Liens, judgments and bankruptcies show money the ${kind} owes elsewhere, which can reach funds held in the account. The record holds ${owed === 1 ? 'one' : owed}.`
-            : `No liens, judgments or bankruptcies against the ${kind}, so there is no sign of claims that could reach funds in the account.`
+          standingSummary ||
+          `No liens, judgments or bankruptcies against the ${kind}, so there is no sign of claims that could reach funds in the account.`
       }
     ]
   ])

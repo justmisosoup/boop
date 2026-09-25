@@ -44,6 +44,7 @@ import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { entityTypeCode } from '../lib/attributes'
+import { formationConfirmed } from '../lib/registrationStatus'
 import { stateName } from '../lib/states'
 import { industrySectorOf } from '../lib/naics'
 import { areaSummaries } from '../lib/areaSummaries'
@@ -206,7 +207,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * many other states hold a foreign registration. "Delaware · 2 foreign
    * registrations" says what a list of codes made the reader count.
    */
-  const domesticState = record.formation?.state ?? record.registrations.find((r) => r.jurisdiction === 'DOMESTIC')?.state
+  const domesticState = formationConfirmed(record)
+    ? record.formation?.state
+    : record.registrations.find((r) => r.jurisdiction === 'DOMESTIC')?.state
   const foreignCount = record.registrations.filter((r) => r.state && r.state !== domesticState).length
   const jurisdiction = domesticState
     ? [

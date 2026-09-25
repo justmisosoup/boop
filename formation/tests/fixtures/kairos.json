@@ -1,0 +1,65 @@
+{
+ "_fixture": "real: Kairos 801 LLC, API 2026-09-25",
+ "id": "da96b936-fe31-402f-96a1-299296b01bba",
+ "name": "KAIROS 801 LLC",
+ "formation": {
+  "entity_type": "LLC",
+  "formation_date": "2022-08-01",
+  "formation_state": "NY"
+ },
+ "submitted": {
+  "name": "KAIROS 801 LLC",
+  "entity_type": null
+ },
+ "registrations": [
+  {
+   "id": "1270ca8b-c0be-4197-a289-3477b16019b0",
+   "name": "KAIROS 801 LLC",
+   "status": "active",
+   "sub_status": null,
+   "status_details": "Active",
+   "jurisdiction": "DOMESTIC",
+   "entity_type": "LLC",
+   "file_number": "6552607",
+   "officers": [
+    {
+     "name": "LEGALZOOM USCA, INC.",
+     "roles": [
+      "Service of Process"
+     ]
+    }
+   ],
+   "registered_agent": {
+    "name": "UNITED STATES CORPORATION AGENTS, INC."
+   },
+   "registration_date": "2022-08-01",
+   "state": "NY",
+   "country_code": "US",
+   "submitted": false,
+   "jurisdiction_details": null
+  }
+ ],
+ "review": {
+  "tasks": [
+   {
+    "key": "sos_domestic_sub_status",
+    "status": "warning",
+    "sub_label": "Not Provided by State",
+    "message": "The domestic sub-status is Not Provided by State."
+   },
+   {
+    "key": "sos_domestic",
+    "status": "success",
+    "sub_label": "Domestic Active",
+    "message": "Active domestic filing found"
+   },
+   {
+    "key": "entity_type",
+    "status": "success",
+    "sub_label": "Verified",
+    "message": "Entity type is a LLC"
+   }
+  ]
+ },
+ "documents": []
+}

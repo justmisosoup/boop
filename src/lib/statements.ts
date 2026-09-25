@@ -14,6 +14,7 @@
  */
 import catalog from '../data/catalog.json'
 import { trueEntityType, type BusinessRecord } from './deriveResults'
+import { watchlistVerdicts } from './watchlist'
 
 const OUTCOME = (catalog as { outcomeOf: Record<string, string> }).outcomeOf
 
@@ -74,6 +75,20 @@ export const statementFor = (
    * membership is restricted to licensed practitioners, which is what a policy
    * reading this row needs in order to ask for licensure at all.
    */
+  /**
+   * A screen that returned only names that are not matches. The provider says
+   * "1 Watchlists hit(s) have been identified" for Andytown's MICHAEL COX, who
+   * is not its member Michael McCrory — the row says what came back and why it
+   * does not count.
+   */
+  if (key === 'watchlist') {
+    const verdicts = watchlistVerdicts(record)
+    if (verdicts.length > 0 && verdicts.every((v) => !v.valid))
+      return verdicts.length === 1
+        ? `No valid hits: the one name returned, ${verdicts[0].entityName}, ${verdicts[0].reason}`
+        : `No valid hits: none of the ${verdicts.length} names returned matches the business or its people`
+  }
+
   if (key === 'entity_type') {
     const form = trueEntityType(record)
     if (form && form !== record.formation?.entityType) return `Entity type is a ${form}`

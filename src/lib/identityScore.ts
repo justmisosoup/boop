@@ -1,4 +1,7 @@
 import type { BusinessRecord, Derived } from './deriveResults'
+import { describeRegistration, domesticOf } from './registrationStatus'
+import { soleProprietorOf } from './soleProprietor'
+import { validHitCount } from './watchlist'
 import { stateName } from './states'
 
 /**
@@ -368,7 +371,8 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
 
   // Screening. The absence of a hit is the point; a hit is the finding, and the
   // ceilings below carry the serious ones.
-  watchlist: (_r, record) => ((record.watchlist?.hitCount ?? 0) > 0 ? 'negative' : 'positive'),
+  // A returned name that is not a match (MICHAEL COX for Michael McCrory) is a clean screen — see watchlist.ts.
+  watchlist: (_r, record) => (validHitCount(record) > 0 ? 'negative' : 'positive'),
   politically_exposed_persons: (_r, record) =>
     (record.pep?.results ?? []).length > 0 ? 'negative' : 'positive',
   adverse_media: (_r, record) => {
@@ -535,15 +539,25 @@ const scoreArea = (
  */
 const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
   const out: ScoreCeiling[] = []
-  const domestic =
-    record.registrations.find((r) => r.jurisdiction === 'DOMESTIC') ??
-    record.registrations.find((r) => r.state === record.formation?.state)
+  const domestic = domesticOf(record)
   const status = (domestic?.status || '').toLowerCase()
   const subStatus = (domestic?.subStatus || '').toLowerCase()
   const where = stateName(domestic?.state ?? record.formation?.state)
   const tin = record.tin as { mismatch?: boolean } | null
 
-  if (record.registrations.length === 0 && !record.formation)
+  const sole = soleProprietorOf(record)
+  /* A sole proprietor files with no state, so "no SOS filing" does not reject
+     one. It is held instead: its trade name is on no filing, and the city
+     registration is in the owner's own name — so the fictitious business name
+     is the thing to ask for. */
+  if (sole && !sole.tradeNameOnFile)
+    out.push({
+      id: 'sole_proprietor_trade_name',
+      at: 89,
+      because: 'a likely sole proprietorship whose trade name is on no filing',
+      plain: `It looks like a sole proprietorship registered with ${sole.city || 'the city'} under ${sole.person}; ${record.name} is not on any filing.`
+    })
+  else if (!sole && record.registrations.length === 0 && !record.formation)
     out.push({
       id: 'no_filing',
       at: 49,
@@ -562,6 +576,27 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
         subStatus && subStatus !== status ? ` and ${subStatus}` : ''
       }.`
     })
+  /*
+   * Active, but the state has started taking it away. C & N Trucking's Indiana
+   * filing reads Active with PENDING_INACTIVE and "Pending Admin Dissolution",
+   * and the status-only check above let it score 92 and Approve. It is held,
+   * not rejected: the dissolution is not final, and filing what is overdue
+   * usually cures it — which is the thing to ask for before opening.
+   */
+  else if (
+    domestic &&
+    status === 'active' &&
+    (subStatus === 'pending_inactive' ||
+      /pending (admin|administrative|dissol|revoc|forfeit|cancel|termin|inactiv|withdraw)|intent to (dissolve|revoke|forfeit)|notice of/i.test(
+        domestic.statusDetails ?? ''
+      ))
+  )
+    out.push({
+      id: 'filing_pending_inactive',
+      at: 69,
+      because: 'the domestic filing is pending inactive',
+      plain: `The domestic registration in ${where} is ${describeRegistration(domestic).toLowerCase()}.`
+    })
 
   if (tin?.mismatch)
     out.push({
@@ -570,7 +605,7 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
       because: 'the TIN does not match the name',
       plain: 'The TIN does not match the business name at the IRS.'
     })
-  if ((record.watchlist?.hitCount ?? 0) > 0)
+  if (validHitCount(record) > 0)
     out.push({
       id: 'watchlist_hit',
       at: 69,

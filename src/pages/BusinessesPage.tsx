@@ -127,7 +127,8 @@ const compare = (a: Row, b: Row, id: string) => {
  *
  * The 25 rows in `records.json` and nothing else — no placeholder rows, no
  * synthesised entries. A row opens the business and its assessment. Searched
- * by name, sorted by either column, names A to Z by default.
+ * by name, sorted by any column, most recently assessed first by default —
+ * a business never assessed sorts last.
  *
  * The shell is the app's businesses page: a page heading over one bordered
  * card, where the toolbar owns the rounded top and the table drops its top
@@ -139,7 +140,8 @@ export const BusinessesPage = () => {
   // Seeded from ?q= so the palette's "See all results" lands on a filtered
   // list rather than the full one.
   const [query, setQuery] = useState(() => params.get('q') ?? '')
-  const [sort, setSort] = useState<DataTableSortState>({ id: 'name', direction: 'asc' })
+  // Newest assessment first: the business just worked on is the one being looked for.
+  const [sort, setSort] = useState<DataTableSortState>({ id: 'assessed', direction: 'desc' })
 
   /**
    * Dock the table's sticky column header to the sticky filter bar.

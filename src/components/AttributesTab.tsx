@@ -1,4 +1,4 @@
-import { attributesFor, licenseRows, type AttributeRow } from '../lib/attributes'
+import { attributesFor, cityRegistrationRows, licenseRows, type AttributeRow } from '../lib/attributes'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
@@ -83,6 +83,15 @@ export const attributeRowsByGroup = (
     const rows = byGroup.get('licenses') ?? new Map<string, AttributeRow>()
     rows.set(a.matchValue ?? `${a.label}::${a.value}`, a)
     byGroup.set('licenses', rows)
+  }
+
+  // City registrations the same way: read from the city's register, not from
+  // any check, so no insight carries them in.
+  for (const a of cityRegistrationRows(record)) {
+    const g = a.group ?? 'licenses'
+    const rows = byGroup.get(g) ?? new Map<string, AttributeRow>()
+    rows.set(`${a.label}::${a.matchValue ?? a.value}`, a)
+    byGroup.set(g, rows)
   }
 
   for (const r of results) {
