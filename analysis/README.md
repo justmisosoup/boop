@@ -3,12 +3,41 @@
 The analysis is produced by the **Claude Code session**, not an API call. This file
 is the spec the session writes against — it is load-bearing, not documentation.
 
+What lives here:
+
+- `agent.json` — the workflow and its assessments: each one's brief, weight and
+  `insightIds` (the insights it reads, and the only ones its section may cite).
+- `reports.json` — one report per business: what it concluded and the snapshot of
+  the record it read. The page and the businesses list read it; a run replaces it.
+
+What a run writes, and the endpoint (`scripts/analyse-endpoint.ts`) reads. All of
+it is git-ignored working state, cleared when the run is kept:
+
 - `pending.json` — the latest request, written when the user hits Run.
 - `request-<id>.json` — kept per request, so a refinement can be read in context.
   Its `assessments` array is the **manifest**: what this run is composed of.
+- `snapshot-<id>.json` — the record and insight list the page was reading.
+- `attachments/<id>/` — files the user attached.
 - `result-<id>.assessments/<assessmentId>.json` — one file per assessment. Written
   concurrently, in any order.
 - `result-<id>.json` — the verdict, written **after every assessment has landed**.
+
+## Who owns what on the page
+
+A run does not write most of what the reader sees. Know which of these you are
+changing before you change it:
+
+| On the page | Comes from |
+|---|---|
+| Each card's headline and summary | `src/lib/areaSummaries.ts`; Identity's parts, `src/lib/identitySections.ts` |
+| The rows under a card | **The section's citations** (body and open gaps), within the assessment's `insightIds` |
+| A row's wording and evidence | `src/lib/deriveResults.ts`, `statements.ts`, `attributes.ts` |
+| Red marks and the flagged count | `POLARITY` in `src/lib/identityScore.ts` |
+| Score, band, caps, the determination line | `src/lib/identityScore.ts`, `scoreReasons.ts` |
+| Registration standing | `standingOf` in `src/lib/registrationStatus.ts`, from `src/data/registrationStanding.json` |
+| Open questions that hold an area for review | **The section's gaps** without `noAction` |
+| Which gaps are hidden | **Follow-ups' `closes`** |
+| Paragraph prose, the headline, follow-up text | **Saved, not shown** on a standing report; a typed question shows its headline |
 
 ## Work the assessments at the same time
 
@@ -68,17 +97,6 @@ Read them before you decide. If the verdict you reach is not supported by the
 assessments you wrote, the assessments were wrong — go back and fix them, rather
 than widening the verdict's citations to fit.
 
-## The lede is not part of this
-
-`analysis/lede-<businessId>.json` is authored once per business and served from
-`/api/lede`. It is keyed on the business, not the run, so **a re-run does not
-rewrite it** — the same business reads the same way every time.
-
-It waits on nothing and nothing waits on it. When the console asks for one, write
-it alongside the assessments rather than after them. An assessment cannot reach
-it, which is the point: an instruction added to one ("say HELLO at the top") used
-to rewrite the first paragraph of the page.
-
 ## The job
 
 The request carries **every insight on the record**, each with an `id`. Pick the ones
@@ -87,9 +105,8 @@ product.
 
 `kind` says which of two things you are writing:
 
-**`report`** — the standing KYB read, fired automatically when a business is opened.
-No one asked; the analyst arrived knowing why they are here. Write it for **a
-financial institution opening a business bank account**.
+**`report`** — the standing KYB read, run when someone presses Run on a business.
+Write it for **a financial institution opening a business bank account**.
 
 It reads in three movements: **what the business is**, **what to do about it**, then
 **why**. The recommendations sit second, above the assessments they rest on — an
@@ -176,9 +193,8 @@ Two ids are the runner's and no assessment may claim them:
 | `recommendation` | **Last, where it is reached.** Carried with an empty `body` — the section renders `followUps` and nothing else. Written after every assessment has landed. |
 | `answer` | A typed follow-up, answered on its own terms. Renders with no heading, beneath the headline. |
 
-`description` is **gone**. The lede is not a section of a run — it is authored per
-business and served from `/api/lede`, and a `description` section written here
-renders nowhere at all.
+`description` is **gone**. A `description` section written here renders nowhere at
+all: the page header already says what the business is.
 
 **Write each stage as a stage of the file, not a category of data.** The question a
 stage answers is "is this part of the onboarding file complete, and what is it
@@ -192,9 +208,8 @@ A `question` does **not** use these. Answer it on its own terms in one section w
 because there is no recommendation for it to land in. Forcing a follow-up through six
 the workflow's headings is filing, not answering.
 
-`used` ids must round-trip **exactly**, including the `location_frequency:<band>`
-fan-out. An id that matches no row is dropped from the sources roll-up and reported
-on screen — it will not pass silently.
+`used` ids must round-trip **exactly**. An id that matches no row is dropped from the
+sources roll-up and reported on screen — it will not pass silently.
 
 ## Rules
 
@@ -202,15 +217,12 @@ on screen — it will not pass silently.
 found no match" is something the record establishes. Filing it as a gap would render
 the one thing counting against the business as missing data.
 
-**Nothing in an assessment is marked or highlighted** — not even that finding. It is
-stated as plainly as everything around it. Open liens set in red, with a warning
-glyph, read as the thing to act on, and they are not: what to act on is the
-recommendation. If a finding matters to the decision, the recommendation says so in
-words and a follow-up names what to do about it. That is the only place in the report
-meant to read as actionable.
+**The prose marks nothing.** State a finding as plainly as everything around it. The
+page's red marks come from code (`POLARITY`), not from how a paragraph is worded; if a
+finding matters to the decision, a follow-up names what to do about it.
 
 **`gaps` is for genuinely open questions**, with `why`. Put each one in the section
-it belongs to — an ownership gap under `ownership` — so it sits beside the finding it
+it belongs to — an ownership gap under Ownership & Control — so it sits beside the finding it
 undercuts rather than in a pile at the end:
 
 | `why` | Means | Whose limit |
@@ -222,8 +234,8 @@ undercuts rather than in a pile at the end:
 
 **Do not judge outside `recommendation`.** The insight rows are careful never to say
 whether something is good or bad — "shared with 21–100 businesses", never "high-risk
-address". A line in `identity` or `activity` reading "this business is legitimate"
-breaks that in the place a reader trusts most. The four middle sections state what
+address". A line in Identity or Activity & Permission reading "this business is
+legitimate" breaks that in the place a reader trusts most. The assessments state what
 the record shows and what it means for a business of this kind; the decision itself
 belongs in the headline and the `recommendation` section, against the question that
 was asked.
@@ -231,80 +243,12 @@ was asked.
 **Absence is not a finding.** Three of the four reasons above are gaps in our data or
 facts about the world. Never treat them as evidence against the business.
 
-**This is the lede.** Write to it.
-
-> Kairos Physio is a boutique concierge physical therapy studio on Madison Avenue in
-> NYC's Upper East Side. Founded by Dr. Joshua Gee, it blends orthopedic rehab with
-> strength training in one-on-one sessions led entirely by Doctors of Physical
-> Therapy, and also offers clinician-led personal training at premium pricing.
-
-A short, plain description of what the business is. Written for someone who has never
-heard of it, in the words they would use — not for a reviewer, and not against a
-policy. Two or three sentences.
-
-It leads with the **registered business identity name, in full, exactly as it appears on
-the filing** — not a trading name, not a shortened form. A trading name may follow if the
-business is known by a different one. Then: what kind of business it is and where, who
-founded it, and what it actually sells and who for. Nothing in it is there to support a
-decision; it is there so the reader knows what company they are looking at.
-
-Plain language throughout. No compliance framing, no risk vocabulary, and nothing about
-revenue models or customer funds.
-
-**The lede describes the business, not the file.** It answers "what is this
-company?" for someone who has never heard of it, so that everything below has
-something to be about. It is not a summary of the record and not a preview of the
-assessments. Keep it to two or three sentences.
-
-**Write it for a compliance analyst.** They are deciding whether to open an account,
-and the lede exists so the rest of the file means something to someone who has never
-heard of this company. Say what it does, who pays it, and how it makes money. If the
-business model bears on the decision — it lends, it holds customer funds, it operates
-in a licensed activity — say so; that is the most useful sentence in the paragraph.
-
-Two failures to avoid, both of which have happened:
-
-- **No press-release trivia.** Headcount, funding rounds, investors, accelerator
-  batches, customer logos. None of it is evidence and none of it is actionable — an
-  analyst does not approve an account because Sequoia backed it.
-- **No asides to the reader.** No "worth naming plainly", no remarks about the report
-  itself or about the irony of the record. Write reference prose in the third person,
-  the way a credit memo is written. The internal voice this prototype was drafted in
-  is not the voice the audience reads in.
-
-Nothing from this list belongs in it — each of these is an assessment input and has a
-section of its own:
-
-- How many states it is registered in, or the status of any registration
-- Filing types on the record — sales tax permits, Form 5500, liens, SAM entries
-- Anything about an address beyond the city it works from — no deliverability,
-  property type, or how many businesses share it
-- Domain registration dates, website reachability, or any "matches what was submitted"
-- **Entity type, state of formation, and formation date** — the page header sits
-  directly above the lede and already shows all three. Repeating them wastes the
-  only paragraph a reader is guaranteed to read.
-
-Industry classification is record data too — leave it out. If the line of work
-matters (it does), say it in plain words, the way someone who works there would
-describe the company.
-
-**The lede may use what you know; nothing else may.** `description` is the one
-section allowed to draw on public knowledge of the company — what it sells, who it
-serves, how big it is, who backs it — because a reader who does not know what the
-business *does* cannot judge whether anything below is normal for it.
-
-Every such paragraph carries `sources`: one `{ "title", "url" }` per page, rendered
-as a single "Public sources" chip that opens them. **No links, no claim** — if you
-cannot point at a page, you do not know it, you are recalling it, and this is the
-product where that distinction is the entire point. Search and confirm rather than
-writing from memory. Three rules hold absolutely:
-
-- Outside knowledge **never substitutes for a check**. "It is a well-known company"
-  is not evidence of anything and must never appear in an assessment or soften a gap.
-- If public knowledge and the record **disagree**, that is a finding for `identity`,
-  not something to smooth over in the lede.
-- Nothing outside the lede may carry `sources`. An assessment cites insights, or it
-  says nothing.
+**No outside knowledge.** Nothing in a run draws on public knowledge of the company.
+It never substitutes for a check — "it is a well-known company" is not evidence of
+anything and must never appear in an assessment or soften a gap — and no section
+carries `sources`. An assessment cites insights, or it says nothing. Write reference
+prose in the third person, the way a credit memo is written: no asides to the reader,
+no remarks about the report itself.
 
 **Name the entity as it is registered.** The entity type in the report is the one the filing
 carries, not the one the `entity_type` field buckets it into. `KAIROS PHYSICAL THERAPY PLLC` is a
@@ -332,18 +276,26 @@ professional practice down a licensed-ownership path — the only thing carrying
 the name suffix. Where the form bears on what the policy should ask for, say so in the assessment
 that owns it.
 
-**Do not invent facts.** Everywhere else, work only from the insights in the request. If something the
+**Do not invent facts.** Work only from the insights in the request. If something the
 question asked about is not covered, that is a `no_insight_covers_it` entry naming the
 check that would answer it — not a guess.
-
-**`pinned` must be addressed.** Ids in `pinned` were added by the user by hand. Use
-them, and say what they contribute — including "it does not change the answer", which
-is a legitimate finding. Silently ignoring one is the failure mode.
 
 **Read the insights together.** The value is in what they mean in combination for
 *this kind of business*, not restated one by one. A residential address is ordinary
 for a sole proprietor; a registered-agent address is ordinary for a Delaware
 corporation.
+
+**Cite only what the assessment reads.** A card shows every row its section cites, so a
+citation is a claim that the row is evidence for that area's question. Each assessment
+declares the insights it reads (`insightIds` in `analysis/agent.json`, carried on the
+manifest), and a section citing outside that list is refused, naming the ids. A
+sentence may still reason from something outside the scope — the name suggests the
+trade, the equipment financed says what it does, a connected business is in real
+estate — but it does not cite it: the name, the lien and the connection are another
+area's evidence, and citing them here puts "Match identified to the submitted business
+name" on a card about the line of work. Address frequency is not an insight at all: how
+many businesses sit at an address a connected business shares is on that connection,
+in `business_connections`.
 
 **The recommendation section carries no prose.** Write `recommendation` with an
 empty `body`. The assessments above carry the evidence and the reader has just read

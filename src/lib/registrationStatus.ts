@@ -1,5 +1,6 @@
+import table from '../data/registrationStanding.json'
 import type { BusinessRecord } from './deriveResults'
-import { STATUS_NOT_PUBLISHED, stateName } from './states'
+import { stateName } from './states'
 
 /**
  * A registration's state, in the registry's three fields.
@@ -11,10 +12,96 @@ import { STATUS_NOT_PUBLISHED, stateName } from './states'
  * when the filing states it, and nothing here invents the missing ones.
  *
  * The one normal absence: Delaware and New Jersey publish no status and no
- * details at all (see `STATUS_NOT_PUBLISHED`), so `silent` says so instead of
- * treating it as a gap.
+ * details at all, so `silent` says so instead of treating it as a gap. The
+ * standing table knows this — see `standingOf`.
  */
 export type Registration = BusinessRecord['registrations'][number]
+
+/**
+ * What a filing's standing IS, as opposed to what it says.
+ *
+ * Every combination of state, status, sub status and details the registries
+ * return (922 of them across 51 jurisdictions) is classified once, in
+ * `src/data/registrationStanding.json`, built from the per-jurisdiction status
+ * breakdown by `formation/build.py`. Georgia's "Active/Noncompliance" is
+ * delinquent; Tennessee's "Active - Dissolved" is at risk; Andytown's
+ * "Converted Out" is succeeded, not dissolved. A regex over the words cannot
+ * know any of that, and three of them used to disagree.
+ *
+ * Every standing decision on the page reads this: the score's caps, the flag
+ * on the sub-status row, the Domestic filing card, the registrations clause on
+ * Activity & Permission. How a filing is WORDED stays with
+ * `describeRegistration`, which says the registry's own words.
+ */
+export type StandingCategory =
+  | 'IN_GOOD_STANDING'
+  | 'NOT_PUBLISHED'
+  | 'DELINQUENT'
+  | 'AT_RISK'
+  | 'SUSPENDED'
+  | 'SUCCEEDED'
+  | 'TERMINATED_INVOLUNTARY'
+  | 'TERMINATED_VOLUNTARY'
+  | 'TERMINATED_UNSPECIFIED'
+  | 'NOT_FORMED'
+  | 'UNRESOLVED'
+
+/** CLEAR stands; NOTE is a gap in what the state publishes; REVIEW has to be
+ *  looked at; CONCERN is a filing the entity cannot currently stand on. */
+export type StandingAssessment = 'CLEAR' | 'NOTE' | 'REVIEW' | 'CONCERN'
+
+export type Standing = {
+  category: StandingCategory
+  assessment: StandingAssessment
+  /** The table's classification of this combination is not yet reviewed. */
+  provisional: boolean
+  /** e.g. `STALE_RECORD` from an alias, `UNSEEN_STATUS` when the table has no entry. */
+  flags: string[]
+}
+
+type Entry = { c: StandingCategory; a: StandingAssessment; review?: boolean; flags?: string[] }
+const TABLE = table as unknown as {
+  _meta: { assessment: Record<StandingCategory, StandingAssessment> }
+  aliases: Record<string, { to: string; flags?: string[] }>
+  entries: Record<string, Entry>
+}
+
+const part = (v: string | null | undefined) => (v && v.trim() ? v : '(none)')
+
+/**
+ * The table's reading of one filing.
+ *
+ * Keyed `STATE|STATUS|SUB STATUS|details`, with `(none)` for an absent field;
+ * an alias resolves first (Wyoming's `INACTIVE / GOOD_STANDING / "ACTIVE"` is a
+ * stale record, read as inactive). A combination the table has never seen is
+ * unresolved, which is a question rather than a verdict.
+ */
+export const standingOf = (reg: Registration): Standing => {
+  const raw = [
+    part(reg.state),
+    part(reg.status?.toUpperCase()),
+    part(reg.subStatus?.toUpperCase()),
+    part(reg.statusDetails)
+  ].join('|')
+  const alias = TABLE.aliases[raw]
+  const entry = TABLE.entries[alias?.to ?? raw]
+  const flags = [...(alias?.flags ?? []), ...(entry?.flags ?? [])]
+  if (!entry)
+    return { category: 'UNRESOLVED', assessment: TABLE._meta.assessment.UNRESOLVED, provisional: false, flags: [...flags, 'UNSEEN_STATUS'] }
+  return { category: entry.c, assessment: entry.a, provisional: Boolean(entry.review), flags }
+}
+
+/** The filing is in good standing, by the table rather than by its wording. */
+export const inGoodStanding = (reg: Registration) => standingOf(reg).category === 'IN_GOOD_STANDING'
+
+/** The state publishes no standing for this filing (Delaware, New Jersey). */
+export const notPublished = (reg: Registration) => standingOf(reg).category === 'NOT_PUBLISHED'
+
+/** Active, but the state has started taking it away, or says it is not in good standing. */
+export const troubled = (reg: Registration) => {
+  const { assessment } = standingOf(reg)
+  return /^active$/i.test(reg.status ?? '') && (assessment === 'REVIEW' || assessment === 'CONCERN')
+}
 
 export type RegistrationState = {
   status?: string
@@ -34,11 +121,17 @@ export const registrationState = (reg: Registration): RegistrationState => ({
   status: sentence(known(reg.status)),
   subStatus: sentence(reg.subStatus),
   statusDetails: sentence(reg.statusDetails),
-  silent: !known(reg.status) && STATUS_NOT_PUBLISHED.has(reg.state)
+  silent: !known(reg.status) && notPublished(reg)
 })
 
-/** A sub status that is good news says nothing a reader has to weigh. */
-export const isGoodStanding = (subStatus?: string) => Boolean(subStatus && /good standing/i.test(subStatus) && !/not/i.test(subStatus))
+/**
+ * A sub status WORDED as good news, which a sentence need not repeat.
+ *
+ * Wording only: Tennessee's "Active - Dissolved" carries GOOD_STANDING as its
+ * sub status, and whether the filing is actually in good standing is
+ * `inGoodStanding`'s call, from the table.
+ */
+const saysGoodStanding = (subStatus?: string) => Boolean(subStatus && /good standing/i.test(subStatus) && !/not/i.test(subStatus))
 
 /** Letters only, so `ACTIVE`, `Active` and `Active-Current` compare as words. */
 const words = (s: string) => s.toLowerCase().replace(/[^a-z]+/g, ' ').trim()
@@ -75,7 +168,7 @@ export const describeRegistration = (reg: Registration): string => {
   const s = registrationState(reg)
   if (!s.status) return s.silent ? `status not published by ${stateName(reg.state)}` : 'status not reported'
   const sub =
-    s.subStatus && !isGoodStanding(s.subStatus) && words(s.subStatus) !== words(s.status)
+    s.subStatus && !saysGoodStanding(s.subStatus) && words(s.subStatus) !== words(s.status)
       ? s.subStatus.toLowerCase().replace(/^not good standing$/, 'not in good standing')
       : ''
   const details = newDetails(s)
@@ -207,8 +300,8 @@ export const formationStandingNote = (record: BusinessRecord): string | undefine
       ? `${stateName(f.state)} doesn't publish filing status, so whether the formation is still active isn't known.`
       : 'The state reports no status for the formation filing.'
   if (st.status === 'Active')
-    return st.subStatus && !isGoodStanding(st.subStatus)
-      ? `The formation filing is still active, but ${describeRegistration(f).toLowerCase().replace(/^active,?\s*/, '')}.`
+    return troubled(f)
+      ? `The formation filing is still active, but ${describeRegistration(f).toLowerCase().replace(/^active[,\s—-]*/, '')}.`
       : 'The formation filing is still active.'
   return `The formation filing is no longer active${ended(f)}.`
 }

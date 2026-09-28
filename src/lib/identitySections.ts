@@ -1,7 +1,7 @@
 import { entityTypeCode } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import type { GroupId } from './groups'
-import { article, describeRegistration, domesticOf, formationFilingOf, isGoodStanding, registrationState, sameName } from './registrationStatus'
+import { article, describeRegistration, domesticOf, formationFilingOf, inGoodStanding, registrationState, sameName } from './registrationStatus'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
 
@@ -214,9 +214,10 @@ export const IDENTITY_SECTIONS: ReadonlyArray<IdentitySection> = [
          filing is a foreign registration in Mississippi, in good standing. */
       const lapsed = registrationState(d).status && registrationState(d).status !== 'Active'
       const live = r.registrations.filter((x) => x !== d && (x.status ?? '').toLowerCase() === 'active')
-      const standingOf = (x: (typeof live)[number]) => {
+      // The state's sub status, when it gives one; "in good standing" only when the table agrees.
+      const standingWords = (x: (typeof live)[number]) => {
         const sub = registrationState(x).subStatus
-        return sub && isGoodStanding(sub) ? ', in good standing' : sub ? `, ${sub.toLowerCase()}` : ''
+        return sub && inGoodStanding(x) ? ', in good standing' : sub ? `, ${sub.toLowerCase()}` : ''
       }
       const kindOf = (x: (typeof live)[number]) => (/foreign/i.test(x.jurisdiction ?? '') ? 'foreign' : 'domestic')
       // A filing under another name is another entity's, and is named as such.
@@ -228,7 +229,7 @@ export const IDENTITY_SECTIONS: ReadonlyArray<IdentitySection> = [
             ? 'It has no other filings.'
             : `None of its ${r.registrations.length} filings is active.`
           : live.length === 1
-            ? `Its only active filing is a ${kindOf(live[0])} registration in ${stateName(live[0].state)}${standingOf(live[0])}${under(live[0])}.`
+            ? `Its only active filing is a ${kindOf(live[0])} registration in ${stateName(live[0].state)}${standingWords(live[0])}${under(live[0])}.`
             : `${live.length} of its filings are active, all ${live.every((x) => kindOf(x) === 'foreign') ? 'foreign registrations' : 'elsewhere'}: ${live
                 .slice(0, 4)
                 .map((x) => stateName(x.state))

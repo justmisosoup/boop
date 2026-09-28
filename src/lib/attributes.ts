@@ -16,7 +16,6 @@ import { entityFormLabel } from './normalise'
 import { formationConfirmed, formationFilingOf, registrationState } from './registrationStatus'
 import { judgeHit } from './watchlist'
 import { stateLabel, stateName } from './states'
-import { frequencyBand } from './statements'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
  *  $4,500.37 and the cents column is noise beside a case number. */
@@ -150,20 +149,7 @@ export type AttributeRow = {
 }
 
 const REGISTRY = 'State registration'
-const SUBMITTED = 'Submitted by the customer'
 const USPS = 'USPS'
-
-/**
- * Provenance comes from the API or it is not shown.
- *
- * An earlier version of this file hard-coded a source per row — every address
- * was "State registration", every person likewise. That was invention: the API
- * marks each person and address with `submitted` and a `sources` array, and a
- * submitted person carrying an adverse-media source was being rendered as found
- * on state filings. Where the record supplies no provenance, this now says so
- * rather than filling it in.
- */
-const NOT_STATED = 'Source not stated'
 
 /**
  * Every source an attribute came from, deduplicated.
@@ -237,7 +223,7 @@ const inGroup = (group: GroupId, rows: AttributeRow[]): AttributeRow[] =>
  * addresses" — a check about shared officers, answered with a property type.
  * An insight shows the reading it is making and nothing else.
  */
-type AddressNote = 'frequency' | 'property' | 'cmra' | 'proximity' | 'deliverability'
+type AddressNote = 'property' | 'cmra' | 'proximity' | 'deliverability'
 
 /**
  * Miles between two geocoded addresses, or nothing if either is not geocoded.
@@ -303,9 +289,6 @@ const addressRow = (
     // No state means the address never parsed — another reading of it, not
     // part of it. The address is what the source gave us.
     a.state ? null : 'non-US, unstructured',
-    note === 'frequency' && typeof a.locationCount === 'number'
-      ? `${a.locationCount} ${a.locationCount === 1 ? 'business' : 'businesses'} at this location`
-      : null,
     note === 'property' ? (sentence(a.propertyType) ?? 'Property type not established') : null,
     note === 'cmra' ? 'Commercial mail receiving agency' : null,
     note === 'proximity' ? proximityNote(a, submitted) : null,
@@ -380,17 +363,6 @@ const dedupeAddresses = (
   }
   return [...seen.values()]
 }
-
-/**
- * Registrations grouped BY STATUS, one row each.
- *
- * A business can hold dozens — PricewaterhouseCoopers has 86 — and rolling them
- * into a single row hides the thing that matters: which are active, which could
- * not be resolved, and which are inactive. Each group gets its own row and its
- * own chip, so `SOS · DE +79` collapses the active filings without burying the
- * one that came back unknown.
- */
-const STATUS_ORDER = ['active', 'unknown', 'inactive']
 
 /** Best case first: what is wrong with the entity is what the eye stops on. */
 export const FOREIGN_STATUS_ORDER = ['active', 'inactive', 'unknown']
@@ -468,10 +440,7 @@ export const filingAge = (date: string | null | undefined) => {
 }
 
 /** One row per filing, named. Used where a check is about specific filings. */
-const registrationRowsFor = (
-  filings: BusinessRecord['registrations'],
-  record: BusinessRecord
-): AttributeRow[] => {
+const registrationRowsFor = (filings: BusinessRecord['registrations']): AttributeRow[] => {
   if (filings.length === 0)
     return [{ label: 'Registrations', value: 'None on the record', source: REGISTRY }]
 
@@ -482,25 +451,6 @@ const registrationRowsFor = (
   // the reader left to notice they agreed. Merged, agreement is the default
   // reading and disagreement is what stands out: two Status rows means the
   // filings disagree, and the chips say which said what.
-  const field = (
-    label: string,
-    value: string | null | undefined,
-    r: BusinessRecord['registrations'][number],
-    qualifier?: string
-  ): AttributeRow[] =>
-    value
-      ? [
-          {
-            label,
-            value,
-            source: '',
-            qualifier,
-            matchValue: `${label}:${value}`,
-            registrations: [r]
-          }
-        ]
-      : []
-
   // Grouped by field, not by filing. Read down a filing at a time, "Status"
   // appeared between two file numbers and the reader had to reassemble the
   // vocabulary themselves; read down a field, Active / Inactive / Unknown sit
@@ -575,36 +525,6 @@ const registrationRowsFor = (
   ]
 }
 
-const registrationRows = (record: BusinessRecord): AttributeRow[] => {
-  if (record.registrations.length === 0)
-    return [{ label: 'Registrations', value: 'None on the record', source: REGISTRY }]
-
-  const byStatus = new Map<string, BusinessRecord['registrations']>()
-  for (const r of record.registrations) {
-    const status = (r.status || 'unknown').toLowerCase()
-    byStatus.set(status, [...(byStatus.get(status) ?? []), r])
-  }
-
-  const ordered = [
-    ...STATUS_ORDER.filter((s) => byStatus.has(s)),
-    ...[...byStatus.keys()].filter((s) => !STATUS_ORDER.includes(s))
-  ]
-
-  // Every group reads the same way: status, count, chip. A group of one is not
-  // a special case — naming the single filing there made the rows inconsistent
-  // with each other, and the name is in the chip's popover anyway.
-  return ordered.map((status) => {
-    const group = byStatus.get(status) as BusinessRecord['registrations']
-
-    return {
-      label: `${status.charAt(0).toUpperCase()}${status.slice(1)} registrations (${group.length})`,
-      value: '',
-      source: '',
-      registrations: group
-    }
-  })
-}
-
 /**
  * The domestic filing, in full.
  *
@@ -627,14 +547,6 @@ export const entityTypeCode = (record: BusinessRecord): string | undefined => {
   if (!raw || raw.toUpperCase() === 'UNKNOWN') return undefined
   // Five letters or fewer is an initialism (LLC, PLLC, LP, INC); longer is a word.
   return raw.length <= 5 ? raw.toUpperCase() : raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase()
-}
-
-/** The entity type as the Formation card spells it — `PLLC` written out — or
- *  nothing when the record has no formation. */
-export const entityTypeOf = (record: BusinessRecord): string | undefined => {
-  if (!record.formation) return undefined
-  const domestic = formationFilingOf(record)
-  return entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType) || undefined
 }
 
 const formationRows = (record: BusinessRecord): AttributeRow[] => {
@@ -695,44 +607,6 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
 }
 
 /**
- * What the record says this business is: the identity card's rows.
- *
- * The card used to build its own cells straight off the record, which made it
- * the one surface in the report that stated a value without saying who says so
- * — no source chips, no claim chip, a bare tick on the label. These are
- * ordinary `AttributeRow`s, so it cites the way the Attributes tab and an
- * insight's evidence cite, out of the one mapping the three of them share.
- *
- * Still a choice of facts rather than a fan-out over the insights: the filing
- * facts an account is opened against. `Sub status` and `File number` are not
- * among them — they are the Attributes tab's, and the card is the short list a
- * reviewer reads before the report starts arguing.
- *
- * No TIN either. It is not a fact about what the business IS, and the check
- * that matched it states it under the Identity paragraph with the name the IRS
- * holds it against — the half of that sentence a card of values cannot carry.
- */
-export const identityRows = (record: BusinessRecord): AttributeRow[] => {
-  const CARD_FIELDS = new Set(['Entity type', 'Formation state', 'Formation date', 'Status'])
-
-  return [
-    ...nameRows(record).filter((r) => r.label === 'DBA'),
-    ...formationRows(record).filter((r) => CARD_FIELDS.has(r.label)),
-    // The address the customer gave us, which is the one the account is opened
-    // against — the record carries others the state happens to list. Named for
-    // the role it plays here rather than "Address", which is what it is called
-    // in a list of every address on file.
-    ...addressRows(record, { submittedOnly: true })
-      .filter((r) => r.submitted)
-      .slice(0, 1)
-      .map((r) => ({ ...r, label: 'Office address' }))
-    // Named to the filing, the way every other surface's rows are. Without this
-    // pass the card cited a bare "Registration" where the Attributes tab, two
-    // clicks away, cited `SOS · NY` for the same value off the same record.
-  ].map(nameTheFiling(record))
-}
-
-/**
  * The domestic filing's identity, for the head of the report.
  *
  * What the Secretary of State says this business IS: the name it is registered
@@ -773,19 +647,6 @@ export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] =>
     ...formation,
     ...row('Registered agent', domestic?.registeredAgent)
   ].map(nameTheFiling(record))
-}
-
-/** `submitted` separates who the customer gave us from who we found on filings.
- *  Collapsing the two makes a found entity look like a submitted person — which
- *  is exactly the error this split exists to prevent. */
-const peopleRows = (record: BusinessRecord): AttributeRow[] => {
-  if (!record.people.length) return [{ label: 'People', value: 'None on the record', source: REGISTRY }]
-
-  return record.people.map((p) => ({
-    label: 'Person',
-    value: p.titles.length ? `${p.name} — ${p.titles.join(', ')}` : `${p.name} — no title published`,
-    source: provenance(p)
-  }))
 }
 
 /**
@@ -856,11 +717,7 @@ const PROFILE_NAMES: Record<string, string> = {
  *
  * A profile source is named for the profile it is — Facebook, not "Profile".
  */
-const contactSources = (
-  refs: SourceRef[] | undefined,
-  item: { sources?: string[] },
-  websiteId?: string | null
-): string[] => {
+const contactSources = (refs: SourceRef[] | undefined, websiteId?: string | null): string[] => {
   const named = (refs ?? [])
     .filter((r) => !(r.type === 'website' && websiteId && r.id === websiteId))
     .map((r) => {
@@ -1083,9 +940,9 @@ const connectionRows = (record: BusinessRecord): AttributeRow[] => {
 }
 
 const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[] => {
-  // A check can yield several insights, each with an id of `key:qualifier`
-  // (address frequency yields one per band). The qualifier scopes the evidence.
-  const [key, qualifier] = rawKey.split(':')
+  // An id can carry a qualifier after its key (`license:npi-…`); the evidence
+  // is read by the key.
+  const [key] = rawKey.split(':')
   // Once per distinct address, however many roles it was submitted in — see
   // `dedupeAddresses`. Every address branch below reads this, not the record.
   const addresses = dedupeAddresses(record.addresses)
@@ -1145,13 +1002,6 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           matchValue: p.name
         }))
       : []
-
-  // --- Address frequency: the addresses in this band only ------------------
-  if (key === 'location_frequency' && qualifier) {
-    return addresses
-      .filter((a) => typeof a.locationCount === 'number' && frequencyBand(a.locationCount) === qualifier)
-      .map((a) => addressRow(a, 'frequency'))
-  }
 
   // --- Names ---------------------------------------------------------------
   // No registration rows here, or under addresses, DBAs or people. The
@@ -1297,13 +1147,6 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
 
   if (key.startsWith('address_')) return inGroup('address', addressRows(record, { submittedOnly: true }))
 
-  // The banded form is handled above, one insight per band. This is the
-  // unbanded fallback — every address that carries a count.
-  if (key === 'location_frequency')
-    return addresses
-      .filter((a) => typeof a.locationCount === 'number')
-      .map((a) => addressRow(a, 'frequency'))
-
   // --- Registrations -------------------------------------------------------
   //
   // Each check is about particular filings, so it evidences those and not the
@@ -1389,7 +1232,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const foreign = filings.filter((r) => !domestic.includes(r))
     const home = filings.filter((r) => domestic.includes(r))
     const rowsFor = (list: BusinessRecord['registrations']) =>
-      list.length ? registrationRowsFor(list, record) : []
+      list.length ? registrationRowsFor(list) : []
 
     // The match is between two things, so it evidences both: the address the
     // customer gave us, and the filing in that address's state. Neither alone
@@ -1439,7 +1282,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       return inGroup('registration', rows.length > 0 ? rows : rowsFor(filings))
     }
 
-    return inGroup('registration', registrationRowsFor(foreign, record))
+    return inGroup('registration', registrationRowsFor(foreign))
   }
 
   /**
@@ -1940,7 +1783,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           label: 'Email address',
           value: e.email,
           source: '',
-          sources: contactSources(e.sourceRefs, e, w.id),
+          sources: contactSources(e.sourceRefs, w.id),
           submitted: e.submitted,
           href: profileUrl(e.sourceRefs),
           refs: e.sourceRefs
@@ -1955,7 +1798,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           label: 'Phone number',
           value: n.phone,
           source: '',
-          sources: contactSources(n.sourceRefs, n, w.id),
+          sources: contactSources(n.sourceRefs, w.id),
           submitted: n.submitted,
           href: profileUrl(n.sourceRefs),
           refs: n.sourceRefs

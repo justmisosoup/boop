@@ -8,11 +8,6 @@ import {
   Dialog,
   Heading,
   Input,
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuSeparator,
-  MenuTrigger,
   MutedText,
   Surface,
   Text,
@@ -58,14 +53,13 @@ export const AssessmentEditor = ({
   /** Ids switched off. */
   onRenameWorkflow: (id: string, name: string) => void
   onCreateSkill: (name: string, instructions: string) => void
-  onUpdateSkill: (id: string, name: string, instructions: string, combines?: string[]) => void
+  onUpdateSkill: (id: string, name: string, instructions: string) => void
   onDeleteSkill: (id: string) => void
 }) => {
   /** null = the top-level assessment, 'new' = writing one, else its id. */
   const [editing, setEditing] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [brief, setBrief] = useState('')
-  const [combines, setCombines] = useState<string[]>([])
   /** The brief, filling the dialog. Collapsed by default so the assessments
    *  under it are the first thing seen. */
   const [briefOpen, setBriefOpen] = useState(false)
@@ -83,24 +77,11 @@ export const AssessmentEditor = ({
   useEffect(() => {
     setName(current?.name ?? '')
     setBrief(current?.instructions ?? '')
-    setCombines(current?.combines ?? [])
-  }, [current?.id, current?.name, current?.instructions, current?.combines])
+  }, [current?.id, current?.name, current?.instructions])
 
-  /**
-   * What the open assessment is built from.
-   *
-   * The top-level one is built from every assessment written under it. A
-   * sub-assessment is built from the ones it names, which is what lets a
-   * complex one be layered out of simple ones.
-   */
-  const parts = isTop
-    ? skills.filter((s) => s.id !== workflow?.id)
-    : skills.filter((s) => combines.includes(s.id))
-
-  /** Assessments that could be added to the one open, minus itself. */
-  const addable = skills.filter(
-    (s) => s.id !== current?.id && s.id !== workflow?.id && !combines.includes(s.id)
-  )
+  /** What the open assessment is built from: the top-level one, from every
+   *  assessment written under it; an assessment, from nothing but itself. */
+  const parts = isTop ? skills.filter((s) => s.id !== workflow?.id) : []
 
   /**
    * The parts as they were when this view was opened.
@@ -121,7 +102,6 @@ export const AssessmentEditor = ({
   const dirty =
     name.trim() !== (current?.name ?? '') ||
     brief !== (current?.instructions ?? '') ||
-    combines.join() !== (current?.combines ?? []).join() ||
     parts.map((x) => x.id).join() !== baseline.join()
 
   const save = () => {
@@ -129,9 +109,9 @@ export const AssessmentEditor = ({
       onCreateSkill(name, brief)
     } else if (isTop && workflow) {
       if (name.trim() !== workflow.name) onRenameWorkflow(workflow.id, name.trim())
-      if (brief !== workflow.instructions) onUpdateSkill(workflow.id, name.trim(), brief, combines)
+      if (brief !== workflow.instructions) onUpdateSkill(workflow.id, name.trim(), brief)
     } else if (target) {
-      onUpdateSkill(target.id, name.trim(), brief, combines)
+      onUpdateSkill(target.id, name.trim(), brief)
     }
 
     // A part was opened FROM the parent, so saving it returns there — closing
@@ -294,11 +274,7 @@ export const AssessmentEditor = ({
                     size="compact"
                     aria-label={`Remove ${s.name}`}
                     title="Remove"
-                    onClick={() =>
-                      isTop
-                        ? onDeleteSkill(s.id)
-                        : setCombines((p) => p.filter((x) => x !== s.id))
-                    }
+                    onClick={() => onDeleteSkill(s.id)}
                     className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                   >
                     <Trash2 aria-hidden="true" className="size-3.5" />

@@ -1,17 +1,17 @@
 node_modules
 dist
+.env
 .env.local
+.DS_Store
+__pycache__/
+*.tsbuildinfo
 
 # Per-run scratch from the analysis handoff. The report that survives a re-pull
 # lives in analysis/reports.json, which IS tracked.
+analysis/pending.json
 analysis/request-*.json
+analysis/snapshot-*.json
 analysis/result-*.json
 analysis/result-*.assessments/
 analysis/replay-*.json
-analysis/snapshot-*.json
-analysis/lede-*.json
-analysis/pending.json
-
-# formation check: secrets and raw API responses
-.env
-.cache/
+analysis/attachments/

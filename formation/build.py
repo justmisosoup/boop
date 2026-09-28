@@ -1,11 +1,15 @@
-"""Regenerate details_map.json, then apply the human decisions in review_needed.csv.
+"""Regenerate the standing table, then apply the human decisions in review_needed.csv.
 
     python formation/build.py [--no-regen]
 
-1. Runs data/build_details_map.py (it writes into its cwd, so it runs inside data/).
-   It overwrites review_needed.csv, so filled your_category/your_note are saved
-   first and merged back. If it cannot run (it needs pandas and the raw
-   per_jurisdiction_status_breakdown.csv), the existing details_map.json is kept.
+The table is src/data/registrationStanding.json, which src/lib/registrationStatus.ts
+reads (standingOf). This script is the only thing that writes it.
+
+1. Runs data/build_details_map.py (it writes details_map.json into its cwd, so it
+   runs inside data/), then moves the result over the table. It overwrites
+   review_needed.csv, so filled your_category/your_note are saved first and merged
+   back. If it cannot run (it needs pandas and the raw
+   per_jurisdiction_status_breakdown.csv), the existing table is kept.
 2. Every review row with your_category set overrides that entry's category and
    assessment (via _meta.assessment), attaches your_note, and clears review.
    The original values are kept under "ovr" so clearing a row later reverts it.
@@ -15,7 +19,8 @@ import csv, json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, 'data')
-MAP = os.path.join(DATA, 'details_map.json')
+MAP = os.path.join(os.path.dirname(HERE), 'src', 'data', 'registrationStanding.json')
+GENERATED = os.path.join(DATA, 'details_map.json')  # where build_details_map.py writes
 REVIEW = os.path.join(DATA, 'review_needed.csv')
 
 
@@ -41,9 +46,10 @@ def regenerate():
     p = subprocess.run([sys.executable, 'build_details_map.py', './'], cwd=DATA,
                        capture_output=True, text=True)
     if p.returncode == 0:
+        os.replace(GENERATED, MAP)
         return True, 'regenerated'
     last = (p.stderr.strip().splitlines() or ['unknown error'])[-1]
-    return False, f'build_details_map.py failed ({last}); kept existing details_map.json'
+    return False, f'build_details_map.py failed ({last}); kept the existing table'
 
 
 def merge_back(saved, old_rows):
@@ -129,7 +135,7 @@ def main(argv):
         with open(tmp, 'wb') as f:
             f.write(prev)
         os.replace(tmp, MAP)
-        print(f'{len(errs)} validation error(s); previous details_map.json kept')
+        print(f'{len(errs)} validation error(s); previous table kept')
         for e in errs[:20]:
             print(' ', e)
         return 1

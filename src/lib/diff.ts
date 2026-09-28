@@ -4,8 +4,8 @@ import type { Derived } from './deriveResults'
  * What changed between two readings of one business.
  *
  * A report is a snapshot; the identity moves on. The difference is what a
- * reviewer opening an old report needs to know before they trust it, and what
- * the reports menu says about a re-run. Compared by insight id, on the things
+ * reviewer opening an old report needs to know before they trust it. Compared
+ * by insight id, on the things
  * a row shows — state, statement, reason — so a change in wording that says
  * the same thing still counts, because the reviewer would read it as one.
  */

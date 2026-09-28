@@ -23,8 +23,7 @@ import {
   Textarea
 } from '@/core'
 
-import type { Derived } from '../lib/deriveResults'
-import { composeAssessment, versionLine } from '../lib/library'
+import { composeAssessment } from '../lib/library'
 import type { CustomerSkill } from '../lib/useAgent'
 import { ago, authorLine, useTicking } from '../lib/user'
 import type { Attachment } from '../lib/useAnalysis'
@@ -183,7 +182,6 @@ const SkillRow = ({
  * explanation under each turned a tight list into a panel.
  */
 const LibraryPicker = ({
-  contexts,
   workflow,
   custom,
   onToggleContext,
@@ -191,7 +189,6 @@ const LibraryPicker = ({
   onCreate,
   onInspect
 }: {
-  contexts: string[]
   workflow: string | null
   /** The customer's own, listed with Middesk's. */
   custom: CustomerSkill[]
@@ -286,10 +283,6 @@ export const AnalysisDock = ({
   onCreateSkill,
   onEditSkill,
   onUpdateSkill,
-  waiting,
-  pinned,
-  results,
-  onUnpin,
   hasAnalysis
 }: {
   /**
@@ -335,10 +328,6 @@ export const AnalysisDock = ({
   onEditSkill: (id: string) => void
   /** Saves an edit made from a token. Middesk's own never reach it. */
   onUpdateSkill: (id: string, name: string, instructions: string) => void
-  waiting: boolean
-  pinned: string[]
-  results: Derived[]
-  onUnpin: (id: string) => void
   hasAnalysis: boolean
 }) => {
   const [prompt, setPrompt] = useState('')
@@ -397,10 +386,6 @@ export const AnalysisDock = ({
     el.style.height = `${el.scrollHeight}px`
   }, [prompt, workflow, contexts])
 
-  const byId = new Map(results.map((r) => [r.insightId, r]))
-
-  // Middesk's skills and the customer's read the same way here; only
-  // `editable` separates them, and only when the modal opens.
   const asToken = (x: {
     id: string
     name: string
@@ -409,22 +394,15 @@ export const AnalysisDock = ({
     createdBy?: string
     createdAt?: string
     editedAt?: string
-    version?: string
     history?: Array<{ at: string; by?: string }>
   }): Token => ({
     id: x.id,
     name: x.name,
     instructions: x.instructions,
     editable: x.editable ?? true,
-    // Two provenances, two lines: a Middesk default has a release and no
-    // author, a customer's has an author and no release. Reading only the
-    // customer's fields left a default with no metadata at all.
-    author:
-      x.editable === false
-        ? versionLine(x)
-        : x.createdAt
-          ? authorLine({ createdBy: x.createdBy, createdAt: x.createdAt, editedAt: x.editedAt })
-          : undefined,
+    author: x.createdAt
+      ? authorLine({ createdBy: x.createdBy, createdAt: x.createdAt, editedAt: x.editedAt })
+      : undefined,
     history: x.history
   })
   const chosenWorkflow = workflow
@@ -587,9 +565,9 @@ export const AnalysisDock = ({
             'focus-within:border-[var(--core-color-control-border-focus)]'
           ].join(' ')}
         >
-          {/* Attachments and pinned insights stay a band of their own: they are
-              things the run carries, not words in the message. */}
-          {(pinned.length > 0 || attachments.length > 0) && (
+          {/* Attachments stay a band of their own: they are things the run
+              carries, not words in the message. */}
+          {attachments.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 border-b border-solid border-border px-3 py-2">
               {attachments.map((a) => (
                 <Tag
@@ -601,18 +579,6 @@ export const AnalysisDock = ({
                   removeLabel={`Remove ${a.name}`}
                 >
                   {a.name}
-                </Tag>
-              ))}
-              {pinned.length > 0 && <MutedText className="text-caption">Also consider</MutedText>}
-              {pinned.map((id) => (
-                <Tag
-                  key={id}
-                  tone="subtle"
-                  size="compact"
-                  onRemove={() => onUnpin(id)}
-                  removeLabel={`Remove ${byId.get(id)?.statement ?? id}`}
-                >
-                  {byId.get(id)?.statement ?? id}
                 </Tag>
               ))}
             </div>
@@ -698,7 +664,6 @@ export const AnalysisDock = ({
           <div className="flex items-center justify-between gap-3 px-3 pb-2.5 pt-0.5">
             <div className="flex items-center gap-1">
               <LibraryPicker
-                contexts={contexts}
                 workflow={workflow}
                 custom={custom}
                 onCreate={onCreateSkill}

@@ -5,7 +5,6 @@ import svgr from 'vite-plugin-svgr'
 import { defineConfig, loadEnv } from 'vite'
 
 import { analysePlugin } from './scripts/analyse-endpoint'
-import { ledePlugin } from './scripts/lede-endpoint'
 import { skillsPlugin } from './scripts/skills-endpoint'
 
 export default defineConfig(({ mode }) => {
@@ -20,7 +19,7 @@ export default defineConfig(({ mode }) => {
       // '...svg'` — the SVGR convention webpack handles natively and Vite does
       // not. Configured for the named export so the clone works unmodified.
       svgr({ svgrOptions: { exportType: 'named' }, include: '**/*.svg' }),
-      react(), analysePlugin(), skillsPlugin(), ledePlugin()],
+      react(), analysePlugin(), skillsPlugin()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

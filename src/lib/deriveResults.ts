@@ -6,12 +6,13 @@
  * dropped here and never reaches the UI** — it is an assessment made before
  * assessments existed (catalog/decompositions.md).
  *
- * One check can yield MORE than one insight: address frequency yields one per
- * band, so `derive` returns a list.
+ * `derive` returns a list, empty for a check that is dropped rather than
+ * shown — see `COMPOSITES` and `THRESHOLDS`.
  */
 import catalog from '../data/catalog.json'
-import { STATUS_NOT_PUBLISHED, stateName } from './states'
-import { addressFrequencyInsights, statementFor } from './statements'
+import { domesticOf, notPublished } from './registrationStatus'
+import { stateName } from './states'
+import { statementFor } from './statements'
 
 const CATALOG_SUBJECTS = (
   catalog as {
@@ -362,6 +363,17 @@ const DBA_UNSUPPORTED = new Set([
 /** Composites. Not insights — a grade over facts that are themselves insights. */
 const COMPOSITES = new Set(['address_risk', 'web_presence_quality'])
 
+/**
+ * Thresholds. Not insights — a band drawn over one number.
+ *
+ * Address frequency sorts each address into 1–20, 21–100 or over 100
+ * businesses. The band is Middesk's call; the count is the fact, and it is
+ * read where it bears on something — on each address a connected business
+ * shares (`connectionRows`). As a row of its own it listed every address in a
+ * band, so a card citing it for one shared address showed all of them.
+ */
+const THRESHOLDS = new Set(['location_frequency'])
+
 export type Derived = InsightResult & {
   reasonUndetermined?: boolean
   /** The catalog defines this check and the record did not report it. */
@@ -369,29 +381,12 @@ export type Derived = InsightResult & {
 }
 
 const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
-  if (COMPOSITES.has(task.key)) return []
+  if (COMPOSITES.has(task.key) || THRESHOLDS.has(task.key)) return []
 
   const base = {
     insightId: task.key,
     statement: statementFor(task.key, task.subLabel, record, task.message),
     group: ''
-  }
-
-  // One insight per frequency band, each carrying its own addresses.
-  if (task.key === 'location_frequency') {
-    const groups = addressFrequencyInsights(record)
-    if (groups.length === 0)
-      return [{ ...base, state: 'no_result', because: task.message ?? undefined }]
-
-    return groups.map((g) => ({
-      insightId: `${task.key}:${g.band}`,
-      statement: g.statement,
-      group: '',
-      state: 'result' as const,
-      evidence: g.addresses.map(
-        (a) => `${a.fullAddress} — ${a.locationCount} businesses at this location`
-      )
-    }))
   }
 
   // "Not Provided by State" — the state does not publish it.
@@ -414,19 +409,21 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
    * there is Unknown, with no status details — so an Unknown in those states
    * is the registry's habit, not a finding about the business. It reads the
    * way an unpublished sub status does: not published, neutral, unflagged.
-   * Each filing is judged by its OWN state: the domestic check by the
-   * formation state, the roll-up only when every Unknown filing is in one of
-   * the silent states. An Unknown anywhere else is still a question.
+   * Each filing is judged by its OWN standing, from the standing table: the
+   * domestic check by the domestic filing the page stands on, the roll-up only
+   * when every Unknown filing is one the state does not publish. An Unknown
+   * anywhere else is still a question.
    */
   if ((task.key === 'sos_domestic' || task.key === 'sos_unknown') && /Unknown/i.test(task.subLabel)) {
     const noStatus = record.registrations.filter((r) => !r.status || /unknown/i.test(r.status))
     const silentStates = [...new Set(noStatus.map((r) => r.state))]
+    const domestic = domesticOf(record)
     const silent =
       task.key === 'sos_domestic'
-        ? STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '')
-        : noStatus.length > 0 && silentStates.every((st) => STATUS_NOT_PUBLISHED.has(st))
+        ? Boolean(domestic && notPublished(domestic))
+        : noStatus.length > 0 && noStatus.every(notPublished)
     if (silent) {
-      const where = task.key === 'sos_domestic' ? [record.formation?.state ?? ''] : silentStates
+      const where = task.key === 'sos_domestic' ? [domestic?.state ?? ''] : silentStates
       const names = where.map((st) => stateName(st))
       return [
         {
@@ -702,7 +699,9 @@ const derived = (record: BusinessRecord): Derived[] => licenseInsights(record)
 const notReported = (ran: Set<string>): Derived[] =>
   CATALOG_SUBJECTS.flatMap((subject) =>
     subject.checks
-      .filter((id) => !ran.has(id))
+      // A threshold is dropped, not missing: the catalog lists it, and "no
+      // result on this record" would say the check failed to run.
+      .filter((id) => !ran.has(id) && !THRESHOLDS.has(id))
       .map((id) => ({
         insightId: id,
         // Say which check this is. A row reading only "no result" is unreadable
@@ -753,6 +752,3 @@ export const categoriesOf = (record: BusinessRecord): Map<string, string> =>
       .filter((t) => t.category)
       .map((t) => [t.key, t.category as string] as [string, string]),
   ])
-
-export const droppedComposites = (record: BusinessRecord): string[] =>
-  record.reviewTasks.filter((t) => COMPOSITES.has(t.key)).map((t) => `${t.key} (${t.subLabel})`)

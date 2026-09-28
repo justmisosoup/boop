@@ -21,8 +21,8 @@ cloned skills get wrong about this repo. Read it before them.
 
 Two further contracts, both authoritative:
 
-- **`PARITY.md`** — what `@/core` is here, the three files that diverge, and the
-  deliberate divergence in the result-state grammar.
+- **`PARITY.md`** — what `@/core` is here, the files that differ from the app's, and
+  the deliberate divergence in the result-state grammar.
 - **`src/core/README.md`** — the design system's own contract, cloned with it.
 
 ## The rules that come up every time
@@ -30,8 +30,8 @@ Two further contracts, both authoritative:
 1. **`src/core/**` is read-only.** It is a one-way clone of the app's `src/core`,
    pinned in `PARITY.md`. Nothing is written back and `/Users/sara-menefee/Projects/app`
    is never modified. Everything you build is LOCAL: `src/components/`,
-   `src/pages/`, `src/lib/`. Needing a primitive the barrel doesn't export means
-   copying its file and transitive imports from the app, plus a barrel line.
+   `src/pages/`, `src/lib/`. The clone is whole and its barrel is the app's public
+   API; something it doesn't export isn't public in the app either.
 
 2. **Rebuilding a screen the dashboard already has? Read the app's real
    implementation first.** Correct tokens are not enough — see
@@ -58,8 +58,12 @@ Two further contracts, both authoritative:
 second screen: the cloned `src/core` ships its colocated tests, and the test
 dependencies aren't installed. `bunx vite build` is the real build check.
 
-## Business formation checks
+## Business formation and standing
 
-- For business formation questions, summarize from the "FORMATION CHECK:" block if present.
-- Otherwise run: `python3 formation/check.py <business_id>`
-- Do not call the API directly, open `.cache/`, or read `formation/data/` unless I ask for a refresh or detail.
+- One implementation: `src/lib/registrationStatus.ts`. `domesticOf` and
+  `formationFilingOf` pick the filing; `standingOf` classifies it from the table in
+  `src/data/registrationStanding.json`. The score caps, the sub-status flag, the
+  Domestic filing card and the Activity & Permission registrations clause all read it.
+- Delaware and New Jersey publish no status; the table says so (`NOT_PUBLISHED`), and it
+  is never a finding.
+- `formation/` is only the offline tooling that builds the table — see its README.

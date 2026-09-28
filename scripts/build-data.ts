@@ -1,6 +1,6 @@
-// Reads the catalog and fixtures and emits JSON the app imports.
+// Reads the catalog and emits the JSON the app imports.
 // The prototype renders from the catalog — no hardcoded insight lists.
-import { existsSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 /**
@@ -67,15 +67,11 @@ const subjects = catalog.insights.map((i: any) => ({
 }))
 const templates: any = await read(join(ROOT, 'catalog', 'templates.yaml'))
 
-const fixtureFiles = readdirSync(join(ROOT, 'fixtures')).filter((f) => /^f\d+\.yaml$/.test(f)).sort()
-const fixtures = []
-for (const f of fixtureFiles) fixtures.push(await read(join(ROOT, 'fixtures', f)))
 
 writeFileSync(
   join(OUT, 'catalog.json'),
   JSON.stringify({ subjects, subjectOf, outcomeOf, nameOf, packagesOf, templates }, null, 2)
 )
-writeFileSync(join(OUT, 'fixtures.json'), JSON.stringify(fixtures, null, 2))
 console.log(
-  `data: ${subjects.length} subjects, ${Object.keys(subjectOf).length} checks, ${Object.keys(outcomeOf).length} outcomes, ${templates.templates.length} templates, ${fixtures.length} fixtures`
+  `data: ${subjects.length} subjects, ${Object.keys(subjectOf).length} checks, ${Object.keys(outcomeOf).length} outcomes, ${templates.templates.length} templates`
 )

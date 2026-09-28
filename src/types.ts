@@ -67,7 +67,20 @@ export type AnalysisRequest = {
    *
    * Empty for a `question`, which is answered as one `answer` section.
    */
-  assessments: Array<{ id: string; name: string; instructions: string }>
+  assessments: Array<{
+    id: string
+    name: string
+    instructions: string
+    /**
+     * The insights this assessment reads, by key.
+     *
+     * A card shows every row its section cites, so a citation is a claim that
+     * the row is evidence for this area's question. The endpoint refuses a
+     * section citing outside this list. Absent on a request written before
+     * scopes existed, which is not checked.
+     */
+    insightIds?: string[]
+  }>
   /**
    * EVERY insight on the record. The session picks from these — it cannot pick
    * what it was not given.
@@ -81,12 +94,6 @@ export type AnalysisRequest = {
     because?: string
     evidence?: string[]
   }>
-  /**
-   * Ids the user added by hand. The session must use these even if it would not
-   * have picked them, and must say what they contribute — including that they
-   * do not change the answer, which is a legitimate finding.
-   */
-  pinned?: string[]
   /**
    * Documents the user attached — a formation certificate, a bank letter, a
    * lease. Written to `analysis/attachments/<requestId>/` by the endpoint; the
@@ -141,7 +148,6 @@ export type StoredQuestion = {
   prompt: string
   typed?: string
   skills?: string[]
-  pinned?: string[]
   durationMs?: number
   result: AnalysisResult
 }
@@ -199,9 +205,6 @@ export type CouldNotConfirmReason =
  */
 export type AssessmentSectionId = string
 
-/** Ids the runner owns. An assessment may not claim one. */
-export const RESERVED_SECTION_IDS = ['recommendation', 'answer'] as const
-
 export type AssessmentSection = {
   id: AssessmentSectionId
   /**
@@ -220,16 +223,6 @@ export type AssessmentSection = {
    */
   body: Array<{
     text: string
-    /**
-     * Public sources behind this paragraph — pages on the open web, not the
-     * record. Rendered as a "Public sources" chip that opens the links.
-     *
-     * Permitted **only in the lede**. The whole product rests on never
-     * presenting something we did not observe as something we did, so outside
-     * knowledge has to arrive with somewhere a reader can go and check it: no
-     * links, no claim. It may never look like a finding or stand in for one.
-     */
-    sources?: Array<{ title: string; url: string }>
     /** Insight ids behind this paragraph, cited at its end. */
     cites?: string[]
   }>

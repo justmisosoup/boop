@@ -1,9 +1,9 @@
 /**
  * How a report is named and dated, everywhere one is named.
  *
- * The Report tab's card, the Reports tab's rows and the assistant's marker all
- * say the same two things about a run: the assessment it was run from, and
- * when. One place, so a run reads the same in all three.
+ * The report card and the assistant's marker both say the same two things
+ * about a run: the assessment it was run from, and when. One place, so a run
+ * reads the same in both.
  */
 
 /** What the report is called: the assessment it was run from. */

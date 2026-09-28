@@ -1,6 +1,6 @@
 import { Fragment, cloneElement, isValidElement, useMemo } from 'react'
 
-import { ChatSources, Text } from '@/core'
+import { Text } from '@/core'
 
 import { attributesFor } from '../lib/attributes'
 import { categoriesOf } from '../lib/deriveResults'
@@ -8,7 +8,6 @@ import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
 import { IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
-import type { AssessmentWeight } from '../lib/identityScore'
 import type {
   AnalysisDraft,
   AnalysisResult,
@@ -16,7 +15,6 @@ import type {
   CouldNotConfirmReason
 } from '../types'
 import { cn } from '../utils/twUtils'
-import { ROLLUP_NO_GLYPH } from './chipStyles'
 import { InsightRow } from './InsightRow'
 import { InsightStack } from './InsightStack'
 
@@ -319,22 +317,19 @@ const markAttributes = (node: React.ReactNode, pattern: RegExp | null): React.Re
  * — see `SectionBody`.
  */
 export const Para = ({
-  sources,
   results,
   record,
   inline = false,
   className,
   children
 }: {
-  sources?: Array<{ title: string; url: string }>
   results: Derived[]
   record?: BusinessRecord
   /**
    * A line inside someone else's paragraph.
    *
    * `InlineAlert`'s body is already a `<p>`, and a `<p>` inside it is invalid;
-   * the sentence is set as a block span instead, with the same marking and
-   * the same sources chip.
+   * the sentence is set as a block span instead, with the same marking.
    */
   inline?: boolean
   className?: string
@@ -347,24 +342,6 @@ export const Para = ({
   const content = (
     <>
       {markAttributes(children, pattern)}
-      {/* The chip is the disclosure: one labelled "Public sources", opening the
-          pages the claim came from. It reads the same way as an insight citation
-          because it is doing the same job — saying where this came from. */}
-      {sources && sources.length > 0 && (
-        <span className="ml-1 align-middle">
-          <ChatSources
-            className={ROLLUP_NO_GLYPH}
-            label="Public sources"
-            sources={sources.map((src) => ({
-              id: src.url,
-              label: src.title,
-              title: src.title,
-              url: src.url,
-              annotation: 'Public web'
-            }))}
-          />
-        </span>
-      )}
     </>
   )
 
@@ -496,9 +473,7 @@ export const ReportBody = ({
   results,
   policy,
   record,
-  stream = false,
   negatives,
-  tiers,
   summaries,
   onJumpToSource
 }: {
@@ -507,12 +482,8 @@ export const ReportBody = ({
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
   record?: BusinessRecord
-  /** A run is being written, so sections not yet here are coming. */
-  stream?: boolean
   /** Insight ids the assessment score read as a point against the identity. */
   negatives?: ReadonlySet<string>
-  /** Accepted for callers that still pass it; the weight is not shown. */
-  tiers?: ReadonlyMap<string, AssessmentWeight>
   /** What each area asks, shown at the head of its card. */
   summaries?: ReadonlyMap<string, AreaSummary>
   /** An evidence chip under a cited insight opens that source's card. */
@@ -539,10 +510,6 @@ export const ReportBody = ({
 
   return (
     <>
-      {/* The lede is not rendered here. It describes the business rather than
-          the assessment, so it leads the report under its own heading, above
-          everything a run wrote. */}
-
       {/* A question has no recommendation to land in, so its one-sentence answer
           leads instead — the same sentence, in the only place it can go. */}
       {verdict && isQuestion && <Text className="mt-2">{verdict.headline}</Text>}

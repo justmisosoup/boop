@@ -12,7 +12,6 @@ import type { BusinessRecord } from './deriveResults'
 type CityRegistration = NonNullable<BusinessRecord['cityRegistrations']>[number]
 
 const BY_NAME = (store as unknown as { registrations: Record<string, CityRegistration[]> }).registrations
-export const CITY_REGISTRY_SOURCE = (store as unknown as { source: { title: string; url: string } }).source
 
 const nameKey = (name: string) => (name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
 

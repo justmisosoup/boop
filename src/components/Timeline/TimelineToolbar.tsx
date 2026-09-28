@@ -18,7 +18,7 @@ import {
 } from '@/core'
 
 import dayjs from '../../lib/dayjs'
-import { COVERAGE_START_YEAR, KIND_COLOR_VAR, KIND_LABEL, KIND_ORDER } from '../../lib/timeline/constants'
+import { COVERAGE_START_YEAR, KIND_LABEL, KIND_ORDER } from '../../lib/timeline/constants'
 import {
   EMPTY_FILTERS,
   isFilterActive,

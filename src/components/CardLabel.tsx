@@ -5,10 +5,7 @@ import { cn } from '../utils/twUtils'
 /**
  * What a card, or a band inside one, calls itself.
  *
- * Two ranks of label on this page, and they differ by weight alone: the band
- * (`PanelGroup`, semibold) and this one, the label on a card. Both are 12px
- * uppercase muted at the same letterspacing, so a reader can tell which
- * contains which without reading either.
+ * 12px uppercase muted, at the page's label letterspacing.
  *
  * It replaces `Heading level={4}` inside the source cards, which was 14px
  * semibold — heavier than the values under it, so a group name read as the

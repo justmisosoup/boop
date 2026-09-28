@@ -11,13 +11,10 @@ export type CustomerSkill = {
   name: string
   instructions: string
   /**
-   * Three things, not two.
-   *
    * `workflow` is the assessment everything else hangs under. `assessment` is
-   * one part of the file it builds. `context` is grounding — what to read the
-   * record as — and is the customer's counterpart to Middesk's own.
+   * one part of the file it builds.
    */
-  kind: 'workflow' | 'assessment' | 'context'
+  kind: 'workflow' | 'assessment'
   /**
    * How much the assessment counts, in the one-pager's two words.
    *
@@ -29,13 +26,12 @@ export type CustomerSkill = {
   /** Who wrote it. Absent on anything seeded before this was recorded. */
   createdBy?: string
   /**
-   * Other assessments this one runs with.
+   * The insights this assessment reads, by key.
    *
-   * Layering rather than nesting: an assessment that needs another's grounding
-   * says so here, and both sets of instructions are sent together. Ids, so a
-   * rename does not break the link.
+   * A card shows every row its section cites, so this is also what the section
+   * may cite: the endpoint refuses a citation outside it. Absent on a workflow.
    */
-  combines?: string[]
+  insightIds?: string[]
   /**
    * One entry per save, oldest first.
    *
@@ -76,9 +72,7 @@ type Agent = {
  */
 const BUNDLED_AGENT: Agent = {
   seeded: (agentStore as Agent).seeded,
-  skills: ((agentStore as Agent).skills ?? []).map((x) =>
-    x.kind === 'context' ? { ...x, kind: 'assessment' as const } : x
-  ),
+  skills: (agentStore as Agent).skills ?? [],
   disabled: (agentStore as Agent).disabled ?? []
 }
 
@@ -86,7 +80,6 @@ export const useAgent = () => {
   // On screen from the first paint, and replaced by the endpoint's copy
   // wherever there is one to ask.
   const [agent, setAgent] = useState<Agent>(BUNDLED_AGENT)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -124,17 +117,13 @@ export const useAgent = () => {
           return
         }
         setAgent({
-          // Everything written before contexts existed was an assessment.
-          skills: (d.skills ?? []).map((x) =>
-            x.kind === 'context' ? { ...x, kind: 'assessment' as const } : x
-          ),
+          skills: d.skills ?? [],
           seeded: d.seeded,
           disabled: d.disabled ?? []
         })
       })
       // An unreachable endpoint means no personalization, not a broken app.
       .catch(() => undefined)
-      .finally(() => live && setReady(true))
     return () => {
       live = false
     }
@@ -153,7 +142,7 @@ export const useAgent = () => {
 
 
   const createSkill = useCallback(
-    (name: string, instructions: string, kind: 'assessment' | 'context' = 'assessment') =>
+    (name: string, instructions: string) =>
       put({
         skills: [
           ...agent.skills,
@@ -161,7 +150,7 @@ export const useAgent = () => {
             id: `skill-${Date.now()}`,
             name: name.trim(),
             instructions: instructions.trim(),
-            kind,
+            kind: 'assessment' as const,
             createdBy: CURRENT_USER,
             createdAt: new Date().toISOString(),
             history: [{ at: new Date().toISOString(), by: CURRENT_USER }]
@@ -172,7 +161,7 @@ export const useAgent = () => {
   )
 
   const updateSkill = useCallback(
-    (id: string, name: string, instructions: string, combines?: string[]) =>
+    (id: string, name: string, instructions: string) =>
       put({
         skills: agent.skills.map((s) => {
           if (s.id !== id) return s
@@ -181,7 +170,6 @@ export const useAgent = () => {
             ...s,
             name: name.trim(),
             instructions: instructions.trim(),
-            combines: combines ?? s.combines,
             editedAt: at,
             history: [...(s.history ?? []), { at, by: CURRENT_USER }]
           }
@@ -195,16 +183,5 @@ export const useAgent = () => {
     [agent.skills, put]
   )
 
-  /** Turn one on or off. Off means it is not offered in the composer. */
-  const setEnabled = useCallback(
-    (id: string, on: boolean) =>
-      put({
-        disabled: on
-          ? (agent.disabled ?? []).filter((x) => x !== id)
-          : [...new Set([...(agent.disabled ?? []), id])]
-      }),
-    [agent.disabled, put]
-  )
-
-  return { ...agent, ready, createSkill, updateSkill, deleteSkill, setEnabled }
+  return { ...agent, createSkill, updateSkill, deleteSkill }
 }

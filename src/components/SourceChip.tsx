@@ -1,6 +1,4 @@
-import { ChatSourceChip, type ChatSourceData } from '@/core'
-
-import { CHIP_NO_GLYPH } from './chipStyles'
+import type { ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../lib/deriveResults'
 
@@ -55,36 +53,4 @@ export const registrationSources = (
         ? 'Government registry · domestic'
         : `Government registry${r.jurisdiction ? ` · ${r.jurisdiction}` : ''}`
   }))
-}
-
-export const SourceChip = ({
-  registrations,
-  domesticState
-}: {
-  registrations: Registration[]
-  domesticState?: string | null
-}) => {
-  if (registrations.length === 0) return null
-
-  const sources = registrationSources(registrations, domesticState)
-
-  // The glyph is a favicon-style identity tile, which earns its place when
-  // sources come from different domains. Every source here is a Secretary of
-  // State registry and the chip already says which, so the tile is hidden
-  // rather than swapped for another mark. Hidden in CSS because the cloned
-  // primitive stays unmodified — and it is the glyph's WRAPPER that has to go:
-  // the wrapper carries the 12px box and its own right margin, so hiding only
-  // the tile inside left a 16px hole where the mark used to be.
-  return (
-    <span className={[
-        // Hide the glyph's WRAPPER, not just the tile inside it: the wrapper
-        // carries the 12px box and its own right margin.
-        '[&_a>span:first-child]:hidden [&_button>span:first-child]:hidden',
-        // The text that followed the glyph keeps a left margin meant to clear
-        // it; with the glyph gone that becomes a hole at the start of the chip.
-        '[&_a>span:nth-child(2)]:ml-0 [&_button>span:nth-child(2)]:ml-0'
-      ].join(' ')}>
-      <ChatSourceChip className={CHIP_NO_GLYPH} sources={sources} />
-    </span>
-  )
 }

@@ -24,12 +24,10 @@ export const AnalysisPanel = ({
   waiting,
   policy,
   results,
-  categories,
   record,
   negatives,
   tiers,
   summaries,
-  onJumpToGroup,
   onJumpToSource
 }: {
   /** The report turn, or null before one has been run. */
@@ -41,7 +39,6 @@ export const AnalysisPanel = ({
   /** The assessments inside the run in flight, for the draft's layout. */
   policy: Array<{ id: string; name: string }>
   results: Derived[]
-  categories: Map<string, string>
   /** The record itself, so a cited check can show the value behind it. */
   record?: BusinessRecord
   /** Insight ids the assessment score read as a point against the identity —
@@ -51,7 +48,6 @@ export const AnalysisPanel = ({
   tiers?: ReadonlyMap<string, AssessmentWeight>
   /** What each area asks, for the head of its card. */
   summaries?: ReadonlyMap<string, AreaSummary>
-  onJumpToGroup: (groupId: string, insightIds: string[]) => void
   /** Follow an evidence chip on a cited insight to that source's card, the way
    *  the Insights tab does. */
   onJumpToSource?: (cardId: string) => void
@@ -76,7 +72,6 @@ export const AnalysisPanel = ({
             return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
           })}
           negatives={negatives}
-          tiers={tiers}
           summaries={summaries}
           onJumpToSource={onJumpToSource}
         />
@@ -94,7 +89,6 @@ export const AnalysisPanel = ({
             results={results}
             record={record}
             policy={policy}
-            stream
             negatives={negatives}
             onJumpToSource={onJumpToSource}
           />

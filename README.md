@@ -1,36 +1,27 @@
 # prototype
 
-Phase 2. Renders from `catalog/` and `fixtures/`; does not compute.
+A Vite + React 19 + TypeScript prototype of the Middesk business-identity
+assessment: the businesses list (`/businesses`) and the assessment record it opens
+(`/businesses/:id`). Working rules are in `CLAUDE.md`; read it first.
 
 ```bash
 bun install
-bun run dev     # http://localhost:3000
+bun run vite    # http://localhost:3000
 ```
 
-`bun run data` regenerates `src/data/*.json` from the catalog and fixtures — it runs
-automatically before `dev` and `build`, so changing the catalog changes the
-prototype.
+`bun run dev` and `bun run build` pull fresh records from the live API first; run
+them only when a data refresh is the point. `bunx vite build` is the build check.
 
-## What is here
+## Where things live
 
-- The assessment output screen, for F1 and F2.
-- The result-state grammar: result, unknown, no result, with the reason as a plain
-  sentence and `should_exist_not_found` promoted as the only adverse one.
-
-## What is not
-
-Composition flow, the proposal journey, F3 and F4. Search is deferred entirely.
-
-## `src/data/results.ts` is a stand-in
-
-The prototype renders; it does not compute. Those results are transcribed from
-`concept/assessment.md`. They are deliberately NOT in `fixtures/`, which holds
-attributes and provenance only so that phase 3 can derive the states rather than
-play them back. When phase 3 lands, that file is deleted.
-
-## `@/core` is a clone, not a rewrite
-
-`src/core` and `src/utils/twUtils.ts` are cloned from the Middesk dashboard at commit
-`f1add6296`, pruned to what this screen uses. Imports are `from '@/core'`, as in the
-app. Read `PARITY.md` before changing anything under `src/core` — those files are
-unmodified copies, and the only local change is the trimmed barrel.
+| What | Where | Written by |
+|---|---|---|
+| The ingested businesses | `src/data/records.json` | `bun run pull` |
+| The insight catalog | `src/data/catalog.json` | `bun run data`, from `../catalog/` |
+| City registrations, licences | `src/data/cityRegistrations.json`, `licenses.json` | by hand / `scripts/pull-city-registrations.ts` |
+| Registration standing table | `src/data/registrationStanding.json` | `formation/build.py` |
+| Assessments (briefs, weights, insight scopes) | `analysis/agent.json` | the app's assessment editor |
+| One report per business | `analysis/reports.json` | a Claude Code session, via `/api/analyse` |
+| How a report is written | `analysis/README.md` | — |
+| Insights, standing, scoring, card copy | `src/lib/` | — |
+| The design system | `src/core/` | read-only clone — see `PARITY.md` |

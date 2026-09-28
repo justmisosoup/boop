@@ -25,12 +25,12 @@ import { InsightCounts } from '../components/InsightCounts'
 
 /**
  * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`
- * where the app has the column. The name, the determination as the app's
- * Status chip, how its insights read, and when the business was last assessed.
+ * where the app has the column. The determination as the app's Status chip,
+ * the name, how its insights read, and when the business was last assessed.
  */
 const COLUMN_WIDTHS = {
-  name: 232,
   status: 132,
+  name: 232,
   insights: 304,
   assessed: 148
 }
@@ -43,6 +43,19 @@ type Row = {
 
 const columns: DataTableColumnDef<Row>[] = [
   {
+    id: 'status',
+    header: 'Status',
+    accessorFn: (row) => row.assessed?.score.value ?? -1,
+    /**
+     * The determination the newest assessment reached — Approve, Needs review,
+     * Reject — in the app's own Status chip, at the app's own width. A business
+     * with no assessment reads Not assessed. It leads the row, ahead of the
+     * name, so the list scans by outcome first.
+     */
+    cell: ({ row }) => <DeterminationChip band={row.original.assessed?.score.band ?? null} />,
+    meta: { width: COLUMN_WIDTHS.status }
+  },
+  {
     id: 'name',
     header: 'Business Name',
     accessorFn: (row) => row.record.name,
@@ -50,18 +63,6 @@ const columns: DataTableColumnDef<Row>[] = [
     // shows the full name in a tooltip when it's actually clipped.
     cell: ({ row }) => <TruncatedText className="font-semibold">{row.original.record.name ?? ''}</TruncatedText>,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
-  },
-  {
-    id: 'status',
-    header: 'Status',
-    accessorFn: (row) => row.assessed?.score.value ?? -1,
-    /**
-     * The determination the newest assessment reached — Approve, Needs review,
-     * Reject — in the app's own Status chip, at the app's own width. A business
-     * with no assessment reads Not assessed.
-     */
-    cell: ({ row }) => <DeterminationChip band={row.original.assessed?.score.band ?? null} />,
-    meta: { width: COLUMN_WIDTHS.status }
   },
   {
     id: 'insights',

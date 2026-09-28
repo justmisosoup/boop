@@ -5,7 +5,7 @@
     {
       "id": "smb-account-opening",
       "name": "Bank account opening",
-      "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out \u2014 a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
+      "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
       "kind": "workflow",
       "createdBy": "Sara Menefee",
       "createdAt": "2026-09-17T00:39:29.869Z",
@@ -115,7 +115,51 @@
         }
       ],
       "editedAt": "2026-09-18T21:57:36.990Z",
-      "weight": "critical"
+      "weight": "critical",
+      "insightIds": [
+        "name",
+        "dba_name",
+        "name_and_entity_type",
+        "entity_type",
+        "entity_type_match",
+        "formation_state",
+        "sos_domestic",
+        "sos_domestic_sub_status",
+        "sos_match",
+        "sos_active",
+        "sos_inactive",
+        "sos_unknown",
+        "sos_not_found",
+        "sos_status",
+        "registrations_not_found",
+        "registrations_status",
+        "submitted_registrations_match",
+        "tin",
+        "tin_error",
+        "tin_issued",
+        "tin_type",
+        "address_verification",
+        "address_deliverability",
+        "address_property_type",
+        "address_cmra",
+        "address_registered_agent",
+        "address_proximity",
+        "web_address_verification",
+        "web_business_name_verification",
+        "website_url_discovery",
+        "website_status",
+        "website_parked",
+        "website_url_domain_ownership",
+        "domain_redirect",
+        "website_verification",
+        "web_email_address_verification",
+        "web_phone_number_verification",
+        "phone",
+        "profile_discovery",
+        "profile_status",
+        "person_verification",
+        "web_person_verification"
+      ]
     },
     {
       "id": "skill-kyb-3",
@@ -143,7 +187,13 @@
         }
       ],
       "editedAt": "2026-09-18T21:34:19.224Z",
-      "weight": "critical"
+      "weight": "critical",
+      "insightIds": [
+        "watchlist",
+        "politically_exposed_persons",
+        "adverse_media",
+        "people_criminal_history"
+      ]
     },
     {
       "id": "skill-kyb-activity",
@@ -163,7 +213,19 @@
         }
       ],
       "editedAt": "2026-09-18T21:32:51.165Z",
-      "weight": "high"
+      "weight": "high",
+      "insightIds": [
+        "industry",
+        "risky_keywords",
+        "operating_as_claimed",
+        "website_url_discovery",
+        "website_status",
+        "profile_discovery",
+        "profile_status",
+        "license",
+        "license_person_match",
+        "license_address_match"
+      ]
     },
     {
       "id": "skill-1789767328449",
@@ -183,7 +245,15 @@
         }
       ],
       "editedAt": "2026-09-18T21:35:43.687Z",
-      "weight": "critical"
+      "weight": "critical",
+      "insightIds": [
+        "person_verification",
+        "web_person_verification",
+        "business_connections",
+        "related_entities",
+        "entity_type",
+        "kyc_decision"
+      ]
     },
     {
       "id": "skill-financial-standing",
@@ -198,6 +268,16 @@
           "at": "2026-09-22T21:00:00.000Z",
           "by": "smenefee@middesk.com"
         }
+      ],
+      "insightIds": [
+        "liens",
+        "bankruptcies",
+        "litigations",
+        "people_liens",
+        "people_litigations",
+        "people_bankruptcies",
+        "ppp_loans",
+        "web_litigation"
       ]
     }
   ]

@@ -97,7 +97,7 @@ const UNDEFINED_SUBJECT: Record<string, GroupId> = {
 }
 
 /**
- * The subject comes from the catalog. Ids fan out (`location_frequency:high`),
+ * The subject comes from the catalog. Ids can be qualified (`license:npi-…`),
  * so the lookup is on the base key.
  *
  * Kept as a factory taking the record's category map so the call sites do not

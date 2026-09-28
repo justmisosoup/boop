@@ -1,15 +1,12 @@
 /**
  * Measures the drift between the product's own vocabulary and what actually runs.
  *
- * `catalog/review-tasks-signals.yaml` is the authority: it is the review tasks and
- * signals the product defines, extracted from the master spreadsheet, with the
- * order packages that produce each one. `catalog/insights.yaml` is hand-authored
- * interpretation on top of it and is NOT the reference — where the two disagree,
- * the product's vocabulary wins.
- *
- * Every id the runtime emits and the sheet does not name is something we produce
- * that the product does not define. Every key the sheet names and the runtime
- * never emits is a check we have never seen run.
+ * `catalog/insights.yaml` (beside the prototype, not inside it) names the checks
+ * the product defines, grouped by subject. Every id the runtime emits that the
+ * catalog does not name is something we produce that the product does not
+ * define. Every check the catalog names that the runtime never emits is one we
+ * have never seen run — or one dropped on purpose (`COMPOSITES`, `THRESHOLDS`
+ * in src/lib/deriveResults.ts).
  *
  * Exits non-zero while drift remains, so it works as a check rather than only as
  * a report.
@@ -58,8 +55,6 @@ const signalCount = catalog.insights.reduce(
   (n: number, i: any) => n + (i.signals?.length ?? 0),
   0
 )
-const catalogIds = defined
-const notInsightIds = new Set<string>()
 
 const runtimeIds = new Set<string>()
 for (const record of records as unknown as BusinessRecord[]) {
@@ -73,7 +68,7 @@ const plainRuntime = new Set([...runtimeIds].map(baseOf))
 
 const matched = [...plainRuntime].filter((id) => defined.has(id)).sort()
 const undefinedAtRuntime = [...plainRuntime]
-  .filter((id) => !defined.has(id) && !notInsightIds.has(id))
+  .filter((id) => !defined.has(id))
   .sort()
 const neverSeen = [...defined].filter((k) => !plainRuntime.has(k)).sort()
 

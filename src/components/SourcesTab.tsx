@@ -11,7 +11,7 @@ import { GROUPS, type GroupId } from '../lib/groups'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
 import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { longDate, profileName } from '../lib/attributes'
+import { longDate } from '../lib/attributes'
 import { stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 

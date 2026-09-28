@@ -40,8 +40,7 @@ const readBody = async (req: Connect.IncomingMessage) => {
  * A finished report used to live only in the browser: pressing send cleared it
  * and a reload lost it, so the work the session did survived exactly as long as
  * the tab did. Keyed by NAME rather than business id because re-ordering the
- * same company mints a new id every time — see `analysis/ledes.json`, which is
- * keyed the same way for the same reason.
+ * same company mints a new id every time.
  */
 const REPORTS = join(DIR, 'reports.json')
 
@@ -59,41 +58,13 @@ const reportKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim
 const briefPrint = (request: AnalysisRequest) =>
   [request.prompt, ...(request.assessments ?? []).map((a) => `${a.id}:${a.instructions}`)].join('\u0000')
 
-/**
- * Every report a business has, oldest first.
- *
- * A v1 store held one report per business, as a bare object. It is read as a
- * one-element list with no snapshot, so a store written before snapshots
- * existed still serves — the page falls back to the live record for those.
- */
+/** Every business's report, keyed by name. */
 const readReports = (): Record<string, StoredReport[]> => {
   if (!existsSync(REPORTS)) return {}
   try {
-    const held =
-      (JSON.parse(readFileSync(REPORTS, 'utf8')) as { reports?: Record<string, unknown> })
-        .reports ?? {}
-    const out: Record<string, StoredReport[]> = {}
-    for (const [key, value] of Object.entries(held)) {
-      out[key] = Array.isArray(value) ? (value as StoredReport[]) : [asStored(key, value)]
-    }
-    return out
+    return (JSON.parse(readFileSync(REPORTS, 'utf8')) as { reports?: Record<string, StoredReport[]> }).reports ?? {}
   } catch {
     return {}
-  }
-}
-
-/** A v1 entry, read forward. */
-const asStored = (key: string, value: unknown): StoredReport => {
-  const v = (value ?? {}) as { brief?: string; policy?: StoredReport['policy']; report?: unknown }
-  return {
-    id: `held:${key}`,
-    name: 'Assessment',
-    at: '',
-    brief: v.brief ?? '',
-    policy: v.policy ?? [],
-    report: v.report as StoredReport['report'],
-    snapshot: null,
-    questions: []
   }
 }
 
@@ -116,19 +87,16 @@ const readSnapshot = (id: string): StoredReport['snapshot'] => {
 }
 
 const STORE_COMMENT =
-  'Every report a business has, oldest first, keyed by name. A report carries what it concluded and what it was reading, so an earlier one still opens against what it saw. Written when a run completes.'
+  'One report per business, keyed by name: what it concluded and the snapshot it read. A new run replaces it; git keeps the history. Written when a run completes.'
 
 /**
- * Kept, not replaced.
+ * One report per business.
  *
- * A report is appended: the one before it stays readable, which is the whole
- * point of a report being a moment rather than a slot. A question is filed
- * INTO the report it was asked of — it was answered against that report's
- * snapshot, and it belongs with it.
- *
- * The `kind` branch is also a fix. This was called for every completed run and
- * wrote to one slot per business, so a typed follow-up overwrote the business's
- * report with a single `answer` section and an empty policy.
+ * A finished report replaces the business's report — the page shows one, and
+ * older runs are git's history, not the bundle's. A question is filed INTO the
+ * report it was asked of: it was answered against that report's snapshot, and
+ * it belongs with it. (Before the `kind` branch, a typed follow-up overwrote
+ * the business's report with a single `answer` section and an empty policy.)
  */
 const keepReport = (asked: AnalysisRequest, report: AnalysisResult) => {
   const key = reportKey(asked.business?.name ?? '')
@@ -150,7 +118,7 @@ const keepReport = (asked: AnalysisRequest, report: AnalysisResult) => {
         ]
       }
     } else {
-      list.push({
+      list.splice(0, list.length, {
         id: asked.id,
         name: asked.skills?.[0] ?? 'Assessment',
         at: asked.requestedAt,
@@ -197,6 +165,30 @@ const problemWithAssessment = (value: unknown, expectedId: string): string | nul
   return null
 }
 
+/** A cited id reads by its key: `license:npi-…` is `license`. */
+const keyOf = (id: string) => id.split(':')[0]
+
+/**
+ * A section may cite only the insights its assessment reads.
+ *
+ * A card shows every row its section cites, so a citation is a claim that the
+ * row is evidence for that area's question. `name` cited under Activity &
+ * Permission, because a sentence mentioned the name, put "Match identified to
+ * the submitted business name" on a card about the line of work. The scope is
+ * the assessment's own, from the manifest; a request written before scopes
+ * existed carries none and is not checked.
+ */
+const outsideScope = (a: AssessmentFile, scope?: string[]): string[] => {
+  if (!scope) return []
+  const allowed = new Set(scope)
+  const cited = [
+    ...a.used,
+    ...a.section.body.flatMap((b) => b.cites ?? []),
+    ...(a.section.gaps ?? []).flatMap((g) => g.cites ?? [])
+  ]
+  return [...new Set(cited.filter((id) => !allowed.has(keyOf(id))))]
+}
+
 /**
  * Everything written so far, in the order the customer composed it.
  *
@@ -216,7 +208,7 @@ const collect = (id: string, manifest: AnalysisRequest['assessments']) => {
   const sections: AssessmentSection[] = []
   const used: string[] = []
 
-  for (const { id: assessmentId } of manifest) {
+  for (const { id: assessmentId, name, insightIds } of manifest) {
     const file = `${assessmentId}.json`
     if (!present.has(file)) continue
 
@@ -231,6 +223,11 @@ const collect = (id: string, manifest: AnalysisRequest['assessments']) => {
     if (problem) return { error: `${problem} (analysis/result-${id}.assessments/${file})` }
 
     const assessment = parsed as AssessmentFile
+    const reaching = outsideScope(assessment, insightIds)
+    if (reaching.length > 0)
+      return {
+        error: `\`${name}\` cites ${reaching.join(', ')}, which it does not read. A card shows every row its section cites, so an assessment may cite only its own insights: ${insightIds!.join(', ')}. (analysis/result-${id}.assessments/${file})`
+      }
     arrived.push(assessmentId)
     sections.push(assessment.section)
     used.push(...assessment.used)
@@ -380,7 +377,7 @@ export const analysePlugin = (): Plugin => ({
           [
             '',
             `  ▶ analysis requested — ${request.business.name}`,
-            `    ${request.insights.length} insights${request.pinned?.length ? `, ${request.pinned.length} pinned` : ''}`,
+            `    ${request.insights.length} insights`,
             ...(request.attachments?.length
               ? [`    ${request.attachments.length} attachment(s) in prototype/analysis/attachments/${id}/`]
               : []),
@@ -409,22 +406,10 @@ export const analysePlugin = (): Plugin => ({
         const params = new URL(url, 'http://localhost').searchParams
         const id = params.get('id')
 
-        /**
-         * No id: the page is asking what it already knows about this business.
-         *
-         * Arriving at a record used to show nothing until someone pressed send,
-         * even when a report had been written minutes earlier — the result lived
-         * in React state and a reload threw it away. The last completed run is
-         * served back here so the work survives the tab.
-         */
+        // The page reads its report from the bundle; this answers runs only.
         if (!id) {
-          const name = params.get('name') ?? ''
-          // The store keeps the briefs beside the report so a re-run can tell
-          // whether they moved; the page only wants the report.
-          const held = name ? newestReport(reportKey(name)) : null
-          res.end(
-            JSON.stringify({ stored: held?.report ?? null, policy: held?.policy ?? [] })
-          )
+          res.statusCode = 400
+          res.end(JSON.stringify({ error: 'An id is required.' }))
           return
         }
 

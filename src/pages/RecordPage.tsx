@@ -3,25 +3,20 @@ import { ArrowLeft } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 
 import {
-  ActionButton,
   ChatSources,
   EmptyState,
-  Heading,
   IconActionButton,
-  MetaChip,
   MutedText,
   PageHeader,
   PageHeaderBand,
   PageHeaderActions,
   PageHeading,
-  Surface,
-  Text,
   TabsContent,
   TabsRoot
 } from '@/core'
 
 import { AnalysisDock } from '../components/AnalysisDock'
-import { AttributeGroupDetail, attributeGroups, countAttributes } from '../components/AttributesTab'
+import { AttributeGroupDetail, attributeGroups } from '../components/AttributesTab'
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
 import { AnalysisChat } from '../components/AnalysisChat'
@@ -49,26 +44,12 @@ import { stateName } from '../lib/states'
 import { industrySectorOf } from '../lib/naics'
 import { areaSummaries } from '../lib/areaSummaries'
 import { byId } from '../lib/records'
-import { GROUPS, type GroupId, makeGroupFor } from '../lib/groups'
+import { GROUPS, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
 import { AssessmentEditor } from '../components/AssessmentEditor'
 import { composeAssessment } from '../lib/library'
 import { cn } from '../utils/twUtils'
 import { useAgent } from '../lib/useAgent'
-
-/**
- * What the assessment workflow runs against.
- *
- * The concepts, not the records underneath them. Listing the record's own
- * sources here said the same thing the answer's citations already say, one
- * filing at a time; the workflow is not written against the Delaware
- * registration, it is written against what these three hold.
- */
-const CONTEXT = [
-  { id: 'context:entities', label: 'Middesk Entities' },
-  { id: 'context:jurisdictions', label: 'Middesk Jurisdictions' },
-  { id: 'context:industries', label: 'Middesk Industries' }
-]
 
 /**
  * The reference panel's width, in px. Fixed.
@@ -170,7 +151,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     () =>
       agent.skills
         .filter((x) => x.kind !== 'workflow' && !(agent.disabled ?? []).includes(x.id))
-        .map((x) => ({ id: x.id, name: x.name, instructions: x.instructions })),
+        .map((x) => ({ id: x.id, name: x.name, instructions: x.instructions, insightIds: x.insightIds })),
     [agent.skills, agent.disabled]
   )
   const analysis = useAnalysis(selected, live)
@@ -378,63 +359,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
 
   // Navigational only — grouping helps a reader find things and nothing rests
   // on it (00-MASTER-PLAN.md rule 3).
-  /**
-   * Insights that actually reported.
-   *
-   * The tab counts these, not every insight evaluated. The list below includes
-   * every check the catalog defines so a reader can see what was never answered,
-   * but counting those would say a business has 63 insights when half of them
-   * are the absence of one.
-   */
-  const reported = useMemo(() => results.filter((r) => !r.notReported), [results])
-
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
-  /**
-   * Guarded on the report, not on the row count.
-   *
-   * `attributeRowsByGroup` seeds a business's licences before it looks at the
-   * insight list, so a business with a licence and no report would count
-   * attributes it has no report to show them in.
-   */
-  const attributeCount = useMemo(
-    () => (view ? countAttributes(record, results, groupFor) : 0),
-    [view, record, results, groupFor]
-  )
-  const groupOf = (result: (typeof results)[number]) => groupFor(result.insightId)
 
-  /**
-   * Found / Not found / All.
-   *
-   * "Found" is a check that reported anything at all — a result, an unknown, a
-   * no-result with a reason. "Not found" is a check the record never mentioned:
-   * the catalog says it exists and this business has nothing for it, which is
-   * most of the list once every insight is evaluated rather than only the ones
-   * that ran.
-   */
-  /**
-   * Still applied, no longer offered.
-   *
-   * The control that changed it is gone from the panel; the filter itself stays
-   * so the tab shows what the record establishes rather than every check that
-   * was defined. Kept as state rather than a constant because the value is
-   * still a product decision someone may want to move.
-   */
-  /**
-   * A report, named by when it was asked.
-   *
-   * A date, not "2 days ago": two reports on one business can be months apart,
-   * and the question the picker answers is which reading you are looking at,
-   * not how recent it is. A report kept before this was recorded has no date to
-   * print.
-   */
-  /**
-   * Which report you are reading, and the way to another.
-   *
-   * On the document beside its tabs, not up in the page chrome: it names the
-   * thing the tabs are faces of. Switch it and the assessment and all three
-   * lists change together, because they all resolve from it.
-   */
   /**
    * Run the standing workflow, from where the report would be.
    *
@@ -448,7 +375,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     if (!composed) return
     analysis.run(
       composed.prompt,
-      analysis.pinned,
       [],
       'report',
       [standing.name],
@@ -556,25 +482,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * reference panel bolted to its right. The assessment is what a report is
    * for, so it opens on it.
    */
-  const [tab, setTab] = useState('assessment')
   const panelRef = useRef<HTMLDivElement | null>(null)
-
-  /**
-   * The assessment tab, which is also the report control.
-   *
-   * It carries the name of the assessment that produced what you are reading,
-   * and the chevron is part of the tab rather than a second control beside it:
-   * clicking the tab you are already on opens the other readings. A dropdown
-   * across the row named the same thing twice, at a distance from the tab it
-   * described.
-   */
-  const showTab = (next: string) => {
-    setTab(next)
-    panelRef.current?.scrollTo({ top: 0 })
-  }
-
-  // Ids the current answer already used — those rows do not offer "add".
-  const used = new Set(analysis.active?.result.used ?? [])
 
   /** Open the right-hand panel on one of its views. */
   const showPanel = (view: PanelView) => {
@@ -717,8 +625,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             * beside them.
             */}
           <TabsRoot
-            value={tab}
-            onValueChange={showTab}
+            value="assessment"
             className="flex min-h-0 flex-col wide:flex-1"
           >
             {/*
@@ -801,8 +708,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     * so the list belongs beside the reading. Below `desk` there
                     * is no margin and the same column sits in the flow above
                     * the pane: a narrow window loses the pinning, not the list.
-                    * The Reports tab has no column — its switch is the report's
-                    * own name in the pane's crumb.
                     */}
                   <div className="min-w-0 flex-1">
                     {/* The tab's content, straight on the canvas. It sat in a
@@ -857,7 +762,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               version={analysis.reportVersion}
               record={record}
               results={results}
-              categories={categories}
               // Only a report puts this column to work. A typed question is
               // answered in the chat and leaves the report where it is.
               waiting={running}
@@ -865,7 +769,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               // otherwise, so the panel is laid out before anything is sent.
               policy={running ? analysis.waitingPolicy : policy}
               draft={analysis.draft}
-              onJumpToGroup={jumpToGroup}
               onJumpToSource={jumpToSource}
               negatives={negatives}
               tiers={tiers}
@@ -1072,7 +975,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         onSend={({ prompt, assessments, attachments, skills, typed, kind, target }) =>
           analysis.run(
             prompt,
-            analysis.pinned,
             attachments,
             kind,
             skills,
@@ -1092,11 +994,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         // that page rather than an editor nested inside itself.
         onEditSkill={(id) => setAgentOpen(id === standing?.id ? 'list' : id)}
         onUpdateSkill={(id, name, instructions) => void agent.updateSkill(id, name, instructions)}
-        waiting={analysis.waiting}
-        pinned={analysis.pinned}
-        // Live, not the report's: the composer is what runs the next one.
-        results={live}
-        onUnpin={(id) => analysis.unpin(id)}
         hasAnalysis={analysis.versions.length > 0}
       />
       )}

@@ -10,7 +10,6 @@
     "pull": "bun run scripts/pull-records.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.125.0",
     "@hookform/resolvers": "5.8.0",
     "@popperjs/core": "^2.11.8",
     "@radix-ui/react-accessible-icon": "^1.1.15",

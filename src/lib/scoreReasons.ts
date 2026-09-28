@@ -1,6 +1,7 @@
 import type { BusinessRecord, Derived } from './deriveResults'
 import { negativesFor, type IdentityScore, type ScoreArea } from './identityScore'
-import { STATUS_NOT_PUBLISHED, stateName } from './states'
+import { domesticOf, notPublished } from './registrationStatus'
+import { stateName } from './states'
 
 /**
  * Why the number is what it is, in a reviewer's words.
@@ -24,7 +25,8 @@ const SOS_STATUS = new Set(['sos_domestic', 'sos_unknown'])
  *  registry — named so the line can say why they were left out. */
 const splitFlags = (record: BusinessRecord, results: Derived[]) => {
   const negative = negativesFor(record, results)
-  const silent = STATUS_NOT_PUBLISHED.has(record.formation?.state ?? '')
+  const domestic = domesticOf(record)
+  const silent = Boolean(domestic && notPublished(domestic))
   const flags = results.filter((r) => negative.has(r.insightId))
   const registry = flags.filter((r) => silent && SOS_STATUS.has(r.insightId))
   return { relevant: flags.filter((r) => !registry.includes(r)), registry }
@@ -60,14 +62,4 @@ export const scoreLine = (
   if (score.findings > 0)
     return `${score.findings} ${score.findings === 1 ? 'insight was' : 'insights were'} flagged by the assessment. No single fact rules it out.`
   return 'Nothing flagged. Every insight the assessment cited stands.'
-}
-
-/** The clause for a list cell: the fact, without the consequence. */
-export const scoreSummary = (score: IdentityScore, areas: ScoreArea[] = []): string => {
-  const cap = score.ceilings[0]
-  if (cap) return cap.plain.replace(/\.$/, '')
-  const held = heldArea(score, areas)
-  if (held) return `${held.name} left a question open`
-  if (score.findings > 0) return `${score.findings} flagged`
-  return 'Nothing flagged'
 }

@@ -1,5 +1,5 @@
 import type { BusinessRecord, Derived } from './deriveResults'
-import { describeRegistration, domesticOf } from './registrationStatus'
+import { describeRegistration, domesticOf, standingOf } from './registrationStatus'
 import { soleProprietorOf } from './soleProprietor'
 import { validHitCount } from './watchlist'
 import { stateName } from './states'
@@ -231,7 +231,7 @@ const clamp = (n: number) => Math.max(0, Math.min(100, n))
  *   opens. A mismatch, an unresolvable person, an unexplained connection.
  * - `neutral` — neither. Provenance ("the URL was submitted"), a fact about a
  *   registry rather than the business ("New York does not publish sub-status"),
- *   and a reading that is only context ("one address in the moderate band").
+ *   and a reading that is only context ("a registered agent's address").
  *   These are shown and not counted.
  *
  * An insight with no entry falls back to the record's own state: a no result is
@@ -256,15 +256,17 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   tin: (_r, record) =>
     (record.tin as { mismatch?: boolean } | null)?.mismatch ? 'negative' : 'positive',
   entity_type: () => 'positive',
-  /* The sub-status is the state's own word on standing. Good standing (or an
-     equivalent) is a point for the file; withheld is nothing; anything else
-     the state bothers to say — pending inactive, dissolved, delinquent — is a
-     point against it, since a state does not annotate a filing it is happy with. */
+  /* Standing, as the standing table reads the domestic filing the page stands
+     on: in good standing is a point for the file; not published, or a gap
+     the table only notes, is nothing; anything it holds for review or
+     concern — pending dissolution, delinquent, dissolved — is a point
+     against. The row's own wording decides none of it. */
   sos_domestic_sub_status: (r, record) => {
     if (r.state !== 'result') return 'neutral'
-    const word = (sub(record, 'sos_domestic_sub_status') ?? '').toLowerCase()
-    const good = /good standing|current|compliant/.test(word) && !/^not\b|not in/.test(word)
-    return good ? 'positive' : 'negative'
+    const domestic = domesticOf(record)
+    if (!domestic) return 'neutral'
+    const { category, assessment } = standingOf(domestic)
+    return category === 'IN_GOOD_STANDING' ? 'positive' : assessment === 'CLEAR' || assessment === 'NOTE' ? 'neutral' : 'negative'
   },
 
   // The office. Deliverable and commercial are points for it; a residential
@@ -275,18 +277,6 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
       ? 'positive'
       : 'neutral',
   address_registered_agent: () => 'neutral',
-  /*
-   * Every frequency band is context, the high one included.
-   *
-   * The high band used to count against the identity. But an address a
-   * hundred businesses file from is, on this record set, a registered agent's
-   * office or a co-working floor — the ordinary footprint of a Delaware
-   * corporation or a start-up — and nothing in the check says which. What a
-   * shared address means is the assessment's reading to make in prose, with
-   * the address in front of it; a table that scores it has decided in advance
-   * that a crowded floor is a mark against, which it is not.
-   */
-  location_frequency: () => 'neutral',
 
   // The web presence. Discovery says who supplied the URL, which is provenance;
   // what the site then says about the business is the finding.
@@ -401,7 +391,7 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   bankruptcies: (_r, record) => ((record.bankruptcies ?? []).length > 0 ? 'negative' : 'positive')
 }
 
-/** The catalog keys a per-band insight as `location_frequency:moderate`. */
+/** A qualified id reads by its key: `license:npi-…` is `license`. */
 const keyOf = (insightId: string) => insightId.split(':')[0]
 
 const polarityOf = (r: Derived, record: BusinessRecord): Polarity => {
@@ -540,6 +530,7 @@ const scoreArea = (
 const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
   const out: ScoreCeiling[] = []
   const domestic = domesticOf(record)
+  const standing = domestic ? standingOf(domestic) : undefined
   const status = (domestic?.status || '').toLowerCase()
   const subStatus = (domestic?.subStatus || '').toLowerCase()
   const where = stateName(domestic?.state ?? record.formation?.state)
@@ -564,7 +555,14 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
       because: 'no filing on the record',
       plain: 'No Secretary of State filing was found for this business.'
     })
-  else if (domestic && status && status !== 'active' && status !== 'unknown')
+  /* The standing table decides; the sentence says what the filing says.
+     CONCERN is a filing the entity cannot currently stand on — expired,
+     dissolved, revoked — and rules approval out. REVIEW is one the state has
+     started taking away, or one the table cannot place: C & N Trucking's
+     Indiana filing is Active with "Pending Admin Dissolution", and a status-only
+     check let it score 92. It is held, not rejected: the dissolution is not
+     final, and filing what is overdue usually cures it. */
+  else if (domestic && standing?.assessment === 'CONCERN')
     out.push({
       id: 'filing_not_active',
       at: 49,
@@ -576,25 +574,11 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
         subStatus && subStatus !== status ? ` and ${subStatus}` : ''
       }.`
     })
-  /*
-   * Active, but the state has started taking it away. C & N Trucking's Indiana
-   * filing reads Active with PENDING_INACTIVE and "Pending Admin Dissolution",
-   * and the status-only check above let it score 92 and Approve. It is held,
-   * not rejected: the dissolution is not final, and filing what is overdue
-   * usually cures it — which is the thing to ask for before opening.
-   */
-  else if (
-    domestic &&
-    status === 'active' &&
-    (subStatus === 'pending_inactive' ||
-      /pending (admin|administrative|dissol|revoc|forfeit|cancel|termin|inactiv|withdraw)|intent to (dissolve|revoke|forfeit)|notice of/i.test(
-        domestic.statusDetails ?? ''
-      ))
-  )
+  else if (domestic && standing?.assessment === 'REVIEW')
     out.push({
-      id: 'filing_pending_inactive',
+      id: 'filing_standing_review',
       at: 69,
-      because: 'the domestic filing is pending inactive',
+      because: `the domestic filing reads ${standing.category.toLowerCase().replace(/_/g, ' ')}`,
       plain: `The domestic registration in ${where} is ${describeRegistration(domestic).toLowerCase()}.`
     })
 

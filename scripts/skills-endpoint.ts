@@ -21,9 +21,10 @@ type Skill = {
   id: string
   name: string
   instructions: string
-  kind?: 'workflow' | 'context'
+  kind?: 'workflow' | 'assessment'
   createdBy?: string
-  combines?: string[]
+  /** The insights an assessment reads — the citations its section may make. */
+  insightIds?: string[]
   history?: Array<{ at: string; by?: string }>
   createdAt: string
   editedAt?: string

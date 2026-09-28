@@ -132,30 +132,3 @@ export const statementFor = (
 
   return subLabel
 }
-
-/**
- * Address frequency fans out to one insight per band.
- *
- * The bands are the product's own — the `location_frequency` signals name
- * 1–20, 21–100 and over 100 — so the split is not ours. Only the grouping of a
- * record's addresses into those bands happens here.
- */
-export const frequencyBand = (n: number): 'low' | 'moderate' | 'high' =>
-  n > 100 ? 'high' : n >= 21 ? 'moderate' : 'low'
-
-export const addressFrequencyInsights = (record: BusinessRecord) =>
-  (['low', 'moderate', 'high'] as const).flatMap((band) => {
-    const addresses = record.addresses.filter(
-      (a) => typeof a.locationCount === 'number' && frequencyBand(a.locationCount) === band
-    )
-    if (addresses.length === 0) return []
-    return [
-      {
-        band,
-        addresses,
-        statement:
-          OUTCOME[`location_frequency|${band}`] ??
-          `${addresses.length} ${addresses.length === 1 ? 'address' : 'addresses'} in the ${band} band`
-      }
-    ]
-  })

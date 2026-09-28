@@ -1,7 +1,7 @@
 import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
-import { describeRegistration, isGoodStanding, registrationState } from './registrationStatus'
+import { describeRegistration, troubled } from './registrationStatus'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
 import { validHitCount, watchlistVerdicts } from './watchlist'
@@ -71,35 +71,58 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         : 'Owners are rarely named on public filings. Beneficial owners come from the customer certification.'
 
   /* Activity & Permission answers three things: what the business does,
-     where it is registered to do it, and whether it needs a licence to. */
-  const what = industry
-    ? `Classified as ${industry}.`
-    : 'We cannot confirm what the business does: no industry classification is on the record.'
+     where it is registered to do it, and whether it needs a licence to. The
+     headline names the classification, so the first sentence under it says
+     whether that classification is high-risk rather than naming it again. */
+  /* The classification is the subject, so the verb agrees with its head noun:
+     the last word, once parentheses, a trailing qualifier (", Local") and
+     anything after "of", "for", "with" or "related to" are set aside. "Credit
+     Bureaus" and "Offices of Dentists" are; "Commercial Banking" and "General
+     Freight Trucking, Local" is. */
+  const headNoun = (industry ?? '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s(?:of|for|with|related to)\s.*$/i, '')
+    .replace(/(?:,\s*[\w-]+)+$/, '')
+    .split(/\s+/)
+    .at(-1)
+  const be = /[^s]s$/i.test(headNoun ?? '') ? 'are' : 'is'
+  /* The high-risk flag can sit on a classification other than the one named:
+     Zendesk's is on "High-Risk Businesses", not "Software Publishers". It is
+     named where it sits, not pinned on the classification in the headline. */
+  const flagged = (record.industry ?? []).filter((c) => c.highRisk)
+  const flaggedElsewhere = flagged.filter((c) => c.name !== industry)
+  const elsewhereNames = [...new Set(flaggedElsewhere.map((c) => c.name).filter((n): n is string => !!n))]
+  const elsewhere =
+    flaggedElsewhere.length === 0
+      ? ''
+      : elsewhereNames.length > 1
+        ? `, but other classifications on the record, ${list(elsewhereNames)}, are`
+        : `, but another classification on the record${elsewhereNames.length ? `, ${elsewhereNames[0]},` : ''} is`
+  /* A professional entity's licence answers the permission question in place
+     of the risk flag, after where it is registered. */
+  const what = !industry
+    ? 'We cannot confirm what the business does: no industry classification is on the record.'
+    : professional
+      ? ''
+      : flagged.some((c) => c.name === industry)
+        ? `${industry} ${be} classified as a high-risk industry.`
+        : `${industry} ${be} not classified as a high-risk industry${elsewhere}.`
   const active = [...new Set(record.registrations.filter((r) => /active/i.test(r.status ?? '') && !/inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))]
   const lapsed = [...new Set(record.registrations.filter((r) => /inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))].filter((st) => !active.includes(st))
   /* An active registration the state has annotated — pending inactive,
      not in good standing — is active on its way out, and is named with what
      the state said about it. */
-  const troubled = record.registrations
-    .filter((r) => {
-      const st = registrationState(r)
-      return st.status === 'Active' && st.subStatus && !isGoodStanding(st.subStatus)
-    })
+  const onItsWayOut = record.registrations
+    .filter(troubled)
     .map((r) => `its ${stateName(r.state)} registration is ${describeRegistration(r).toLowerCase()}`)
   const where = active.length
     ? `Registered to operate in ${list(active)}${lapsed.length ? `; its ${list(lapsed)} registration${lapsed.length === 1 ? ' is' : 's are'} inactive` : ''}${
-        troubled.length ? `; ${troubled.join('; ')}` : ''
+        onItsWayOut.length ? `; ${onItsWayOut.join('; ')}` : ''
       }.`
     : record.registrations.length
       ? 'No active state registration confirms where it operates.'
       : 'No state registration shows where it operates.'
-  const permission = professional
-    ? `Operating as a ${entity} requires a professional licence. ${licencePointer}`
-    : industry
-      ? (record.industry ?? []).some((c) => c.highRisk)
-        ? 'That classification is flagged as a high-risk industry.'
-        : 'That classification is not a high-risk industry.'
-      : ''
+  const permission = professional ? `Operating as a ${entity} requires a professional licence. ${licencePointer}` : ''
 
   /* A lien or a bankruptcy is a claim on money; a litigation is a case that
      may or may not become one, so it is named as what it is. */
@@ -190,9 +213,10 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     [
       'skill-kyb-activity',
       {
-        /* The NAICS sector name can run to a line on its own, so the states it
-           is registered in stay in the sentences under the heading. */
-        headline: industry ? `Operates in ${industry.toLowerCase()}` : "What the business does isn't on the record",
+        /* The classification's name, as NAICS writes it. It can run to a line
+           on its own, so the states it is registered in stay in the sentences
+           under the heading. */
+        headline: industry ? `Industry classified as ${industry}` : "What the business does isn't on the record",
         summary: [what, where, permission].filter(Boolean).join(' ')
       }
     ],

@@ -12,53 +12,39 @@ the point of the exercise. The components below are the app's own files.
 
 ## What was cloned
 
+The whole of the app's `src/core`, untrimmed (177 files), with its public barrel
+`src/core/index.ts` byte-identical to the app's at `f1add6296`. Also:
+
 | From `/app` | To | Modified? |
 |---|---|---|
-| `src/core/theme.css` | `src/core/theme.css` | No — all `--core-*` tokens, light and scoped dark |
-| `src/core/tokens/` | `src/core/tokens/` | No |
-| `src/core/theme.ts` | `src/core/theme.ts` | No |
-| `src/core/Surface.tsx` | `src/core/Surface.tsx` | No — `Surface`, `Section`, `Heading`, `Text`, `MutedText`, `LabelText`, … |
-| `src/core/Badge.tsx` | `src/core/Badge.tsx` | No |
-| `src/core/Tag.tsx` | `src/core/Tag.tsx` | No |
 | `src/utils/twUtils.ts` | `src/utils/twUtils.ts` | No — the tailwind-merge conflict groups |
 | `tailwind.config.js` | `tailwind.config.cjs` | Renamed only (this package is `type: module`) |
 | `tsconfig.json` compiler options | `tsconfig.json` | Mirrored, so the clone typechecks as it does at home |
 
 Imports are `import { Surface, Text } from '@/core'`, exactly as in the app.
 
-## The three local modifications
+## Where the clone differs from `f1add6296`
 
-**1. The clone is pruned.** Only the primitives this screen consumes were copied.
-The full `src/core` is 120 files and pulls in react-router, react-redux,
-react-select, react-modal, sonner, styled-components, ionicons and more — a
-dependency tail this prototype has no use for.
+Checked file by file on 2026-09-28. Four files differ:
 
-**2. `src/core/index.ts` is a trimmed barrel.** The app's is the full public API and
-imports everything. This one re-exports only the pruned set. The *kept files* are
-unmodified; only the barrel differs.
+- **`src/core/ChatSources.tsx` — local modifications, marked in the file.**
+  - **(3)** `ChatSourceData` gained an optional `screenshot: { src, alt, onOpen? }`.
+    When set, the hover preview renders the capture where the headline would go, and
+    `onOpen` makes it the trigger for the consumer's viewer. A source without one
+    renders exactly as before, and a capture that fails to load falls back to the
+    headline it replaced. It is there because a preview titled `facebook.com/middesk`
+    above a snippet reading `https://facebook.com/middesk` proves nothing; the page
+    is the evidence. The viewer is NOT in core (`src/components/ScreenshotViewer.tsx`):
+    core's HoverCard contract forbids it owning a dialog reachable only from a hover
+    body.
+  - **(4)** one shared identity for a whole list, and **(5)** which edge the list
+    opens from.
+- **`src/core/PayloadViewer.tsx`, `PayloadViewer.test.tsx` and
+  `Dropdown.consumers.test.tsx`** differ with no local marker; they read as re-copied
+  from a later app commit. Confirm against the app before a re-clone overwrites them.
 
-**3. `src/core/ChatSources.tsx` carries a `screenshot` field.** The first kept file
-to be modified rather than cloned intact, so the re-clone is no longer a straight
-copy for this one file.
-
-`ChatSourceData` gained an optional `screenshot: { src, alt, onOpen? }`. When set,
-the hover preview renders the capture where the headline would go, and `onOpen`
-makes it the trigger for the consumer's viewer. Nothing else changes: a source
-without one renders exactly as before, and a capture that fails to load falls back
-to the headline it replaced.
-
-The field is there because a citation preview titled `facebook.com/middesk`, above
-a snippet reading `https://facebook.com/middesk`, says the same thing twice and
-proves nothing. What a reviewer wants at that moment is the page — the Intro card
-with `hello@middesk.com` highlighted is the evidence; the URL is only its address.
-`title` is typed `string`, so there was no way to do this from the product side.
-
-The viewer itself is NOT in core (`src/components/ScreenshotViewer.tsx`). Core's
-HoverCard contract forbids it owning a dialog reachable only from a hover body, and
-how a capture is shown at full size is the consuming screen's decision.
-
-All three are marked in the files themselves. Adding a primitive means copying its
-file, its transitive core imports, and adding a line to the barrel.
+(1) and (2) — the clone was pruned, and the barrel trimmed — are retired: the clone
+is whole now. Adding a primitive means nothing; it is already there.
 
 ## The skills, cloned too
 
@@ -134,10 +120,6 @@ can carry when only `neutral` is non-committal (`decisions/001`).
 search", not a `not_published` chip. No `@/core` primitive attaches a reason to an
 absence (`decisions/003`).
 
-**No group headings.** The nine areas are navigational only (`00-MASTER-PLAN.md`
-rule 3); using them as output structure gave them weight they should not carry. Rows
-appear in the order the user added them.
-
 ## What the product system would need
 
 If this moves in-tree, in order of size:
@@ -154,7 +136,3 @@ If this moves in-tree, in order of size:
    by page and attribute, standing in for that. Two open questions it does not
    answer: how a capture reaches touch, where there is no hover preview to hang it
    on, and what a stale capture should say when the page has since changed.
-
-## Not yet built
-
-Composition flow, the proposal journey, F3 and F4 traces.
