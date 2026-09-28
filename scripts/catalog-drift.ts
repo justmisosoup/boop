@@ -21,7 +21,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 import records from '../src/data/records.json'
-import { deriveResults, type BusinessRecord } from '../src/lib/deriveResults'
+import { deriveResults, PROTOTYPE_INSIGHTS, type BusinessRecord } from '../src/lib/deriveResults'
 
 /**
  * Walk up for the directory holding `catalog/`. The catalog sits beside the
@@ -68,7 +68,7 @@ const plainRuntime = new Set([...runtimeIds].map(baseOf))
 
 const matched = [...plainRuntime].filter((id) => defined.has(id)).sort()
 const undefinedAtRuntime = [...plainRuntime]
-  .filter((id) => !defined.has(id))
+  .filter((id) => !defined.has(id) && !PROTOTYPE_INSIGHTS.has(id))
   .sort()
 const neverSeen = [...defined].filter((k) => !plainRuntime.has(k)).sort()
 

@@ -90,7 +90,8 @@ export const attributeRowsByGroup = (
   for (const a of cityRegistrationRows(record)) {
     const g = a.group ?? 'licenses'
     const rows = byGroup.get(g) ?? new Map<string, AttributeRow>()
-    rows.set(`${a.label}::${a.matchValue ?? a.value}`, a)
+    // A name the register shares with the submitted name keys as that name's row.
+    rows.set(a.matchValue?.startsWith('legal:') ? a.matchValue : `${a.label}::${a.matchValue ?? a.value}`, a)
     byGroup.set(g, rows)
   }
 

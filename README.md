@@ -19,7 +19,7 @@ them only when a data refresh is the point. `bunx vite build` is the build check
 | The ingested businesses | `src/data/records.json` | `bun run pull` |
 | The insight catalog | `src/data/catalog.json` | `bun run data`, from `../catalog/` |
 | City registrations, licences | `src/data/cityRegistrations.json`, `licenses.json` | by hand / `scripts/pull-city-registrations.ts` |
-| Registration standing table | `src/data/registrationStanding.json` | `formation/build.py` |
+| Registration standing table | `src/data/registrationStanding.json` | `scripts/standing/build.py` |
 | Assessments (briefs, weights, insight scopes) | `analysis/agent.json` | the app's assessment editor |
 | One report per business | `analysis/reports.json` | a Claude Code session, via `/api/analyse` |
 | How a report is written | `analysis/README.md` | — |

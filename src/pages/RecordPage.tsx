@@ -39,6 +39,7 @@ import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { entityTypeCode } from '../lib/attributes'
+import { entityFallback } from '../lib/businessNames'
 import { formationConfirmed } from '../lib/registrationStatus'
 import { stateName } from '../lib/states'
 import { industrySectorOf } from '../lib/naics'
@@ -214,7 +215,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         { id: 'customer', label: 'Business', title: 'Business', annotation: 'Neobank' },
         // As the filing abbreviates it — LLC, PLLC — or Unknown when the
         // record has no formation.
-        { id: 'entity', label: 'Entity', title: 'Entity', annotation: entityTypeCode(record) ?? 'Unknown' },
+        { id: 'entity', label: 'Entity', title: 'Entity', annotation: entityTypeCode(record) ?? entityFallback(record) ?? 'Unknown' },
         // The domestic state, and how many others hold a foreign registration.
         { id: 'jurisdiction', label: 'Jurisdiction', title: 'Jurisdiction', annotation: jurisdiction },
         // The top of the NAICS scheme the business's classification sits in.

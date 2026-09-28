@@ -2,6 +2,7 @@ import reportStore from '../../analysis/reports.json'
 
 import type { StoredReport } from '../types'
 import { withCityRegistrations } from './cityRegistrations'
+import { presented } from './deriveResults'
 
 /**
  * The reports written for this prototype, bundled — one per business.
@@ -29,5 +30,9 @@ export const reportKey = (name: string) => (name ?? '').toLowerCase().replace(/\
 export const heldReportFor = (name: string): StoredReport | null => {
   const r = (RAW[reportKey(name)] ?? []).at(-1)
   if (!r) return null
-  return r.snapshot?.record ? { ...r, snapshot: { ...r.snapshot, record: withCityRegistrations(r.snapshot.record) } } : r
+  if (!r.snapshot?.record) return r
+  const record = withCityRegistrations(r.snapshot.record)
+  // The snapshot's rows were derived when the report was written; what the
+  // page shows of them follows today's rules.
+  return { ...r, snapshot: { ...r.snapshot, record, results: presented(record, r.snapshot.results) } }
 }

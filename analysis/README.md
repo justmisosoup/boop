@@ -30,6 +30,7 @@ changing before you change it:
 | On the page | Comes from |
 |---|---|
 | Each card's headline and summary | `src/lib/areaSummaries.ts`; Identity's parts, `src/lib/identitySections.ts` |
+| The Formation card's rows | **The record, always** — `FORMATION_CARD_INSIGHTS` in `src/lib/identitySections.ts`. No section repeats them, whatever it cites |
 | The rows under a card | **The section's citations** (body and open gaps), within the assessment's `insightIds` |
 | A row's wording and evidence | `src/lib/deriveResults.ts`, `statements.ts`, `attributes.ts` |
 | Red marks and the flagged count | `POLARITY` in `src/lib/identityScore.ts` |

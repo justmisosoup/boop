@@ -13,6 +13,7 @@
  * invented sentence.
  */
 import catalog from '../data/catalog.json'
+import { entityFallback } from './businessNames'
 import { trueEntityType, type BusinessRecord } from './deriveResults'
 import { watchlistVerdicts } from './watchlist'
 
@@ -52,6 +53,45 @@ export const sentenceCase = (text: string): string =>
     return word.toLowerCase()
   })
 
+/** The website checks, by sub-label, each naming the website as its source. */
+const within = (message?: string | null) => {
+  const miles = /within ([\d.]+) miles/i.exec(message ?? '')?.[1]
+  return miles
+    ? `The website shows an address within ${miles} miles of the submitted office address`
+    : 'The website shows an address near the submitted office address'
+}
+const WEB: Record<string, Record<string, string | ((message?: string | null) => string)>> = {
+  web_business_name_verification: {
+    verified: 'The website shows the submitted business name',
+    similar_match: 'The website shows a name similar to the submitted business name',
+    mismatch: 'The website shows a different name from the submitted business name',
+    unverified: "The website doesn't show a business name"
+  },
+  web_person_verification: {
+    verified: 'The website names the submitted person',
+    mismatch: 'The website names people different from the submitted people',
+    unverified: "The website doesn't name the submitted person"
+  },
+  web_address_verification: {
+    verified: 'The website shows the submitted office address',
+    approximate_match: within,
+    similar_match: 'The website shows an address similar to the submitted office address',
+    incomplete_match: 'The website shows a partial match to the submitted office address',
+    mismatch: 'The website shows a different address from the submitted office address',
+    unverified: "The website doesn't show the submitted office address"
+  },
+  web_phone_number_verification: {
+    verified: 'The website shows the submitted phone number',
+    mismatch: 'The website shows a different phone number from the submitted one',
+    unverified: "The website doesn't show the submitted phone number"
+  },
+  web_email_address_verification: {
+    verified: 'The website shows the submitted email address',
+    mismatch: 'The website shows a different email address from the submitted one',
+    unverified: "The website doesn't show the submitted email address"
+  }
+}
+
 /**
  * What the check reported.
  *
@@ -83,39 +123,34 @@ export const statementFor = (
    */
   if (key === 'watchlist') {
     const verdicts = watchlistVerdicts(record)
-    if (verdicts.length > 0 && verdicts.every((v) => !v.valid))
-      return verdicts.length === 1
-        ? `No valid hits: the one name returned, ${verdicts[0].entityName}, ${verdicts[0].reason}`
-        : `No valid hits: none of the ${verdicts.length} names returned matches the business or its people`
+    // Which names came back, and why each is not a match, are the evidence's.
+    if (verdicts.length > 0 && verdicts.every((v) => !v.valid)) return 'No valid watchlist hits'
   }
 
   if (key === 'entity_type') {
     const form = trueEntityType(record)
     if (form && form !== record.formation?.entityType) return `Entity type is a ${form}`
+    // No state filing to say it: Firebird Yarns is a DBA of a person with no
+    // filing, so likely a sole proprietorship, not "unknown". That it is a DBA
+    // is `submitted_name`'s to say, not this row's.
+    if (!form && entityFallback(record) === 'Likely sole proprietorship') return 'Entity type is likely a sole proprietorship'
   }
 
-  /**
-   * The other place. `business_connections` reports a count — "2 connections
-   * found" — and a count of businesses is not something a reviewer can act on
-   * or follow. Where the record carries the connections themselves, the row
-   * names them: the same fact, with the part that matters left in.
-   */
-  if (key === 'business_connections') {
-    const names = (record.connections ?? []).map((c) => c.name).filter(Boolean)
-    if (names.length > 0)
-      return `${names.length} ${names.length === 1 ? 'connection' : 'connections'} found: ${names.join(', ')}`
-  }
+  // `business_connections` keeps the product's own count — "2 connections
+  // found". Which businesses they are is the evidence's: a statement names no
+  // entity.
 
   /*
-   * The website name check. The source's sentence — "We identified a name we
-   * believe is different from the submitted business name" — never says
-   * where the name was found, and in an Identity card beside filing matches
-   * it read as a registry finding. It is the website.
+   * The website checks. The source's sentences — "Match identified to the
+   * submitted person" — never say where the match was found, and they are
+   * the same words the filing checks use: Userleap's page read "Unable to
+   * identify a match to the submitted person" and "Match identified to the
+   * submitted person" one above the other, the second from its website. Each
+   * says it is the website. Keyed on the exact sub-label: a pattern read
+   * "Unverified" as a match.
    */
-  if (key === 'web_business_name_verification') {
-    if (/mismatch/i.test(subLabel ?? '')) return 'The website shows a different name from the submitted business name'
-    if (/match|verified/i.test(subLabel ?? '')) return 'The website shows the submitted business name'
-  }
+  const web = WEB[key]?.[(subLabel ?? '').toLowerCase().replace(/\s+/g, '_')]
+  if (web) return typeof web === 'function' ? web(message) : web
 
   if (message) return sentenceCase(message)
 

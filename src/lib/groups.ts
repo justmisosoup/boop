@@ -92,8 +92,15 @@ const UNDEFINED_SUBJECT: Record<string, GroupId> = {
   industry: 'industry',
   location_frequency: 'address',
   adverse_media: 'screening',
-  risky_keywords: 'industry',
-  website_url_domain_ownership: 'website'
+  website_url_domain_ownership: 'website',
+  // Derived here, not Middesk checks: see `nameInsights`.
+  submitted_name: 'name',
+  trade_names: 'name',
+  submitted_name_dba: 'name',
+  dba_owner_filing: 'name',
+  linked_domestic: 'registration',
+  former_formation: 'registration',
+  name_entity_type: 'name'
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { BusinessRecord, Derived } from './deriveResults'
-import { describeRegistration, domesticOf, standingOf } from './registrationStatus'
-import { soleProprietorOf } from './soleProprietor'
+import { describeRegistration, standingOf } from './registrationStatus'
+import { nameStandingOf } from './businessNames'
+import { domesticFilingOf } from './linkedFormation'
 import { validHitCount } from './watchlist'
 import { stateName } from './states'
 
@@ -256,6 +257,24 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   tin: (_r, record) =>
     (record.tin as { mismatch?: boolean } | null)?.mismatch ? 'negative' : 'positive',
   entity_type: () => 'positive',
+  /* The submitted name across legal names and DBAs (`nameStandingOf`): a legal
+     name, a registered business's DBA or a sole proprietor's DBA stands; a DBA
+     of an unregistered business, or no filing and no DBA, is against it. */
+  submitted_name: (_r, record) => {
+    const { assessment } = nameStandingOf(record)
+    return assessment === 'CLEAR' || assessment === 'NOTE' ? 'positive' : 'negative'
+  },
+  /* What else the names establish. Context, not counted: `submitted_name`
+     already carries the reading, and counting these too would score it twice. */
+  trade_names: () => 'neutral',
+  submitted_name_dba: () => 'neutral',
+  dba_owner_filing: () => 'neutral',
+  // A filing on a linked record: shown, not counted — a link is not a confirmation.
+  linked_domestic: () => 'neutral',
+  // Where a converted business came from: context, not counted.
+  former_formation: () => 'neutral',
+  // The name's suffix against the filing's type: shown, not counted.
+  name_entity_type: () => 'neutral',
   /* Standing, as the standing table reads the domestic filing the page stands
      on: in good standing is a point for the file; not published, or a gap
      the table only notes, is nothing; anything it holds for review or
@@ -263,7 +282,7 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
      against. The row's own wording decides none of it. */
   sos_domestic_sub_status: (r, record) => {
     if (r.state !== 'result') return 'neutral'
-    const domestic = domesticOf(record)
+    const domestic = domesticFilingOf(record)?.filing
     if (!domestic) return 'neutral'
     const { category, assessment } = standingOf(domestic)
     return category === 'IN_GOOD_STANDING' ? 'positive' : assessment === 'CLEAR' || assessment === 'NOTE' ? 'neutral' : 'negative'
@@ -371,7 +390,6 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   },
   industry: (_r, record) =>
     (record.industry ?? []).some((i) => i.highRisk) ? 'negative' : 'positive',
-  risky_keywords: (r) => (r.state === 'result' ? 'positive' : 'positive'),
 
   /*
    * Financial standing. Nothing found is a point for the file. Something found
@@ -529,31 +547,33 @@ const scoreArea = (
  */
 const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
   const out: ScoreCeiling[] = []
-  const domestic = domesticOf(record)
+  // Its own domestic filing, or the one on a linked record (`domesticFilingOf`).
+  const domestic = domesticFilingOf(record)?.filing
   const standing = domestic ? standingOf(domestic) : undefined
   const status = (domestic?.status || '').toLowerCase()
   const subStatus = (domestic?.subStatus || '').toLowerCase()
   const where = stateName(domestic?.state ?? record.formation?.state)
   const tin = record.tin as { mismatch?: boolean } | null
 
-  const sole = soleProprietorOf(record)
-  /* A sole proprietor files with no state, so "no SOS filing" does not reject
-     one. It is held instead: its trade name is on no filing, and the city
-     registration is in the owner's own name — so the fictitious business name
-     is the thing to ask for. */
-  if (sole && !sole.tradeNameOnFile)
+  /* The submitted name, read the way a filing's standing is: see
+     `nameStandingOf`. CONCERN — no state filing and no DBA carries it — rules
+     approval out. REVIEW — a DBA of a business with no filing on record — is
+     held until that business resolves. A sole proprietor's DBA, or a DBA of a
+     business whose own filing is on record, is a note and holds nothing. */
+  const name = nameStandingOf(record)
+  if (name.assessment === 'CONCERN')
     out.push({
-      id: 'sole_proprietor_trade_name',
-      at: 89,
-      because: 'a likely sole proprietorship whose trade name is on no filing',
-      plain: `It looks like a sole proprietorship registered with ${sole.city || 'the city'} under ${sole.person}; ${record.name} is not on any filing.`
-    })
-  else if (!sole && record.registrations.length === 0 && !record.formation)
-    out.push({
-      id: 'no_filing',
+      id: 'name_not_found',
       at: 49,
-      because: 'no filing on the record',
-      plain: 'No Secretary of State filing was found for this business.'
+      because: 'no filing and no DBA carries the submitted name',
+      plain: 'No Secretary of State filing or DBA carries the submitted business name.'
+    })
+  else if (name.assessment === 'REVIEW')
+    out.push({
+      id: 'name_needs_review',
+      at: 69,
+      because: 'the submitted name is a DBA of a business with no filing on record',
+      plain: `The submitted business name is a DBA of ${name.matchedDba?.owner}, and no state filing for ${name.matchedDba?.owner} is on record.`
     })
   /* The standing table decides; the sentence says what the filing says.
      CONCERN is a filing the entity cannot currently stand on — expired,
@@ -562,7 +582,7 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
      Indiana filing is Active with "Pending Admin Dissolution", and a status-only
      check let it score 92. It is held, not rejected: the dissolution is not
      final, and filing what is overdue usually cures it. */
-  else if (domestic && standing?.assessment === 'CONCERN')
+  if (domestic && standing?.assessment === 'CONCERN')
     out.push({
       id: 'filing_not_active',
       at: 49,

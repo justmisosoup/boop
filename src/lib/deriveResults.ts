@@ -10,7 +10,18 @@
  * shown — see `COMPOSITES` and `THRESHOLDS`.
  */
 import catalog from '../data/catalog.json'
-import { domesticOf, notPublished } from './registrationStatus'
+import {
+  dbaOfAnotherOf,
+  dbaOfAnotherStatement,
+  dbaOwnerOf,
+  dbaOwnerStatement,
+  nameStandingOf,
+  nameStatement,
+  ownDbas,
+  tradeNamesStatement
+} from './businessNames'
+import { convertedFormationOf, domesticOf, formationFilingOf, notPublished } from './registrationStatus'
+import { domesticFilingOf } from './linkedFormation'
 import { stateName } from './states'
 import { statementFor } from './statements'
 
@@ -632,7 +643,8 @@ const licenseInsights = (record: BusinessRecord): Derived[] => {
     const rows: Derived[] = [
       {
         insightId: `license:${l.id}`,
-        statement: `${l.registry} holds a ${l.profession} licence for ${l.holder}${l.credential ? `, ${l.credential}` : ''}, status ${l.status}`,
+        // The holder and credential are the evidence's: a statement names no entity.
+        statement: `${l.registry} holds a ${l.profession} licence, status ${l.status}`,
         group: '',
         state: 'result',
         evidence: held
@@ -675,7 +687,201 @@ const licenseInsights = (record: BusinessRecord): Derived[] => {
   })
 }
 
-const derived = (record: BusinessRecord): Derived[] => licenseInsights(record)
+/**
+ * The submitted business name, read across legal names AND trade names.
+ *
+ * Beside the API's `name` check, not instead of it: that one asks only whether
+ * a state filing carries the name, which some customers require. This one says
+ * what the name is — the legal name, a DBA of a registered business, a sole
+ * proprietor's DBA — from `nameStandingOf`, which is the one reading of names.
+ *
+ * One fact per insight: what the name is, where it is not simply the legal
+ * name the API's check already matched (`submitted_name`); the business's other
+ * trade names (`trade_names`); the name filed as another business's DBA
+ * (`submitted_name_dba`); and whether that business is filed
+ * (`dba_owner_filing`). Each appears only where it applies.
+ */
+const nameInsights = (record: BusinessRecord): Derived[] => {
+  const n = nameStandingOf(record)
+  const out: Derived[] = []
+  const statement = nameStatement(n)
+  const evidence = [
+    `Submitted: ${n.submitted}`,
+    ...n.legal.map((r) => `Legal name on the ${r.state} ${(r.jurisdiction ?? '').toLowerCase()} filing: ${r.name}`),
+    ...(n.matchedDba ? [`Doing business as ${n.matchedDba.name}${n.matchedDba.owner ? `, owner ${n.matchedDba.owner}` : ''} — ${n.matchedDba.source}`] : [])
+  ]
+  // The legal name is the API's own `name` check — "Match identified to the
+  // submitted business name" — and saying it again is a second row for one
+  // fact. This row is for what that check cannot see: a DBA, or no filing
+  // and no DBA at all.
+  if (n.category !== 'MATCHES_LEGAL_NAME')
+    out.push(
+      n.category === 'NOT_FOUND'
+        ? { insightId: 'submitted_name', statement, group: '', state: 'no_result', reason: 'should_exist_not_found', because: statement, evidence }
+        : { insightId: 'submitted_name', statement, group: '', state: 'result', value: n.category, evidence }
+    )
+
+  const own = ownDbas(n, record)
+  if (own.length > 0)
+    out.push({
+      insightId: 'trade_names',
+      statement: tradeNamesStatement(own),
+      group: '',
+      state: 'result',
+      value: own.map((d) => d.name).join(', '),
+      evidence: own.map((d) => `Doing business as ${d.name}${d.owner ? `, owner ${d.owner}` : ''} — ${d.source}`)
+    })
+
+  const other = dbaOfAnotherOf(n)
+  if (other?.owner)
+    out.push({
+      insightId: 'submitted_name_dba',
+      statement: dbaOfAnotherStatement(),
+      group: '',
+      state: 'result',
+      value: other.owner,
+      evidence: [`Doing business as ${other.name}, owner ${other.owner} — ${other.source}`]
+    })
+
+  const owner = dbaOwnerOf(record, n)
+  if (owner) {
+    const text = dbaOwnerStatement(owner)
+    const f = owner.filing
+    out.push(
+      f
+        ? {
+            insightId: 'dba_owner_filing',
+            statement: text,
+            group: '',
+            state: 'result',
+            value: f.name ?? owner.owner,
+            evidence: [`${owner.owner}'s legal name on the ${f.state} ${(f.jurisdiction ?? '').toLowerCase()} filing: ${f.name}`]
+          }
+        : { insightId: 'dba_owner_filing', statement: text, group: '', state: 'no_result', reason: 'should_exist_not_found', because: text, evidence: [] }
+    )
+  }
+  return out
+}
+
+/**
+ * The domestic filing, found on a linked record rather than this one — Sprig's
+ * and Userleap's is Mixboard Inc.'s Delaware filing (`domesticFilingOf`). One
+ * fact: whose filing it is. How the records were linked is its evidence. Beside
+ * the API's `sos_domestic`, which says what this business holds itself.
+ */
+const linkedDomesticInsight = (record: BusinessRecord): Derived[] => {
+  const link = domesticFilingOf(record)?.linked
+  if (!link) return []
+  const f = link.filing
+  return [
+    {
+      insightId: 'linked_domestic',
+      // Which business, and which filing, are the evidence.
+      statement: 'Domestic filing is on a linked record, under another business entity',
+      group: '',
+      state: 'result',
+      value: f.name,
+      evidence: [
+        `${f.state} domestic filing: ${f.name}${f.fileNumber ? ` (#${f.fileNumber})` : ''}`,
+        `This record also goes by ${link.name}`,
+        ...link.addresses.map((a) => `Both list ${a}`),
+        ...link.people.map((p) => `Both name ${p}`)
+      ]
+    }
+  ]
+}
+
+/**
+ * The formation filing converted out to a domestic filing in another state —
+ * Andytown's California LLC, converted to Delaware in 2017. The Formation card
+ * leads with the filing it stands on now; this is where it came from, with the
+ * former registration as its evidence.
+ */
+const formerFormationInsight = (record: BusinessRecord): Derived[] => {
+  const c = convertedFormationOf(record)
+  if (!c) return []
+  return [
+    {
+      insightId: 'former_formation',
+      statement: 'Formation filing converted out to a domestic filing in another state',
+      group: '',
+      state: 'result',
+      value: c.formed.state,
+      evidence: [
+        `Former: ${c.formed.state} ${(c.formed.jurisdiction ?? '').toLowerCase()} filing ${c.formed.fileNumber ?? ''}, registered ${c.formed.registrationDate ?? 'on an unknown date'}, ${c.formed.statusDetails ?? c.formed.status ?? ''}`.trim(),
+        `Current: ${c.now.state} ${(c.now.jurisdiction ?? '').toLowerCase()} filing ${c.now.fileNumber ?? ''}, registered ${c.now.registrationDate ?? 'on an unknown date'}`.trim()
+      ]
+    }
+  ]
+}
+
+/**
+ * The form a business name's suffix claims, and the form the filing records.
+ * "ANDYTOWN LLC" claims an LLC; its filing says LLC. "SORENSON COMMUNICATIONS,
+ * LLC" claims an LLC; its filing's type reads Corporation. Middesk's own check
+ * for this (`name_and_entity_type`) is in the catalog but is not returned for
+ * these records, so this derives the same comparison from the name and the
+ * filing. A name with no suffix, or a filing with no type, compares nothing.
+ */
+const SUFFIX: Array<[RegExp, string]> = [
+  [/\bP\.?L\.?L\.?C\.?$/i, 'PLLC'],
+  [/\b(L\.?L\.?C\.?|LIMITED LIABILITY COMPANY)$/i, 'LLC'],
+  [/\bL\.?L\.?P\.?$/i, 'LLP'],
+  [/\bL\.?P\.?$/i, 'LP'],
+  [/\b(INC\.?|INCORPORATED|CORP\.?|CORPORATION|CO\.?|COMPANY|LTD\.?|LIMITED|PBC|P\.?C\.?)$/i, 'Corporation']
+]
+const formOf = (raw: string | null | undefined): string | undefined => {
+  const t = (raw ?? '').toUpperCase()
+  if (!t || t === 'UNKNOWN') return undefined
+  if (/PLLC|PROFESSIONAL LIMITED LIABILITY/.test(t)) return 'PLLC'
+  if (/LLC|LIMITED LIABILITY COMPANY/.test(t)) return 'LLC'
+  if (/LLP|LIMITED LIABILITY PARTNERSHIP/.test(t)) return 'LLP'
+  if (/\bLP\b|LIMITED PARTNERSHIP/.test(t)) return 'LP'
+  if (/CORP|INC|PBC|BENEFIT/.test(t)) return 'Corporation'
+  return undefined
+}
+export const nameEntityTypeOf = (record: BusinessRecord) => {
+  const name = ((record.names ?? []).find((n) => n.submitted)?.name ?? record.name).replace(/,/g, ' ').trim()
+  const suffix = SUFFIX.find(([re]) => re.test(name))?.[1]
+  const filed = record.formation ? formOf(trueEntityType(record) ?? formationFilingOf(record)?.entityType ?? record.formation.entityType) : undefined
+  return suffix && filed ? { suffix, filed, match: suffix === filed } : undefined
+}
+
+const nameEntityTypeInsight = (record: BusinessRecord): Derived[] => {
+  const m = nameEntityTypeOf(record)
+  if (!m) return []
+  return [
+    {
+      insightId: 'name_entity_type',
+      statement: m.match
+        ? "Submitted business name's suffix matches the entity type"
+        : "Submitted business name's suffix doesn't match the entity type",
+      group: '',
+      state: 'result',
+      value: m.match ? 'match' : 'mismatch',
+      evidence: [`Name suffix: ${m.suffix}`, `Entity type on the filing: ${m.filed}`]
+    }
+  ]
+}
+
+/** Insights this prototype derives itself, which no Middesk check produces. */
+export const PROTOTYPE_INSIGHTS: ReadonlySet<string> = new Set([
+  'submitted_name',
+  'trade_names',
+  'submitted_name_dba',
+  'dba_owner_filing',
+  'linked_domestic',
+  'former_formation',
+  'name_entity_type'
+])
+
+const derived = (record: BusinessRecord): Derived[] => [
+  ...licenseInsights(record),
+  ...nameInsights(record),
+  ...linkedDomesticInsight(record),
+  ...formerFormationInsight(record),
+  ...nameEntityTypeInsight(record)
+]
 
 
 /**
@@ -739,10 +945,57 @@ const signalRows = (): Derived[] =>
 export const deriveResults = (record: BusinessRecord): Derived[] => {
   const ran = record.reviewTasks.flatMap((t) => derive(t, record))
   const ranKeys = new Set(ran.map((r) => r.insightId.split(':')[0]))
-  return [...ran, ...derived(record), ...notReported(ranKeys), ...signalRows()].map((d) => {
-    const origin = producedBy(d.insightId)
-    return origin ? { ...d, evidence: [...(d.evidence ?? []), origin] } : d
-  })
+  return presented(
+    record,
+    [...ran, ...derived(record), ...notReported(ranKeys), ...signalRows()].map((d) => {
+      const origin = producedBy(d.insightId)
+      return origin ? { ...d, evidence: [...(d.evidence ?? []), origin] } : d
+    })
+  )
+}
+
+/** Not shown at all. */
+const RETIRED = new Set(['risky_keywords'])
+
+/** The provider's band on an adverse-media screen. */
+const RISK_GRADE = /\b(low|moderate|high) risk\b/i
+
+/**
+ * What the page shows of a derivation.
+ *
+ * Applied to a fresh derivation AND to the snapshot a report was written from
+ * (`heldReportFor`), so a report kept before one of these rules existed reads
+ * the same as one written after.
+ *
+ * - `risky_keywords` is not an insight here.
+ * - Adverse media carries no risk grade. "1 or more moderate risk source was
+ *   found" is the provider's judgement of the articles; the articles are the
+ *   finding, and they are the evidence. A "Low risk" grade reads "No adverse
+ *   media was found" over an article it returned — with the grade gone, that
+ *   sentence is simply false, so a screen that returned anything says so.
+ * - "1 of 21 filings have no status provided" says nothing the domestic row
+ *   does not when the one filing without a status IS the domestic filing — its
+ *   evidence was that filing. It shows only when some other filing lacks one.
+ */
+export const presented = (record: BusinessRecord, results: Derived[]): Derived[] => {
+  const domestic = domesticOf(record)
+  const noStatus = record.registrations.filter((r) => (r.status || 'unknown').toLowerCase() === 'unknown')
+  const onlyDomesticUnknown =
+    Boolean(domestic) && noStatus.length > 0 && noStatus.every((r) => r === domestic)
+
+  return results
+    .filter((d) => !RETIRED.has(d.insightId.split(':')[0]))
+    .filter((d) => !(d.insightId === 'sos_unknown' && onlyDomesticUnknown))
+    .map((d) => {
+      if (d.insightId !== 'adverse_media') return d
+      const found = (record.adverseMedia?.results ?? []).length > 0
+      return {
+        ...d,
+        statement: found ? 'Adverse media was found' : d.statement,
+        because: found ? 'Adverse media was found' : d.because,
+        evidence: d.evidence?.filter((e) => !RISK_GRADE.test(e))
+      }
+    })
 }
 
 /** The category Middesk assigns each check, keyed by task key. */

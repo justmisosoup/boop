@@ -32,7 +32,8 @@ import { updateDomId } from './UpdateEntry'
  * WHAT DID NOT COME ACROSS:
  *
  * - **The data.** The app fetches up to ten pages of a hundred events from
- *   `v1/businesses/:id/timeline`; this reads one stored response.
+ *   `v1/businesses/:id/timeline`; this reads the same, pulled ahead of time by
+ *   `scripts/pull-timeline.ts` into one file keyed by business.
  * - **The date-range calendar.** `@/core`'s `DateRangePicker` arrived with the
  *   same commit and is not in this read-only clone, so the toolbar offers its
  *   presets as a menu — see `TimelineToolbar`.
@@ -41,16 +42,13 @@ import { updateDomId } from './UpdateEntry'
  *   go away with the page.
  */
 export const Timeline = ({ businessId }: { businessId: string }) => {
-  const events = useMemo(() => {
-    const response = timelineFixture as { data: TimelineEvent[] }
-    // One stored response, and only this business's. The app has an endpoint
-    // per business; a fixture has to say so itself.
-    return response.data.filter(
-      (event) =>
-        (event.data as { object?: { business_id?: string } })?.object?.business_id ===
-        businessId
-    )
-  }, [businessId])
+  // This business's stored response (`scripts/pull-timeline.ts`); none stored
+  // reads as no events, which the empty state covers.
+  const events = useMemo(
+    () =>
+      (timelineFixture as { byBusiness: Record<string, TimelineEvent[]> }).byBusiness[businessId] ?? [],
+    [businessId]
+  )
 
   const [filters, setFilters] = useState<TimelineFilters>(EMPTY_FILTERS)
   const [shown, setShown] = useState(LIST_WINDOW)

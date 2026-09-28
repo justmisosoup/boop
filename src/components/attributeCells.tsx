@@ -1,17 +1,8 @@
 import type { ReactNode } from 'react'
 
-import { Tag } from '@/core'
-
 import { corroborated, type AttributeRow } from '../lib/attributes'
 import type { AttributeCell, AttributeValue } from './AttributeGrid'
 import { RowProvenance, SubmittedChip } from './Provenance'
-
-/** Colour follows the provider's confidence, not our reading of it. */
-export const RISK_TONE: Record<string, 'subtle' | 'warning' | 'danger'> = {
-  'Low risk': 'subtle',
-  'Moderate risk': 'warning',
-  'High risk': 'danger'
-}
 
 export type CellContext = {
   domesticState?: string | null
@@ -80,18 +71,10 @@ const badgeFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
 }
 
 /** A reading OF the value, under it — what we made of it, not where it came
- *  from. The provider's risk band, our own count of what shares an address. */
+ *  from. Our own count of what shares an address. */
 const noteFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
   const evidenceNote = ctx.evidence ? row.evidenceNote : undefined
-  const trailing =
-    row.trailing &&
-    (RISK_TONE[row.trailing] ? (
-      <Tag tone={RISK_TONE[row.trailing]} size="compact">
-        {row.trailing}
-      </Tag>
-    ) : (
-      <span>{row.trailing}</span>
-    ))
+  const trailing = row.trailing && <span>{row.trailing}</span>
   if (!trailing && !evidenceNote) return undefined
 
   return (
@@ -170,12 +153,16 @@ export const cellsFromRows = (rows: AttributeRow[], ctx: CellContext = {}): Attr
       // media is a list. Neither survives half a row. `href` alone does not
       // qualify: every row a crawl produced carries the site it was read from,
       // and spanning on that put a one-word title across the whole card.
+      // A row can ask for half width outright: the close matches under "No
+      // valid hits" carry a list chip but are short, and read side by side.
       span:
-        row.span === 'full' ||
-        row.links?.length ||
-        (typeof value === 'string' && /^https?:\/\//.test(value))
-          ? 'full'
-          : undefined
+        row.span === 'half'
+          ? undefined
+          : row.span === 'full' ||
+              row.links?.length ||
+              (typeof value === 'string' && /^https?:\/\//.test(value))
+            ? 'full'
+            : undefined
     })
   })
 

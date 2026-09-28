@@ -1,6 +1,6 @@
 """Regenerate the standing table, then apply the human decisions in review_needed.csv.
 
-    python formation/build.py [--no-regen]
+    python3 scripts/standing/build.py [--no-regen]
 
 The table is src/data/registrationStanding.json, which src/lib/registrationStatus.ts
 reads (standingOf). This script is the only thing that writes it.
@@ -19,7 +19,7 @@ import csv, json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, 'data')
-MAP = os.path.join(os.path.dirname(HERE), 'src', 'data', 'registrationStanding.json')
+MAP = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'src', 'data', 'registrationStanding.json')
 GENERATED = os.path.join(DATA, 'details_map.json')  # where build_details_map.py writes
 REVIEW = os.path.join(DATA, 'review_needed.csv')
 

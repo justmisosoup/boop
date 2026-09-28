@@ -1,6 +1,6 @@
 import rawRecords from '../data/records.json'
 import type { BusinessRecord } from './deriveResults'
-import { formationConfirmed, sameName } from './registrationStatus'
+import { convertedFormationOf, domesticOf, formationConfirmed, formationFilingOf, sameName } from './registrationStatus'
 
 /**
  * A formation found on another record, when this one has none.
@@ -72,6 +72,32 @@ export const linkedFormationOf = (record: BusinessRecord): LinkedFormation | und
   }
   return undefined
 }
+
+/**
+ * The domestic filing this business stands on: its own, or failing that one on
+ * a linked record. The one answer to that question — the Formation card, the
+ * standing caps and the sub-status all read it, so everything on Sprig's page
+ * names the same filing.
+ *
+ * `domesticOf` stays the record-only picker; this is the only place the link
+ * is added. `linked` says the filing is another record's, which every consumer
+ * has to say out loud.
+ */
+export const domesticFilingOf = (record: BusinessRecord): { filing: Registration; linked?: LinkedFormation } | undefined => {
+  const own = domesticOf(record)
+  if (own) return { filing: own }
+  const linked = linkedFormationOf(record)
+  return linked ? { filing: linked.filing, linked } : undefined
+}
+
+/**
+ * The filing the Formation card leads with: a linked record's domestic filing
+ * when this business has none (Sprig), the domestic filing a converted
+ * business moved to (Andytown's Delaware one), otherwise the formation filing.
+ * The card, and the insight counting the OTHER domestic filings, read this.
+ */
+export const formationCardFilingOf = (record: BusinessRecord) =>
+  linkedFormationOf(record)?.filing ?? convertedFormationOf(record)?.now ?? formationFilingOf(record)
 
 /** The street line of an address: "2021 Fillmore St PMB 86". */
 const street = (a: string) => a.split(',')[0].trim()

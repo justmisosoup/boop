@@ -23,14 +23,13 @@ export type Registration = BusinessRecord['registrations'][number]
  * Every combination of state, status, sub status and details the registries
  * return (922 of them across 51 jurisdictions) is classified once, in
  * `src/data/registrationStanding.json`, built from the per-jurisdiction status
- * breakdown by `formation/build.py`. Georgia's "Active/Noncompliance" is
+ * breakdown by `scripts/standing/build.py`. Georgia's "Active/Noncompliance" is
  * delinquent; Tennessee's "Active - Dissolved" is at risk; Andytown's
  * "Converted Out" is succeeded, not dissolved. A regex over the words cannot
  * know any of that, and three of them used to disagree.
  *
- * Every standing decision on the page reads this: the score's caps, the flag
- * on the sub-status row, the Domestic filing card, the registrations clause on
- * Activity & Permission. How a filing is WORDED stays with
+ * Every standing decision on the page reads this: the score's caps and the
+ * flag on the sub-status row. How a filing is WORDED stays with
  * `describeRegistration`, which says the registry's own words.
  */
 export type StandingCategory =
@@ -91,9 +90,6 @@ export const standingOf = (reg: Registration): Standing => {
   return { category: entry.c, assessment: entry.a, provisional: Boolean(entry.review), flags }
 }
 
-/** The filing is in good standing, by the table rather than by its wording. */
-export const inGoodStanding = (reg: Registration) => standingOf(reg).category === 'IN_GOOD_STANDING'
-
 /** The state publishes no standing for this filing (Delaware, New Jersey). */
 export const notPublished = (reg: Registration) => standingOf(reg).category === 'NOT_PUBLISHED'
 
@@ -128,8 +124,8 @@ export const registrationState = (reg: Registration): RegistrationState => ({
  * A sub status WORDED as good news, which a sentence need not repeat.
  *
  * Wording only: Tennessee's "Active - Dissolved" carries GOOD_STANDING as its
- * sub status, and whether the filing is actually in good standing is
- * `inGoodStanding`'s call, from the table.
+ * sub status, and whether the filing is actually in good standing is the
+ * standing table's call (`standingOf`).
  */
 const saysGoodStanding = (subStatus?: string) => Boolean(subStatus && /good standing/i.test(subStatus) && !/not/i.test(subStatus))
 
@@ -260,6 +256,41 @@ export const formationFilingOf = (record: BusinessRecord) => {
     inState.find((r) => isDomestic(r)) ??
     inState[0]
   )
+}
+
+/**
+ * A formation filing that converted out, and the domestic filing the business
+ * converted into. Andytown was formed in California in 2012, converted to
+ * Delaware in 2017, and registered back in California as a foreign LLC. The
+ * Formation card leads with the Delaware filing it stands on now, and says
+ * where it came from, rather than leading with a filing that no longer exists.
+ *
+ * Only a conversion: a later domestic filing beside an inactive formation
+ * (Alliance Transfer's two New York filings) is not the same business moving,
+ * and the card keeps its formation.
+ */
+export const convertedFormationOf = (record: BusinessRecord) => {
+  const formed = formationFilingOf(record)
+  const now = domesticOf(record)
+  if (!formed || !now || formed === now || !/convert/i.test(formed.statusDetails ?? '')) return undefined
+  // The foreign registration back in the state it left, if it has one.
+  const foreign = record.registrations.find((r) => r !== formed && r.state === formed.state && !isDomestic(r))
+  return { formed, now, foreign }
+}
+
+/** The subtext, in the filings' own facts: "Formed in California in 2012; that
+ *  domestic filing is marked converted out. Its Delaware domestic filing was
+ *  registered in 2017, and it holds an active California foreign registration."
+ *  When it converted is not stated anywhere, so it is not said. */
+export const convertedFormationNote = (c: NonNullable<ReturnType<typeof convertedFormationOf>>) => {
+  const year = (iso?: string | null) => (iso && /^\d{4}/.test(iso) ? ` in ${iso.slice(0, 4)}` : '')
+  const was = stateName(c.formed.state)
+  const foreign = c.foreign
+    ? `, and it holds ${/^active$/i.test(c.foreign.status ?? '') ? 'an active' : `a ${(c.foreign.status ?? '').toLowerCase() || 'reported'}`} ${was} foreign registration`
+    : ''
+  return `Formed in ${was}${year(c.formed.registrationDate)}; that domestic filing is marked converted out. Its ${stateName(
+    c.now.state
+  )} domestic filing was registered${year(c.now.registrationDate)}${foreign}.`
 }
 
 /**

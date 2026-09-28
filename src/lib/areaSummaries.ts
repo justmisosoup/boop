@@ -1,7 +1,7 @@
 import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
-import { describeRegistration, troubled } from './registrationStatus'
+import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
 import { validHitCount, watchlistVerdicts } from './watchlist'
@@ -54,7 +54,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const sole = soleProprietorOf(record)
   const ownership = sole
     ? `A sole proprietorship has one owner, the person it is registered under; ${
-        sole.tradeNameOnFile ? `${sole.city}'s business registration lists ${sole.person} as the owner` : `the ${sole.city} city registration is in ${sole.person}'s name`
+        nameStandingOf(record).category === 'DBA_OF_PERSON' ? `${sole.city}'s business registration lists ${sole.person} as the owner` : `the ${sole.city} city registration is in ${sole.person}'s name`
       }. Confirm it on the customer certification.`
     : professional
     ? `A ${entity} is typically owned by one or a few licensed practitioners who also run the practice.${
@@ -100,28 +100,35 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         : `, but another classification on the record${elsewhereNames.length ? `, ${elsewhereNames[0]},` : ''} is`
   /* A professional entity's licence answers the permission question in place
      of the risk flag, after where it is registered. */
+  // The classifier's own "Insufficient data" is not a line of business.
+  const insufficient = /^insufficient data$/i.test(industry ?? '')
   const what = !industry
     ? 'We cannot confirm what the business does: no industry classification is on the record.'
+    : insufficient
+      ? 'The classifier returned insufficient data to say what the business does.'
     : professional
       ? ''
       : flagged.some((c) => c.name === industry)
         ? `${industry} ${be} classified as a high-risk industry.`
         : `${industry} ${be} not classified as a high-risk industry${elsewhere}.`
-  const active = [...new Set(record.registrations.filter((r) => /active/i.test(r.status ?? '') && !/inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))]
-  const lapsed = [...new Set(record.registrations.filter((r) => /inactive/i.test(r.status ?? '')).map((r) => stateName(r.state)))].filter((st) => !active.includes(st))
-  /* An active registration the state has annotated — pending inactive,
-     not in good standing — is active on its way out, and is named with what
-     the state said about it. */
-  const onItsWayOut = record.registrations
-    .filter(troubled)
-    .map((r) => `its ${stateName(r.state)} registration is ${describeRegistration(r).toLowerCase()}`)
-  const where = active.length
-    ? `Registered to operate in ${list(active)}${lapsed.length ? `; its ${list(lapsed)} registration${lapsed.length === 1 ? ' is' : 's are'} inactive` : ''}${
-        onItsWayOut.length ? `; ${onItsWayOut.join('; ')}` : ''
-      }.`
-    : record.registrations.length
-      ? 'No active state registration confirms where it operates.'
-      : 'No state registration shows where it operates.'
+  /* Where it operates, in the office-state check's own terms — the check this
+     card carries. Which filings it holds, and each one's status, are the
+     Formation card's; listing every state here repeated them, and read a
+     Delaware filing that publishes no status as "no active registration". */
+  const officeState = record.addresses.find((a) => a.submitted && a.state)?.state
+  const officeCheck = record.reviewTasks.find((t) => t.key === 'sos_match')?.subLabel ?? ''
+  const office = officeState ? stateName(officeState) : undefined
+  const where = !record.registrations.length
+    ? 'No state registration shows where it operates.'
+    : !office
+      ? ''
+      : /submitted active/i.test(officeCheck)
+        ? `Registered and active in ${office}, the state of its office.`
+        : /inactive/i.test(officeCheck)
+          ? `Its registration in ${office}, the state of its office, is inactive.`
+          : /not registered/i.test(officeCheck)
+            ? `Not registered in ${office}, the state of its office.`
+            : ''
   const permission = professional ? `Operating as a ${entity} requires a professional licence. ${licencePointer}` : ''
 
   /* A lien or a bankruptcy is a claim on money; a litigation is a case that
@@ -198,16 +205,19 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       'skill-kyb-3',
       {
         headline: hits > 0 ? `${hits} watchlist ${hits === 1 ? 'hit' : 'hits'} to clear before opening` : 'No sanctions or watchlist hits',
+        /* Only what the headline and the rows do not already say. A clean
+           screen needs no sentence: "No sanctions or watchlist hits" over
+           "No watchlist hits were identified" was the same fact twice, and a
+           summary saying it again made three. Names returned and ruled out are
+           the evidence's to name; the card says only what they were. */
         summary:
           hits > 0
             ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
             : notMatches.length > 0
-              ? `No valid sanctions or watchlist hits. The screen returned ${
-                  notMatches.length === 1
-                    ? `${notMatches[0].entityName}, who ${notMatches[0].reason}`
-                    : `${notMatches.length} names, none of which matches the ${kind} or the individuals named on its filings`
-                }, so it is not counted and nothing here stands in the way of opening the account.`
-              : `No sanctions or watchlist hits on the ${kind} or the individuals named on its filings, so nothing here stands in the way of opening the account.`
+              ? notMatches.length === 1
+                ? 'The name returned is a close match, not a valid one.'
+                : 'The names returned are close matches, not valid ones.'
+              : ''
       }
     ],
     [
@@ -216,7 +226,11 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         /* The classification's name, as NAICS writes it. It can run to a line
            on its own, so the states it is registered in stay in the sentences
            under the heading. */
-        headline: industry ? `Industry classified as ${industry}` : "What the business does isn't on the record",
+        headline: !industry
+          ? "What the business does isn't on the record"
+          : /^insufficient data$/i.test(industry)
+            ? 'Industry classification returned insufficient data'
+            : `Industry classified as ${industry}`,
         summary: [what, where, permission].filter(Boolean).join(' ')
       }
     ],

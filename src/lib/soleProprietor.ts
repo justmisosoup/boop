@@ -23,11 +23,10 @@ export type SoleProprietor = {
   /** The city registration's own status word, lower-case ("active"). */
   status?: string
   address: string
-  /** From the city's own register, when it has been pulled: the account, and
-   *  whether it lists the submitted name as what the owner does business as. */
+  /** From the city's own register, when it has been pulled. Whether it lists the
+   *  submitted name as a DBA is `nameStandingOf`'s call, not this one's. */
   account?: string
   since?: string
-  tradeNameOnFile: boolean
 }
 
 const key = (n: string | null | undefined) => (n ?? '').toLowerCase().replace(/[^a-z]/g, '')
@@ -54,8 +53,7 @@ export const soleProprietorOf = (r: BusinessRecord): SoleProprietor | undefined 
       status: m.status ? String(m.status).toLowerCase() : undefined,
       address: address.fullAddress,
       account: reg?.accountNumber ?? undefined,
-      since: reg?.businessStart ?? undefined,
-      tradeNameOnFile: Boolean(reg?.dba && key(reg.dba) === key(r.name))
+      since: reg?.businessStart ?? undefined
     }
   }
   return undefined

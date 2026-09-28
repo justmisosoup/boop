@@ -1,16 +1,19 @@
 import { useEffect, useId, useState, type MouseEvent } from 'react'
 import { ChevronDown } from 'lucide-react'
 
-import { ActionButton, MutedText, Text, TruncatedText } from '@/core'
+import { ActionButton, MetaChip, MutedText, Text, TruncatedText } from '@/core'
 
 import { attributesFor, type AttributeRow } from '../lib/attributes'
-import type { BusinessRecord } from '../lib/deriveResults'
+import { PROTOTYPE_INSIGHTS, type BusinessRecord } from '../lib/deriveResults'
 import type { InsightResult } from '../types'
 import { cn } from '../utils/twUtils'
 import { AttributeCells } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
 import { Collapsible } from './Collapsible'
 import { StateMark } from './StateMark'
+
+/** A value that says nothing was found. */
+const PLACEHOLDER = /^(none on the record|none submitted|none supplied by the customer|none found|no hits)$/i
 
 /** One row per distinct fact: same label, value and sources collapse to one. */
 const dedupe = (rows: AttributeRow[]): AttributeRow[] => {
@@ -114,7 +117,11 @@ export const InsightRow = ({
    * other; a reviewer reads a repeated row as two facts and looks for the
    * difference. Same label, same value, same sources — one row.
    */
-  const attributes = dedupe(attributesOverride ?? attributesFor(result.insightId, record))
+  const attributes = dedupe(attributesOverride ?? attributesFor(result.insightId, record)).filter(
+    // "None on the record" is the absence the statement already states, not
+    // evidence for it; a row with only that behind it does not open.
+    (a) => !PLACEHOLDER.test(a.value ?? '')
+  )
 
   // The source's message earns a line only when it says something the statement
   // does not. On a no result the statement often already carries the reason.
@@ -143,6 +150,10 @@ export const InsightRow = ({
   // copies of one fact about our plumbing, in the slot where the evidence for
   // THIS business goes. It stays on `result.evidence`, which is what the
   // assessment layer reads, so nothing downstream loses it.
+
+  /** Derived in this prototype, with no Middesk check behind it yet
+   *  (`PROTOTYPE_INSIGHTS`) — marked so nobody reads it as the product's. */
+  const isNew = PROTOTYPE_INSIGHTS.has(result.insightId.split(':')[0])
 
   /** A row with nothing behind it does not pretend to open. */
   const expandable = cells.length > 0
@@ -301,6 +312,15 @@ export const InsightRow = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* `xs` is the 20px status-badge size: the statement line's strut, so it
+            sits on the first line beside the chevron. Provenance, not state —
+            the no-badge-for-state rule is about the finding, and this is not. */}
+        {isNew && (
+          <MetaChip size="xs" tone="info" className="shrink-0" title="Not a Middesk insight yet: derived in this prototype">
+            New
+          </MetaChip>
         )}
 
         {/* The one real control on the row: it carries the disclosure's ARIA

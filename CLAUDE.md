@@ -62,8 +62,13 @@ dependencies aren't installed. `bunx vite build` is the real build check.
 
 - One implementation: `src/lib/registrationStatus.ts`. `domesticOf` and
   `formationFilingOf` pick the filing; `standingOf` classifies it from the table in
-  `src/data/registrationStanding.json`. The score caps, the sub-status flag, the
-  Domestic filing card and the Activity & Permission registrations clause all read it.
+  `src/data/registrationStanding.json`. The score caps and the sub-status flag read it.
+- The Formation card (`src/components/FormationCard.tsx`) is the one place filings are
+  shown: the current domestic filing's grid, then — always from the record — a former
+  or linked filing and every filing's status (`FORMATION_CARD_INSIGHTS` in
+  `src/lib/identitySections.ts`). No report section repeats those rows.
+- Where the business operates — the office address, the office-state check and every
+  web check except the website's business name — is Activity & Permission's.
 - Delaware and New Jersey publish no status; the table says so (`NOT_PUBLISHED`), and it
   is never a finding.
-- `formation/` is only the offline tooling that builds the table — see its README.
+- `scripts/standing/` is only the offline tooling that builds the table — see its README.

@@ -1,6 +1,7 @@
 import type { BusinessRecord, Derived } from './deriveResults'
 import { negativesFor, type IdentityScore, type ScoreArea } from './identityScore'
-import { domesticOf, notPublished } from './registrationStatus'
+import { domesticFilingOf } from './linkedFormation'
+import { notPublished } from './registrationStatus'
 import { stateName } from './states'
 
 /**
@@ -25,7 +26,7 @@ const SOS_STATUS = new Set(['sos_domestic', 'sos_unknown'])
  *  registry — named so the line can say why they were left out. */
 const splitFlags = (record: BusinessRecord, results: Derived[]) => {
   const negative = negativesFor(record, results)
-  const domestic = domesticOf(record)
+  const domestic = domesticFilingOf(record)?.filing
   const silent = Boolean(domestic && notPublished(domestic))
   const flags = results.filter((r) => negative.has(r.insightId))
   const registry = flags.filter((r) => silent && SOS_STATUS.has(r.insightId))

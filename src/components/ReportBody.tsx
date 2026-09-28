@@ -6,7 +6,7 @@ import { attributesFor } from '../lib/attributes'
 import { categoriesOf } from '../lib/deriveResults'
 import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
-import { IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
+import { FORMATION_CARD_INSIGHTS, IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type {
   AnalysisDraft,
@@ -134,12 +134,18 @@ const CiteList = ({
     const [tb, sb] = rank(b)
     return ta - tb || sa - sb
   }
-  const ordered = [...[...flagged].sort(byTopic), ...cited.filter((r) => !isFlagged(r)).sort(byTopic)]
+  /* What the Formation card carries — the filings, their statuses, the entity
+     type — it carries from the record whatever any section cited, so no
+     section shows those rows a second time. Ownership cites the entity type;
+     the card's grid already states it. */
+  const onCard = new Set<string>(FORMATION_CARD_INSIGHTS)
+  const ordered = [...[...flagged].sort(byTopic), ...cited.filter((r) => !isFlagged(r)).sort(byTopic)].filter(
+    (r) => !onCard.has(r.insightId.split(':')[0])
+  )
 
-  /* A part claims an insight outright before topics are read: the
-     domestic-filing checks are Formation-topic insights, but they say whether
-     the filing is live, which is the Domestic filing part's, not the
-     registration's. */
+  /* A part claims an insight outright before topics are read: the website's
+     business-name check is a website-topic insight, but it is a name match,
+     so the business-name part claims it. */
   const sectionOf = (r: Derived) => {
     const key = r.insightId.split(':')[0]
     return (
@@ -178,14 +184,15 @@ const CiteList = ({
    * whole (a gap) leads the first card.
    */
   if (sections) {
+    const here = ordered
     const parts = [
       ...sections.map((s) => ({
         title: s.headline(record),
         note: s.note?.(record),
         // A check the title states is not repeated as a row under it.
-        rows: ordered.filter((r) => sectionOf(r) === s && !s.stated?.(record).includes(r.insightId.split(':')[0]))
+        rows: here.filter((r) => sectionOf(r) === s && !s.stated?.(record).includes(r.insightId.split(':')[0]))
       })),
-      { title: 'Other', note: undefined, rows: ordered.filter((r) => !sectionOf(r)) }
+      { title: 'Other', note: undefined, rows: here.filter((r) => !sectionOf(r)) }
     ].filter((p) => p.rows.length > 0)
     return (
       <div className="flex flex-col gap-4">
@@ -211,7 +218,7 @@ const CiteList = ({
   return (
     // The Insights tab's own frame, the same component: one card, named in its
     // own header, rows divided by the inset hairline.
-    <InsightStack title={title} trailing={flaggedChip(cited)} intro={intro}>
+    <InsightStack title={title} trailing={flaggedChip(ordered)} intro={intro}>
       {ordered.map(row)}
     </InsightStack>
   )

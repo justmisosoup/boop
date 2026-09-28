@@ -1,8 +1,18 @@
 import { Surface } from '@/core'
 
-import { formationIdentityRows, type AttributeRow } from '../lib/attributes'
-import { linkedFormationNote, linkedFormationOf } from '../lib/linkedFormation'
-import { formationConfirmed, formationFilingOf, formationStandingNote, sameName } from '../lib/registrationStatus'
+import { currentDomesticRows, formationIdentityRows, type AttributeRow } from '../lib/attributes'
+import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
+import { negativesFor } from '../lib/identityScore'
+import { domesticFilingOf, formationCardFilingOf, linkedFormationNote } from '../lib/linkedFormation'
+import {
+  convertedFormationNote,
+  convertedFormationOf,
+  formationConfirmed,
+  formationFilingOf,
+  formationStandingNote,
+  sameName
+} from '../lib/registrationStatus'
+import { nameStandingOf } from '../lib/businessNames'
 import { soleProprietorOf } from '../lib/soleProprietor'
 import { stateName } from '../lib/states'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
@@ -12,14 +22,16 @@ import { AttributeCells } from './AttributeGrid'
 import { attributeRowsByGroup } from './AttributesTab'
 import { cellsFromRows } from './attributeCells'
 import { CardHeader } from './CardHeader'
+import { InsightRow } from './InsightRow'
+import { ROW_HAIRLINE } from './InsightStack'
 import { AttributeSources, SubmittedChip } from './Provenance'
 
 /**
  * The strongest record of who this business is, under the call.
  *
- * In order of strength: the domestic Secretary of State filing, a DBA filing,
- * a city registration, and — when the record holds nothing found — what the
- * customer submitted. One card, headed by whichever of the four it is, so a
+ * In order of strength: the domestic Secretary of State filing, a city
+ * registration, and — when the record holds nothing found — what the customer
+ * submitted. One card, headed by whichever of the three it is, so a
  * reader never sees "Formation" over a business that has no formation record:
  * that card used to show the submitted name under a heading that claimed the
  * state had said it.
@@ -33,11 +45,10 @@ import { AttributeSources, SubmittedChip } from './Provenance'
  * source's own chip — `SOS · NY`, `City registration`, `Submitted` — and it
  * follows to that source's card in Sources the way an attribute row's does.
  */
-type Tier = 'formation' | 'dba' | 'city' | 'submitted'
+type Tier = 'formation' | 'city' | 'submitted'
 
 const TITLE: Record<Tier, string> = {
   formation: 'Formation',
-  dba: 'DBA filing',
   city: 'City registration',
   submitted: 'Submitted'
 }
@@ -81,33 +92,49 @@ export const FormationCard = ({
      Sprig's Delaware filing sits on the Mixboard Inc. record. The card shows
      that filing, and the note says it was not found for this business and
      how it was linked. */
-  const linked = linkedFormationOf(record)
-  const domestic = linked?.filing ?? formationFilingOf(record)
+  const found = domesticFilingOf(record)
+  const linked = found?.linked
+  // Converted out of the state it was formed in: the card leads with the
+  // domestic filing it stands on now (Andytown's Delaware one).
+  const converted = !linked ? convertedFormationOf(record) : undefined
+  const domestic = formationCardFilingOf(record)
+  const domesticState = linked ? linked.filing.state : converted ? converted.now.state : record.formation?.state
 
   // Which record there is, strongest first.
-  const dbaSources = new Set(
-    (record.names ?? []).filter((n) => n.type === 'dba').flatMap((n) => n.sources ?? [])
-  )
   const rows = allRows(record, results, groupFor)
   const cityRows = rows.filter((r) => (r.sources ?? []).includes(CITY))
-  const dbaRows = rows.filter((r) => (r.sources ?? []).some((s) => dbaSources.has(s)))
 
   const tier: Tier =
     record.formation || domestic
       ? 'formation'
-      : dbaRows.length > 0
-        ? 'dba'
-        : cityRows.length > 0
-          ? 'city'
-          : 'submitted'
+      : cityRows.length > 0
+        ? 'city'
+        : 'submitted'
 
   const tierRows =
     tier === 'formation'
-      ? formationIdentityRows(linked?.record ?? record)
-      : dedupe(tier === 'dba' ? dbaRows : tier === 'city' ? cityRows : rows.filter((r) => r.submitted))
+      ? converted
+        ? currentDomesticRows(record, converted.now)
+        : formationIdentityRows(linked?.record ?? record)
+      : dedupe(tier === 'city' ? cityRows : rows.filter((r) => r.submitted))
+
+  /* Which filing `sos_domestic` and its sub-status speak to: the formation
+     filing. Where that is the grid's own filing, or the former filing the
+     converted-out row shows, the row repeats what is on the card. */
+  const formationFiling = formationFilingOf(record)
+  const alreadyShown = (id: string) =>
+    (id === 'entity_type' && tierRows.some((r) => r.label === 'Entity type')) ||
+    (id === 'linked_domestic' && Boolean(linked)) ||
+    (id === 'sos_domestic' && Boolean(formationFiling) && (formationFiling === domestic || formationFiling === converted?.formed)) ||
+    // The grid states the sub status as a field, published or not.
+    (id === 'sos_domestic_sub_status' && tier === 'formation')
+  const negatives = negativesFor(record, results)
+  const cardRows = FORMATION_CARD_INSIGHTS.flatMap((id) =>
+    results.filter((r) => r.insightId === id && r.state !== 'unknown' && !alreadyShown(id))
+  )
 
   const cells = cellsFromRows(tierRows, {
-    domesticState: linked ? linked.filing.state : record.formation?.state,
+    domesticState,
     onJumpToSource,
     // The source is named once, in the header.
     provenance: false,
@@ -136,7 +163,7 @@ export const FormationCard = ({
         <AttributeSources
           sources={[]}
           registrations={[domestic]}
-          domesticState={linked ? linked.filing.state : record.formation?.state}
+          domesticState={domesticState}
           onJumpToSource={onJumpToSource}
         />
       )
@@ -144,7 +171,7 @@ export const FormationCard = ({
       <SubmittedChip onJumpToSource={onJumpToSource} />
     ) : (
       <AttributeSources
-        sources={tier === 'city' ? [CITY] : [...dbaSources]}
+        sources={[CITY]}
         domesticState={record.formation?.state}
         onJumpToSource={onJumpToSource}
       />
@@ -169,9 +196,11 @@ export const FormationCard = ({
   const note = linked
     ? linkedFormationNote(record, linked, stateName)
     : strong
-      ? formationStandingNote(record)
+      ? converted
+        ? convertedFormationNote(converted)
+        : formationStandingNote(record)
       : sole
-        ? sole.tradeNameOnFile
+        ? nameStandingOf(record).category === 'DBA_OF_PERSON'
           ? `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. ${sole.city} registers the business to ${sole.person}, doing business as ${record.name}${
               sole.since ? ` since ${sole.since.slice(0, 4)}` : ''
             }${sole.account ? ` (account ${sole.account})` : ''}, at the submitted office address.`
@@ -193,6 +222,23 @@ export const FormationCard = ({
         </div>
       )}
       <AttributeCells items={items} className="-mb-px" />
+      {/* The record's own insights about its filings, under the filing they
+          are about: the lead filing's standing, a former domestic filing, the
+          other filings and their statuses, whether it is registered where its
+          office is, what it operates as. A row the card already shows — the
+          entity type in the grid, a linked filing its note describes — is not
+          repeated. */}
+      {cardRows.length > 0 && (
+        <div className="border-t border-[var(--core-color-border-divider)]">
+          {/* Divided the way every report card's rows are (`InsightStack`). */}
+          {cardRows.map((r, i) => (
+            <div key={r.insightId} className={cn(i > 0 && ROW_HAIRLINE)}>
+              <InsightRow result={r} record={record} negative={negatives.has(r.insightId)} onJumpToSource={onJumpToSource} />
+            </div>
+          ))}
+        </div>
+      )}
     </Surface>
   )
 }
+

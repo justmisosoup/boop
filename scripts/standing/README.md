@@ -1,4 +1,4 @@
-# formation/
+# scripts/standing/
 
 Offline tooling for the registration standing table, and nothing else.
 
@@ -8,6 +8,6 @@ Offline tooling for the registration standing table, and nothing else.
   on the page.
 - `data/` holds what it is built from: the cleaned per-jurisdiction status breakdown,
   the cleaning log, and `review_needed.csv` (143 provisional rows awaiting a decision).
-- `python3 formation/build.py` regenerates the table and applies filled review rows;
+- `python3 scripts/standing/build.py` regenerates the table and applies filled review rows;
   `--no-regen` only applies the rows. Regenerating needs pandas and the raw
   `per_jurisdiction_status_breakdown.csv`, which is not in the repo.

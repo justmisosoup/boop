@@ -10,11 +10,13 @@
  * to the insight, from the insight to its attributes, and from an attribute to
  * the source that supplied it.
  */
-import { trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
+import { nameEntityTypeOf, trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
 import { entityFormLabel } from './normalise'
-import { formationConfirmed, formationFilingOf, registrationState } from './registrationStatus'
+import { dbaOfAnotherOf, dbaOwnerOf, filingOf, isBusinessName, nameStandingOf, ownDbas, submittedNameOf, type Dba } from './businessNames'
+import { convertedFormationOf, formationConfirmed, formationFilingOf, registrationState, sameName } from './registrationStatus'
 import { judgeHit } from './watchlist'
+import { domesticFilingOf, formationCardFilingOf } from './linkedFormation'
 import { stateLabel, stateName } from './states'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
@@ -142,7 +144,8 @@ export type AttributeRow = {
    * side beneath. Left to the grid's own packing, the address shared its row
    * with the filing state and the status hung alone underneath.
    */
-  span?: 'full'
+  /** `full` spans the grid; `half` keeps a cell in the column even with links. */
+  span?: 'full' | 'half'
   /** Headline for the chip's preview. Without it the URL is shown, which is the
    *  same string as the link beneath it. */
   sourceTitle?: string
@@ -642,11 +645,56 @@ export const formationIdentityRows = (record: BusinessRecord): AttributeRow[] =>
     // date is the only one on it.
     .map((r) => (r.label === 'Formation date' ? { ...r, label: 'Formed' } : r))
 
+  /* The sub status is a field of the filing, stated here whatever it is: a
+     state that publishes none says so as the value, beside the status and
+     status details, rather than as an insight row of its own under the card. */
+  const subStatus = formation.some((r) => r.label === 'Sub status')
+    ? []
+    : domestic
+      ? row('Sub status', `Not provided by ${stateName(domestic.state)}`)
+      : []
+
   return [
     ...row('Legal name', domestic?.name ?? registered?.value),
     ...formation,
+    ...subStatus,
     ...row('Registered agent', domestic?.registeredAgent)
   ].map(nameTheFiling(record))
+}
+
+/**
+ * The Formation card's rows for a business that converted out of the state it
+ * was formed in (`convertedFormationOf`): the domestic filing it stands on now,
+ * read off that filing, not the formation's. "Domestic state" and "Registered"
+ * rather than formation state and date: Delaware is where it is domestic now,
+ * not where it was formed, which the card's subtext says.
+ */
+export const currentDomesticRows = (
+  record: BusinessRecord,
+  filing: BusinessRecord['registrations'][number],
+  /** A former filing: its date is stated alone. The record carries no end date
+   *  for a converted filing, so how long it was active is not something it says. */
+  former?: boolean
+): AttributeRow[] => {
+  const st = registrationState(filing)
+  const age = former ? undefined : filingAge(filing.registrationDate)
+  const base = st.silent ? `Not published by ${stateName(filing.state)}` : st.status
+  // The state's detail only when it adds something: "Inactive — converted out", not "Active — active".
+  const detail = st.statusDetails && st.statusDetails.toLowerCase() !== (st.status ?? '').toLowerCase() ? st.statusDetails.toLowerCase() : ''
+  const status = [base, detail].filter(Boolean).join(' — ')
+  const row = (label: string, value: string | null | undefined, extra?: Partial<AttributeRow>): AttributeRow[] =>
+    value ? [{ group: 'formation' as const, label, value, source: '', registrations: [filing], ...extra }] : []
+  return [
+    ...row('Legal name', filing.name),
+    ...row('Entity type', entityFormLabel(trueEntityType(record) ?? filing.entityType ?? record.formation?.entityType)),
+    ...row('Domestic state', stateLabel(filing.state)),
+    ...row('Registered', longDate(filing.registrationDate), { qualifier: age }),
+    ...row('Status', status),
+    // Stated whatever it is, as on the formation card; a former filing only
+    // where the state gave one.
+    ...row('Sub status', st.subStatus ?? (former ? undefined : `Not provided by ${stateName(filing.state)}`)),
+    ...row('Registered agent', filing.registeredAgent)
+  ]
 }
 
 /**
@@ -822,7 +870,12 @@ const nameTheFiling = (record: BusinessRecord) => (row: AttributeRow): Attribute
   const fromRegistry = textual.some((x) => REGISTRATION_SOURCES.has(x))
   if (!fromRegistry || record.registrations.length === 0) return row
 
-  const domestic = record.registrations.filter((r) => r.state === record.formation?.state)
+  // The formation filing itself (`formationFilingOf`), not every filing in the
+  // formation state: Andytown holds a California domestic filing and a
+  // California foreign one, and its formation facts cited both, as "SOS · CA +1"
+  // over one filing counted twice.
+  const formationFiling = formationFilingOf(record)
+  const domestic = formationFiling ? [formationFiling] : []
 
   // Only name the filing where the record actually says which one. Formation
   // facts come from the domestic filing, so that is nameable. An officer or an
@@ -1063,6 +1116,169 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     })
   }
 
+  /*
+   * The submitted name and what else the names establish — see `nameStandingOf`
+   * and `nameInsights`. Each insight shows only the names its one fact rests
+   * on. Evidence only: the Attributes tab already lists these names from the
+   * checks and the city register that produced them.
+   */
+  if (key === 'submitted_name' || key === 'trade_names' || key === 'submitted_name_dba' || key === 'dba_owner_filing') {
+    const n = nameStandingOf(record)
+    const submittedRow: AttributeRow = {
+      group: 'name',
+      label: 'Submitted business name',
+      value: n.submitted,
+      source: '',
+      submitted: true,
+      evidenceOnly: true,
+      matchValue: `submitted:${nameKey(n.submitted)}`
+    }
+    const dbaRow = (d: Dba): AttributeRow => ({
+      group: 'name',
+      label: 'Doing business as',
+      value: d.name,
+      source: d.city ? 'City registration' : d.source,
+      sources: [d.city ? 'City registration' : d.source],
+      refs: (d.refIds ?? []).map((id) => ({ id, type: 'city_registration', metadata: { city: d.city, status: d.open ? 'Active' : 'Inactive' } })),
+      trailing: [d.owner ? `Owner: ${d.owner}` : '', d.since ? `since ${d.since.slice(0, 4)}` : ''].filter(Boolean).join(' · ') || undefined,
+      evidenceOnly: true,
+      matchValue: `dba:${nameKey(d.name)}:${nameKey(d.owner ?? '')}`
+    })
+
+    /* A DBA of another business entity, in the order it is found: the
+       registration that lists the name, then the business it belongs to —
+       named as related, with how: it owns the DBA, and the reference its own
+       name points to. That is its Secretary of State filing where there is
+       one (Mixboard Inc.'s Delaware filing, on a linked record), and
+       otherwise the record the DBA was listed on. A person gets none. */
+    const listedRow = (d: Dba): AttributeRow => ({
+      ...dbaRow(d),
+      label: d.city ? `${d.city} registration` : d.source,
+      trailing: [d.owner ? `DBA of ${d.owner}` : '', d.since ? `since ${d.since.slice(0, 4)}` : ''].filter(Boolean).join(' · ') || undefined
+    })
+    const relatedRow = (d: Dba): AttributeRow[] => {
+      if (!d.owner || !isBusinessName(d.owner)) return []
+      const found = filingOf(record, d.owner)
+      const owns = 'Owns this DBA'
+      const base = { group: 'name' as const, label: 'Related business', evidenceOnly: true, matchValue: `related:${nameKey(d.owner)}` }
+      if (found)
+        return [
+          {
+            ...base,
+            value: found.filing.name ?? d.owner,
+            source: '',
+            registrations: [found.filing],
+            trailing: [owns, found.linked ? 'filing on a linked record' : ''].filter(Boolean).join(' · ')
+          }
+        ]
+      const { source, sources, refs } = dbaRow(d)
+      return [{ ...base, value: d.owner, source, sources, refs, trailing: `${owns} · no state filing on record` }]
+    }
+    const dbaOfBusinessRows = (d: Dba) => (d.owner && isBusinessName(d.owner) ? [listedRow(d), ...relatedRow(d)] : [dbaRow(d)])
+
+    if (key === 'trade_names') return ownDbas(n, record).map(dbaRow)
+    if (key === 'submitted_name_dba') {
+      const d = dbaOfAnotherOf(n)
+      return d ? dbaOfBusinessRows(d) : []
+    }
+    if (key === 'dba_owner_filing') {
+      const o = dbaOwnerOf(record, n)
+      if (!o) return []
+      return o.filing
+        ? [
+            {
+              group: 'name',
+              label: `${o.owner}'s legal name`,
+              value: o.filing.name ?? '',
+              source: '',
+              registrations: [o.filing],
+              evidenceOnly: true,
+              matchValue: `owner-filing:${o.filing.state}:${o.filing.fileNumber ?? ''}`
+            }
+          ]
+        : [{ group: 'name', label: `${o.owner}'s legal name`, value: 'No state filing on record', source: '', evidenceOnly: true }]
+    }
+    return [
+      submittedRow,
+      ...n.legal.map((r) => ({
+        group: 'name' as const,
+        label: 'Legal name',
+        value: r.name ?? n.submitted,
+        source: '',
+        registrations: [r],
+        evidenceOnly: true,
+        matchValue: `legal-filing:${r.state}:${r.fileNumber ?? ''}`
+      })),
+      // The DBA the name is, where it is one and not also a legal name, and
+      // the business it belongs to.
+      ...(n.matchedDba && n.category !== 'MATCHES_LEGAL_NAME' ? dbaOfBusinessRows(n.matchedDba) : [])
+    ]
+  }
+
+  /*
+   * The registration a converted business left (`convertedFormationOf`), as
+   * the filing itself states it: Andytown's California domestic LLC, marked
+   * converted out.
+   */
+  // The two things compared: the suffix on the submitted name, and the type
+  // the filing records.
+  if (key === 'name_entity_type') {
+    const m = nameEntityTypeOf(record)
+    if (!m) return []
+    // The filing the Formation card leads with: Andytown's Delaware one, not
+    // the California filing it converted out of.
+    const filing = formationCardFilingOf(record)
+    return [
+      {
+        group: 'name',
+        label: 'Submitted business name',
+        value: (record.names ?? []).find((n) => n.submitted)?.name ?? record.name,
+        trailing: `Suffix: ${m.suffix}`,
+        source: '',
+        submitted: true,
+        evidenceOnly: true
+      },
+      {
+        group: 'formation',
+        label: 'Entity type',
+        value: entityFormLabel(trueEntityType(record) ?? filing?.entityType ?? record.formation?.entityType) ?? m.filed,
+        source: '',
+        registrations: filing ? [filing] : undefined,
+        evidenceOnly: true
+      }
+    ]
+  }
+
+  if (key === 'former_formation') {
+    const c = convertedFormationOf(record)
+    return c ? currentDomesticRows(record, c.formed, true).map((r) => ({ ...r, evidenceOnly: true })) : []
+  }
+
+  /*
+   * The domestic filing on a linked record (`domesticFilingOf`): the filing,
+   * and what ties the two records — the name this one also goes by, and the
+   * addresses and people they share.
+   */
+  if (key === 'linked_domestic') {
+    const link = domesticFilingOf(record)?.linked
+    if (!link) return []
+    return [
+      {
+        group: 'registration',
+        label: 'Related business',
+        value: link.filing.name ?? '',
+        source: '',
+        registrations: [link.filing],
+        trailing: `Domestic filing${link.filing.fileNumber ? ` #${link.filing.fileNumber}` : ''} · on a linked record`,
+        evidenceOnly: true,
+        matchValue: `linked-filing:${link.filing.state}:${link.filing.fileNumber ?? ''}`
+      },
+      { group: 'name', label: 'Also goes by', value: link.name, source: '', evidenceOnly: true },
+      ...link.addresses.map((a) => ({ group: 'address' as const, label: 'Shared address', value: a, source: '', evidenceOnly: true })),
+      ...link.people.map((p) => ({ group: 'people' as const, label: 'Shared person', value: p, source: '', evidenceOnly: true }))
+    ]
+  }
+
   if (key === 'dba_name') {
     const dba = (record.names ?? []).filter((n) => n.type === 'dba' && n.submitted)
     return [
@@ -1155,7 +1371,10 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   // "Good-standing sub-status not published" were backed by identical rows and
   // neither one showed you the filing it was talking about.
   if (key.startsWith('sos_') || key.startsWith('registrations') || key === 'submitted_registrations_match') {
-    const domestic = record.registrations.filter((r) => r.state === record.formation?.state)
+    // The formation filing itself, not every filing in the formation state:
+    // Andytown's California foreign filing is foreign, not its home filing.
+    const formationFiling = formationFilingOf(record)
+    const domestic = formationFiling ? [formationFiling] : []
     const byStatus = (status: string) =>
       record.registrations.filter((r) => (r.status || 'unknown').toLowerCase() === status)
 
@@ -1274,10 +1493,21 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       ]
 
     if (STATUS_KEYS.has(key)) {
+      // Which kind of filing each status is on: the Formation card answers
+      // what the foreign registrations are, and "Status" alone did not say.
+      const kind = (label: string, which: 'Domestic' | 'Foreign') => `${which} filing ${label.toLowerCase()}`
+      // By each filing's own jurisdiction. The formation filing stays out of the
+      // Attributes tab, where the formation rows already state its status.
+      const isDomestic = (r: BusinessRecord['registrations'][number]) => /domestic/i.test(r.jurisdiction ?? '')
+      const statusRows = (list: BusinessRecord['registrations'], which: 'Domestic' | 'Foreign', evidenceOnly?: boolean) =>
+        rowsFor(list)
+          .filter((r) => r.label === 'Status' || r.label === 'Sub status')
+          .map((r) => ({ ...r, label: kind(r.label, which), ...(evidenceOnly ? { evidenceOnly: true } : {}) }))
       const rows = [
-        ...rowsFor(foreign),
-        ...rowsFor(home).map((r) => ({ ...r, evidenceOnly: true }))
-      ].filter((r) => r.label === 'Status' || r.label === 'Sub status')
+        ...statusRows(filings.filter((r) => !isDomestic(r)), 'Foreign'),
+        ...statusRows(filings.filter((r) => isDomestic(r) && !home.includes(r)), 'Domestic'),
+        ...statusRows(home, 'Domestic', true)
+      ]
 
       return inGroup('registration', rows.length > 0 ? rows : rowsFor(filings))
     }
@@ -1375,8 +1605,6 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   // not carry it — so on a hit the provider's own message is shown rather than
   // a list picked from the coverage constant.
   if (key === 'watchlist' || key === 'politically_exposed_persons' || key === 'adverse_media') {
-    const task = record.reviewTasks.find((t) => t.key === key)
-
     // Screening does not stop at the people the customer named. Anyone found on
     // the record goes through it too, and the record says who: a person carries
     // the screen's own result key among their sources. Listing only submitted
@@ -1400,18 +1628,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         .values()
     ]
     const names = entityNames.length > 0 ? entityNames : [{ name: record.name, submitted: true, sources: [] }]
-    const sub = task?.subLabel ?? ''
-    // A sub-label can be a SCORE rather than an outcome — adverse media returns
-    // "Low risk" alongside a message saying nothing was found. The message is
-    // the outcome, so a denial in either place means no hit.
-    const said = `${sub} ${task?.message ?? ''}`
-    const hit = !/\bno\b|\bnone\b|not found/i.test(said)
 
-    // The outcome follows each name — but only when there is nothing to find.
-    // "No hits" is true of every name screened; a hit is true of one of them,
-    // and the record never says which, so on a hit the names stay plain and the
-    // provider's message carries the finding.
-    const outcome = hit ? '' : key === 'adverse_media' ? ' — none found' : ' — no hits'
 
     /**
      * What was SEARCHED, not where the name came from.
@@ -1447,23 +1664,6 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       valid?: boolean
       note?: string
       risks?: Array<{ name: string; confidence: string | null }>
-    }
-
-    /**
-     * The provider's own confidence, highest across the articles a name pulled
-     * in. "Organized crime" at low confidence on a name collision is not the
-     * same claim as the same flag at high confidence, and the risk names alone
-     * read identically.
-     */
-    const RISK_ORDER = ['low', 'moderate', 'high']
-    const riskLevel = (matches: Match[]) => {
-      const levels = matches
-        .flatMap((m) => m.risks ?? [])
-        .map((r) => (r.confidence ?? '').toLowerCase())
-        .filter((c) => RISK_ORDER.includes(c))
-      if (levels.length === 0) return undefined
-      const top = levels.sort((a, b) => RISK_ORDER.indexOf(b) - RISK_ORDER.indexOf(a))[0]
-      return `${top.charAt(0).toUpperCase()}${top.slice(1)} risk`
     }
 
     const matchesFor = (item: { sourceRefs?: SourceRef[] } | { sources?: string[] }): Match[] => {
@@ -1529,7 +1729,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         // screen hid exactly that.
         const found = articles.length > 0
 
-        const row = {
+        const row: AttributeRow = {
           // Evidence for the screening insight, not an attribute of the
           // business. The names are already in Name and People; repeating them
           // under Watchlist, PEP and Adverse media added three groups that held
@@ -1553,7 +1753,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
               ? articles.every((a) => a.valid === false)
                 ? ` — returned ${[...new Set(articles.map((a) => a.title).filter(Boolean))].join(', ')}, not a match`
                 : ''
-              : outcome
+              : ''
           }`,
           source: '',
           // On a hit, the list or article it matched. On a clean name, nothing:
@@ -1579,43 +1779,42 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           // the name is a fact about the name, and it lives on the name's own
           // attribute; here the only question is what the screen ran against
           // and what it returned.
-          submitted: false,
-          // No count — the chip already reads "Www.wafb.com +8". What the count
-          // cannot say is how the provider rated what it found.
-          trailing: found ? riskLevel(articles) : undefined
+          // No count — the chip already reads "Www.wafb.com +8" — and no risk
+          // grade: the provider's band is a judgement, the articles the finding.
+          submitted: false
         }
 
+      /* A screen that returned only close matches, none of them valid — the
+         row under "No valid watchlist hits". Each screened name is its own entry, not a
+         line folded into the one above: the name screened, what the list
+         returned for it, and that it is a close match and not a valid one. */
+      const invalidOnly = found && articles.every((a) => a.valid === false)
+      if (invalidOnly)
+        return [
+          {
+            name: item.name,
+            found,
+            row: {
+              ...row,
+              detail: undefined,
+              evidenceOnly: true,
+              label: item.name,
+              value: [...new Set(articles.map((a) => a.title).filter(Boolean))].join(', '),
+              trailing: 'Close match, not a valid match',
+              span: 'half' as const
+            }
+          }
+        ]
       return [{ name: item.name, found, row }]
     })
 
     /*
-     * One row per screen, not one per name.
-     *
-     * Every name got its own row, so citing watchlist, adverse media and PEP
-     * against two names produced six rows that between them said one thing:
-     * nothing came back. The outcome is the finding; who it covers is the
-     * scope, and scope belongs under the value rather than in place of it.
-     *
-     * A name that DID come back keeps its own row. It carries the articles and
-     * the provider's rating, and folding it into a count would bury the one
-     * result on the screen that a reader has to act on.
+     * Only the names that came back. A name screened clean is only what was
+     * checked — listed under "No hits" it read as though something was found
+     * for it. A name that did come back keeps its own row, with the articles
+     * and the provider's rating: the one result a reader has to act on.
      */
-    const clean = built.filter((b) => !b.found)
-    const hits = built.filter((b) => b.found).map((b) => b.row)
-
-    return [
-      ...hits,
-      ...(clean.length > 0
-        ? [
-            {
-              ...clean[0].row,
-              value: key === 'adverse_media' ? 'None found' : 'No hits',
-              evidenceNote: `Screened: ${clean.map((b) => b.name).join(', ')}`
-            }
-          ]
-        : []),
-      ...searched
-    ]
+    return [...built.filter((b) => b.found).map((b) => b.row), ...searched]
   }
 
   /**
@@ -1634,7 +1833,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
    */
   if (key === 'litigations') {
     const cases = record.litigations ?? []
-    if (cases.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+    // None found: nothing to open. The business name and person were only
+    // what was searched, and read as though something came back.
+    if (cases.length === 0) return []
 
     return cases.map((c) => {
       // The court is the source. Without it nine Georgia cases and one in
@@ -1671,7 +1872,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
 
   if (key === 'liens') {
     const filings = record.liens ?? []
-    if (filings.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+    if (filings.length === 0) return []
 
     return filings.map((l) => {
       // The filing office, per state: a UCC-1 in Idaho and one in New Jersey
@@ -1704,7 +1905,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
 
   if (key === 'bankruptcies') {
     const filings = record.bankruptcies ?? []
-    if (filings.length === 0) return [nameRow, ...peopleRow(submittedPeople, 'Person')]
+    if (filings.length === 0) return []
 
     return filings.map((b) => {
       const court = b.court ?? (b.courtState ? `${b.courtState} courts` : 'Bankruptcy court')
@@ -1755,7 +1956,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       href: w.url,
       source: 'Website',
       sources: ['Website'],
-      submitted: w.submitted
+      submitted: w.submitted,
+      // Whose site it is is part of what a website check shows.
+      trailing: w.submitted ? undefined : 'Found by Middesk, not submitted'
     }
 
     // Reachability: the URL and what the site calls itself. The individual page
@@ -1808,7 +2011,19 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     return [
       url,
       ...(key === 'web_address_verification' ? inGroup('address', addressRows(record, { submittedOnly: true })) : []),
-      ...(key === 'web_person_verification' ? peopleRow(submittedPeople, 'Person') : [])
+      /* The submitted people, and — where the check verified one and there is
+         only one it can be — the website as the source that names them, so
+         the row does not read as the filing check's. The record does not say
+         which person the site named, so with several none is marked: Andytown's
+         registered-agent company read "Named on the website". No page is
+         claimed either. */
+      ...(key === 'web_person_verification'
+        ? peopleRow(submittedPeople, 'Submitted person').map((p, _i, all) =>
+            all.length === 1 && /^verified$/i.test(record.reviewTasks.find((t) => t.key === key)?.subLabel ?? '')
+              ? { ...p, source: 'Website', sources: ['Website'], refs: undefined, trailing: 'Named on the website' }
+              : p
+          )
+        : [])
     ]
   }
 
@@ -1822,12 +2037,14 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       ).values()
     ]
 
-    // Each check its own subset. Both returned every profile, so "supplied by
-    // the customer" listed five the customer never mentioned — the record says
-    // exactly one profile was submitted.
+    // Each check its own subset, and discovery by its own outcome: "Third
+    // party profiles submitted" is the ones the customer named, "found" is the
+    // ones Middesk found. Filtering "found" to the submitted ones showed
+    // Userleap's Trustpilot page as "None supplied by the customer".
+    const submittedOnly = /^submitted$/i.test(record.reviewTasks.find((t) => t.key === 'profile_discovery')?.subLabel ?? '')
     const profiles =
       key === 'profile_discovery'
-        ? all.filter((p) => p.submitted)
+        ? all.filter((p) => (submittedOnly ? p.submitted : true))
         : key === 'profile_status'
           ? all.filter((p) => p.status)
           : all
@@ -2103,7 +2320,15 @@ export const cityRegistrationRows = (record: BusinessRecord): AttributeRow[] => 
     for (const d of list.map((r) => r.dba).filter((d): d is string => Boolean(d)))
       if (!dbas.has(nameKey(d))) dbas.set(nameKey(d), d)
     for (const dba of dbas.values())
-      rows.push({ ...base, group: 'name' as GroupId, label: 'Doing business as', value: dba, matchValue: dba })
+      rows.push({
+        ...base,
+        group: 'name' as GroupId,
+        label: 'Doing business as',
+        value: dba,
+        // The submitted name, when the register carries it: the same key as the
+        // name row, so one name is one row carrying both sources.
+        matchValue: sameName(dba, submittedNameOf(record)) ? `legal:${nameKey(submittedNameOf(record))}` : dba
+      })
     if (first.businessStart)
       rows.push({
         ...base,

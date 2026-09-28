@@ -455,3 +455,6 @@ await Bun.write('src/data/records.json', JSON.stringify(records, null, 2))
 console.log(
   `pulled ${records.length} record(s) with ${records.reduce((n, r) => n + r.reviewTasks.length, 0)} review tasks → src/data/records.json`
 )
+
+// The timeline for the same businesses, so the two files never disagree.
+await import('./pull-timeline.ts')
