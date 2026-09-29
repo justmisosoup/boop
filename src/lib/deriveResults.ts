@@ -279,6 +279,12 @@ export type BusinessRecord = {
   }>
   taxExemptOrganization?: Record<string, unknown> | null
   profiles?: Array<{
+    id?: string | null
+    externalId?: string | null
+    /** The profile's own name for the business. */
+    name?: string | null
+    /** Everything the API returns about the page, verbatim. */
+    metadata?: Record<string, unknown>
     url: string | null
     type: string | null
     status: string | null

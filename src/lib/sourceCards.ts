@@ -9,7 +9,7 @@ import type { BusinessRecord } from './deriveResults'
  */
 
 /** Third-party profiles, folded into one Web presence source. */
-export const PROFILES = new Set(['Google', 'LinkedIn', 'Facebook', 'BBB', 'Trustpilot', 'Yelp', 'Profile'])
+export const PROFILES = new Set(['Third-party profiles', 'Google', 'LinkedIn', 'Facebook', 'Instagram', 'TikTok', 'X', 'BBB', 'Trustpilot', 'Yelp', 'Profile'])
 
 export const SUBMITTED_CARD = 'src:submitted'
 

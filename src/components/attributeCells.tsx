@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react'
+import { BadgeCheck } from 'lucide-react'
+
+import { Text } from '@/core'
 
 import { corroborated, type AttributeRow } from '../lib/attributes'
 import type { AttributeCell, AttributeValue } from './AttributeGrid'
 import { RowProvenance, SubmittedChip } from './Provenance'
+import { ProfileIcon } from './ProfileIcon'
 
 export type CellContext = {
   domesticState?: string | null
@@ -91,9 +95,19 @@ const noteFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
         </span>
       )}
       {fields.map((f, i) => (
-        <span key={i} className="block">
-          {f.label ? `${f.label}: ` : ''}
-          {f.value}
+        <span key={i} className="flex items-center gap-1">
+          {'icon' in f && f.icon === 'verified' && (
+            <BadgeCheck
+              aria-hidden="true"
+              size={12}
+              strokeWidth={2}
+              className="shrink-0 text-[var(--core-color-text-secondary)]"
+            />
+          )}
+          <span>
+            {f.label ? `${f.label}: ` : ''}
+            {f.value}
+          </span>
         </span>
       ))}
     </span>
@@ -164,6 +178,19 @@ export const cellsFromRows = (rows: AttributeRow[], ctx: CellContext = {}): Attr
       label,
       values: [entry],
       badge: badgeFor(row, ctx),
+      // A third-party profile's mark beside its label, as the dashboard draws it.
+      ...(row.profileType
+        ? {
+            labelNode: (
+              <span className="flex items-center gap-1.5">
+                <ProfileIcon type={row.profileType} />
+                <Text tone="secondary" size="sm" className="leading-snug">
+                  {label}
+                </Text>
+              </span>
+            )
+          }
+        : {}),
       // A URL is 60 characters of unbreakable string, and a run of adverse
       // media is a list. Neither survives half a row. `href` alone does not
       // qualify: every row a crawl produced carries the site it was read from,

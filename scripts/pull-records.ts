@@ -214,6 +214,15 @@ const normalise = (b: Any) => ({
   // URL and status meant "Trustpilot profile is reachable" and said nothing
   // about 2.8 from 3 reviews.
   profiles: (b.profiles ?? []).map((p: Any) => ({
+    id: p.id ?? null,
+    externalId: p.external_id ?? null,
+    // The profile's own name for the business, as the page states it.
+    name: p.metadata?.name ?? null,
+    // Everything the API returns about the page, verbatim: a BBB rating and its
+    // complaints, a Trustpilot trust score, follower and post counts, the last
+    // post, whether the account is verified or private. Only followers and
+    // categories were kept, and the rest is what a reviewer reads a profile for.
+    metadata: p.metadata ?? {},
     url: p.url ?? null,
     type: p.type ?? null,
     status: p.status ?? null,

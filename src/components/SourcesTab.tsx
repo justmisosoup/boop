@@ -274,7 +274,8 @@ export const sourcesFor = (
         // Merged, but each row still names the profile it came from — "Web
         // presence" alone loses the only thing separating a Trustpilot review
         // page from a LinkedIn company page.
-        add(source.supplied, group, { row, ref, role: profile ? named : undefined })
+        // Labelled by the site alone — "Trustpilot" — as the row already is.
+        add(source.supplied, group, { row, ref })
       }
 
       // Submitted is a source too — the weakest one, and the only one the
@@ -660,7 +661,7 @@ export const appHeader = (s: Source): { title: string; subtitle?: string } => {
     case 'website':
       return { title: 'Website' }
     case 'profiles':
-      return { title: 'Profiles' }
+      return { title: 'Third-party profiles' }
     default:
       if (s.id === SUBMITTED_CARD) return { title: 'Submitted' }
       // No dashboard card reads this record; it keeps the name the chips use.
@@ -813,19 +814,31 @@ const FmcsaSections = ({ s }: { s: Source }) => (
 /** Values a source is cited for, labelled by the role they played for it. */
 /** One cell per value, two to a row: a filing's addresses and officers are each
  *  their own entry, not one list under a single label. */
-const SuppliedCells = ({ rows }: { rows: Supplied[] }) => (
-  <AttributeCells
-    items={cellsFromRows(
+const SuppliedCells = ({ rows }: { rows: Supplied[] }) => {
+  const cells = cellsFromRows(
       rows.map((item) => item.row),
       {
         labelFor: (_, i) => roleLabel(rows[i]),
-        valueFor: (_, i) => withoutRole(supplied(rows[i]), rows[i].role),
+        // A profile's page is linked here, on its source, not in Attributes.
+        valueFor: (row, i) =>
+          row.pageUrl ? (
+            <a
+              href={row.pageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+            >
+              {row.pageUrl}
+            </a>
+          ) : (
+            withoutRole(supplied(rows[i]), rows[i].role)
+          ),
         // The card IS the source. A chip on every value would cite the card to itself.
         provenance: false
       }
-    )}
-  />
-)
+    )
+  return <AttributeCells items={cells} />
+}
 
 /** Any other source, under the app's section names for it. */
 const RecordSections = ({ s }: { s: Source }) => {
@@ -858,7 +871,8 @@ const RecordSections = ({ s }: { s: Source }) => {
       )}
       {rest.map(([g, rows]) => (
         <Fragment key={g}>
-          <CardLabelRow as="h4">{GROUP_LABEL.get(g)}</CardLabelRow>
+          {/* Not repeated under a card already titled by it. */}
+          {GROUP_LABEL.get(g) !== appHeader(s).title && <CardLabelRow as="h4">{GROUP_LABEL.get(g)}</CardLabelRow>}
           <SuppliedCells rows={rows} />
         </Fragment>
       ))}

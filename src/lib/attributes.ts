@@ -113,7 +113,7 @@ export type AttributeRow = {
    * the source's words, never joined into one string. They stay in the one cell
    * so it is plain which record they belong to.
    */
-  fields?: Array<{ label?: string; value: string }>
+  fields?: Array<{ label?: string; value: string; icon?: 'verified' }>
   /**
    * A record's metadata, as one muted line under its title: its status, its ID
    * with the kind of ID, and when it was filed — "Open · Case 2003TW000393 ·
@@ -165,6 +165,10 @@ export type AttributeRow = {
   /** Headline for the chip's preview. Without it the URL is shown, which is the
    *  same string as the link beneath it. */
   sourceTitle?: string
+  /** A third-party profile's page, shown as a link on its Sources card. */
+  pageUrl?: string
+  /** A third-party profile's site — `instagram` — for its mark beside the label. */
+  profileType?: string
   /** The business name each source on this row carries, by source label —
    *  the SEC or EPA record's entity, which has no place to be titled by. */
   sourceNames?: Record<string, string>
@@ -789,7 +793,10 @@ const PROFILE_NAMES: Record<string, string> = {
   trustpilot: 'Trustpilot',
   facebook: 'Facebook',
   google: 'Google',
-  yelp: 'Yelp'
+  yelp: 'Yelp',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  x: 'X'
 }
 
 /**
@@ -821,6 +828,55 @@ const profileUrl = (refs: SourceRef[] | undefined) =>
 export const profileName = (type: string) =>
   PROFILE_NAMES[type.toLowerCase()] ?? `${type.charAt(0).toUpperCase()}${type.slice(1)}`
 
+
+/**
+ * A profile's page details, from its own metadata, as the dashboard reads them
+ * (`app/src/containers/BusinessHome/DiveCards/ThirdPartyProfilesCard.tsx`):
+ * the flags it raises, its BBB and star ratings, followers and the other page
+ * counts, and when it was last active. One field per line; nothing the page
+ * does not state.
+ */
+const profileFields = (p: NonNullable<BusinessRecord['profiles']>[number]): Array<{ label?: string; value: string; icon?: 'verified' }> => {
+  const m = (p.metadata ?? {}) as Record<string, unknown>
+  const type = (p.type ?? '').toLowerCase()
+  const num = (v: unknown) => (typeof v === 'number' && v > 0 ? v : undefined)
+  const count = (v: unknown, word: string) => (num(v) !== undefined ? { value: `${(v as number).toLocaleString()} ${word}` } : undefined)
+  const flag = (on: boolean, value: string) => (on ? { value } : undefined)
+  const lastLabel: Record<string, string> = { google: 'Last review', yelp: 'Last review', linkedin: 'Last post', instagram: 'Last post', facebook: 'Last post' }
+  const price = typeof m.price_range === 'string' && /^\$+$/.test(m.price_range) ? m.price_range : undefined
+  return [
+    // The flags the dashboard raises under the profile's name.
+    // With the platform's verified mark beside it.
+    type === 'instagram' && m.is_business_account === true ? { value: 'Verified business', icon: 'verified' as const } : undefined,
+    flag(type === 'instagram' && m.is_private === true, 'Private'),
+    flag(type === 'google' && m.status === 'temporarily_closed', 'Temporary closure'),
+    flag(type === 'google' && m.status === 'permanently_closed', 'Permanent closure'),
+    flag(type === 'yelp' && m.is_claimed === true, 'Business claimed'),
+    flag(type === 'yelp' && m.is_closed === true, 'Closed'),
+    type === 'bbb' && typeof m.bbb_rating === 'string' ? { label: 'BBB rating', value: m.bbb_rating } : undefined,
+    typeof p.rating === 'number' && (p.ratingCount ?? 0) > 0
+      ? { value: `${p.rating} from ${p.ratingCount} review${p.ratingCount === 1 ? '' : 's'}` }
+      : undefined,
+    // Counts that belong together share a line: "107,811 followers · 97
+    // following", then "163 posts · Last post: Sep 19, 2026".
+    line(count(m.followers ?? p.followers, 'followers'), count(m.following, 'following')),
+    typeof m.company_size === 'string' ? { label: 'Company size', value: m.company_size } : undefined,
+    count(m.likes, 'likes'),
+    price ? { label: 'Price range', value: price } : undefined,
+    line(
+      count(m.posts_count, 'posts'),
+      lastLabel[type] && typeof m.last_post === 'string'
+        ? { value: `${lastLabel[type]}: ${shortDate(m.last_post) ?? m.last_post}` }
+        : undefined
+    )
+  ].filter((x): x is { label?: string; value: string; icon?: 'verified' } => Boolean(x))
+}
+
+/** Two short facts on one line, "·" between; either alone when the other is absent. */
+const line = (...parts: Array<{ label?: string; value: string } | undefined>) => {
+  const shown = parts.filter((x): x is { label?: string; value: string } => Boolean(x))
+  return shown.length ? { value: shown.map((x) => (x.label ? `${x.label}: ${x.value}` : x.value)).join(' · ') } : undefined
+}
 
 const REGISTRATION_SOURCES = new Set([REGISTRY, 'registration'])
 
@@ -2187,13 +2243,16 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     return [
       ...(profiles.length
         ? profiles.map((p) => ({
-            label: p.type ? `${profileName(p.type)} profile` : 'Profile',
-            // The full URL, because the value column is where a reader reads
-            // rather than hovers. Reachability stays metadata on the chip.
-            value: p.url ?? '',
-            href: p.url ?? undefined,
-            source: 'Third-party profile',
-            sources: [p.type ? profileName(p.type) : 'Third-party profile'],
+            // The site alone: the group is already Third-party profiles.
+            label: p.type ? profileName(p.type) : 'Profile',
+            // The page's own name for the business. The link itself is the
+            // Sources card's to show (`pageUrl`); here the one chip says where
+            // the profiles are kept.
+            value: p.name ?? record.name,
+            pageUrl: p.url ?? undefined,
+            profileType: p.type ?? undefined,
+            source: '',
+            sources: ['Third-party profiles'],
             // The customer named this page. The record has said so all along —
             // `profile_discovery` filters on exactly this flag — but the row
             // dropped it, so the one profile the customer gave us read like the
@@ -2206,18 +2265,10 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             sourceNote: p.status
               ? `${p.status.charAt(0).toUpperCase()}${p.status.slice(1)}`
               : 'Status not stated',
-            // What the profile actually says about the business. Reachability
-            // alone told a reviewer the page loads; the rating is the reason
-            // they opened it. A rating with no reviews behind it (BBB's 0 from
-            // 0) is not a score, so it reads as the absence it is.
-            trailing:
-              typeof p.rating === 'number' && (p.ratingCount ?? 0) > 0
-                ? `${p.rating} from ${p.ratingCount} review${p.ratingCount === 1 ? '' : 's'}`
-                : typeof p.followers === 'number'
-                  ? `${p.followers.toLocaleString()} followers`
-                  : (p.ratingCount ?? 0) === 0 && typeof p.rating === 'number'
-                    ? 'No reviews'
-                    : undefined
+            // What the page says, as the dashboard's Third-party profiles card
+            // reads it (`ThirdPartyProfilesCard`): its flags, its ratings, its
+            // page details and its latest activity — each on its own line.
+            fields: profileFields(p)
           }))
         : [
             {

@@ -42,6 +42,11 @@ const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
     // Pulled after most reports were written, from the same business record.
     fmcsaRegistrations: record.fmcsaRegistrations ?? live.fmcsaRegistrations,
     documents: record.documents ?? live.documents,
+    // Each profile's own name and page details, from the same page on the live
+    // record (by URL).
+    profiles: (record.profiles ?? []).map((p) =>
+      p.metadata ? p : { ...p, ...((live.profiles ?? []).find((x) => x.url === p.url) ?? {}) }
+    ),
     registrations: record.registrations.map((r) => {
       if (r.officerRoles) return r
       const same = live.registrations.find((x) => x.state === r.state && x.fileNumber === r.fileNumber)
