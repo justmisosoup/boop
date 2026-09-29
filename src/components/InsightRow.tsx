@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react'
 
 import { ActionButton, MetaChip, MutedText, Text, TruncatedText } from '@/core'
 
-import { attributesFor, type AttributeRow } from '../lib/attributes'
+import { attributesFor, isPlaceholder, type AttributeRow } from '../lib/attributes'
 import { PROTOTYPE_INSIGHTS, type BusinessRecord } from '../lib/deriveResults'
 import type { InsightResult } from '../types'
 import { cn } from '../utils/twUtils'
@@ -11,9 +11,6 @@ import { AttributeCells } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
 import { Collapsible } from './Collapsible'
 import { StateMark } from './StateMark'
-
-/** A value that says nothing was found. */
-const PLACEHOLDER = /^(none on the record|none submitted|none supplied by the customer|none found|no hits)$/i
 
 /** One row per distinct fact: same label, value and sources collapse to one. */
 const dedupe = (rows: AttributeRow[]): AttributeRow[] => {
@@ -120,7 +117,7 @@ export const InsightRow = ({
   const attributes = dedupe(attributesOverride ?? attributesFor(result.insightId, record)).filter(
     // "None on the record" is the absence the statement already states, not
     // evidence for it; a row with only that behind it does not open.
-    (a) => !PLACEHOLDER.test(a.value ?? '')
+    (a) => !isPlaceholder(a.value)
   )
 
   // The source's message earns a line only when it says something the statement

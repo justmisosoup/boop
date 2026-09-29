@@ -39,7 +39,7 @@ const SHORT: Record<string, string> = {
   lien: 'Lien'
 }
 
-const ACRONYMS = new Set(['sos', 'pep', 'sam', 'tin', 'ucc', 'naics', 'mcc', 'dba', 'irs', 'bbb'])
+const ACRONYMS = new Set(['sos', 'pep', 'sam', 'tin', 'ucc', 'naics', 'mcc', 'dba', 'irs', 'bbb', 'sec', 'epa', 'frs', 'fmcsa', 'npi', 'sba'])
 
 export const sourceLabel = (name: string) => {
   const mapped = SHORT[name] ?? SHORT[name.replace(/ /g, '_').toLowerCase()]

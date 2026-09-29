@@ -34,7 +34,8 @@ import { changedInsights } from '../lib/diff'
 import { reportDate, reportLabel, reportStamp } from '../lib/reportLabels'
 import { FormationCard } from '../components/FormationCard'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
-import { SourceDetail, sourceSections, sourcesFor } from '../components/SourcesTab'
+import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
+import { SUBMITTED_CARD } from '../lib/sourceCards'
 import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
@@ -428,7 +429,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     () => sourcesFor(scopeRecord, scopeResults, scopeGroupFor),
     [scopeRecord, scopeResults, scopeGroupFor]
   )
-  const scopeSourceBands = useMemo(() => sourceSections(scopeSources), [scopeSources])
+  // The app's Sources tab, with the prototype's Submitted card kept at its head.
+  const scopeSubmitted = useMemo(() => scopeSources.find((s) => s.id === SUBMITTED_CARD), [scopeSources])
+  const scopeOrderedSources = useMemo(() => appOrderedSources(scopeSources, scopeRecord), [scopeSources, scopeRecord])
 
   /** What moved since the report, said once at the head of an evidence panel. */
   const drift =
@@ -520,13 +523,23 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const resolveSource = (sources: typeof scopeSources, cardId: string) =>
     sources.find((x) => x.id === cardId) ?? sources.find((x) => x.id.startsWith(cardId))
   /** The identity's source, picked in the Sources column. */
+  /** A summary tag's card, by its source id: ringed, then scrolled to. */
+  const jumpToSourceCard = (id: string) => {
+    flashSource(id)
+    // To the card's top: it opens as it is followed, and centring a card that
+    // is still growing lands mid-body.
+    window.setTimeout(() => {
+      document.getElementById(`source-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 60)
+  }
+
   const jumpToSource = (cardId: string) => {
     const hit = resolveSource(scopeSources, cardId)
     showPanel('sources')
     if (!hit) return
     flashSource(hit.id)
     window.setTimeout(() => {
-      document.getElementById(`source-${hit.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      document.getElementById(`source-${hit.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 60)
   }
 
@@ -919,20 +932,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             {panelView === 'sources' && (
               <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 panel-scroll">
                 {drift}
-                {scopeSourceBands.map((band) => (
-                  <section key={band.key} className="space-y-3">
-                    <CardLabel as="h4" className="font-semibold">
-                      {band.label}
-                    </CardLabel>
-                    {band.items.map((src) => (
-                      <SourceDetail
-                        key={src.id}
-                        source={src}
-                        record={scopeRecord}
-                        focused={sourceFocus === src.id}
-                      />
-                    ))}
-                  </section>
+                {scopeSubmitted && (
+                  <SourceDetail source={scopeSubmitted} record={scopeRecord} focused={sourceFocus === scopeSubmitted.id} />
+                )}
+                <SourcesSummary sources={scopeOrderedSources} record={scopeRecord} onJump={jumpToSourceCard} />
+                {scopeOrderedSources.map((src) => (
+                  <SourceDetail key={src.id} source={src} record={scopeRecord} focused={sourceFocus === src.id} />
                 ))}
               </div>
             )}

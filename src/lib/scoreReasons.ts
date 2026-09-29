@@ -2,7 +2,6 @@ import type { BusinessRecord, Derived } from './deriveResults'
 import { negativesFor, type IdentityScore, type ScoreArea } from './identityScore'
 import { domesticFilingOf } from './linkedFormation'
 import { notPublished } from './registrationStatus'
-import { stateName } from './states'
 
 /**
  * Why the number is what it is, in a reviewer's words.
@@ -56,9 +55,7 @@ export const scoreLine = (
       return `${named.join('; ')}${more}. Confirm before approving; none of it rules the business out.`
     }
     if (registry.length > 0)
-      return `Nothing flagged bears on the decision. The filing-status gaps are ${stateName(
-        evidence.record.formation?.state
-      )} not publishing status, not a signal about the business.`
+      return 'Nothing flagged bears on the decision. The filing-status gaps are status not provided by state, not a signal about the business.'
   }
   if (score.findings > 0)
     return `${score.findings} ${score.findings === 1 ? 'insight was' : 'insights were'} flagged by the assessment. No single fact rules it out.`

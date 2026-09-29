@@ -83,6 +83,10 @@ export type ChatSourceData = {
   /** Custom glyph (a favicon `<img>`, a product mark) sized by the consumer
    *  (12–16px reads best). Falls back to a deterministic letter tile. */
   icon?: React.ReactNode
+  /** LOCAL MODIFICATION (6): a compact element after the title in the list row
+   *  and the preview headline — a record's status as a Tag, say. Decorative
+   *  to the title, not a second name: the title stays the accessible name. */
+  badge?: React.ReactNode
   /**
    * A capture of the page this source is, shown in the preview in place of the
    * headline — the citation's evidence rather than its address.
@@ -313,8 +317,12 @@ const SourcePreview = ({ source }: { source: ChatSourceData }) => {
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
-          {source.title ?? source.label}
+        <div className='flex min-w-0 items-center gap-1.5'>
+          <div className='line-clamp-2 text-sm font-medium leading-5 text-foreground'>
+            {source.title ?? source.label}
+          </div>
+          {/* LOCAL MODIFICATION (6) */}
+          {source.badge && <span className='flex shrink-0'>{source.badge}</span>}
         </div>
       )}
       {source.snippet && (
@@ -364,8 +372,12 @@ const SourceRowContent = ({
         </span>
       )}
       <span className='min-w-0 flex-1'>
-        <span className='block truncate text-sm leading-5 text-foreground'>
-          {source.title ?? source.label}
+        <span className='flex min-w-0 items-center gap-1.5'>
+          <span className='block truncate text-sm leading-5 text-foreground'>
+            {source.title ?? source.label}
+          </span>
+          {/* LOCAL MODIFICATION (6) */}
+          {source.badge && <span className='flex shrink-0'>{source.badge}</span>}
         </span>
         {byline && (
           <span className='block truncate text-caption text-[var(--core-color-text-muted)]'>

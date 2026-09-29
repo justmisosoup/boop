@@ -22,7 +22,6 @@ import {
 } from './businessNames'
 import { convertedFormationOf, domesticOf, formationFilingOf, notPublished } from './registrationStatus'
 import { domesticFilingOf } from './linkedFormation'
-import { stateName } from './states'
 import { statementFor } from './statements'
 
 const CATALOG_SUBJECTS = (
@@ -209,6 +208,8 @@ export type BusinessRecord = {
     /** What this filing lists, for attributing an address or officer to it. */
     addresses?: string[]
     officers?: string[]
+    /** The officers as the filing states them, with their roles. */
+    officerRoles?: Array<{ name: string; roles: string[] }>
   }>
   tin: unknown
   /**
@@ -259,6 +260,24 @@ export type BusinessRecord = {
       sourceRefs?: SourceRef[]
     }>
   } | null
+  fmcsaRegistrations?: Array<{
+    id: string
+    dotNumber: string | null
+    legalName: string | null
+    dbaName: string | null
+    addresses: string[]
+    sourceUrl: string | null
+  }>
+  documents?: Array<{
+    id: string
+    documentType: string | null
+    filename: string | null
+    contentType: string | null
+    filingDate: string | null
+    source: SourceRef | null
+    createdAt: string | null
+  }>
+  taxExemptOrganization?: Record<string, unknown> | null
   profiles?: Array<{
     url: string | null
     type: string | null
@@ -435,13 +454,12 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
         : noStatus.length > 0 && noStatus.every(notPublished)
     if (silent) {
       const where = task.key === 'sos_domestic' ? [domestic?.state ?? ''] : silentStates
-      const names = where.map((st) => stateName(st))
       return [
         {
           ...base,
           state: 'no_result',
           reason: 'not_published' as NoResultReason,
-          because: `${names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`} ${names.length === 1 ? 'does' : 'do'} not publish filing status.`,
+          because: 'Filing status not provided by state.',
           evidence: where.map((st) => `Registration state: ${st}`)
         }
       ]

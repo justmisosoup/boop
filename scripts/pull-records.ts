@@ -131,9 +131,40 @@ const normalise = (b: Any) => ({
     addresses: (r.addresses ?? []).map((a: Any) =>
       typeof a === 'string' ? a : (a.full_address ?? '')
     ),
-    officers: (r.officers ?? []).map((o: Any) => (typeof o === 'string' ? o : (o.name ?? '')))
+    officers: (r.officers ?? []).map((o: Any) => (typeof o === 'string' ? o : (o.name ?? ''))),
+    // The same officers as the filing states them: its spelling and its roles.
+    // The filing's card lists these, not the record's people[], which merges a
+    // member and an agent whose names happen to look alike.
+    officerRoles: (r.officers ?? []).map((o: Any) =>
+      typeof o === 'string' ? { name: o, roles: [] } : { name: o.name ?? '', roles: o.roles ?? [] }
+    )
   })),
   tin: b.tin ?? null,
+  // The FMCSA's carrier records, whole: the DOT number, the legal name as the
+  // FMCSA holds it, its addresses and the SAFER page. Only its references on
+  // names and addresses were kept, which gave the Sources tab nothing to show.
+  fmcsaRegistrations: (b.fmcsa_registrations ?? []).map((f: Any) => ({
+    id: f.id,
+    dotNumber: f.dot_number ?? null,
+    legalName: f.legal_name ?? null,
+    dbaName: f.dba_name ?? null,
+    addresses: (f.addresses ?? []).map((a: Any) => (typeof a === 'string' ? a : (a.full_address ?? ''))),
+    sourceUrl: typeof f.source === 'string' ? f.source : null
+  })),
+  // Documents on the business — a certificate of good standing, articles —
+  // by type and file. The download URL is signed and expires; the name and
+  // type are what is kept to be read.
+  documents: (b.documents ?? []).map((d: Any) => ({
+    id: d.id,
+    documentType: d.document_type ?? null,
+    filename: d.filename ?? null,
+    contentType: d.content_type ?? null,
+    filingDate: d.filing_date ?? null,
+    // The filing it was retrieved from, as the API states it.
+    source: d.source ? (sourceRefs([d.source])[0] ?? null) : null,
+    createdAt: d.created_at ?? null
+  })),
+  taxExemptOrganization: b.tax_exempt_organization ?? null,
   // What the crawl actually found. Keeping only url/status/domain threw away
   // the scrape: the page title, the platform it runs on, who registered the
   // domain and until when, the pages that were read, and the contact details

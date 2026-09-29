@@ -1,9 +1,12 @@
-import { attributesFor, cityRegistrationRows, licenseRows, type AttributeRow } from '../lib/attributes'
+import { attributesFor, cityRegistrationRows, isPlaceholder, licenseRows, nameKey, type AttributeRow } from '../lib/attributes'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { AttributeGrid } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
+
+/** Names across a registry's casing and punctuation. */
+const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 /**
  * Attributes, grouped as Middesk groups them and deduplicated.
@@ -91,6 +94,8 @@ export const attributeRowsByGroup = (
     const g = a.group ?? 'licenses'
     const rows = byGroup.get(g) ?? new Map<string, AttributeRow>()
     // A name the register shares with the submitted name keys as that name's row.
+    // The register's "Doing business as" yields to that row's label below: the
+    // customer submitted it as the business's name, not as a trade name.
     rows.set(a.matchValue?.startsWith('legal:') ? a.matchValue : `${a.label}::${a.matchValue ?? a.value}`, a)
     byGroup.set(g, rows)
   }
@@ -103,22 +108,47 @@ export const attributeRowsByGroup = (
       // they belong under it when it is expanded, not as facts about the
       // business alongside its addresses and officers.
       if (a.detail || a.evidenceOnly) continue
+      // Nothing found is not an attribute: "TIN: Not held", "Profiles: None on
+      // the record". A group with nothing in it does not appear at all.
+      if (isPlaceholder(a.value)) continue
 
       const group = a.group ?? asked
       const rows = byGroup.get(group) ?? new Map<string, AttributeRow>()
-      const key = a.matchValue ?? `${a.label}::${a.value}`
+      // A person is one row per role: the same name as a registered agent and
+      // as a member, or under two titles, is two facts, not one. The same role
+      // from two producers is still one row.
+      const key =
+        (a.group ?? asked) === 'people' && a.matchValue
+          ? `${a.label}::${norm(a.matchValue)}`
+          : a.matchValue ?? `${a.label}::${a.value}`
       const seen = rows.get(key)
+      // The fuller rendering wins: one producer may know the property type or
+      // the registered-agent flag where another does not.
+      const winner = seen && a.value.length > seen.value.length ? a : seen
+      // Two spellings of one name are one value. Two different values are not:
+      // FISHMONGER DON was submitted, the filing reads FISHMONGER DON LLC, and
+      // OR-ing the flags put the Submitted chip on the filing's spelling. The
+      // chip says the customer supplied THE VALUE SHOWN.
+      const sameValue = seen && nameKey(a.value) === nameKey(seen.value)
 
       rows.set(
         key,
-        seen
+        seen && winner
           ? {
               ...seen,
-              // The fuller rendering wins: one producer may know the property
-              // type or the registered-agent flag where another does not.
-              value: a.value.length > seen.value.length ? a.value : seen.value,
+              label: seen.source === 'City registration' && a.source !== 'City registration' ? a.label : seen.label,
+              value: winner.value,
+              trailing: sameValue ? seen.trailing ?? a.trailing : winner.trailing,
               sources: [...new Set([...(seen.sources ?? []), ...(a.sources ?? [])])],
-              submitted: seen.submitted || a.submitted,
+              // The records behind those sources, merged with them: keeping only
+              // the first producer's left a tax permit named with no record to
+              // say which state's it was, and the Sources tab built a card for
+              // it with no jurisdiction beside the real one.
+              refs: [
+                ...(seen.refs ?? []),
+                ...(a.refs ?? []).filter((x) => !(seen.refs ?? []).some((y) => y.id === x.id && y.type === x.type))
+              ],
+              submitted: sameValue ? seen.submitted || a.submitted : winner.submitted,
               // Union, not first-wins: a value four filings agree on carries
               // all four, so the chip reads "SOS · CA +3" rather than naming
               // one and silently dropping the corroboration.
@@ -156,6 +186,15 @@ export const countAttributes = (
 
 export type AttributeGroup = { id: GroupId; label: string; rows: AttributeRow[] }
 
+/* What each group holds, named for that, in this tab only: the formation
+   group is the domestic filing's facts, and the registration group is the
+   foreign filings — "Registrations" read as though nothing was found. The
+   Insights tab keeps the topic names. */
+const TAB_LABEL: Partial<Record<GroupId, string>> = {
+  formation: 'Domestic registration',
+  registration: 'Foreign registrations'
+}
+
 /**
  * The attribute groupings, in the order the groups are laid out, empty ones
  * dropped — what the Attributes tab's column lists, and what its pane shows
@@ -171,6 +210,7 @@ export const attributeGroups = (
   const byGroup = attributeRowsByGroup(record, results, groupFor)
   return GROUPS.map((g) => ({
     ...g,
+    label: TAB_LABEL[g.id] ?? g.label,
     rows: ordered(g.id, [...(byGroup.get(g.id)?.values() ?? [])])
   })).filter((g) => g.rows.length > 0)
 }
@@ -189,12 +229,19 @@ export const AttributeGroupDetail = ({
   record: BusinessRecord
   /** Follow a source chip to that source's card in the Sources tab. */
   onJumpToSource?: (cardId: string) => void
-}) => (
-  <AttributeGrid
-    title={group.label}
-    items={cellsFromRows(group.rows, {
-      domesticState: record.formation?.state,
-      onJumpToSource
-    })}
-  />
-)
+}) => {
+  const cells = cellsFromRows(group.rows, {
+    domesticState: record.formation?.state,
+    onJumpToSource
+  })
+  // The business's own name takes the Names card's first row alone, so its
+  // trade names pair up beneath it rather than one sitting beside the legal
+  // name and the next wrapping to a row of its own.
+  const lead = group.id === 'name' && /^(legal|business) name$/i.test(group.rows[0]?.label ?? '') && cells.length > 1
+  return (
+    <AttributeGrid
+      title={group.label}
+      items={lead ? [{ ...cells[0], span: 'full' as const }, ...cells.slice(1)] : cells}
+    />
+  )
+}

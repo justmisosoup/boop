@@ -1,4 +1,5 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 import { MutedText, Surface, Tag, Text } from '@/core'
 
@@ -11,9 +12,13 @@ import { GROUPS, type GroupId } from '../lib/groups'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
 import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { longDate } from '../lib/attributes'
-import { stateName } from '../lib/states'
+import { filedName, longDate, roleLabel as filedRole } from '../lib/attributes'
+import { NOT_PROVIDED, registrationState } from '../lib/registrationStatus'
+import { entityFormLabel } from '../lib/normalise'
+import { formationCardFilingOf } from '../lib/linkedFormation'
+import { STATE_NAMES, stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
+import { Collapsible } from './Collapsible'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
@@ -126,6 +131,8 @@ export type Source = {
   label: string
   /** The filing itself, where the source IS a filing. */
   registration?: Registration
+  /** The FMCSA's carrier records, where the source is the FMCSA. */
+  fmcsa?: NonNullable<BusinessRecord['fmcsaRegistrations']>
   /** Every instance of this source on the record, metadata intact. A business
    *  can hold three sales tax permits; they are three records, not one. */
   refs: SourceRef[]
@@ -190,6 +197,10 @@ export const sourcesFor = (
         // out — Formation literally IS the domestic registration — so listing
         // them underneath printed the card's own contents a second time.
         if (group === 'name' || group === 'formation') continue
+        // Its people are the filing's own list, read below — not the record's
+        // people[], which folds a member and an agent whose names look alike
+        // into one person.
+        if (group === 'people') continue
 
         const id = registrationCard(r)
         // The ref for THIS filing, so the row can be labelled by the role it
@@ -202,6 +213,7 @@ export const sourcesFor = (
         // The role on THIS filing: its registered agent is a registered agent
         // here even where another filing lists them as an officer.
         const isAgent =
+          row.label === 'Registered agent' &&
           Boolean(r.registeredAgent) && norm(r.registeredAgent ?? '') === norm(row.matchValue ?? row.value)
 
         add(get(id, `Secretary of State · ${stateName(r.state)}`, r, r.sourceUrl ?? undefined).supplied, group, {
@@ -268,7 +280,18 @@ export const sourcesFor = (
       // Submitted is a source too — the weakest one, and the only one the
       // customer controls. Leaving it out made the tab look like everything
       // here was independently found.
-      if (row.submitted) add(get(SUBMITTED_CARD, 'Submitted').supplied, group, { row, bare: true })
+      // A person the customer submitted is a name and nothing more: the API's
+      // `submitted.people` carries names only. "Registered agent" and "Manager"
+      // came off the filings, and on this card they read as the customer's
+      // claim. One entry per person, whatever roles the filings gave them.
+      if (row.submitted) {
+        const card = get(SUBMITTED_CARD, 'Submitted')
+        if (group === 'people') {
+          const who = norm(row.matchValue ?? row.value)
+          if (!(card.supplied.get('people') ?? []).some(({ row: r }) => norm(r.matchValue ?? r.value) === who))
+            add(card.supplied, group, { row: { ...row, trailing: undefined }, role: 'Person', bare: true })
+        } else add(card.supplied, group, { row, bare: true })
+      }
     }
   }
 
@@ -283,28 +306,52 @@ export const sourcesFor = (
     for (const row of looked) add(card.supplied, 'address', { row, role: row.label, bare: true })
   }
 
-  // A filing's registered agent is a person that filing names. Most are also in
-  // the record's people[] and resolve on their own; some — Delaware's agent
-  // here — appear nowhere else, and leaving them only in the payload put a
-  // person under a heading of dates and file numbers.
+  // A filing's people, as the filing names them: each officer under its role
+  // ("Member"; "Officer" where none is given), then its registered agent. The
+  // dashboard's SOS card reads them the same way. Two entries whose names look
+  // alike stay two entries — the filing lists them separately.
   for (const source of byId.values()) {
-    const agent = source.registration?.registeredAgent
-    if (!agent) continue
-
-    const people = source.supplied.get('people') ?? []
-    if (people.some(({ row }) => norm(row.matchValue ?? row.value) === norm(agent))) continue
-
-    add(source.supplied, 'people', {
-      role: 'Registered agent',
-      row: {
-        group: 'people',
-        label: 'Registered agent',
-        value: agent,
-        source: '',
-        sources: [],
-        matchValue: agent
-      }
+    const r = source.registration
+    if (!r) continue
+    const person = (label: string, value: string, matchValue: string, trailing?: string): AttributeRow => ({
+      group: 'people',
+      label,
+      value,
+      trailing,
+      source: '',
+      sources: [],
+      matchValue
     })
+    // "Officer", the name as filed, and its roles under it — the dashboard's
+    // own SOS card. A name the filing lists several times is one cell with its
+    // roles together, each once, in the filing's order: Checkr's Utah filing
+    // names Daniel Yanisse five times across four roles. Grouped on the name
+    // as written, ignoring only case and punctuation — never a look-alike.
+    const byName = new Map<string, { name: string; roles: string[] }>()
+    for (const o of r.officerRoles ?? []) {
+      if (!o.name) continue
+      const entry = byName.get(norm(o.name)) ?? { name: o.name, roles: [] }
+      for (const raw of o.roles.length ? o.roles : [''])
+        if (!entry.roles.includes(filedRole(raw))) entry.roles.push(filedRole(raw))
+      byName.set(norm(o.name), entry)
+    }
+    for (const { name, roles } of byName.values()) {
+      // "Officer" says nothing beside a real role, and is no role at all alone.
+      const named = roles.filter((x) => x !== 'Officer')
+      add(source.supplied, 'people', {
+        row: person('Officer', filedName(name), name, named.length ? named.join(', ') : undefined),
+        role: 'Officer'
+      })
+    }
+    if (r.registeredAgent)
+      add(source.supplied, 'people', { row: person('Registered agent', r.registeredAgent, r.registeredAgent), role: 'Registered agent' })
+  }
+
+  // The FMCSA's own records, on the card its references built — or a card of
+  // their own where no attribute cites them.
+  if ((record.fmcsaRegistrations ?? []).length > 0) {
+    const card = get(namedCard('FMCSA registration'), 'FMCSA registration', undefined, undefined, 'FMCSA registration')
+    card.fmcsa = record.fmcsaRegistrations
   }
 
   const count = (s: Source) => [...s.supplied.values()].reduce((n, rows) => n + rows.length, 0)
@@ -383,108 +430,12 @@ const jurisdiction = (r: Registration, record: BusinessRecord) => {
   return r.state && r.state === record.formation?.state ? 'Domestic' : 'Foreign'
 }
 
-/**
- * Status and standing are two different facts.
- *
- * `status` is whether the registration is live — active, inactive, unknown.
- * `sub_status` is its standing with the state — in good standing or not, or
- * dissolved. A company can be active and NOT in good standing, which is the
- * case an analyst most needs to see, and joining the pair into one string
- * ("Active · not in good standing") buried it inside a sentence and implied one
- * fact where there are two. Delaware publishes a status and no standing at all.
- */
+/** The API's own words, cased for reading — nothing renamed. */
+/** The compact Tag's padding, shared by the status and summary tags. */
 const BADGE = 'px-1.5 py-0 text-xs leading-4'
 
-/** Status carries colour because it is the one that changes a decision. */
-const STATUS_TONE: Record<string, 'success' | 'danger' | 'subtle'> = {
-  active: 'success',
-  inactive: 'danger'
-}
-
-/**
- * The API's own words, cased for reading — nothing renamed.
- *
- * `status` is whether the registration is live; `sub_status` is its standing
- * with the state. They are two facts and stay two fields: a company can be
- * active and NOT in good standing, which is the case worth seeing. Where the
- * API says `unknown` it is shown as Unknown, not dressed up as "not published"
- * — that would be this code claiming to know why the value is missing.
- */
 const sentence = (v: string) =>
   v.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase())
-
-const status = (r: Registration) => sentence(r.status ?? 'unknown')
-
-const standing = (r: Registration) => (r.subStatus ? sentence(r.subStatus) : 'Unknown')
-
-/** The filing's own payload, verbatim — what the API returned about it. */
-const RegistrationPayload = ({ r }: { r: Registration }) => (
-  /* No label above it: this is the first thing in the card body, and the card's
-     own title already says whose filing it is.
-
-     Identical on every filing. Each registration states its own name, entity
-     type, agent and standing, so nothing here depends on whether the filing is
-     the domestic one — that is what the jurisdiction chip says, and it is the
-     only thing that should differ between these cards.
-
-     Labels are the registration object's own field names — `name`,
-     `entity_type`, `sub_status`, `file_number`, `registration_date`, `source` —
-     read out. Renaming them ("Filed as", "Standing", "Registry") put words on
-     screen the source never used, and nothing downstream could be traced back
-     to the field it came from.
-
-     Jurisdiction is also on the header as a chip. It stays here because this
-     block is the registration object read out, and dropping a field from it
-     because the header happens to summarise it makes the record incomplete.
-
-     The registered agent is not a payload field: they are a person on the
-     record, so they appear under People with the filings that name them, the
-     same as any officer. Officers and addresses are not repeated either — the
-     section below lists the same people and addresses as attributes, with their
-     titles and the normalisation the rest of the record uses. Printing both
-     said everything twice, the second time worse. */
-  <AttributeCells
-    items={[
-      cell('Name', r.name || 'Unknown'),
-      cell('Entity type', r.entityType ?? 'Unknown'),
-      cell('Jurisdiction', r.jurisdiction ?? 'Unknown'),
-      cell('Status', status(r)),
-      cell('Sub status', standing(r))
-    ]}
-  />
-)
-
-/**
- * A non-filing source's own payload.
- *
- * Only registrations had one, so a Form 5500 card showed what it corroborated
- * and never its plan year or acknowledgement id — the record held them and the
- * screen dropped them. Keys are the API's own, read out; `labels` is excluded
- * because it is the role, already carried by the row labels above.
- */
-const SourceRecords = ({ refs }: { refs: SourceRef[] }) => {
-  const shown = refs
-    .map((r) => Object.entries(r.metadata ?? {}).filter(([k, v]) => k !== 'labels' && v != null))
-    .filter((entries) => entries.length > 0)
-
-  if (shown.length === 0) return null
-
-  return (
-    <>
-      {shown.map((entries, i) => (
-        <Fragment key={i}>
-          {/* Numbered where there are several: the rule between two records is
-              the same rule as the one between two fields, so without a label
-              the second record reads as more fields on the first. */}
-          <CardLabelRow as="h4">
-            {shown.length > 1 ? `Record ${i + 1}` : 'Record'}
-          </CardLabelRow>
-          <AttributeCells items={entries.map(([k, v]) => cell(sentence(k), String(v)))} />
-        </Fragment>
-      ))}
-    </>
-  )
-}
 
 /**
  * The captures behind a card's pages.
@@ -614,98 +565,342 @@ const StreetViewCaptures = ({ items }: { items: Supplied[] }) => {
   return <CaptureStrip captures={[...captures.values()]} />
 }
 
-/** Where the filing sits in the registry, rather than what it says. */
-const FilingDetails = ({ r }: { r: Registration }) => (
-  <>
-    <CardLabelRow as="h4">Filing details</CardLabelRow>
-    <AttributeCells
-      items={[
-        cell('File number', r.fileNumber ?? 'Unknown'),
-        cell('Registration date', longDate(r.registrationDate) ?? 'Unknown'),
-        ...(r.sourceUrl
-          ? [
-              cell(
-                'Source',
-                <a
-                  href={r.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
-                >
-                  {r.sourceUrl}
-                </a>,
-                { span: 'full' as const }
-              )
-            ]
-          : [])
-      ]}
-    />
-  </>
-)
-
-/**
- * What the card holds, in the subtitle.
- *
- * Normally the groups — Addresses, People. But a card whose single group is
- * named after the card itself said "Industry classification · Industry
- * classification" and claimed nothing: the useful summary there is what is
- * actually inside, which is NAICS, SIC, MCC and the prohibited check.
- */
-const summary = (source: Source, groups: Array<[GroupId, Supplied[]]>) => {
-  const single = groups.length === 1 && GROUP_LABEL.get(groups[0][0]) === source.label
-  if (!single) return groups.map(([g]) => GROUP_LABEL.get(g)).join(', ')
-  return [...new Set(groups[0][1].map((item) => roleLabel(item)))].join(', ')
-}
-
 /** A source's supplied groups, in the order the groups are laid out. */
 const ORDER = GROUPS.map((g) => g.id)
 export const sourceGroups = (source: Source): Array<[GroupId, Supplied[]]> =>
   [...source.supplied.entries()].sort((a, b) => ORDER.indexOf(a[0]) - ORDER.indexOf(b[0]))
 
-/** What a source's row says under its name: how much, and of what. */
-export const sourceSummary = (source: Source) => {
-  const groups = sourceGroups(source)
-  const total = groups.reduce((n, [, rows]) => n + rows.length, 0)
-  return `${total} attribute${total === 1 ? '' : 's'} · ${summary(source, groups)}`
+/**
+ * The dashboard's Sources tab, copied: its source types, its order, its card
+ * titles and subtitles, and its section names (`BusinessHome/Sources`).
+ *
+ * The prototype holds a filing's whole payload, so a Secretary of State card
+ * reads section for section as the app's does. Every other source it holds
+ * only as metadata on the values it is cited for — so those cards use the app's
+ * titles and section names over what the record has, and show no field the
+ * record does not.
+ */
+const APP_ORDER = [
+  'registration',
+  'fmcsa_registration',
+  'professional_license',
+  'sales_tax_permit',
+  'sec_filing',
+  'sam_entity_extract',
+  'sba_entity_v2',
+  'ptin_holder',
+  'city_registration',
+  'dba_registration',
+  'food_and_beverage',
+  'npi_record',
+  'poi_record',
+  'form_5500',
+  'tax_exempt_organization',
+  'website',
+  'profiles',
+  'lien',
+  'generic_verification_source'
+]
+
+const TYPE_OF_LABEL: Record<string, string> = {
+  'Tax permit': 'sales_tax_permit',
+  'City registration': 'city_registration',
+  Lien: 'lien',
+  'SEC filing': 'sec_filing',
+  'Form 5500': 'form_5500',
+  SAM: 'sam_entity_extract',
+  'SBA entity v2': 'sba_entity_v2',
+  'FMCSA registration': 'fmcsa_registration',
+  'NPI record': 'npi_record',
+  Website: 'website',
+  'Web presence': 'profiles'
+}
+
+export const appTypeOf = (s: Source) =>
+  s.registration ? 'registration' : (TYPE_OF_LABEL[(s.kind ?? s.label).split(' · ')[0]] ?? 'generic_verification_source')
+
+type Meta = { state?: string; city?: string; status?: string; plan_year?: string; ack_id?: string; dot_number?: string; uei?: string; id?: string }
+const metas = (s: Source) => s.refs.map((r) => (r.metadata ?? {}) as Meta)
+const unique = <T,>(xs: T[]) => [...new Set(xs)]
+/** The state a record is from: its own metadata, else the jurisdiction its
+ *  card was scoped to ("Lien · Delaware"). */
+const stateOf = (s: Source) => {
+  const stated = metas(s).map((m) => m.state?.toUpperCase()).find(Boolean)
+  if (stated) return stated
+  const scoped = s.label.split(' · ')[1]
+  return scoped ? Object.keys(STATE_NAMES).find((code) => STATE_NAMES[code].toLowerCase() === scoped.toLowerCase()) : undefined
+}
+const citiesOf = (s: Source) =>
+  unique(metas(s).filter((m) => m.city && m.state).map((m) => `${m.city}, ${stateName((m.state as string).toUpperCase())}`))
+
+/** The app's card title and subtitle for this source. */
+export const appHeader = (s: Source): { title: string; subtitle?: string } => {
+  const st = stateOf(s)
+  switch (appTypeOf(s)) {
+    case 'registration':
+      return { title: 'Secretary of State', subtitle: stateName(s.registration!.state) }
+    case 'sales_tax_permit':
+      return { title: 'Sales Tax Permit', subtitle: st ? stateName(st) : undefined }
+    case 'city_registration':
+      return { title: 'City Registration', subtitle: citiesOf(s).join(' · ') || (st ? stateName(st) : undefined) }
+    case 'lien':
+      return { title: 'Lien Filing', subtitle: st ? stateName(st) : undefined }
+    case 'sec_filing':
+      return { title: 'SEC EDGAR Filings' }
+    case 'form_5500':
+      return { title: 'Form 5500', subtitle: 'Internal Revenue Service' }
+    case 'sam_entity_extract':
+      return { title: 'SAM Entity Registration' }
+    case 'sba_entity_v2':
+      return { title: 'Small Business Profile', subtitle: 'Small Business Administration' }
+    case 'fmcsa_registration':
+      return { title: 'Federal Motor Carrier Safety Administration', subtitle: 'Department of Transportation' }
+    case 'npi_record':
+      return { title: 'National Provider Identifier', subtitle: 'National Plan and Provider Enumeration System' }
+    case 'website':
+      return { title: 'Website' }
+    case 'profiles':
+      return { title: 'Profiles' }
+    default:
+      if (s.id === SUBMITTED_CARD) return { title: 'Submitted' }
+      // No dashboard card reads this record; it keeps the name the chips use.
+      if (s.label === 'EPA FRS facility') return { title: 'EPA FRS Facility' }
+      return { title: s.label }
+  }
+}
+
+/** The app's name for the section a card's own details sit under. */
+const DETAILS: Record<string, string> = {
+  sales_tax_permit: 'Taxpayer details',
+  lien: 'Lien details',
+  sba_entity_v2: 'Entity details'
+}
+
+/** Fields the record's metadata holds for a source, under the app's labels. */
+const metaCells = (s: Source) => {
+  const ms = metas(s)
+  const first = <K extends keyof Meta>(k: K) => ms.map((m) => m[k]).find(Boolean)
+  const status = first('status')
+  switch (appTypeOf(s)) {
+    case 'sales_tax_permit':
+      return status ? [cell('Status', sentence(status))] : []
+    case 'form_5500':
+      return [
+        ...(first('plan_year') ? [cell('Plan Year', String(first('plan_year')))] : []),
+        ...(first('ack_id') ? [cell('ACK ID', String(first('ack_id')))] : [])
+      ]
+    case 'fmcsa_registration':
+      return first('dot_number') ? [cell('USDOT number', String(first('dot_number')))] : []
+    case 'sba_entity_v2':
+      return first('uei') ? [cell('Unique Entity Identifier (UEI)', String(first('uei')))] : []
+    default:
+      return []
+  }
+}
+
+/** Active green, inactive or dissolved red, nothing stated grey — the app's MetaTag. */
+const toneOf = (status?: string | null) =>
+  !status || /^unknown$/i.test(status) ? ('subtle' as const) : /^active$/i.test(status) ? ('success' as const) : ('danger' as const)
+
+const StatusTagCell = ({ label, status }: { label: string; status?: string | null }) => (
+  <Tag tone={toneOf(status)} size="compact" className={BADGE}>
+    {label}
+  </Tag>
+)
+
+/** A filing, section for section as the app's `SOSRegistrationCard` reads it. */
+const RegistrationSections = ({ s }: { s: Source }) => {
+  const r = s.registration!
+  const st = registrationState(r)
+  const people = s.supplied.get('people') ?? []
+  const addresses = s.supplied.get('address') ?? []
+  return (
+    <>
+      <CardLabelRow as="h4">Status details</CardLabelRow>
+      <AttributeCells
+        items={[
+          cell('Jurisdiction', r.jurisdiction ? sentence(r.jurisdiction) : NOT_PROVIDED),
+          cell('Status', <StatusTagCell label={st.status ?? NOT_PROVIDED} status={st.status} />),
+          cell('Sub-status', st.subStatus ? <StatusTagCell label={st.subStatus} status={st.status} /> : NOT_PROVIDED),
+          ...(st.statusDetails ? [cell('Status details', st.statusDetails)] : [])
+        ]}
+      />
+      <CardLabelRow as="h4">Entity details</CardLabelRow>
+      <AttributeCells
+        items={[
+          cell('Business name', r.name || NOT_PROVIDED),
+          cell('Entity type', entityFormLabel(r.entityType) ?? NOT_PROVIDED)
+        ]}
+      />
+      {addresses.length > 0 && (
+        <>
+          <CardLabelRow as="h4">Addresses</CardLabelRow>
+          <SuppliedCells rows={addresses} />
+        </>
+      )}
+      {people.length > 0 && (
+        <>
+          <CardLabelRow as="h4">People</CardLabelRow>
+          <SuppliedCells rows={people} />
+        </>
+      )}
+      <CardLabelRow as="h4">Filing details</CardLabelRow>
+      <AttributeCells
+        items={[
+          cell('Filed date', longDate(r.registrationDate) ?? NOT_PROVIDED),
+          cell('File number', r.fileNumber ?? NOT_PROVIDED),
+          ...(r.sourceUrl
+            ? [
+                cell(
+                  'Record',
+                  <a
+                    href={r.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+                  >
+                    {`${stateName(r.state)} Secretary of State website`}
+                  </a>,
+                  { span: 'full' as const }
+                )
+              ]
+            : [])
+        ]}
+      />
+    </>
+  )
+}
+
+/** A carrier record, as the app's `FMCSARegistrationCard` reads it. */
+const FmcsaSections = ({ s }: { s: Source }) => (
+  <>
+    {(s.fmcsa ?? []).map((f) => (
+      <Fragment key={f.id}>
+        <CardLabelRow as="h4">Registration details</CardLabelRow>
+        <AttributeCells
+          items={[
+            cell('Business name', f.legalName ?? NOT_PROVIDED),
+            ...(f.dbaName ? [cell('DBA name', f.dbaName)] : []),
+            cell('USDOT number', f.dotNumber ?? NOT_PROVIDED),
+            ...(f.sourceUrl
+              ? [
+                  cell(
+                    'Record',
+                    <a
+                      href={f.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+                    >
+                      FMCSA website
+                    </a>
+                  )
+                ]
+              : [])
+          ]}
+        />
+        {f.addresses.length > 0 && (
+          <>
+            <CardLabelRow as="h4">Addresses</CardLabelRow>
+            <AttributeCells items={f.addresses.map((a) => cell('Address', a))} />
+          </>
+        )}
+      </Fragment>
+    ))}
+  </>
+)
+
+/** Values a source is cited for, labelled by the role they played for it. */
+/** One cell per value, two to a row: a filing's addresses and officers are each
+ *  their own entry, not one list under a single label. */
+const SuppliedCells = ({ rows }: { rows: Supplied[] }) => (
+  <AttributeCells
+    items={cellsFromRows(
+      rows.map((item) => item.row),
+      {
+        labelFor: (_, i) => roleLabel(rows[i]),
+        valueFor: (_, i) => withoutRole(supplied(rows[i]), rows[i].role),
+        // The card IS the source. A chip on every value would cite the card to itself.
+        provenance: false
+      }
+    )}
+  />
+)
+
+/** Any other source, under the app's section names for it. */
+const RecordSections = ({ s }: { s: Source }) => {
+  const groups = sourceGroups(s)
+  const names = s.supplied.get('name') ?? []
+  const people = s.supplied.get('people') ?? []
+  const addresses = s.supplied.get('address') ?? []
+  const rest = groups.filter(([g]) => g !== 'name' && g !== 'people' && g !== 'address')
+  const details = metaCells(s)
+  const type = appTypeOf(s)
+  return (
+    <>
+      {(names.length > 0 || details.length > 0) && type !== 'website' && type !== 'profiles' && (
+        <>
+          <CardLabelRow as="h4">{s.id === SUBMITTED_CARD ? 'Business details' : (DETAILS[type] ?? 'Registration details')}</CardLabelRow>
+          {names.length > 0 && (
+            <AttributeCells
+              items={cellsFromRows(
+                names.map((item) => item.row),
+                {
+                  labelFor: (row) => (/dba|doing business/i.test(row.label) ? 'Doing business as' : 'Business name'),
+                  valueFor: (_, i) => supplied(names[i]),
+                  provenance: false
+                }
+              )}
+            />
+          )}
+          {details.length > 0 && <AttributeCells items={details} />}
+        </>
+      )}
+      {rest.map(([g, rows]) => (
+        <Fragment key={g}>
+          <CardLabelRow as="h4">{GROUP_LABEL.get(g)}</CardLabelRow>
+          <SuppliedCells rows={rows} />
+        </Fragment>
+      ))}
+      {people.length > 0 && (
+        <>
+          <CardLabelRow as="h4">People</CardLabelRow>
+          <SuppliedCells rows={people} />
+        </>
+      )}
+      {addresses.length > 0 && (
+        <>
+          <CardLabelRow as="h4">Addresses</CardLabelRow>
+          <SuppliedCells rows={addresses} />
+        </>
+      )}
+    </>
+  )
 }
 
 /**
- * Four bands, strongest first: what the customer claimed, the filings that
- * constitute the entity, the government records showing it transacting, and
- * the open web that corroborates. Empty bands are dropped.
- */
-export const sourceSections = (sources: Source[]) =>
-  (
-    [
-      ['submitted', 'Submitted'],
-      ['registration', 'Registrations'],
-      ['government', 'Government sources'],
-      ['web', 'Web and public sources']
-    ] as const
-  )
-    .map(([key, label]) => ({ key, label, items: sources.filter((s) => s.band === key) }))
-    .filter((section) => section.items.length > 0)
-
-/**
- * One source, in full, in the pane beside the column that lists them.
+ * One source, as the app's card for it: its title, the subtitle saying where it
+ * is from, and its sections.
  *
- * Its head is what its row in the column says — the source, its standing if
- * it is a filing, how many attributes and which groups — and under it
- * everything it supplied, then the filing's details or the captures and
- * records behind it. Always open: the column is the index, and a source you
- * have picked from it is the thing you asked to read.
+ * Collapsed to its title until opened. Following a source to it — a chip, a
+ * summary tag — opens it, and it stays open once read.
  */
 export const SourceDetail = ({
   source: s,
-  record,
   focused = false
 }: {
   source: Source
-  record: BusinessRecord
-  /** Followed here from an attribute's chip — ringed for a moment. */
+  record?: BusinessRecord
+  /** Followed here from an attribute's chip — ringed for a moment, and opened. */
   focused?: boolean
 }) => {
-  const groups = sourceGroups(s)
+  const { title, subtitle } = appHeader(s)
+  const all = sourceGroups(s).flatMap(([, rows]) => rows)
+  const [open, setOpen] = useState(focused)
+  useEffect(() => {
+    if (focused) setOpen(true)
+  }, [focused])
+  const bodyId = `source-body-${s.id}`
 
   return (
     <Surface
@@ -714,80 +909,176 @@ export const SourceDetail = ({
       padding="none"
       className={cn('overflow-hidden', focused && 'ring-2 ring-ring')}
     >
-      <div className="border-b border-[var(--core-color-border-divider)] px-4 py-3">
-        <span className="flex items-center gap-2">
-          <Text size="md" className="truncate font-semibold">
-            {s.label}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          'flex w-full items-start gap-2 px-4 py-3 text-left transition-colors duration-fast hover:bg-[var(--core-color-list-item-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none',
+          open && 'border-b border-[var(--core-color-border-divider)]'
+        )}
+      >
+        <span className="min-w-0 flex-1">
+          <Text size="md" className="block truncate font-semibold">
+            {title}
           </Text>
-          {/* Domestic or foreign, and whether the filing is live: the two
-              halves of what a filing is, beside where it was made. */}
-          {s.registration && (
+          {subtitle && <MutedText className="mt-0.5 block text-caption">{subtitle}</MutedText>}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          size={14}
+          strokeWidth={2}
+          className={cn(
+            'mt-1 shrink-0 text-[var(--core-color-text-secondary)] transition-transform duration-standard ease-emphasized motion-reduce:transition-none',
+            !open && '-rotate-90'
+          )}
+        />
+      </button>
+
+      <Collapsible open={open} id={bodyId}>
+        <div className="-mb-px">
+          {s.registration ? (
+            <RegistrationSections s={s} />
+          ) : s.fmcsa ? (
+            <FmcsaSections s={s} />
+          ) : s.id === STREET_VIEW_CARD ? (
+            <StreetViewCaptures items={all} />
+          ) : (
             <>
-              <Tag tone="subtle" size="compact" className={BADGE}>
-                {jurisdiction(s.registration, record)}
-              </Tag>
-              <Tag
-                tone={STATUS_TONE[s.registration.status ?? 'unknown'] ?? 'subtle'}
-                size="compact"
-                className={BADGE}
-              >
-                {status(s.registration)}
-              </Tag>
+              <RecordSections s={s} />
+              {s.id !== SUBMITTED_CARD && <SourceCaptures items={all} />}
             </>
           )}
-        </span>
-        <MutedText className="mt-0.5 block text-caption">{sourceSummary(s)}</MutedText>
-      </div>
-
-      {/* `-mb-px` on the body and nowhere inside it: every band's last rule
-          separates it from the band below, and only the card's last rule hangs
-          outside to be clipped. */}
-      <div className="-mb-px">
-        {s.registration && <RegistrationPayload r={s.registration} />}
-
-        {s.id !== STREET_VIEW_CARD &&
-          groups.map(([g, rows]) => (
-            <Fragment key={g}>
-              {/* A card supplying one group does not need that group named —
-                  the card title already says what this is, and "Industry
-                  codes" under "Industry classification" is the same word
-                  twice. */}
-              {groups.length > 1 && <CardLabelRow as="h4">{GROUP_LABEL.get(g)}</CardLabelRow>}
-              <AttributeCells
-                items={cellsFromRows(
-                  rows.map((item) => item.row),
-                  {
-                    // The role this value played for THIS source, not the
-                    // label it carries elsewhere: a filing's "Mailing address",
-                    // not "Address". Consecutive values sharing it fold into
-                    // one cell — eleven codes under one scheme are one
-                    // classification, not eleven facts.
-                    labelFor: (_, i) => roleLabel(rows[i]),
-                    valueFor: (_, i) => withoutRole(supplied(rows[i]), rows[i].role),
-                    // The card IS the source. A chip on every value would cite
-                    // the card to itself.
-                    provenance: false,
-                    fold: true
-                  }
-                )}
-              />
-            </Fragment>
-          ))}
-
-        {s.registration ? (
-          <FilingDetails r={s.registration} />
-        ) : s.id === STREET_VIEW_CARD ? (
-          <StreetViewCaptures items={groups.flatMap(([, rows]) => rows)} />
-        ) : (
-          <>
-            {/* Not on Submitted: the customer gave us the URL, and a capture of
-                the page they named is evidence about the page, not about
-                their having named it. */}
-            {s.id !== SUBMITTED_CARD && <SourceCaptures items={groups.flatMap(([, rows]) => rows)} />}
-            <SourceRecords refs={s.refs} />
-          </>
-        )}
-      </div>
+        </div>
+      </Collapsible>
     </Surface>
+  )
+}
+
+/** The app's order: its source types, and within the filings the primary
+ *  domestic filing first, then active, then inactive (`buildSourceData`). */
+export const appOrderedSources = (sources: Source[], record: BusinessRecord) => {
+  const primary = formationCardFilingOf(record)
+  const rank = (s: Source) => {
+    const i = APP_ORDER.indexOf(appTypeOf(s))
+    return i === -1 ? APP_ORDER.length : i
+  }
+  const filing = (s: Source) => {
+    const r = s.registration
+    if (!r) return 0
+    if (primary && r.state === primary.state && r.fileNumber === primary.fileNumber) return 0
+    return /^active$/i.test(r.status ?? '') ? 1 : /^inactive$/i.test(r.status ?? '') ? 2 : 3
+  }
+  const last = (s: Source) => (s.id === STREET_VIEW_CARD ? 1 : 0)
+  return sources
+    .filter((s) => s.id !== SUBMITTED_CARD)
+    .sort((a, b) => rank(a) - rank(b) || filing(a) - filing(b) || last(a) - last(b))
+}
+
+/** One summary tag, following to its card. */
+const SummaryTag = ({ label, tone, onJump }: { label: string; tone: 'success' | 'danger' | 'subtle'; onJump: () => void }) => (
+  <button type="button" onClick={onJump} className="rounded-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <Tag tone={tone} size="compact" className={BADGE}>
+      {label}
+    </Tag>
+  </button>
+)
+
+const SummaryRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="grid gap-1.5 px-4 py-3 [&+&]:border-t [&+&]:border-[var(--core-color-border-divider)]">
+    <Text size="sm" className="font-semibold">
+      {label}
+    </Text>
+    <div className="flex flex-wrap gap-1.5">{children}</div>
+  </div>
+)
+
+/**
+ * The app's two summary cards: authoritative sources, a row per type with a
+ * tag per record, then alternative sources — the website and its profiles.
+ * Each tag follows to its card.
+ */
+export const SourcesSummary = ({
+  sources,
+  record,
+  onJump
+}: {
+  sources: Source[]
+  record: BusinessRecord
+  onJump: (sourceId: string) => void
+}) => {
+  const of = (type: string) => sources.filter((s) => appTypeOf(s) === type)
+  const tags = (type: string, label: (s: Source) => string[], tone: (s: Source) => 'success' | 'danger' | 'subtle' = () => 'success') =>
+    of(type).flatMap((s) => label(s).map((l, i) => <SummaryTag key={`${s.id}:${i}`} label={l} tone={tone(s)} onJump={() => onJump(s.id)} />))
+
+  const rows: Array<[string, React.ReactNode[]]> = [
+    [
+      'Secretary of State filings',
+      tags(
+        'registration',
+        (s) => [
+          `${s.registration!.state} · ${jurisdiction(s.registration!, record) === 'Domestic' ? 'Formation state · ' : ''}${
+            registrationState(s.registration!).status ?? NOT_PROVIDED
+          }`
+        ],
+        (s) => toneOf(registrationState(s.registration!).status)
+      )
+    ],
+    ['FMCSA registrations', tags('fmcsa_registration', () => ['DOT'])],
+    ['Sales tax permits', tags('sales_tax_permit', (s) => [stateOf(s) ? `${stateOf(s)}・${Math.max(s.refs.length, 1)}` : 'Sales tax permit'])],
+    ['NPI records', tags('npi_record', () => ['NPI'])],
+    ['Form 5500 filings', tags('form_5500', (s) => unique(metas(s).map((m) => `IRS · ${m.plan_year ?? ''}`.trim())), () => 'subtle')],
+    ['SEC EDGAR Filings', tags('sec_filing', () => ['SEC'])],
+    [
+      'City Registrations',
+      tags('city_registration', (s) => unique(metas(s).filter((m) => m.city).map((m) => `${m.city}, ${m.state?.toUpperCase()}`)))
+    ],
+    ['SAM Entity Registration', tags('sam_entity_extract', () => ['SAM Registration'], () => 'subtle')],
+    ['Small Business Administration records', tags('sba_entity_v2', () => ['SBA Profile'])],
+    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'])],
+    // Not a type the dashboard has: the prototype's own sources, and records
+    // such as an EPA facility that no dashboard card reads.
+    ['Other sources', tags('generic_verification_source', (s) => [appHeader(s).title], () => 'subtle')]
+  ]
+  const authoritative = rows.filter(([, t]) => t.length > 0)
+  const alternative = [...of('website'), ...of('profiles')].map((s) => (
+    <SummaryTag key={s.id} label={appHeader(s).title} tone="success" onJump={() => onJump(s.id)} />
+  ))
+
+  const card = (title: string, body: React.ReactNode) => (
+    <Surface variant="card" padding="none" className="overflow-hidden">
+      <div className="border-b border-[var(--core-color-border-divider)] px-4 py-3">
+        <Text size="md" className="font-semibold">
+          {title}
+        </Text>
+      </div>
+      {body}
+    </Surface>
+  )
+
+  return (
+    <>
+      {card(
+        'Authoritative sources',
+        authoritative.length > 0 ? (
+          authoritative.map(([label, t]) => (
+            <SummaryRow key={label} label={label}>
+              {t}
+            </SummaryRow>
+          ))
+        ) : (
+          <MutedText className="block px-4 py-3">No authoritative sources found</MutedText>
+        )
+      )}
+      {card(
+        'Alternative sources',
+        alternative.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 px-4 py-3">{alternative}</div>
+        ) : (
+          <MutedText className="block px-4 py-3">No alternative sources found</MutedText>
+        )
+      )}
+    </>
   )
 }

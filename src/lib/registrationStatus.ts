@@ -121,6 +121,14 @@ export const registrationState = (reg: Registration): RegistrationState => ({
 })
 
 /**
+ * The sub status as every surface states it — report, Attributes and Sources
+ * alike. A filing without one says the state did not provide it; "Unknown"
+ * claimed a value the registry never sent.
+ */
+export const NOT_PROVIDED = 'Not provided by state'
+export const subStatusLabel = (reg: Registration) => registrationState(reg).subStatus ?? NOT_PROVIDED
+
+/**
  * A sub status WORDED as good news, which a sentence need not repeat.
  *
  * Wording only: Tennessee's "Active - Dissolved" carries GOOD_STANDING as its
@@ -162,7 +170,7 @@ export const newDetails = (s: RegistrationState) => {
  */
 export const describeRegistration = (reg: Registration): string => {
   const s = registrationState(reg)
-  if (!s.status) return s.silent ? `status not published by ${stateName(reg.state)}` : 'status not reported'
+  if (!s.status) return s.silent ? 'status not provided by state' : 'status not reported'
   const sub =
     s.subStatus && !saysGoodStanding(s.subStatus) && words(s.subStatus) !== words(s.status)
       ? s.subStatus.toLowerCase().replace(/^not good standing$/, 'not in good standing')
@@ -328,7 +336,7 @@ export const formationStandingNote = (record: BusinessRecord): string | undefine
   }
   if (!st.status)
     return st.silent
-      ? `${stateName(f.state)} doesn't publish filing status, so whether the formation is still active isn't known.`
+      ? "The state doesn't provide filing status, so whether the formation is still active isn't known."
       : 'The state reports no status for the formation filing.'
   if (st.status === 'Active')
     return troubled(f)

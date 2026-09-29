@@ -366,10 +366,14 @@
         "addresses": [
           "251 LITTLE FALLS DR, WILMINGTON, DE 19808-1674"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "5585e6df-ab94-4aae-a68e-acf9b1796139",
       "url": null,
@@ -1061,6 +1065,9 @@
     ],
     "registrations": [],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "d7f1aab3-15ee-4bcc-be71-892ecf5a392b",
       "url": "https://sprig.com",
@@ -1836,10 +1843,21 @@
         ],
         "officers": [
           "LEGALZOOM USCA, INC."
+        ],
+        "officerRoles": [
+          {
+            "name": "LEGALZOOM USCA, INC.",
+            "roles": [
+              "Service of Process"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "5ccbba9b-87b6-420c-9ac1-737e044056fc",
       "url": null,
@@ -2420,10 +2438,14 @@
         "addresses": [
           "801 MADISON AVE FL 3, NEW YORK, NY 10065-5930"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "6a4c3d0d-c611-44b7-a2d8-039b717d0dd1",
       "url": null,
@@ -3110,6 +3132,14 @@
         ],
         "officers": [
           "KAIROS PHYSICAL THERAPY PLLC"
+        ],
+        "officerRoles": [
+          {
+            "name": "KAIROS PHYSICAL THERAPY PLLC",
+            "roles": [
+              "Service of Process"
+            ]
+          }
         ]
       }
     ],
@@ -3125,6 +3155,9 @@
       "business_id": "13aaf63f-9184-42d5-a051-77cb18e4d8a5",
       "tin": "92-1166319"
     },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "cc71c387-6ce9-47a4-8345-0d680ef6225c",
       "url": "https://www.kairosphysio.com",
@@ -5065,6 +5098,20 @@
         "officers": [
           "LAUREN CRABBE",
           "MICHAEL MCCRORY"
+        ],
+        "officerRoles": [
+          {
+            "name": "LAUREN CRABBE",
+            "roles": [
+              "Manager"
+            ]
+          },
+          {
+            "name": "MICHAEL MCCRORY",
+            "roles": [
+              "Manager"
+            ]
+          }
         ]
       },
       {
@@ -5082,7 +5129,8 @@
         "addresses": [
           "850 NEW BURTON RD, DOVER, DE 19904-5785"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ANDYTOWN LLC",
@@ -5104,10 +5152,260 @@
           "LAUREN CRABBE",
           "LAUREN CRABBE",
           "MICHAEL MCCRORY"
+        ],
+        "officerRoles": [
+          {
+            "name": "LAUREN CRABBE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "LAUREN CRABBE",
+            "roles": [
+              "Manager"
+            ]
+          },
+          {
+            "name": "MICHAEL MCCRORY",
+            "roles": [
+              "Manager"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "4912cb0e-fb00-4de3-aac0-697d562910bc",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "f072f54f-42c1-4039-bbc7-d46069ac86c4",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:34:44.293Z"
+      },
+      {
+        "id": "66143edc-d5b1-49ce-9ecf-efb4e3e09b3f",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "1ff36646-e04a-49e3-bd5e-2cd29ba97362",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:37.789Z"
+      },
+      {
+        "id": "33682659-c1b8-4ee7-b934-90929847b54f",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "2078de22-2bcb-4248-b9e9-63628913b8e6",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:38.759Z"
+      },
+      {
+        "id": "7b740797-36ad-4e3e-9f22-0a96294f33dc",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "c53b12a1-33bd-4ca7-8dfc-8bd68b7929b2",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:40.253Z"
+      },
+      {
+        "id": "1b169f7a-953e-4538-a65b-c42ef1a3ebbc",
+        "documentType": "Certificate of good standing",
+        "filename": "201303910168_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "8dd010a9-10f7-4f11-957a-1004467e49ad",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "inactive",
+            "name": "ANDYTOWN LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:28:10.777Z"
+      },
+      {
+        "id": "fb3938e0-be8b-4721-9b3b-440aefd0e19f",
+        "documentType": "Initial_filing",
+        "filename": "201303910168_Initial_Filing_2012-12-19.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2012-12-19T00:00:00.000Z",
+        "source": {
+          "id": "8dd010a9-10f7-4f11-957a-1004467e49ad",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "inactive",
+            "name": "ANDYTOWN LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:27:22.178Z"
+      },
+      {
+        "id": "55f56f85-4111-4697-ac2b-37f9bc0c3175",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "c3d3479f-9f5b-474a-b947-0f1f38b55aba",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:34:23.661Z"
+      },
+      {
+        "id": "fe71be4a-3931-4a33-8111-b7a92e0b1d3c",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "76fb4b79-6602-45b2-b03d-4d07522a87c2",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:37.340Z"
+      },
+      {
+        "id": "26337d1b-a471-4dce-924b-bb3a7b622834",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "c1e20b87-41b4-42c6-9077-871e29b2b6c9",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:39.263Z"
+      },
+      {
+        "id": "cf080db5-4e4c-475d-8d99-b8cee71da456",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "71a6c516-deb8-41d4-b20c-a40e842b856e",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:40.683Z"
+      },
+      {
+        "id": "ae23dd32-701b-44e5-b327-725c6a032f9b",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "cd8e73f4-4e89-4eaf-84f7-5cc6f952f618",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:39.780Z"
+      },
+      {
+        "id": "942f08be-458e-4149-b0d1-efb823803c40",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "f9d8bda1-56d7-42d6-bad4-f35d1e0a5a58",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:38.284Z"
+      },
+      {
+        "id": "2df120a5-0660-4296-b604-b51aab859d66",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "52319a2f-8d5d-4717-a6be-bf29a5ef1450",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:36.277Z"
+      },
+      {
+        "id": "5955323e-39c4-466a-a22d-d07c684bc8e9",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "14319ea3-5511-4557-9e16-f601459c49c4",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:36.832Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "c729a1a9-4975-4a2b-a14a-23b7df42fc7b",
       "url": "https://andytownsf.com",
@@ -7018,10 +7316,378 @@
         "officers": [
           "JOSE ORNELAS",
           "JOSE ORNELAS"
+        ],
+        "officerRoles": [
+          {
+            "name": "JOSE ORNELAS",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "JOSE ORNELAS",
+            "roles": [
+              "Manager"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [
+      {
+        "id": "45bd5da3-76a2-43cb-95ad-e689b472566f",
+        "dotNumber": "3309219",
+        "legalName": "JAYLEAF LLC",
+        "dbaName": null,
+        "addresses": [
+          "PO Box 214, Hollister, CA 95024-0214",
+          "3000 Cienega Rd, Hollister, CA 95023-9614"
+        ],
+        "sourceUrl": "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx"
+      }
+    ],
+    "documents": [
+      {
+        "id": "a6a2383e-020b-4899-9b1a-733440cc3fb7",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "1a8101b2-e381-4af5-8527-ddc1af2d8dd1",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:25.396Z"
+      },
+      {
+        "id": "483660b7-6714-41db-92b2-dc82c73bb438",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "04ee2829-fb7c-484b-9525-0c88c5ccd4e7",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:27.220Z"
+      },
+      {
+        "id": "4179b291-3588-4124-ae02-8be4f3b1440b",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "aec5f663-f595-4062-9536-cec299d45610",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:28.139Z"
+      },
+      {
+        "id": "3fd13c7f-70b4-4976-be2a-00d9e93eb7ca",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "32804c68-14a2-4921-8184-d63bf5bd275c",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:27.730Z"
+      },
+      {
+        "id": "5a00de54-6d1c-44ac-a2d3-169c1cb37138",
+        "documentType": "Initial_filing",
+        "filename": "200925110153_Initial_Filing_2009-09-04.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2009-09-04T00:00:00.000Z",
+        "source": {
+          "id": "9b022bdc-b636-4899-ae0c-1cce7d034317",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "JAYLEAF, LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:26:44.554Z"
+      },
+      {
+        "id": "5a31d4c9-2f39-446f-8ba0-5fb90856145f",
+        "documentType": "Certificate of good standing",
+        "filename": "200925110153_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "9b022bdc-b636-4899-ae0c-1cce7d034317",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "JAYLEAF, LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:27:50.443Z"
+      },
+      {
+        "id": "acff0cfa-dca0-4835-9270-19e19c986db6",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "31cce26b-a595-4816-b87b-b3a325e821f4",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:37:09.037Z"
+      },
+      {
+        "id": "3317a4ca-ed0a-4776-af97-d97420691700",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "04ec9be5-6e1a-47dc-8983-ebca542bb9cd",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:39:13.421Z"
+      },
+      {
+        "id": "c44b2ebc-6f79-48ee-b2df-1c9f85c6257a",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "f0871f4f-d1ab-412a-ab6c-82a1d5bf87e7",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:34:03.560Z"
+      },
+      {
+        "id": "e30f621b-e7ab-4787-8303-9fc886553ef4",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "99f26aff-aff6-451e-91d4-17faa87d70de",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:28.932Z"
+      },
+      {
+        "id": "2c7b2b48-5578-4959-a4cb-e21d6e7359c0",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "28a74040-d45c-45c3-b1c9-bb83f6fa3f2d",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:28.508Z"
+      },
+      {
+        "id": "77b82db1-7aca-43be-b131-9809749bf90a",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "fb4e665b-cc7d-4fb9-9224-f39f50ffbd23",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:25.954Z"
+      },
+      {
+        "id": "6d5dd920-dcf9-4f7d-8156-1aca341c5746",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "bfd162eb-1c6e-49cc-98a5-3c1332427293",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:24.969Z"
+      },
+      {
+        "id": "bc16311b-8f75-410c-8b0f-0ce310a9ebbf",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "43c946b9-27de-4bba-96dc-669bd0abd824",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:23.992Z"
+      },
+      {
+        "id": "87542f19-2a7a-48e6-b1c8-087c75cec50c",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "bfd162eb-1c6e-49cc-98a5-3c1332427293",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:24.456Z"
+      },
+      {
+        "id": "f1dc0f7f-e26b-4309-93d1-6915b59344ef",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "7ba834fd-3026-4bed-99eb-3fbacfee5a8c",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:26.519Z"
+      },
+      {
+        "id": "d57de8a5-9740-4334-bd31-353640c3d120",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "5427685e-bb9f-4f77-87e6-c78b436b8f58",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:29.444Z"
+      },
+      {
+        "id": "8497b56f-262b-4ba7-9ae9-942afa85efa7",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "1bcbca17-fbe9-48d6-82e0-d08b21c596f3",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:29.824Z"
+      },
+      {
+        "id": "61fe7e6b-94e3-41c0-94bf-bccf377198cf",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "8181ed8d-c61b-46d0-b524-e34cad09ab98",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:30.253Z"
+      },
+      {
+        "id": "81cdc38b-555b-48d9-866f-5401dd6a3d82",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "e63ea976-779a-4f02-86b4-a817c7527819",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:25:30.773Z"
+      },
+      {
+        "id": "f8f4f553-c948-4da0-bca9-c18f93f462f8",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "6474f0d9-5067-4bd4-b070-147c7be3b51f",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:38:25.172Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "311e3b80-0f38-4319-8ad5-88187d10c6e7",
       "url": "https://www.jayleaf.com",
@@ -9772,10 +10438,170 @@
           "WOO YOUNG LEE",
           "WOO YOUNG LEE",
           "WOO YOUNG LEE"
+        ],
+        "officerRoles": [
+          {
+            "name": "WOO YOUNG LEE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "WOO YOUNG LEE",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "WOO YOUNG LEE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "WOO YOUNG LEE",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "0f004ab2-db7c-405f-bdcd-a309a72f9920",
+        "documentType": "Initial_filing",
+        "filename": "C2988384_Initial_Filing_2007-05-10.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2007-05-10T00:00:00.000Z",
+        "source": {
+          "id": "326e75db-6e23-4d44-80d3-0c5bc8f85fc7",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "WOO YOUNG LEE, D.D.S., INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:25:10.485Z"
+      },
+      {
+        "id": "ac28195e-b738-44f3-b009-8edcb072f468",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "a26c9094-eb8f-42be-b32b-dadf589a9ef8",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:28:52.003Z"
+      },
+      {
+        "id": "a83b5608-ce03-4139-86d8-d2ed280221d0",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "2666a908-691c-4984-90dc-9b1fffd5d041",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:29:37.050Z"
+      },
+      {
+        "id": "99b75346-a0c8-4522-956f-893258b94059",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "9830c698-6ca9-4a5b-9b40-ee6293670dbc",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:29:21.071Z"
+      },
+      {
+        "id": "7fc4dc95-d696-4158-919d-8a85d87a6a11",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "bd7fd9a0-ca6b-4796-9ecc-0578c62e37a1",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:24:17.166Z"
+      },
+      {
+        "id": "60e10a36-38f2-4d6e-8986-35a6d4b73c79",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "cdb07744-5de2-4b5a-91aa-9de86e30336f",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:24:16.719Z"
+      },
+      {
+        "id": "90865c54-20be-434d-b0f9-9ae8a772b088",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "ad1999c6-3c42-424c-8c25-6e93404d8531",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:24:16.236Z"
+      },
+      {
+        "id": "711479de-8db8-49a3-93c3-21f2c44b1ae5",
+        "documentType": "Certificate of good standing",
+        "filename": "C2988384_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "326e75db-6e23-4d44-80d3-0c5bc8f85fc7",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "WOO YOUNG LEE, D.D.S., INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:26:02.580Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "61b50f96-2560-44fe-a3f7-840941ea37aa",
       "url": "https://gracedentalgroup.com",
@@ -11182,6 +12008,14 @@
         ],
         "officers": [
           "NATHAN DEAN ULERY"
+        ],
+        "officerRoles": [
+          {
+            "name": "NATHAN DEAN ULERY",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -11199,10 +12033,59 @@
         "addresses": [
           "516 ZACHARY ST, LIVINGSTON, TN 38570-1288"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [
+      {
+        "id": "f434a97f-2659-44b1-9208-5a4c2842b865",
+        "dotNumber": "3614915",
+        "legalName": "C & N TRUCKING LLC",
+        "dbaName": null,
+        "addresses": [
+          "516 Zachary St, Livingston, TN 38570-1288"
+        ],
+        "sourceUrl": "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx"
+      }
+    ],
+    "documents": [
+      {
+        "id": "26d92b2a-4a92-419d-addd-a22ea5b11eb3",
+        "documentType": "Initial_filing",
+        "filename": "201803081244923_Initial_Filing_2018-03-08.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2018-03-08T00:00:00.000Z",
+        "source": {
+          "id": "7258dc10-c3a6-4dd5-b74c-7dbdecd6d5b4",
+          "type": "registration",
+          "metadata": {
+            "state": "IN",
+            "status": "active",
+            "name": "C & N TRUCKING, LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:24:24.460Z"
+      },
+      {
+        "id": "473e4af5-9e6e-4eaf-bbe5-f6ef18a6fbaa",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "27aa22bf-97a4-42e0-8167-065568d81040",
+          "type": "lien",
+          "metadata": {
+            "state": "IN",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:27:08.932Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "8250e790-5a09-483d-a1e0-88199d066fa7",
       "url": null,
@@ -12279,10 +13162,142 @@
         "officers": [
           "MEGAN RAY",
           "MEGAN RAY"
+        ],
+        "officerRoles": [
+          {
+            "name": "MEGAN RAY",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "MEGAN RAY",
+            "roles": [
+              "Manager"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "b8d384df-d06f-4919-9c52-d77aaf84e277",
+        "documentType": "Certificate of good standing",
+        "filename": "200308510012_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "2d506a41-c97f-4836-af25-aa547c116743",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "MIETTE CAKES, LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:24:06.825Z"
+      },
+      {
+        "id": "10713f2b-7801-40d2-b550-26d1e9ed419a",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "75e4bda5-3dcf-40cb-a65d-c610876c2319",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:56.711Z"
+      },
+      {
+        "id": "70a990a5-37f9-4d9b-b05e-1fa4a8a42af1",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "446a051c-a742-4e85-ae3e-5a204493095f",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:57.191Z"
+      },
+      {
+        "id": "494940c4-bb70-41df-9d72-13fc508c6081",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "141173a6-8e37-4074-bd41-112cb685629f",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:20.841Z"
+      },
+      {
+        "id": "b773fd40-0d65-44eb-a3cb-e708292a4eb6",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "fbca9b57-16a2-4c37-9987-0153b8a9bd7f",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:21.320Z"
+      },
+      {
+        "id": "78648b03-8471-46e1-b031-333bd4e5cd7b",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "ac0ca16d-86cf-455b-826a-c341077b554b",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:21.829Z"
+      },
+      {
+        "id": "94e90716-a21b-4097-9d23-42b358d46070",
+        "documentType": "Initial_filing",
+        "filename": "200308510012_Initial_Filing_2003-03-24.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2003-03-24T00:00:00.000Z",
+        "source": {
+          "id": "2d506a41-c97f-4836-af25-aa547c116743",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "MIETTE CAKES, LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:22:19.666Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "4ceebff8-1101-428b-bed8-82567309c514",
       "url": "http://miette.com",
@@ -13383,6 +14398,26 @@
     ],
     "registrations": [],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "3dd3b989-8f69-477b-9619-cb2c059d692e",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "fe3914d7-e535-4d3e-92a9-615e73bf8f41",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:21:26.628Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "f718e851-89be-4116-918f-52cd775bb261",
       "url": "https://www.miette.com",
@@ -14028,10 +15063,56 @@
         ],
         "officers": [
           "DONALD MAYFIELD"
+        ],
+        "officerRoles": [
+          {
+            "name": "DONALD MAYFIELD",
+            "roles": [
+              "Manager"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "3e89d48e-a097-4602-80dc-6d9df217e34e",
+        "documentType": "Certificate of good standing",
+        "filename": "202035610124_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "9451bfdf-bd2d-4fb9-81a6-d7694c7898ee",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "FISHMONGER DON LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:20:16.548Z"
+      },
+      {
+        "id": "555b795a-aa94-458f-a3a6-c7cb3333c7cd",
+        "documentType": "Initial_filing",
+        "filename": "202035610124_Initial_Filing_2020-12-16.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2020-12-16T00:00:00.000Z",
+        "source": {
+          "id": "9451bfdf-bd2d-4fb9-81a6-d7694c7898ee",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "FISHMONGER DON LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:17:48.724Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "b2ccd6e4-995f-48e8-8c43-7c39a6777c91",
       "url": "https://fishmongerdon.com",
@@ -17967,7 +19048,8 @@
           "1108 E SOUTH UNION AVE, MIDVALE, UT 84047-2904",
           "4192 S RIVERBOAT RD, SALT LAKE CITY, UT 84123-2550"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Sorenson Communications, Limited Liability Company",
@@ -17989,6 +19071,20 @@
         "officers": [
           "R. SCOTT WOOD",
           "R. SCOTT WOOD"
+        ],
+        "officerRoles": [
+          {
+            "name": "R. SCOTT WOOD",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "R. SCOTT WOOD",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -18014,6 +19110,44 @@
           "RONALD BURDETT",
           "SCOTT SORENSEN",
           "SORENSON COMMUNICATIONS, INC."
+        ],
+        "officerRoles": [
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Controller"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "RONALD BURDETT",
+            "roles": [
+              "Vice-President"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SORENSON COMMUNICATIONS, INC.",
+            "roles": [
+              "Tax Preparer"
+            ]
+          }
         ]
       },
       {
@@ -18040,6 +19174,56 @@
           "SCOTT R WOOD",
           "SCOTT SORENSEN",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DARREN RICHMAN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JAMES V CONTINENZA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "KEITH LUH",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SCOTT EISENBERG",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT R WOOD",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "President/CEO (Chief Executive Officer)"
+            ]
+          }
         ]
       },
       {
@@ -18062,6 +19246,26 @@
           "PATRICK NOLA",
           "REED STEINER",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          }
         ]
       },
       {
@@ -18084,6 +19288,24 @@
           "PATRICK NOLA",
           "REED STEINER",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": []
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": []
+          },
+          {
+            "name": "REED STEINER",
+            "roles": []
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": []
+          }
         ]
       },
       {
@@ -18106,6 +19328,30 @@
           "NOLA PATRICK",
           "SORENSEN SCOTT",
           "STEINER REED"
+        ],
+        "officerRoles": [
+          {
+            "name": "JOHNSON DAVID",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "NOLA PATRICK",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "SORENSEN SCOTT",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "STEINER REED",
+            "roles": []
+          }
         ]
       },
       {
@@ -18137,6 +19383,86 @@
           "STEINER, REED",
           "TRUJILLO, DAVID I",
           "WOOD, SCOTT R"
+        ],
+        "officerRoles": [
+          {
+            "name": "ANDERSON, MARK M",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "CANFIELD, PHILIP A",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "JOHNSON, DAVID",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "NOLA, PATRICK",
+            "roles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "NOLA, PATRICK",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "NOLA, PATRICK",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "SORENSEN, SCOTT",
+            "roles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "SORENSEN, SCOTT",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SORENSON, JAMES LEE",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "STEINER, REED",
+            "roles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "STEINER, REED",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "TRUJILLO, DAVID I",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "WOOD, SCOTT R",
+            "roles": [
+              "SECRETARY"
+            ]
+          }
         ]
       },
       {
@@ -18158,6 +19484,20 @@
         "officers": [
           "GREGORY O TAYLOR",
           "JAMES LEE SORENSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "GREGORY O TAYLOR",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "JAMES LEE SORENSON",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -18190,6 +19530,92 @@
           "SCOTT SORENSEN",
           "SCOTT SORENSEN",
           "SCOTT SORENSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID I TRUJILLO",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JAMES LEE SORENSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MARK M ANDERSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "PHILIP A CANFIELD",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SCOTT R WOOD",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSON",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -18212,6 +19638,20 @@
         "officers": [
           "PAT NOLA",
           "WITHDRAWN"
+        ],
+        "officerRoles": [
+          {
+            "name": "PAT NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "WITHDRAWN",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -18230,7 +19670,8 @@
           "112 SW 7TH ST STE 3C, TOPEKA, KS 66603-3858",
           "4192 S RIVERBOAT RD, SALT LAKE CITY, UT 84123-2550"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "SORENSON COMMUNICATIONS, INC.",
@@ -18256,6 +19697,50 @@
           "REED STEINER",
           "SCOTT SORENSEN",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "DIRECTOR"
+            ]
+          }
         ]
       },
       {
@@ -18274,7 +19759,8 @@
           "351 W CAMDEN ST, BALTIMORE, MD 21201-7912",
           "4192 S RIVERBOAT RD STE 100, SALT LAKE CITY, UT 84123-2550"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "SORENSON COMMUNICATIONS, INC.",
@@ -18291,7 +19777,8 @@
         "addresses": [
           "40600 ANN ARBOR RD E STE 201, PLYMOUTH, MI 48170-4675"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "SORENSON COMMUNICATIONS, INC.",
@@ -18312,6 +19799,20 @@
         "officers": [
           "C T CORPORATION SYSTEM INC",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "C T CORPORATION SYSTEM INC",
+            "roles": [
+              "Registered Agent"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          }
         ]
       },
       {
@@ -18340,6 +19841,56 @@
           "SCOTT R WOOD",
           "SCOTT SORENSEN",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DARREN RICHMAN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JAMES V CONTINENZA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "KEITH LUH",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SCOTT EISENBERG",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT R WOOD",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -18365,6 +19916,50 @@
           "REED STEINER",
           "SCOTT SORENSEN",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "TREASURER"
+            ]
+          }
         ]
       },
       {
@@ -18388,6 +19983,26 @@
           "SORENSEN, SCOTT",
           "STEINER, REED",
           "WOOD, SCOTT R"
+        ],
+        "officerRoles": [
+          {
+            "name": "SORENSEN, SCOTT",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "STEINER, REED",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "WOOD, SCOTT R",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -18414,6 +20029,50 @@
           "REED STEINER",
           "SCOTT SORENSEN",
           "SCOTT SORENSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSON",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -18436,6 +20095,14 @@
         ],
         "officers": [
           "PATRICK NOLA"
+        ],
+        "officerRoles": [
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -18454,7 +20121,8 @@
           "1833 S MORGAN RD, OKLAHOMA CITY, OK 73128-7004",
           "4393 S RIVERBOAT RD STE 300, SALT LAKE CITY, UT 84123-2524"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "SORENSON COMMUNICATIONS, INC.",
@@ -18475,6 +20143,20 @@
         "officers": [
           "PATRICK NOLA",
           "REED STEINER"
+        ],
+        "officerRoles": [
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "SECRETARY"
+            ]
+          }
         ]
       },
       {
@@ -18501,6 +20183,50 @@
           "REED STEINER",
           "SCOTT SORENSON",
           "SCOTT SORENSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSON",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSON",
+            "roles": [
+              "DIRECTOR"
+            ]
+          }
         ]
       },
       {
@@ -18519,7 +20245,8 @@
           "319 COTEAU ST, PIERRE, SD 57501-3187",
           "4192 S RIVERBOAT RD, SALT LAKE CITY, UT 84123-2550"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Sorenson Communications, Inc.",
@@ -18543,6 +20270,36 @@
           "REED STEINER",
           "RONALD BURDETT",
           "SCOTT SORENSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": []
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "DIR/CONTROL/SEC"
+            ]
+          },
+          {
+            "name": "RONALD BURDETT",
+            "roles": [
+              "Vice President"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSON",
+            "roles": [
+              "TREAS/DIR"
+            ]
+          }
         ]
       },
       {
@@ -18569,6 +20326,50 @@
           "REED STEINER",
           "SCOTT SORENSEN",
           "SCOTT SORENSEN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DAVID JOHNSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PATRICK NOLA",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "REED STEINER",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SCOTT SORENSEN",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -18586,10 +20387,79 @@
         "addresses": [
           "SEE PRINCIPAL OFFICE ADDRESS PAN"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "3b8efacf-7689-481e-8ac7-d152886a0145",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "7dc9ac26-c9b2-47c8-a8f1-2cfc75d25778",
+          "type": "lien",
+          "metadata": {
+            "state": "UT",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:14:43.656Z"
+      },
+      {
+        "id": "2de8336a-6b8e-4dc9-bf41-4a0bc2465456",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "e4777db0-2edb-4d2c-899f-e8b873625d0e",
+          "type": "lien",
+          "metadata": {
+            "state": "VA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:14:44.146Z"
+      },
+      {
+        "id": "2b9845e8-1798-49d2-a773-0b5292389471",
+        "documentType": "Amendment",
+        "filename": "Amendment.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "7c6b6b0b-2eb7-4a8e-88fe-4321fceea69a",
+          "type": "lien",
+          "metadata": {
+            "state": "UT",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:14:44.630Z"
+      },
+      {
+        "id": "f6599cfd-f96c-4e89-ae10-faecf41db1af",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "ee8a3de6-1695-4e36-8eac-7f27a432f98f",
+          "type": "lien",
+          "metadata": {
+            "state": "UT",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:14:45.059Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "d495ba42-9cd8-428f-b52e-716f6bf048dc",
       "url": "http://sorenson.com",
@@ -22353,6 +24223,9 @@
     ],
     "registrations": [],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "2ecc3afa-c8a6-4825-b9a7-f994794d7bfa",
       "url": "https://firebirdyarns.com",
@@ -23400,10 +25273,39 @@
         ],
         "officers": [
           "CHRISTOPHER LOCHTE"
+        ],
+        "officerRoles": [
+          {
+            "name": "CHRISTOPHER LOCHTE",
+            "roles": [
+              "Member"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "9086ea07-c5f0-4714-8d40-65a999669643",
+        "documentType": "Certificate of good standing",
+        "filename": "23681063_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "eee0abd1-fd7e-4ee8-a289-a7d4dd7d0063",
+          "type": "registration",
+          "metadata": {
+            "state": "AZ",
+            "status": "active",
+            "name": "Maverick Games LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:48:37.704Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "afed25dd-4a7d-4494-bc93-7f7ab2e7c9a3",
       "url": null,
@@ -24382,7 +26284,8 @@
         "addresses": [
           "2035 SUNSET LAKE RD STE B2, NEWARK, DE 19702-2600"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Supabase, Inc.",
@@ -24400,7 +26303,8 @@
           "970 TOA PAYOH NORTH #07-04, SINGAPORE, OC 318992",
           "2 N JACKSON ST STE 605, MONTGOMERY, AL 36104-3821"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "SUPABASE, INC.",
@@ -24423,6 +26327,32 @@
           "ARUN MATHEW",
           "CARYN MAROONEY",
           "PAUL COPPLESTONE"
+        ],
+        "officerRoles": [
+          {
+            "name": "ANTHONY WILSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "ARUN MATHEW",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "CARYN MAROONEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PAUL COPPLESTONE",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -24446,10 +26376,57 @@
           "PAUL COPPLESTONE",
           "PAUL COPPLESTONE",
           "PAUL COPPLESTONE"
+        ],
+        "officerRoles": [
+          {
+            "name": "PAUL COPPLESTONE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "PAUL COPPLESTONE",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "PAUL COPPLESTONE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "PAUL COPPLESTONE",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "0474bdd7-8d7f-484d-9757-277e46f9f575",
+        "documentType": "Certificate of good standing",
+        "filename": "7816270_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "94732a5f-202f-427a-8f46-d94b7799b560",
+          "type": "registration",
+          "metadata": {
+            "state": "DE",
+            "status": "unknown",
+            "name": "SUPABASE, INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:13:32.252Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "4cbc6002-7aa6-4355-a439-d21405def14d",
       "url": "https://supabase.com",
@@ -25581,10 +27558,86 @@
           "MICHAEL ESKELSON",
           "MICHAEL ESKELSON",
           "MICHAEL ESKELSON"
+        ],
+        "officerRoles": [
+          {
+            "name": "JACOB SELBY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JACOB SELBY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JACOB SELBY",
+            "roles": [
+              "Vice President"
+            ]
+          },
+          {
+            "name": "MICHAEL ESKELSON",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "MICHAEL ESKELSON",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "MICHAEL ESKELSON",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "37d77323-72f6-4a23-8013-041439f805b2",
+        "documentType": "Initial_filing",
+        "filename": "12160647-0142_Initial_Filing_2021-02-10.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2021-02-10T00:00:00.000Z",
+        "source": {
+          "id": "aad5dc13-b079-4219-ab85-e49459dd1aec",
+          "type": "registration",
+          "metadata": {
+            "state": "UT",
+            "status": "active",
+            "name": "MODERN REALTY INC"
+          }
+        },
+        "createdAt": "2026-09-17T17:13:44.456Z"
+      },
+      {
+        "id": "79906a2d-bd51-4718-be7a-6ebd7c4fd041",
+        "documentType": "Certificate of good standing",
+        "filename": "12160647-0142_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "aad5dc13-b079-4219-ab85-e49459dd1aec",
+          "type": "registration",
+          "metadata": {
+            "state": "UT",
+            "status": "active",
+            "name": "MODERN REALTY INC"
+          }
+        },
+        "createdAt": "2026-09-17T17:23:21.343Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "40f36f28-5c75-4096-9262-fbbca69ffd1e",
       "url": null,
@@ -27851,7 +29904,8 @@
         "addresses": [
           "251 LITTLE FALLS DR, WILMINGTON, DE 19808-1674"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Change.org Corp",
@@ -27873,6 +29927,26 @@
           "ANTHONY SEBRO",
           "BENJAMIN RATTRAY",
           "DUNCAN LOCKARD"
+        ],
+        "officerRoles": [
+          {
+            "name": "ANTHONY SEBRO",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "BENJAMIN RATTRAY",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "DUNCAN LOCKARD",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          }
         ]
       },
       {
@@ -27891,7 +29965,8 @@
           "306 W MAIN ST STE 512, FRANKFORT, KY 40601-1840",
           "548 MARKET ST PMB 29993, SAN FRANCISCO, CA 94104-5401"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHANGE.ORG, CORP. A/K/A CHANGE.ORG, PBC",
@@ -27909,7 +29984,8 @@
           "2405 YORK RD STE 201, LUTHERVILLE TIMONIUM, MD 21093-2252",
           "383 RHODE ISLAND ST STE 300, SAN FRANCISCO, CA 94103-5178"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHANGE.ORG, PBC",
@@ -27933,6 +30009,26 @@
           "BEN RATTRAY",
           "BENJAMIN RATTRAY",
           "C/O C T CORPORATION SYSTEM"
+        ],
+        "officerRoles": [
+          {
+            "name": "BEN RATTRAY",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "BENJAMIN RATTRAY",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "C/O C T CORPORATION SYSTEM",
+            "roles": [
+              "Service of Process"
+            ]
+          }
         ]
       },
       {
@@ -27955,6 +30051,26 @@
           "BENJAMIN RATTRAY",
           "EVE CHAURAND",
           "RAHOUL SETH"
+        ],
+        "officerRoles": [
+          {
+            "name": "BENJAMIN RATTRAY",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "EVE CHAURAND",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "RAHOUL SETH",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          }
         ]
       },
       {
@@ -27973,7 +30089,8 @@
           "1015 15TH ST NW STE 1000, WASHINGTON, DC 20005-2621",
           "548 MARKET ST PMB 29993, SAN FRANCISCO, CA 94104-5401"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHANGE.ORG, PBC",
@@ -27998,6 +30115,44 @@
           "JOE GREENSTEIN",
           "LYNN TALIENTO",
           "NICKOLAS BEARLIN-ALLARDICE"
+        ],
+        "officerRoles": [
+          {
+            "name": "ANTHONY SEBRO JR.",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "BENJAMIN RATTRAY",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "DUNCAN LOCKARD",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "JOE GREENSTEIN",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "LYNN TALIENTO",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "NICKOLAS BEARLIN-ALLARDICE",
+            "roles": [
+              "GoverningPerson"
+            ]
+          }
         ]
       },
       {
@@ -28016,10 +30171,32 @@
           "100 CHARLES EWING BLVD STE 160, EWING, NJ 08628-3456",
           "383 RHODE ISLAND ST STE 300, SAN FRANCISCO, CA 94103-5178"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "c0b6b061-c37d-419f-a4d4-048a6600f5c7",
+        "documentType": "Certificate of good standing",
+        "filename": "4215439_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "a588cec8-a077-4f54-b61d-b56b90acb7a2",
+          "type": "registration",
+          "metadata": {
+            "state": "DE",
+            "status": "unknown",
+            "name": "CHANGE.ORG, PBC"
+          }
+        },
+        "createdAt": "2026-09-17T17:12:34.765Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "4b5a3518-aba7-47be-844a-40290c3af0a3",
       "url": "https://www.change.org",
@@ -31286,6 +33463,32 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "NAEEM ISHAQ"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "NAEEM ISHAQ",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -31303,7 +33506,8 @@
         "addresses": [
           "919 N MARKET ST STE 950, WILMINGTON, DE 19801-3036"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHECKR, INC.",
@@ -31325,6 +33529,26 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "TIM YARBROUGH"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TIM YARBROUGH",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          }
         ]
       },
       {
@@ -31343,7 +33567,8 @@
           "1 MONTGOMERY ST STE 2400, SAN FRANCISCO, CA 94104-5524",
           "7700 E ARAPAHOE RD STE 220, CENTENNIAL, CO 80112-1268"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Checkr, Inc.",
@@ -31365,6 +33590,26 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "TIM YARBROUGH"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Officer;Director"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "TIM YARBROUGH",
+            "roles": [
+              "Officer"
+            ]
+          }
         ]
       },
       {
@@ -31388,6 +33633,26 @@
           "YANISSE DANIEL",
           "YANISSE DANIEL",
           "YEH JENNIFER"
+        ],
+        "officerRoles": [
+          {
+            "name": "YANISSE DANIEL",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "YANISSE DANIEL",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "YEH JENNIFER",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -31410,6 +33675,26 @@
           "DANIEL YANISSE",
           "DANIEL YANISSE",
           "JENNIFER YEH"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -31433,6 +33718,26 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "TIM YARBROUGH"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TIM YARBROUGH",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -31451,7 +33756,8 @@
           "1 MONTGOMERY ST STE 2000, SAN FRANCISCO, CA 94104-5520",
           "2405 YORK RD STE 201, LUTHERVILLE TIMONIUM, MD 21093-2252"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHECKR, INC.",
@@ -31469,7 +33775,8 @@
           "1 MONTGOMERY ST STE 2400, SAN FRANCISCO, CA 94104-5524",
           "3 CHASE AVE, AUGUSTA, ME 04330-4525"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHECKR, INC.",
@@ -31491,6 +33798,32 @@
           "JENNIFER YEH",
           "NAEEM ISHAQ",
           "DANIEL YANISSE"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "NAEEM ISHAQ",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -31513,6 +33846,26 @@
           "YANISSE, DANIEL",
           "YANISSE, DANIEL",
           "YEH, JENNIFER"
+        ],
+        "officerRoles": [
+          {
+            "name": "YANISSE, DANIEL",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "YANISSE, DANIEL",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "YEH, JENNIFER",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -31534,6 +33887,20 @@
         "officers": [
           "C/O C T CORPORATION SYSTEM",
           "DANIEL YANISSE"
+        ],
+        "officerRoles": [
+          {
+            "name": "C/O C T CORPORATION SYSTEM",
+            "roles": [
+              "Service of Process"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -31552,7 +33919,8 @@
           "1 MONTGOMERY ST STE 2400, SAN FRANCISCO, CA 94104-5524",
           "4400 EASTON CMNS STE 125, COLUMBUS, OH 43219-6223"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Checkr, Inc.",
@@ -31569,7 +33937,8 @@
         "addresses": [
           "1 MONTGOMERY ST STE 2400, SAN FRANCISCO, CA 94104-5524"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHECKR, INC.",
@@ -31587,7 +33956,8 @@
           "1 MONTGOMERY ST STE 2400, SAN FRANCISCO, CA 94104-5524",
           "300 MONTVUE RD, KNOXVILLE, TN 37919-5510"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "CHECKR, INC.",
@@ -31607,6 +33977,14 @@
         ],
         "officers": [
           "DANIEL YANISSE"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -31635,6 +34013,62 @@
           "JENNIFER YEH",
           "NAEEM ISHAQ",
           "NAEEM ISHAQ"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "NAEEM ISHAQ",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "NAEEM ISHAQ",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -31657,6 +34091,26 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "NAEEM ISHAQ"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President Chie"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "NAEEM ISHAQ",
+            "roles": [
+              "Treasurer Chie"
+            ]
+          }
         ]
       },
       {
@@ -31680,6 +34134,32 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "TODD FREEDMAN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TODD FREEDMAN",
+            "roles": [
+              "Treasurer"
+            ]
+          }
         ]
       },
       {
@@ -31703,10 +34183,67 @@
           "DANIEL YANISSE",
           "JENNIFER YEH",
           "TIM YARBROUGH"
+        ],
+        "officerRoles": [
+          {
+            "name": "DANIEL YANISSE",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "JENNIFER YEH",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "TIM YARBROUGH",
+            "roles": [
+              "GoverningPerson"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "f3b9ea66-f600-4737-b5a6-e6a880bf9fe3",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "24f0c762-baa5-41fd-bbff-b892a88434aa",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:10:09.145Z"
+      },
+      {
+        "id": "05fc7d20-df6b-455f-94b7-203165a5ff75",
+        "documentType": "Certificate of good standing",
+        "filename": "5503562_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "699ac236-065f-414a-999e-8a3ac1023658",
+          "type": "registration",
+          "metadata": {
+            "state": "DE",
+            "status": "unknown",
+            "name": "CHECKR, INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:12:01.891Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "d34090ef-d674-40e7-86cc-5f47007eac56",
       "url": "https://checkr.com",
@@ -40479,7 +43016,8 @@
         "addresses": [
           "920 N KING ST LBBY 2, WILMINGTON, DE 19801-3319"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Zendesk, Inc.",
@@ -40497,7 +43035,8 @@
           "1019 MARKET ST, SAN FRANCISCO, CA 94103-1605",
           "2 N JACKSON ST STE 605, MONTGOMERY, AL 36104-3821"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Zendesk, Inc.",
@@ -40515,7 +43054,8 @@
           "1019 MARKET ST, SAN FRANCISCO, CA 94103-1605",
           "2 N JACKSON ST STE 605, MONTGOMERY, AL 36104-3821"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40538,6 +43078,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "CFO (Chief Financial Officer)"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO (Chief Executive Officer)"
+            ]
+          }
         ]
       },
       {
@@ -40560,6 +43132,26 @@
           "JULIE SWINNEY",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          }
         ]
       },
       {
@@ -40578,7 +43170,8 @@
           "181 FREMONT ST FL 17, SAN FRANCISCO, CA 94105-2890",
           "7700 E ARAPAHOE RD STE 220, CENTENNIAL, CO 80112-1268"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40601,6 +43194,32 @@
           "SHANA SIMMONS",
           "TOM EGGEMEIER",
           "JULIE SWINNEY"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Officer;Director"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -40619,7 +43238,8 @@
           "1015 15TH ST NW STE 1000, WASHINGTON, DC 20005-2621",
           "181 FREMONT ST FL 17, SAN FRANCISCO, CA 94105-2890"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40644,6 +43264,38 @@
           "SIMMONS SHANA",
           "SWINNEY JULIE",
           "SWINNEY JULIE"
+        ],
+        "officerRoles": [
+          {
+            "name": "EGGEMEIER TOM",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "SIMMONS SHANA",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SIMMONS SHANA",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SWINNEY JULIE",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "SWINNEY JULIE",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -40668,6 +43320,38 @@
           "SIMMONS,SHANA",
           "SWINNEY,JULIE",
           "SWINNEY,JULIE"
+        ],
+        "officerRoles": [
+          {
+            "name": "EGGEMEIER,TOM",
+            "roles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "SIMMONS,SHANA",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SIMMONS,SHANA",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "SWINNEY,JULIE",
+            "roles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "SWINNEY,JULIE",
+            "roles": [
+              "DIRECTOR"
+            ]
+          }
         ]
       },
       {
@@ -40686,7 +43370,8 @@
           "181 FREMONT ST FL 17, SAN FRANCISCO, CA 94105-2890",
           "400 E COURT AVE, DES MOINES, IA 50309-2017"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40710,6 +43395,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -40728,7 +43445,8 @@
           "112 SW 7TH ST STE 3C, TOPEKA, KS 66603-3858",
           "181 FREMONT ST FL 17, SAN FRANCISCO, CA 94105-2890"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40752,6 +43470,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Officer"
+            ]
+          }
         ]
       },
       {
@@ -40776,6 +43526,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -40794,7 +43576,8 @@
           "2405 YORK RD STE 201, LUTHERVILLE TIMONIUM, MD 21093-2252",
           "989 MARKET ST, SAN FRANCISCO, CA 94103-1708"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -40817,6 +43600,38 @@
           "NOT YET ELECTED",
           "SHANA SIMMONS",
           "JULIE SWINNEY"
+        ],
+        "officerRoles": [
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "NOT YET ELECTED",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -40841,6 +43656,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          }
         ]
       },
       {
@@ -40863,6 +43710,26 @@
           "EGGEMEIER, TOM",
           "SIMMONS, SHANA",
           "SWINNEY, JULIE"
+        ],
+        "officerRoles": [
+          {
+            "name": "EGGEMEIER, TOM",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "SIMMONS, SHANA",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "SWINNEY, JULIE",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          }
         ]
       },
       {
@@ -40888,6 +43755,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -40912,6 +43811,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          }
         ]
       },
       {
@@ -40942,6 +43873,74 @@
           "MIKKEL SVANE",
           "MIKKEL SVANE",
           "THOMAS SZKUTAK"
+        ],
+        "officerRoles": [
+          {
+            "name": "CARL BASS",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "CARYN MAROONEY",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "ELENA GOMEZ",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "MICHAEL CURTIS",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "MICHAEL FRANDSEN",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "MICHELLE WILSON",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "director"
+            ]
+          },
+          {
+            "name": "THOMAS SZKUTAK",
+            "roles": [
+              "director"
+            ]
+          }
         ]
       },
       {
@@ -40982,6 +43981,122 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "THOMAS SZKUTAK"
+        ],
+        "officerRoles": [
+          {
+            "name": "CARL BASS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "CARYN MAROONEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "ELENA GOMEZ",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "MICHAEL CURTIS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHAEL FRANDSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHELLE WILSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "NICHOLE KRAUSE",
+            "roles": [
+              "Treasurer"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "THOMAS SZKUTAK",
+            "roles": [
+              "Director"
+            ]
+          }
         ]
       },
       {
@@ -41006,6 +44121,26 @@
           "MIKKEL SVANE",
           "TOM EGGEMEIER",
           "ZENDESK, INC."
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "ZENDESK, INC.",
+            "roles": [
+              "Service of Process"
+            ]
+          }
         ]
       },
       {
@@ -41024,7 +44159,8 @@
           "1019 MARKET ST, SAN FRANCISCO, CA 94103-1605",
           "4400 EASTON CMNS STE 125, COLUMBUS, OH 43219-6223"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC",
@@ -41045,6 +44181,20 @@
         "officers": [
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "PRESIDENT"
+            ]
+          }
         ]
       },
       {
@@ -41068,6 +44218,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Governor"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Governor"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Other"
+            ]
+          }
         ]
       },
       {
@@ -41092,6 +44274,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -41109,7 +44323,8 @@
         "addresses": [
           "2 OFFICE PARK CT STE 103, COLUMBIA, SC 29223-5948"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -41127,7 +44342,8 @@
           "181 FREMONT ST FL 17, SAN FRANCISCO, CA 94105-2890",
           "300 MONTVUE RD, KNOXVILLE, TN 37919-5510"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -41152,6 +44368,38 @@
           "MCDERMOTT ADRIAN",
           "SWINNEY JULIE",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "COPELAND PAT",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "GENNARO NORMAN",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "MCDERMOTT ADRIAN",
+            "roles": [
+              "Other"
+            ]
+          },
+          {
+            "name": "SWINNEY JULIE",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -41198,6 +44446,164 @@
           "THOMAS SZKUTAK",
           "THOMAS SZKUTAK",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "CARL BASS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "CARYN MAROONEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "CARL BASS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "CARYN MAROONEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Officer"
+            ]
+          },
+          {
+            "name": "MICHAEL CURTIS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHAEL FRANDSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHELLE WILSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "MICHAEL CURTIS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHAEL FRANDSEN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MICHELLE WILSON",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Chairman of the Board"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "THOMAS SZKUTAK",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "THOMAS SZKUTAK",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Officer"
+            ]
+          }
         ]
       },
       {
@@ -41220,6 +44626,26 @@
           "JULIE SWINNEY",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Chief Financial"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "Chief Executive"
+            ]
+          }
         ]
       },
       {
@@ -41244,6 +44670,38 @@
           "SHANA SIMMONS",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -41267,6 +44725,26 @@
           "JULIE SWINNEY",
           "SHANA SIMMONS",
           "TOM EGGEMEIER"
+        ],
+        "officerRoles": [
+          {
+            "name": "JULIE SWINNEY",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "SHANA SIMMONS",
+            "roles": [
+              "GoverningPerson"
+            ]
+          },
+          {
+            "name": "TOM EGGEMEIER",
+            "roles": [
+              "GoverningPerson"
+            ]
+          }
         ]
       },
       {
@@ -41285,7 +44763,8 @@
           "301 S BEDFORD ST STE 1, MADISON, WI 53703-3691",
           "989 MARKET ST STE 300, SAN FRANCISCO, CA 94103-1708"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -41309,6 +44788,32 @@
           "HASANI CARAWAY",
           "MICHAEL CURTIS",
           "MIKKEL SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "CARL BASS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "MICHAEL CURTIS",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -41329,6 +44834,20 @@
         "officers": [
           "BLACK ALAN",
           "SVANE MIKKEL"
+        ],
+        "officerRoles": [
+          {
+            "name": "BLACK ALAN",
+            "roles": [
+              "Vice Chairman"
+            ]
+          },
+          {
+            "name": "SVANE MIKKEL",
+            "roles": [
+              "Controller"
+            ]
+          }
         ]
       },
       {
@@ -41351,6 +44870,26 @@
           "ALAN BLACK",
           "MIKKEL SVANE",
           "MIKKEL SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "ALAN BLACK",
+            "roles": [
+              "CFO"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "CEO"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -41373,6 +44912,20 @@
         "officers": [
           "MIKKEL SVANE",
           "WITHDRAWN"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "WITHDRAWN",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -41394,6 +44947,14 @@
         ],
         "officers": [
           "MIKKEL SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -41414,6 +44975,14 @@
         ],
         "officers": [
           "MIKKEL SVANC"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL SVANC",
+            "roles": [
+              "PRESIDENT"
+            ]
+          }
         ]
       },
       {
@@ -41437,6 +45006,32 @@
           "MIKKEL ASGER SVANE",
           "MIKKEL ASGER SVANE",
           "MIKKEL ASGER SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL ASGER SVANE",
+            "roles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "MIKKEL ASGER SVANE",
+            "roles": [
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "MIKKEL ASGER SVANE",
+            "roles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "MIKKEL ASGER SVANE",
+            "roles": [
+              "TREASURER"
+            ]
+          }
         ]
       },
       {
@@ -41454,7 +45049,8 @@
         "addresses": [
           "600 W MAIN ST, JEFFERSON CITY, MO 65101-1592"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -41476,6 +45072,26 @@
           "ELENA GOMEZ",
           "HASANI CARAWAY",
           "MIKKEL SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "ELENA GOMEZ",
+            "roles": [
+              "Vice President"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "roles": [
+              "Secretary"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "Chairman of the Board of   Directors"
+            ]
+          }
         ]
       },
       {
@@ -41494,7 +45110,8 @@
           "1833 S MORGAN RD, OKLAHOMA CITY, OK 73128-7004",
           "989 MARKET ST, SAN FRANCISCO, CA 94103-1708"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "Zendesk, Inc.",
@@ -41512,7 +45129,8 @@
           "1019 MARKET ST, SAN FRANCISCO, CA 94103-1605",
           "800 S GAY ST STE 2021, KNOXVILLE, TN 37929-9710"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK, INC.",
@@ -41532,6 +45150,14 @@
         ],
         "officers": [
           "MIKKEL SVANE"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       },
       {
@@ -41556,6 +45182,32 @@
           "MICHELLE WILSON",
           "MIKKEL SVANE",
           "PETER FENTON"
+        ],
+        "officerRoles": [
+          {
+            "name": "CARYN MAROONEY",
+            "roles": []
+          },
+          {
+            "name": "JOHN GESCHKE",
+            "roles": [
+              "SVP"
+            ]
+          },
+          {
+            "name": "MICHELLE WILSON",
+            "roles": []
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "roles": [
+              "President"
+            ]
+          },
+          {
+            "name": "PETER FENTON",
+            "roles": []
+          }
         ]
       },
       {
@@ -41573,7 +45225,8 @@
         "addresses": [
           "301 S BEDFORD ST STE 1, MADISON, WI 53703-3691"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ZENDESK INC.",
@@ -41591,10 +45244,48 @@
           "1019 MARKET ST, SAN FRANCISCO, CA 94103-1605",
           "820 BEAR TAVERN RD, EWING, NJ 08628-1021"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "6ebc3a2e-7ff6-4f71-b32f-acef8bdc8a5d",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "4798db8f-2a51-4d3d-a095-99e9b3f2eb37",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:58.633Z"
+      },
+      {
+        "id": "2fa0db93-4ab6-4e11-8f3e-65860a05e8dd",
+        "documentType": "Certificate of good standing",
+        "filename": "4661237_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "97957c55-8dfb-432c-a249-4cf0fc943604",
+          "type": "registration",
+          "metadata": {
+            "state": "DE",
+            "status": "unknown",
+            "name": "ZENDESK, INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:11:58.514Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "cb0d2335-e779-466d-ac1c-030645f8c49b",
       "url": "https://www.zendesk.com",
@@ -47107,6 +50798,20 @@
         "officers": [
           "ALLIANCE ENTERPRISES IV, INC.",
           "RICHARD KAWAS"
+        ],
+        "officerRoles": [
+          {
+            "name": "ALLIANCE ENTERPRISES IV, INC.",
+            "roles": [
+              "Service of Process"
+            ]
+          },
+          {
+            "name": "RICHARD KAWAS",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -47127,6 +50832,14 @@
         ],
         "officers": [
           "DENISE PULICE"
+        ],
+        "officerRoles": [
+          {
+            "name": "DENISE PULICE",
+            "roles": [
+              "CEO"
+            ]
+          }
         ]
       },
       {
@@ -47144,7 +50857,8 @@
         "addresses": [
           "50 COURT ST STE 406, BROOKLYN, NY 11201-4879"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "ALLIANCE ENTERPRISES IV INC.",
@@ -47162,10 +50876,143 @@
           "140 58TH ST STE 2D, BROOKLYN, NY 11220-2560",
           "240 GROVE ST, JERSEY CITY, NJ 07302-3646"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "d6521d34-23bc-4ea6-8e84-63f2d31df2af",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "254b3f11-63bf-47fa-8da1-c4d862a75bbc",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:13.959Z"
+      },
+      {
+        "id": "048f2e47-3a40-4a2c-a7a6-3d2f1ec8a0c8",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "73e1d0e2-3bf1-4a9d-856d-96317d0abee7",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:13.471Z"
+      },
+      {
+        "id": "2b9d250c-2603-4fd3-987e-b9fe1ef265a0",
+        "documentType": "Amendment",
+        "filename": "Amendment.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "4a12b250-5cd2-4abb-81e5-e6df6b2dee2c",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:13.058Z"
+      },
+      {
+        "id": "9111f08a-c476-4e0f-848c-a2ddce8491d0",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "03b721ed-f06b-4c05-ad4a-824ec0a7687b",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:10.949Z"
+      },
+      {
+        "id": "64b3dcc4-425b-4c73-affc-add0620c74db",
+        "documentType": "Amendment",
+        "filename": "Amendment.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "03b721ed-f06b-4c05-ad4a-824ec0a7687b",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:11.380Z"
+      },
+      {
+        "id": "6b8e2659-0270-47d6-a1e9-8e81db5634ec",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "4eacdf93-e141-40b2-aa8b-71446f44ef39",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:11.845Z"
+      },
+      {
+        "id": "18b80830-2800-44f3-9e2c-e6aae21a14bb",
+        "documentType": "Amendment",
+        "filename": "Amendment.tiff",
+        "contentType": "image/tiff",
+        "filingDate": null,
+        "source": {
+          "id": "7bcce38a-557c-42eb-b6a6-b6f76d3dc426",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "closed"
+          }
+        },
+        "createdAt": "2026-09-17T17:09:12.622Z"
+      },
+      {
+        "id": "2d1b80dd-eaa8-41ee-92ca-c4bffc861461",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "7223d7d3-5243-4f72-bdb5-81205ffff560",
+          "type": "lien",
+          "metadata": {
+            "state": "NY",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-17T19:12:47.258Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "004cef3c-9000-41a1-bf74-e6ac9e03b504",
       "url": null,
@@ -48346,10 +52193,39 @@
         ],
         "officers": [
           "ZB, NATIONAL ASSOCIATION"
+        ],
+        "officerRoles": [
+          {
+            "name": "ZB, NATIONAL ASSOCIATION",
+            "roles": [
+              "Owner"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "c48d6c83-0a29-4995-8f18-6a7f0420e4a1",
+        "documentType": "Initial_filing",
+        "filename": "557804_Initial_Filing_2016-02-19.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2016-02-19T00:00:00.000Z",
+        "source": {
+          "id": "7eb5d82b-8273-40f2-98c1-434cc6dc11d5",
+          "type": "registration",
+          "metadata": {
+            "state": "ID",
+            "status": "active",
+            "name": "ZIONS BANK"
+          }
+        },
+        "createdAt": "2026-09-17T17:10:37.827Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "d21eb44c-e714-4412-bfc0-d9fee59f86a3",
       "url": "https://www.zionsbank.com",
@@ -50351,10 +54227,32 @@
         "addresses": [
           "729 W OLSON DR, GRANTSBURG, WI 54840-7804"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "ed0d4921-d9ef-472e-81ba-28e70d645742",
+        "documentType": "Certificate of good standing",
+        "filename": "O043535_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "3d4fd816-3c62-4e78-8c4d-fcdda4967803",
+          "type": "registration",
+          "metadata": {
+            "state": "WI",
+            "status": "inactive",
+            "name": "OLD STUFF VINTAGE SALES LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:14:45.996Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "a83b8f5e-b069-4d53-83e5-2ebade081a68",
       "url": "https://www.oldstuffvintagesales.com",
@@ -50932,10 +54830,14 @@
           "116 AGNES RD STE 200, KNOXVILLE, TN 37919-6306",
           "2812A VAULX LN, NASHVILLE, TN 37204-2644"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "9c71e00d-5c33-421f-b86c-56a96c384f3f",
       "url": "https://themalamarket.com",
@@ -51929,7 +55831,8 @@
         "addresses": [
           "651 N BROAD ST STE 206, MIDDLETOWN, DE 19709-6402"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       },
       {
         "name": "MEROXA, INC.",
@@ -51950,6 +55853,26 @@
           "ALI HAMIDI",
           "ALI HAMIDI",
           "ALI HAMIDI"
+        ],
+        "officerRoles": [
+          {
+            "name": "ALI HAMIDI",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "ALI HAMIDI",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "ALI HAMIDI",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       },
       {
@@ -51972,10 +55895,45 @@
         "officers": [
           "DEVARIS BROWN",
           "DEVARIS BROWN"
+        ],
+        "officerRoles": [
+          {
+            "name": "DEVARIS BROWN",
+            "roles": [
+              "Director"
+            ]
+          },
+          {
+            "name": "DEVARIS BROWN",
+            "roles": [
+              "President"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "4cd22e8d-9812-40f5-a713-ce86fcdbcdeb",
+        "documentType": "Certificate of good standing",
+        "filename": "7665070_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "21b17637-a6ce-4b80-a7a1-4e4b3667542e",
+          "type": "registration",
+          "metadata": {
+            "state": "DE",
+            "status": "unknown",
+            "name": "MEROXA, INC."
+          }
+        },
+        "createdAt": "2026-09-17T17:07:07.037Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "64950903-2356-466b-bbf6-28ae7a230ad7",
       "url": "https://meroxa.com",
@@ -53572,10 +57530,39 @@
           "RYAN GLASGOW",
           "RYAN GLASGOW",
           "RYAN GLASGOW"
+        ],
+        "officerRoles": [
+          {
+            "name": "RYAN GLASGOW",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "RYAN GLASGOW",
+            "roles": [
+              "Chief Executive Officer"
+            ]
+          },
+          {
+            "name": "RYAN GLASGOW",
+            "roles": [
+              "Chief Financial Officer"
+            ]
+          },
+          {
+            "name": "RYAN GLASGOW",
+            "roles": [
+              "Secretary"
+            ]
+          }
         ]
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
     "website": {
       "id": "d50bb275-8eaa-48be-b8ec-86e8d4812628",
       "url": "https://sprig.com",
@@ -54543,10 +58530,49 @@
         "addresses": [
           "7980 LINDA VISTA RD APT 46, SAN DIEGO, CA 92111-5159"
         ],
-        "officers": []
+        "officers": [],
+        "officerRoles": []
       }
     ],
     "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "f344ca02-8147-4ffb-acbf-b783170789fd",
+        "documentType": "Certificate of good standing",
+        "filename": "202205910316_Certificate_of_Good_Standing_2026-09-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-17T00:00:00.000Z",
+        "source": {
+          "id": "6626f96b-efc2-4c5f-9f0b-fd47edc6d888",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "CHARM COFFEE LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:06:23.067Z"
+      },
+      {
+        "id": "787011bc-9ded-47ae-9730-6d854e6efbaa",
+        "documentType": "Initial_filing",
+        "filename": "202205910316_Initial_Filing_2022-02-24.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2022-02-24T00:00:00.000Z",
+        "source": {
+          "id": "6626f96b-efc2-4c5f-9f0b-fd47edc6d888",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "active",
+            "name": "CHARM COFFEE LLC"
+          }
+        },
+        "createdAt": "2026-09-17T17:05:42.690Z"
+      }
+    ],
+    "taxExemptOrganization": null,
     "website": {
       "id": "86014e4a-06c3-4da0-a659-57ce5f4ccc5d",
       "url": null,

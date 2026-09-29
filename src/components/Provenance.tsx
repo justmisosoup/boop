@@ -3,7 +3,8 @@ import { CircleAlert, CircleCheck } from 'lucide-react'
 import { ChatSourceChip, type ChatSourceData } from '@/core'
 
 import type { AttributeRow } from '../lib/attributes'
-import type { BusinessRecord } from '../lib/deriveResults'
+import type { BusinessRecord, SourceRef } from '../lib/deriveResults'
+import { stateName } from '../lib/states'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
 import { WEBSITE_METADATA, faviconFor, readableUrl, sourceLabel } from '../lib/sourceLabels'
 import { screenshotFor } from '../lib/sourceScreenshots'
@@ -128,10 +129,59 @@ export const StreetViewChip = ({ address }: { address: string }) => {
   )
 }
 
+/**
+ * A record source as the dashboard's Sources cards name it: the card's title,
+ * and its subtitle saying where the record is from. `BusinessHome/Sources/*Card`.
+ * Sources with no card there keep their own name.
+ */
+const APP_CARD: Record<
+  string,
+  { title: string; subtitle?: (m: { city?: string; state?: string }) => string | undefined; place?: boolean }
+> = {
+  'City registration': { title: 'City Registration', place: true, subtitle: (m) => (m.city && m.state ? `${m.city}, ${stateName(m.state)}` : undefined) },
+  Lien: { title: 'Lien Filing', place: true, subtitle: (m) => (m.state ? stateName(m.state) : undefined) },
+  'SEC filing': { title: 'SEC EDGAR Filings' },
+  'Tax permit': { title: 'Sales Tax Permit', place: true, subtitle: (m) => (m.state ? stateName(m.state) : undefined) },
+  'Form 5500': { title: 'Form 5500', subtitle: () => 'Internal Revenue Service' },
+  SAM: { title: 'SAM Entity Registration' },
+  'SBA entity v2': { title: 'Small Business Profile', subtitle: () => 'Small Business Administration' },
+  'FMCSA registration': { title: 'Federal Motor Carrier Safety Administration', subtitle: () => 'Department of Transportation' },
+  'NPI record': { title: 'National Provider Identifier', subtitle: () => 'National Plan and Provider Enumeration System' },
+  'EPA FRS facility': { title: 'EPA FRS Facility' }
+}
+
+/** One entry per record the card would show — per city, per state — as the
+ *  dashboard's cards are one per record. Empty for a source with no card. */
+const appEntries = (name: string, refs: SourceRef[], sourceNames?: Record<string, string>) => {
+  const card = APP_CARD[sourceLabel(name)]
+  if (!card) return []
+  const subtitles = new Set<string | undefined>()
+  for (const ref of refs) {
+    if (sourceLabel(ref.type) !== sourceLabel(name)) continue
+    const m = (ref.metadata ?? {}) as { city?: string; state?: string }
+    subtitles.add(card.subtitle?.({ city: m.city, state: m.state?.toUpperCase() }))
+  }
+  if (subtitles.size === 0) subtitles.add(card.subtitle?.({}))
+  // A record from a place leads with the place — "San Francisco, California"
+  // over "City Registration" — so a list of them reads as where they are. One
+  // with no place — an SEC or EPA record — leads with the business name it
+  // carries, as the record states it, over what kind of record it is.
+  const entity = sourceNames?.[sourceLabel(name)]
+  return [...subtitles].map((subtitle) =>
+    card.place && subtitle
+      ? { title: subtitle, subtitle: card.title }
+      : !card.subtitle && entity
+        ? { title: entity, subtitle: card.title }
+        : { title: card.title, subtitle }
+  )
+}
+
 export const AttributeSources = ({
   sources,
   links,
   registrations,
+  refs,
+  sourceNames,
   domesticState,
   href,
   note,
@@ -140,6 +190,11 @@ export const AttributeSources = ({
   onJumpToSource
 }: {
   sources: string[]
+  /** The record's own source objects, so a record source can say where it is
+   *  from and its status rather than only its kind. */
+  refs?: SourceRef[]
+  /** The business name each source carries, by source label. */
+  sourceNames?: Record<string, string>
   /** Distinct pages behind one row, each with its own destination. */
   links?: AttributeRow['links']
   /** Where the value comes from. Leads the chip, ahead of what corroborates it. */
@@ -181,7 +236,8 @@ export const AttributeSources = ({
           domain: l.label,
           title: l.title ?? l.label,
           url: l.url,
-          annotation: l.note ?? 'Adverse media'
+          annotation: l.note ?? 'Adverse media',
+          snippet: l.agency ? `Agency: ${l.agency}` : undefined
         }))}
       />
     )
@@ -207,7 +263,20 @@ export const AttributeSources = ({
 
   // A source with a `url` becomes a link chip — the same affordance every other
   // source chip has, rather than an underlined word in the value.
-  const data: ChatSourceData[] = sources.map((name) => {
+  const data: ChatSourceData[] = sources.flatMap((name): ChatSourceData | ChatSourceData[] => {
+    // A record — a city registration, a tax permit, a lien, an SEC filing —
+    // named as the dashboard's Sources card for it is: the card's title, and
+    // its subtitle saying where the record is from.
+    const cards = appEntries(name, refs ?? [], sourceNames)
+    if (cards.length > 0)
+      return cards.map((c, i): ChatSourceData => ({
+        id: `${name}:${c.subtitle ?? i}`,
+        label: sourceLabel(name),
+        title: c.title,
+        annotation: c.subtitle,
+        onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined
+      }))
+
     // A page chip goes to the page. Sent to its card in the Sources tab, the
     // LinkedIn chip on a LinkedIn row — and the Privacy page chip on a privacy
     // policy — led away from the one thing the reader wanted. Metadata is the
@@ -243,7 +312,8 @@ export const AttributeSources = ({
         !linksOut && onJumpToSource
           ? () => onJumpToSource(namedCard(sourceLabel(name)))
           : undefined,
-        annotation: note ?? (isMetadata ? 'Website metadata' : 'Source'),
+        // What the source is, never the bare word "Source".
+        annotation: note ?? (isMetadata ? 'Website metadata' : href ? undefined : sourceLabel(name)),
       // Hung on every source in the row, a Facebook capture would have appeared
       // under the website crawl's chip as though the crawl had taken it.
       screenshot:
@@ -293,6 +363,8 @@ export const RowProvenance = ({
         sources={sources}
         links={row.links}
         registrations={row.registrations}
+        refs={row.refs}
+        sourceNames={row.sourceNames}
         domesticState={domesticState}
         href={row.href}
         note={row.sourceNote}

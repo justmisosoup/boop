@@ -1,8 +1,9 @@
 import reportStore from '../../analysis/reports.json'
+import liveRecords from '../data/records.json'
 
 import type { StoredReport } from '../types'
 import { withCityRegistrations } from './cityRegistrations'
-import { presented } from './deriveResults'
+import { presented, type BusinessRecord } from './deriveResults'
 
 /**
  * The reports written for this prototype, bundled — one per business.
@@ -27,11 +28,33 @@ export const reportKey = (name: string) => (name ?? '').toLowerCase().replace(/\
  * withCityRegistrations — so the page it opens on can show them. The store is
  * a list per business for the endpoint's sake; the page reads the newest.
  */
+/**
+ * What a snapshot written before these were pulled does not carry: each
+ * filing's officers as the filing states them (copied from the SAME filing on
+ * the live record, by state and file number), and the business's FMCSA
+ * records and documents. Nothing inferred.
+ */
+const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
+  const live = (liveRecords as unknown as BusinessRecord[]).find((x) => reportKey(x.name) === reportKey(record.name))
+  if (!live) return record
+  return {
+    ...record,
+    // Pulled after most reports were written, from the same business record.
+    fmcsaRegistrations: record.fmcsaRegistrations ?? live.fmcsaRegistrations,
+    documents: record.documents ?? live.documents,
+    registrations: record.registrations.map((r) => {
+      if (r.officerRoles) return r
+      const same = live.registrations.find((x) => x.state === r.state && x.fileNumber === r.fileNumber)
+      return same?.officerRoles ? { ...r, officerRoles: same.officerRoles } : r
+    })
+  }
+}
+
 export const heldReportFor = (name: string): StoredReport | null => {
   const r = (RAW[reportKey(name)] ?? []).at(-1)
   if (!r) return null
   if (!r.snapshot?.record) return r
-  const record = withCityRegistrations(r.snapshot.record)
+  const record = withOfficerRoles(withCityRegistrations(r.snapshot.record))
   // The snapshot's rows were derived when the report was written; what the
   // page shows of them follows today's rules.
   return { ...r, snapshot: { ...r.snapshot, record, results: presented(record, r.snapshot.results) } }

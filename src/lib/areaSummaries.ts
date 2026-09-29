@@ -44,6 +44,16 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         .map((p) => titleCase(p.name.trim()))
     )
   ]
+  // Members as the filings name them — their spelling, their role. Not the
+  // record's people[], which folds a member and an agent whose names look
+  // alike into one person.
+  const members = [
+    ...new Map(
+      record.registrations
+        .flatMap((r) => (r.officerRoles ?? []).filter((o) => o.roles.some((x) => /member/i.test(x))).map((o) => ({ ...o, state: r.state })))
+        .map((o) => [o.name.toLowerCase(), o] as const)
+    ).values()
+  ]
   const list = (xs: string[]) => (xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`)
   const licences = record.licenses ?? []
   const licencePointer = licences.length
@@ -66,6 +76,8 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       }`
     : upper === 'CORPORATION'
       ? 'A corporation is owned by shareholders, who are not named on its filings; officers are. Beneficial owners come from the customer certification, which is normal for this structure.'
+      : upper === 'LLC' && members.length > 0
+        ? `The ${stateName(members[0].state)} filing names ${list(members.map((m) => titleCase(m.name)))} as ${members.length === 1 ? 'a member' : 'members'}. Ownership percentages and any other beneficial owners come from the customer certification.`
       : upper === 'LLC'
         ? 'An LLC is owned by its members, who are rarely named on state filings. Beneficial owners come from the customer certification, which is normal for this structure.'
         : 'Owners are rarely named on public filings. Beneficial owners come from the customer certification.'
@@ -241,7 +253,9 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
           ? `Likely owned by ${sole.person}, as a sole proprietor`
           : professional
             ? 'Owned by licensed practitioners'
-            : 'Owners come from the customer certification',
+            : upper === 'LLC' && members.length > 0
+              ? `${members.length === 1 ? 'Member' : 'Members'} named on the state filing`
+              : 'Owners come from the customer certification',
         summary: ownership
       }
     ],

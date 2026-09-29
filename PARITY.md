@@ -39,6 +39,11 @@ Checked file by file on 2026-09-28. Four files differ:
     body.
   - **(4)** one shared identity for a whole list, and **(5)** which edge the list
     opens from.
+  - **(6)** `ChatSourceData` gained an optional `badge: ReactNode`, rendered after
+    the title in the list row and the preview headline. A source without one
+    renders exactly as before. It carries a record's status as a `Tag`: a filing
+    reading "California" with an Active chip beside it, rather than
+    "California · Active" as text in the title.
 - **`src/core/PayloadViewer.tsx`, `PayloadViewer.test.tsx` and
   `Dropdown.consumers.test.tsx`** differ with no local marker; they read as re-copied
   from a later app commit. Confirm against the app before a re-clone overwrites them.

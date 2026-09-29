@@ -53,6 +53,9 @@ const TITLE: Record<Tier, string> = {
   submitted: 'Submitted'
 }
 
+/** The fields other sources state as well as the card's filing. */
+const CORROBORATED = new Set(['Legal name', 'Entity type'])
+
 /** As the rows name it: `provenanceList` renders source keys as labels. */
 const CITY = 'City registration'
 
@@ -133,11 +136,31 @@ export const FormationCard = ({
     results.filter((r) => r.insightId === id && r.state !== 'unknown' && !alreadyShown(id))
   )
 
-  const cells = cellsFromRows(tierRows, {
+  /* The header names the card's filing once. A value other sources state too —
+     the name 21 filings are under, the form they all declare — shows every source that states it, this filing included, so it
+     reads as what the record agrees on rather than one filing's word. Everything
+     else is the filing's alone, and the header already cites it. */
+  const isCardFiling = (f: BusinessRecord['registrations'][number]) =>
+    Boolean(domestic) && f.state === domestic?.state && f.fileNumber === domestic?.fileNumber
+  // A chip only where something beyond the card's own filing states the value
+  // — and then it lists everything, the card's filing first, so the list reads
+  // as the whole record rather than the whole record minus the one on screen.
+  const corroboratedBeyondCard = (r: AttributeRow) =>
+    (r.registrations ?? []).some((f) => !isCardFiling(f)) || (r.sources ?? []).length > 0
+  const shownRows =
+    tier === 'formation'
+      ? tierRows.map((r) =>
+          CORROBORATED.has(r.label) && corroboratedBeyondCard(r)
+            ? r
+            : { ...r, sources: [], source: '', registrations: undefined }
+        )
+      : tierRows
+
+  const cells = cellsFromRows(shownRows, {
     domesticState,
     onJumpToSource,
-    // The source is named once, in the header.
-    provenance: false,
+    // The source is named once, in the header; only corroboration beyond it shows.
+    provenance: tier === 'formation',
     // The standing row's "order a certificate" line is a reading of the
     // absence, which is what the note slot is for.
     evidence: true

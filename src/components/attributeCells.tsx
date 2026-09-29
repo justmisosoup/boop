@@ -75,12 +75,27 @@ const badgeFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
 const noteFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
   const evidenceNote = ctx.evidence ? row.evidenceNote : undefined
   const trailing = row.trailing && <span>{row.trailing}</span>
-  if (!trailing && !evidenceNote) return undefined
+  // One field per line, labelled — never run together into one string.
+  const fields = [...(row.fields ?? []), ...(ctx.evidence ? (row.evidenceFields ?? []) : [])]
+  const meta = row.meta?.length ? row.meta.join(' · ') : undefined
+  if (!trailing && !evidenceNote && fields.length === 0 && !meta) return undefined
 
   return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      {trailing}
-      {evidenceNote && <span>{evidenceNote}</span>}
+    <span className="flex flex-col gap-y-0.5">
+      {/* A record's status, ID and date, as the line a list of records is scanned by. */}
+      {meta && <span className="block">{meta}</span>}
+      {(trailing || evidenceNote) && (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {trailing}
+          {evidenceNote && <span>{evidenceNote}</span>}
+        </span>
+      )}
+      {fields.map((f, i) => (
+        <span key={i} className="block">
+          {f.label ? `${f.label}: ` : ''}
+          {f.value}
+        </span>
+      ))}
     </span>
   )
 }
