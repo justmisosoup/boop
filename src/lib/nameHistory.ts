@@ -1,6 +1,5 @@
 import timeline from '../data/timeline.json'
 import type { BusinessRecord } from './deriveResults'
-import { sameName } from './registrationStatus'
 
 type NameEvent = {
   id: string
@@ -12,27 +11,21 @@ type NameEvent = {
 const EVENTS = (timeline as unknown as { byBusiness: Record<string, NameEvent[]> }).byBusiness
 
 /**
- * The names the business's filings have dropped, newest first, from the
- * business timeline: Sprig's California filing was USERLEAP INC until the
- * timeline recorded its change in October 2021. Any of its filings, but only a
- * name none of them — nor the record — still carries: a name dropped and put
- * back, or dropped on one filing and kept on another, is not a former name.
+ * Every name change the business timeline records on the business's filings,
+ * newest first — one per change, as the timeline lists them: the name the
+ * filing dropped, in which state, and when. Sprig's California filing dropped
+ * USERLEAP INC in October 2021; Change.org's filings made four changes across
+ * California, New York and D.C.
  */
-export const priorNamesOf = (record: BusinessRecord): Array<{ name: string; at: string; eventId: string }> => {
-  const current = [...record.registrations.map((r) => r.name), ...(record.names ?? []).map((n) => n.name)]
-  const out: Array<{ name: string; at: string; eventId: string }> = []
-  for (const e of EVENTS[record.id] ?? []) {
-    if (e.type !== 'name.deleted') continue
-    if (!(e.data.object.sources ?? []).some((x) => x.type === 'registration')) continue
-    const name = e.data.object.name
-    if (!name || current.some((c) => sameName(c, name))) continue
-    const seen = out.find((o) => sameName(o.name, name))
-    // The latest time it was dropped.
-    if (seen) {
-      if (e.occurred_at > seen.at) Object.assign(seen, { at: e.occurred_at, eventId: e.id })
-      continue
-    }
-    out.push({ name, at: e.occurred_at, eventId: e.id })
-  }
-  return out.sort((a, b) => b.at.localeCompare(a.at))
-}
+export const priorNamesOf = (
+  record: BusinessRecord
+): Array<{ name: string; state?: string; at: string; eventId: string }> =>
+  (EVENTS[record.id] ?? [])
+    .filter((e) => e.type === 'name.deleted' && e.data.object.name)
+    .flatMap((e) => {
+      const filing = (e.data.object.sources ?? []).find((x) => x.type === 'registration')
+      return filing
+        ? [{ name: e.data.object.name as string, state: filing.metadata?.state, at: e.occurred_at, eventId: e.id }]
+        : []
+    })
+    .sort((a, b) => b.at.localeCompare(a.at))

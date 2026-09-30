@@ -223,7 +223,7 @@ const NameHistory = ({
   names,
   onOpen
 }: {
-  names: Array<{ name: string; at: string; eventId: string }>
+  names: Array<{ name: string; state?: string; at: string; eventId: string }>
   /** Open the timeline on the change — the newest one. */
   onOpen?: (eventId: string) => void
 }) => {
@@ -238,10 +238,14 @@ const NameHistory = ({
       {/* One row per name, newest first, each with the date the timeline
           shows for its change. */}
       {names.map((n) => (
-        <span key={n.name} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1">
+        // One row per change, as the timeline lists them, each with its
+        // filing's state. One line each: a long name is cut short —
+        // CHANGEORG INC WHICH WILL DO BUSINESS IN… — and read in full there.
+        <span key={n.eventId} className="flex items-center justify-between gap-4">
+          <span className="flex min-w-0 items-center gap-1">
             <History {...MARK} />
-            {n.name}
+            {n.state && <span className="shrink-0 text-text-secondary">{n.state}</span>}
+            <span className="truncate">{n.name}</span>
           </span>
           <span className="shrink-0 text-text-secondary">{formatDate(n.at)}</span>
         </span>
@@ -441,7 +445,7 @@ export const FormationCard = ({
   const FILING_FIELDS = new Set(['Formation state', 'Status', 'Sub status', 'Status details'])
   const shownCells = strip ? cells.filter((c) => !FILING_FIELDS.has(c.label ?? '')) : cells
   const [lead, ...rest] = shownCells
-  // Every name the business's filings have dropped, beside its legal name.
+  // Every name change on the business's filings, beside its legal name.
   const priorNames = tier === 'formation' && lead?.label === 'Legal name' ? priorNamesOf(record) : []
   /* The names the business trades under, beside its legal name: Andytown LLC
      as Andytown, Andytown Coffee Roasters. The names only — who owns them is
