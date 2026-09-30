@@ -593,16 +593,22 @@ export const FilingStrip = ({
             }
           ]
         : []),
-      // The formation filing's date is the card's Formation date, with its age.
-      ...(f.registrationDate && f !== lead
-        ? [
-            {
-              key: `${f.fileNumber}-r`,
-              label: 'Registered',
-              values: [{ value: formatDate(f.registrationDate) }]
-            }
-          ]
-        : [])
+      // Every filing's own date, the formation filing's included: the card's
+      // Formation date says when the entity was formed, this says when this
+      // filing was made.
+      {
+        key: `${f.fileNumber}-r`,
+        label: 'Registered',
+        values: [
+          {
+            value: f.registrationDate ? (
+              formatDate(f.registrationDate)
+            ) : (
+              <span className="text-text-secondary">{NOT_PROVIDED}</span>
+            )
+          }
+        ]
+      }
     ]
   })
 

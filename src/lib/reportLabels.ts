@@ -14,7 +14,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept'
 
 /** "Sept 22 2026". */
 export const formatDate = (iso: string) => {
-  const d = new Date(iso)
+  // A date alone ("2019-10-21") is a calendar day, not an instant: parsed as
+  // one it is midnight UTC, which west of Greenwich is the evening before, and
+  // every filing's date read a day early. Read it as the local day.
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : new Date(iso)
   return `${MONTHS[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`
 }
 
