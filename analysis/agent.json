@@ -7,56 +7,56 @@
       "name": "Bank account opening",
       "instructions": "Run the four assessments attached to this assessment workflow. Make sure to keep the tone of the assessment in the mindset of a financial services compliance analyst that works at a bank like Mercury who is onboarding businesses to their bank. \n\nMake sure the prose is very concise and do not be overtly verbose. Only share what is relevant to the decision.\n\nWrite no recommendation prose at all. Do not summarise the assessments or repeat what they established; the reader has just read them. The recommendation section is the follow-ups and nothing else.\n\nEach follow-up is one thing to do before the account opens, with only the facts that justify it behind it. Two lines, at most three: the instruction, then why. If nobody could act on it tomorrow, leave it out — a connected business that is plainly a neighbour is a fact for the assessment, not a step. Steps come from what the record leaves open and from what a registry does not publish: a missing good-standing sub-status is an RFI, not a shrug.",
       "kind": "workflow",
-      "createdBy": "Sara Menefee",
+      "createdBy": "Alex Morgan",
       "createdAt": "2026-09-17T00:39:29.869Z",
       "history": [
         {
           "at": "2026-09-17T00:39:29.869Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T00:39:47.172Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T00:39:54.176Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T00:43:24.067Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T01:08:10.816Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T18:30:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:05:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T22:42:42.633Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T23:55:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T00:29:30.903Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:36:56.520Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:37:07.899Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         }
       ],
       "editedAt": "2026-09-18T21:37:07.899Z"
@@ -66,52 +66,52 @@
       "name": "Identity",
       "instructions": "Is this a real, distinct, active entity, and is it the one on the application?\n\nAlways:\n- Verify the submitted business name matches a state filing\n- Verify the submitted address matches a state filing\n- Identify Secretary of State filings (domestic and foreign)\n- Identify Certificate of Good Standing or Secretary of State filings sub status is in good standing\n- Identify unsubmitted entity classification type\n- Identify unsubmitted industry classification \n- Identify unsubmitted web presence and third-party profiles\n- Identify unsubmitted officers or people associated\n- Identify unsubmitted business entities listed as owners / officers \n- Identify unsubmitted registered agents listed as owners / officers\n- Identify complexity of ownership structure for the business entity\n\nIf submitted:\n- Verify that the TIN belongs to a name associated with the business entity. If a TIN is not submitted do not elevate\n- Verify DBA names, this is not a requirement, if the DBA is not submitted you literally dont have to mention it\n- Verify entity classification type for the business entity\n- Verify third-party profiles for the business entity\n- Verify website presence for the business entity\n- Verify email for the business entity\n- Verify phone for the business entity",
       "kind": "assessment",
-      "createdBy": "Sara Menefee",
+      "createdBy": "Alex Morgan",
       "createdAt": "2026-09-17T18:30:00.000Z",
       "history": [
         {
           "at": "2026-09-17T18:30:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T19:40:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:05:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:40:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:45:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:50:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:54:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:31:05.511Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:34:47.967Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:43:50.397Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:57:36.990Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         }
       ],
       "editedAt": "2026-09-18T21:57:36.990Z",
@@ -152,24 +152,24 @@
       "name": "Compliance Screenings",
       "instructions": "Does the business, any UBO, or any signer trigger a sanctions or enforcement obligation?\n\nAlways:\n- Flag hits for submitted business name Sanctions / Watchlist hits\n- Flag hits for submitted business name Adverse Media hits\n- Flag hits for submitted / found people Sanctions / Watchlist hits\n- Flag hits for submitted / found people PEP hits\n- Flag hits for submitted / found people Adverse Media hits",
       "kind": "assessment",
-      "createdBy": "Sara Menefee",
+      "createdBy": "Alex Morgan",
       "createdAt": "2026-09-17T00:59:54.491981Z",
       "history": [
         {
           "at": "2026-09-17T00:59:54.491981Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T20:05:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-17T22:40:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:34:19.224Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         }
       ],
       "editedAt": "2026-09-18T21:34:19.224Z",
@@ -186,16 +186,16 @@
       "name": "Activity & Permission",
       "instructions": "Is the industry eligible under policy, and is the business licensed where it operates?\n\nAlways:\n- Identify whether the industry is a high-risk or prohibited industry\n- Identify whether there is evidence of other industry activity not detected that point to high-risk or prohibited industries\n- Identify presence and status of licenses required of the industry + jurisdiction. \n- Identify license link to officer / owner / person or business entity.",
       "kind": "assessment",
-      "createdBy": "Sara Menefee",
+      "createdBy": "Alex Morgan",
       "createdAt": "2026-09-17T21:15:00.000Z",
       "history": [
         {
           "at": "2026-09-17T21:15:00.000Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:32:51.165Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         }
       ],
       "editedAt": "2026-09-18T21:32:51.165Z",
@@ -232,16 +232,16 @@
       "name": "Ownership & Control",
       "instructions": "Who ultimately owns this, who is authorized to sign, and does the attestation hold up?\n\nAlways:\n- Identify unsubmitted officers or people associated\n- Identify unsubmitted business entities listed as owners / officers\n- Identify unsubmitted registered agents listed as owners / officers\n- Identify complexity of ownership structure for the business entity\n\nWhen submitted:\n- Verify business entities listed as owners / officers\n- Verify people listed as owners / officers\n- Verify registered agents listed as owners / officers",
       "kind": "assessment",
-      "createdBy": "Sara Menefee",
+      "createdBy": "Alex Morgan",
       "createdAt": "2026-09-18T21:35:28.449Z",
       "history": [
         {
           "at": "2026-09-18T21:35:28.449Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         },
         {
           "at": "2026-09-18T21:35:43.687Z",
-          "by": "Sara Menefee"
+          "by": "Alex Morgan"
         }
       ],
       "editedAt": "2026-09-18T21:35:43.687Z",

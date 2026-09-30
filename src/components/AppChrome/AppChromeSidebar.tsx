@@ -4,7 +4,7 @@ import { ArrowRight, ExternalLink, Plus, type LucideIcon } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 
 import { byId } from '@/lib/records'
-import { ago, CURRENT_USER } from '@/lib/user'
+import { ago, CURRENT_USER, CURRENT_USER_EMAIL } from '@/lib/user'
 
 import { AppSidebar, type AppNavLink } from './AppSidebar'
 import { CommandPalette, type CommandItem } from './CommandPalette'
@@ -164,7 +164,7 @@ export const AppChromeSidebar = () => {
   return (
     <>
       <AppSidebar
-        account={{ name: CURRENT_USER, email: 'smenefee@middesk.com' }}
+        account={{ name: CURRENT_USER, email: CURRENT_USER_EMAIL }}
         activeHref={location.pathname}
         groups={NAV_GROUPS}
         primary={PRIMARY_NAV}

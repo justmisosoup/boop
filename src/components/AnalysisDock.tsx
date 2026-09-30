@@ -50,7 +50,7 @@ type Token = {
   name: string
   instructions: string
   editable: boolean
-  /** "Sara Menefee · Updated 1 min ago" — only on the customer's own. */
+  /** "Alex Morgan · Updated 1 min ago" — only on the customer's own. */
   author?: string
   /** One entry per save, oldest first. */
   history?: Array<{ at: string; by?: string }>
@@ -790,7 +790,7 @@ export const AnalysisDock = ({
               />
 
               {/* Whose skill this is, in one place and one register for both:
-                  "Middesk · v0.12" for a default, "Sara Menefee · Updated 1 min
+                  "Middesk · v0.12" for a default, "Alex Morgan · Updated 1 min
                   ago" for one the customer wrote. */}
               {inspect.author && (
                 <div className="flex items-center gap-1">

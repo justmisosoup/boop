@@ -1,6 +1,6 @@
 import type { BandId } from './identityScore'
 import { createLocalStore } from './localStore'
-import { CURRENT_USER } from './user'
+import { CURRENT_USER, CURRENT_USER_EMAIL } from './user'
 
 /**
  * Who owns a business's review, and where it stands.
@@ -22,7 +22,7 @@ export type TeamMember = { id: string; name: string; email: string }
  * exist so the picker is a picker.
  */
 export const TEAM: readonly TeamMember[] = [
-  { id: 'u-sara', name: CURRENT_USER, email: 'smenefee@middesk.com' },
+  { id: 'u-alex', name: CURRENT_USER, email: CURRENT_USER_EMAIL },
   { id: 'u-priya', name: 'Priya Raman', email: 'praman@middesk.com' },
   { id: 'u-marcus', name: 'Marcus Lee', email: 'mlee@middesk.com' }
 ]

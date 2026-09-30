@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react'
  * here rather than inline so that the one place authorship comes from is
  * obvious when a real session replaces it.
  */
-export const CURRENT_USER = 'Sara Menefee'
+export const CURRENT_USER = 'Alex Morgan'
+export const CURRENT_USER_EMAIL = 'alex.morgan@middesk.com'
 
 /** "just now", "1 min ago", "2 hours ago", "3 days ago". */
 export const ago = (iso?: string) => {
@@ -22,7 +23,7 @@ export const ago = (iso?: string) => {
 }
 
 /**
- * Who owns a skill and when it last changed — "Sara Menefee · Updated 1 min
+ * Who owns a skill and when it last changed — "Alex Morgan · Updated 1 min
  * ago".
  *
  * One line for both, because they answer the same question: whose is this and
