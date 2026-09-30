@@ -211,8 +211,8 @@ const AccountMenu = ({
  *
  * And `focus-visible:outline-none` where the app writes `outline-hidden` —
  * that is a Tailwind v4 utility and this project is on v3, where it compiles to
- * nothing and the browser paints its own ring on top of core's. Same rule, and
- * the same reason, as the note in `AnalysisDock`.
+ * nothing and the browser paints its own ring on top of core's. Same rule
+ * wherever a field's outline is stripped in this prototype.
  */
 export const AppSidebar = ({
   account,

@@ -116,9 +116,21 @@ export type AnalysisRequest = {
   snapshot?: ReportSnapshot
   /** Which report a `question` is asked of. Absent on a `report`. */
   reportId?: string
+  /**
+   * Which conversation on that report the question belongs to.
+   *
+   * A report can carry several conversations — the assistant's history lists
+   * them and "New conversation" starts another. Absent on a `report`, and on a
+   * question asked before conversations existed, which the page reads as the
+   * first conversation.
+   */
+  threadId?: string
   /** The assessments that composed the run, in read order. The first is the
    *  workflow, which is what a report is called. */
   skills?: string[]
+  /** What the reader typed, on its own — the prompt minus the skills. Kept
+   *  with the question so the conversation can show it as the user's turn. */
+  typed?: string
 }
 
 /**
@@ -149,6 +161,8 @@ export type StoredQuestion = {
   typed?: string
   skills?: string[]
   durationMs?: number
+  /** The conversation it was asked in. Absent = the report's first. */
+  threadId?: string
   result: AnalysisResult
 }
 
@@ -307,11 +321,12 @@ export type AnalysisVerdict = {
   /**
    * One sentence answering the question asked.
    *
-   * It renders on a typed question, where it is the answer. On a standing
-   * report it does not: the follow-ups under `Recommendations` are what a
-   * reviewer acts on, and a sentence saying "onboard subject to conditions"
-   * above them only named what the list already is. Still written, still
-   * validated — it is what records which of the three decisions was reached.
+   * Not rendered. On a standing report the follow-ups under `Recommendations`
+   * are what a reviewer acts on, and a sentence saying "onboard subject to
+   * conditions" above them only named what the list already is. On a typed
+   * question the assistant prints the paragraphs, whose first answers
+   * directly, and a summary over them said everything twice. Still written,
+   * still validated — it is what records the answer in one line.
    */
   headline: string
   /**
@@ -351,6 +366,14 @@ export type AnalysisVerdict = {
      */
     entities?: Array<{ name: string; note?: string }>
   }>
+  /**
+   * Two or three questions the reader might ask next, as they would type them.
+   *
+   * The assistant offers them under the answer. Optional: an answer without
+   * them falls back to the standing starter questions. Never a follow-up step
+   * — those are things to do; these are things to ask.
+   */
+  suggestions?: string[]
 }
 
 /** The two stages merged by the endpoint. What the UI renders. */

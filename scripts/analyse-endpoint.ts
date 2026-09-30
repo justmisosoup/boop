@@ -110,11 +110,22 @@ const keepReport = (asked: AnalysisRequest, report: AnalysisResult) => {
       // A question against a report we do not hold has nowhere to go. Dropping
       // it is better than inventing a report around it.
       if (at === -1) return
+      // Filed once. The page polls until the answer lands and any poll after
+      // that — or a second reader of the same id — would file it again.
+      if (list[at].questions.some((q) => q.id === asked.id)) return
       list[at] = {
         ...list[at],
         questions: [
           ...list[at].questions,
-          { id: asked.id, at: asked.requestedAt, prompt: asked.prompt, result: report }
+          {
+            id: asked.id,
+            at: asked.requestedAt,
+            prompt: asked.prompt,
+            typed: asked.typed,
+            skills: asked.skills,
+            threadId: asked.threadId,
+            result: report
+          }
         ]
       }
     } else {
@@ -286,6 +297,33 @@ const problemWithVerdict = (value: unknown, draft: AnalysisDraft): string | null
   if (reaching.length > 0)
     return `The recommendation cites ${[...new Set(reaching)].join(', ')}, which no assessment discusses. A verdict may only rest on its own assessments.`
 
+  return null
+}
+
+/**
+ * A typed question's answer file: `{ headline, answer, followUps?, suggestions? }`.
+ *
+ * `answer` is the one section (README: id `answer`); `recommendation` is
+ * accepted in its place for a file written to the report's shape.
+ */
+type QuestionAnswer = {
+  headline: string
+  answer?: AssessmentSection
+  recommendation?: AssessmentSection
+  followUps?: AnalysisVerdict['followUps']
+  suggestions?: string[]
+}
+
+const problemWithAnswer = (value: unknown, asked: AnalysisRequest): string | null => {
+  if (!value || typeof value !== 'object') return 'Answer file is not an object.'
+  const v = value as Partial<QuestionAnswer>
+  if (typeof v.headline !== 'string' || !v.headline.trim()) return 'Answer is missing `headline`.'
+  const section = v.answer ?? v.recommendation
+  if (!section || !Array.isArray(section.body)) return 'Answer is missing an `answer` section with `body`.'
+  const known = new Set(asked.insights.map((i) => i.id))
+  const reaching = [...citesOf([section])].filter((id) => !known.has(id))
+  if (reaching.length > 0)
+    return `The answer cites ${reaching.join(', ')}, which is not on this record. An answer may only cite the insights it was given.`
   return null
 }
 
@@ -510,6 +548,32 @@ export const analysePlugin = (): Plugin => ({
           return
         }
 
+        /**
+         * A question is answered whole, in one section.
+         *
+         * It has no assessments, so the report's rule — a verdict may only
+         * cite what an assessment discussed — has nothing to check against and
+         * refused every citation. A question's answer may cite any insight the
+         * request carried: those are what it was asked to read.
+         */
+        if (asked.kind === 'question') {
+          const problem = problemWithAnswer(rawVerdict, asked)
+          if (problem) return fail(`${problem} (analysis/result-${id}.json)`)
+          const answer = rawVerdict as QuestionAnswer
+          const section: AssessmentSection = { ...(answer.answer ?? answer.recommendation!), id: 'answer' }
+          const merged: AnalysisResult = {
+            by: 'claude-code-session',
+            used: [...new Set(citesOf([section]))],
+            headline: answer.headline,
+            sections: [section],
+            followUps: answer.followUps ?? [],
+            ...(Array.isArray(answer.suggestions) ? { suggestions: answer.suggestions } : {})
+          }
+          keepReport(asked, merged)
+          res.end(JSON.stringify(merged))
+          return
+        }
+
         const verdictProblem = problemWithVerdict(rawVerdict, draft)
         if (verdictProblem) return fail(`${verdictProblem} (analysis/result-${id}.json)`)
         const verdict = rawVerdict as AnalysisVerdict
@@ -519,7 +583,10 @@ export const analysePlugin = (): Plugin => ({
           used: draft.used,
           headline: verdict.headline,
           sections: [...draft.sections, verdict.recommendation],
-          followUps: verdict.followUps
+          followUps: verdict.followUps,
+          // What to ask next, when the session offered it. Optional, so an
+          // older result without it still merges.
+          ...(Array.isArray(verdict.suggestions) ? { suggestions: verdict.suggestions } : {})
         }
         // Written on completion, not on demand: the moment a report is whole is
         // the only moment we can be sure it is worth keeping.

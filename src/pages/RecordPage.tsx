@@ -12,14 +12,15 @@ import {
   PageHeaderActions,
   PageHeading,
   TabsContent,
-  TabsRoot
+  TabsRoot,
+  type FloatingPanelPresentation,
+  type FloatingPanelState
 } from '@/core'
 
-import { AnalysisDock } from '../components/AnalysisDock'
 import { AttributeGroupDetail, attributeGroups } from '../components/AttributesTab'
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
-import { AnalysisChat } from '../components/AnalysisChat'
+import { AssistantPanel } from '../components/Assistant/AssistantPanel'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { Timeline } from '../components/Timeline'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
@@ -27,7 +28,8 @@ import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 import { DeterminationCard } from '../components/DeterminationCard'
 import { NeedsReviewCard } from '../components/NeedsReviewCard'
-import { cardsNeedingReview } from '../lib/needsReview'
+import { FORMATION_CARD_ID, cardsNeedingReview } from '../lib/needsReview'
+import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
 import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
@@ -103,6 +105,40 @@ const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
 
 /** The report column's width, in px, from which the decision sits in a left rail. */
 const RAIL_AT = 860
+
+/**
+ * The assistant's state and presentation, remembered per browser.
+ *
+ * Minimise it once and it stays minimised; float it and it stays floating —
+ * the same promise the Explorer dock makes (`readInitialState` there). Guarded
+ * reads: with site data blocked the getter itself throws, inside a `useState`
+ * initialiser, where an unguarded throw would crash the page.
+ */
+const ASSISTANT_STATE_KEY = 'proto:assistant:state'
+const ASSISTANT_PRESENTATION_KEY = 'proto:assistant:presentation'
+
+const readStored = (key: string): string | null => {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+const writeStored = (key: string, value: string) => {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    // private mode / storage disabled — the preference just won't persist
+  }
+}
+
+/** Open on first visit — the assistant is half of what this page is for. */
+const readAssistantState = (): FloatingPanelState => {
+  const saved = readStored(ASSISTANT_STATE_KEY)
+  return saved === 'pill' || saved === 'window' || saved === 'expanded' ? saved : 'window'
+}
+const readAssistantPresentation = (): FloatingPanelPresentation =>
+  readStored(ASSISTANT_PRESENTATION_KEY) === 'floating' ? 'floating' : 'docked'
 
 /**
  * One business's assessment.
@@ -315,11 +351,43 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * The rail's button brings it back, and dismissing it gives the whole width
    * to the report again.
    */
-  const [chatOpen, setChatOpen] = useState(() => analysis.questions.length > 0)
+  const [chatOpen, setChatOpen] = useState(false)
 
   /** What the right-hand column is showing. The picker in its own header, and
    *  the rail it collapses to, both set this. */
   const [panelView, setPanelView] = useState<PanelView>('assistant')
+
+  /**
+   * The assistant's own state: pill, window or expanded, docked or floating.
+   *
+   * Docked, it IS the right-hand column and its state decides whether the
+   * column is open. Floating, it is a window over the report and the column
+   * is put away to the rail. Below `wide` there is no column to dock into, so
+   * the preference is remembered and not honoured: the window floats.
+   */
+  const [assistantState, setAssistantStateRaw] = useState<FloatingPanelState>(readAssistantState)
+  const [assistantPreference, setAssistantPresentationRaw] =
+    useState<FloatingPanelPresentation>(readAssistantPresentation)
+  const setAssistantState = (next: FloatingPanelState) => {
+    setAssistantStateRaw(next)
+    writeStored(ASSISTANT_STATE_KEY, next)
+  }
+  const setAssistantPresentation = (next: FloatingPanelPresentation) => {
+    setAssistantPresentationRaw(next)
+    writeStored(ASSISTANT_PRESENTATION_KEY, next)
+  }
+  const assistantPresentation: FloatingPanelPresentation =
+    isWide && assistantPreference === 'docked' ? 'docked' : 'floating'
+  const assistantDocked = assistantPresentation === 'docked' && assistantState !== 'pill'
+
+  /**
+   * Whether the column has something in it.
+   *
+   * On the assistant it is the docked panel's own state; on the other four
+   * views it is the flag the rail toggles. One answer for the layout below,
+   * which sizes the column and insets the report from it.
+   */
+  const columnOpen = panelView === 'assistant' ? assistantDocked : chatOpen
 
   /**
    * Written out rather than composed from `wide:` variants.
@@ -331,7 +399,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    */
   const panelClass = !isWide
     ? 'contents'
-    : chatOpen
+    : chatOpen && panelView !== 'assistant'
       ? 'flex min-w-0 flex-1 flex-col border-l border-solid border-border bg-card'
       : 'hidden'
 
@@ -503,7 +571,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               />
   )
 
-  const [dockOpen, setDockOpen] = useState(true)
   const [revealed, setRevealed] = useState<string[]>([])
   /**
    * Which face of the report is on screen.
@@ -518,7 +585,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   /** Open the right-hand panel on one of its views. */
   const showPanel = (view: PanelView) => {
     setPanelView(view)
-    setChatOpen(true)
+    if (view === 'assistant') {
+      if (assistantState === 'pill') setAssistantState('window')
+    } else setChatOpen(true)
   }
 
   /**
@@ -535,6 +604,35 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     window.setTimeout(() => setRevealed([]), 2400)
   }
   const jumpToGroup = (groupId: string, insightIds: string[]) => reveal(insightIds, groupId)
+
+  /**
+   * An assistant chip leads to the insight IN THE REPORT.
+   *
+   * The report is where the assessment argues from the row, so that is where
+   * a citation should land: the cited rows open where they sit on their cards,
+   * and the report scrolls to the first of them. A cite whose row is on no card
+   * — the assessment did not cite it — falls back to the Insights view, which
+   * has every row.
+   */
+  const revealedSet = useMemo(() => new Set(revealed), [revealed])
+  const jumpToInsight = (groupId: string, insightIds: string[]) => {
+    const scroller = panelRef.current
+    const target =
+      insightIds
+        .map((id) => scroller?.querySelector<HTMLElement>(`[id="insight-${id}"]`) ?? null)
+        .find((el): el is HTMLElement => el !== null) ??
+      // The domestic filing's checks are the Formation card's, and the card
+      // states most of them as fields of its grid rather than as rows — the
+      // status, the sub status, the entity type. No row to open, but the card
+      // is where the answer is, so the card is where the chip lands.
+      (insightIds.some((id) => (FORMATION_CARD_INSIGHTS as ReadonlyArray<string>).includes(id.split(':')[0]))
+        ? scroller?.querySelector<HTMLElement>(`[id="${FORMATION_CARD_ID}"]`) ?? null
+        : null)
+    if (!target) return reveal(insightIds, groupId)
+    setRevealed(insightIds)
+    window.setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+    window.setTimeout(() => setRevealed([]), 2400)
+  }
 
   /**
    * An attribute's source chip names a record, and the record is in Sources
@@ -583,13 +681,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       style={
         {
           '--panel-w': `${PANEL_W}px`,
-          ...(chatOpen ? {} : { '--chat-w': RAIL_W }),
+          ...(columnOpen ? {} : { '--chat-w': RAIL_W }),
           // The timeline is a chart with a year axis and a 144px label column:
           // at the assistant's width it is a sparkline with truncated values,
           // so opening it takes the half of the window it needs. A width the
           // reader has dragged wins over both — they have said what they want.
-          ...(chatOpen && chatW === null && panelView !== 'assistant' ? { '--chat-w': '50%' } : {}),
-          ...(chatOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
+          ...(columnOpen && chatW === null && panelView !== 'assistant' ? { '--chat-w': '50%' } : {}),
+          ...(columnOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
         } as React.CSSProperties
       }
     >
@@ -788,6 +886,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               record={record}
               results={results}
               groupFor={groupFor}
+              revealed={revealedSet}
               onJumpToSource={jumpToSource}
               className={(view || running) && !railed ? 'mt-4' : undefined}
             />
@@ -825,29 +924,11 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               draft={analysis.draft}
               onJumpToSource={jumpToSource}
               negatives={negatives}
+              revealed={revealedSet}
               tiers={tiers}
               summaries={summaries}
             />
 
-            {/* No column at this width, so the turns sit under the report —
-                which is where the conversation has always been here. */}
-            {!isWide && analysis.selected && (
-              <AnalysisChat
-                className="mt-10"
-                scroll={false}
-                turns={analysis.questions}
-                waiting={analysis.waiting && analysis.waitingKind === 'question'}
-                waitingTyped={analysis.waitingTyped}
-                waitingSkills={analysis.waitingSkills}
-                error={analysis.error}
-                results={results}
-                record={record}
-                categories={categories}
-                negatives={negatives}
-                onJumpToGroup={jumpToGroup}
-                onJumpToSource={jumpToSource}
-              />
-            )}
               </TabsContent>
 
                     </div>
@@ -899,13 +980,52 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         {/* The seam is a handle. It is inside the column so it moves with it,
             and it is the column's own left edge — the one the report is on the
             other side of. */}
-        {isWide && chatOpen && (
+        {isWide && columnOpen && (
           <ColumnResizer
             width={chatW ?? (window.innerWidth >= 1504 ? 460 : 400)}
             onResize={setChatW}
             onReset={() => setChatW(null)}
           />
         )}
+
+        {/* The assistant: the column itself when docked, a window over the
+            report when floating, the pill when minimised. A sibling of the
+            other views' box rather than inside it, because that box is
+            `hidden` when the column is put away — and the pill has to stay on
+            screen precisely then. Its own width and height are forced to the
+            column's, since the column is already sized by `--chat-w` and the
+            seam above; the kit's own rail width would fight it. */}
+        <AssistantPanel
+          className={cn(
+            assistantPresentation === 'docked' &&
+              (assistantDocked && panelView === 'assistant'
+                ? '!static !h-full !w-full min-w-0 flex-1'
+                : // Put away, or another view has the column: not a zero-width
+                  // rail (its header spilled over the Timeline's) but gone. The
+                  // pill is the panel's sibling and stays; the rail's entry
+                  // brings the panel back.
+                  'hidden')
+          )}
+          record={record}
+          results={results}
+          groupFor={groupFor}
+          analysis={analysis}
+          custom={agent.skills.filter((x) => !(agent.disabled ?? []).includes(x.id))}
+          disabled={agent.disabled ?? []}
+          policy={policy}
+          state={assistantState}
+          presentation={assistantPresentation}
+          canDock={isWide}
+          onStateChange={(next) => {
+            setAssistantState(next)
+            // Opening it on a column showing another view brings the
+            // assistant back to the front of the column.
+            if (next !== 'pill') setPanelView('assistant')
+          }}
+          onPresentationChange={setAssistantPresentation}
+          onCreateSkill={() => setAgentOpen('new')}
+          onJumpToGroup={jumpToInsight}
+        />
 
         {/* The panel. White, and the report beyond it is the canvas grey: the
             report is a run of white cards now — the call, the formation grid,
@@ -919,7 +1039,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             the composer inside it is never thrown away, so what someone has
             half-typed survives both. */}
         <div className={panelClass}>
-            {isWide && chatOpen && (
+            {isWide && chatOpen && panelView !== 'assistant' && (
             <ChatPanelHeader view={panelView} />
             )}
 
@@ -982,85 +1102,33 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               </div>
             )}
 
-            {panelView === 'assistant' && analysis.selected && (
-              <AnalysisChat
-                // A different report is a different conversation: remounting
-                // resets the log's stick-to-bottom, which would otherwise stay
-                // detached from where the reader had scrolled in the last one.
-                key={analysis.selected.id}
-                turns={analysis.questions}
-                marker={
-                  running
-                    ? `Running ${analysis.waitingSkills[0] ?? standing?.name ?? 'the assessment'}`
-                    : `${reportLabel(analysis.selected)} · ${reportDate(analysis.selected)}`
-                }
-                waiting={analysis.waiting && analysis.waitingKind === 'question'}
-                waitingTyped={analysis.waitingTyped}
-                waitingSkills={analysis.waitingSkills}
-                error={analysis.error}
-                results={results}
-                record={record}
-                categories={categories}
-                negatives={negatives}
-                onJumpToGroup={jumpToGroup}
-                onJumpToSource={jumpToSource}
-              />
-            )}
-
-      {(!isWide || panelView === 'assistant') && (
-      <AnalysisDock
-        docked={isWide}
-        open={dockOpen}
-        setOpen={setDockOpen}
-        // Which report a question joins. A report ignores it and starts its own.
-        report={
-          analysis.selected
-            ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
-            : null
-        }
-        onSend={({ prompt, assessments, attachments, skills, typed, kind, target }) =>
-          analysis.run(
-            prompt,
-            attachments,
-            kind,
-            skills,
-            typed,
-            // What the composer actually put in the box, so a disabled part or
-            // an edit between render and send cannot drift from what runs.
-            assessments.length > 0 ? assessments : policy,
-            target
-          )
-        }
-        // Switched off means not offered: the menu lists what can be run, and
-        // an entry that is off would be a row you can pick and nothing happens.
-        custom={agent.skills.filter((x) => !(agent.disabled ?? []).includes(x.id))}
-        disabled={agent.disabled ?? []}
-        onCreateSkill={() => setAgentOpen('new')}
-        // The standing assessment IS the settings page, so editing it opens
-        // that page rather than an editor nested inside itself.
-        onEditSkill={(id) => setAgentOpen(id === standing?.id ? 'list' : id)}
-        onUpdateSkill={(id, name, instructions) => void agent.updateSkill(id, name, instructions)}
-        hasAnalysis={analysis.versions.length > 0}
-      />
-      )}
         </div>
 
         {/* The rail, always. Putting the panel away leaves the list of what it
             could show rather than a bare edge. */}
         {isWide && (
           <ChatRail
-            open={chatOpen}
-            onHide={() => setChatOpen(false)}
+            open={columnOpen}
+            onHide={() => {
+              if (panelView === 'assistant') setAssistantState('pill')
+              else setChatOpen(false)
+            }}
             view={panelView}
             onOpen={(v) => {
               // Picking the view you are already on puts the column away, the
               // way a nav rail's current entry does nothing but this one has
-              // somewhere to go.
-              if (chatOpen && v === panelView) setChatOpen(false)
-              else {
-                setPanelView(v)
-                setChatOpen(true)
+              // somewhere to go. The assistant's entry docks it: the rail is
+              // the column's, and a floating window is not in the column.
+              if (columnOpen && v === panelView) {
+                if (v === 'assistant') setAssistantState('pill')
+                else setChatOpen(false)
+                return
               }
+              setPanelView(v)
+              if (v === 'assistant') {
+                setAssistantPresentation('docked')
+                setAssistantState('window')
+              } else setChatOpen(true)
             }}
           />
         )}

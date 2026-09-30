@@ -24,6 +24,22 @@ export type AnalysisVersion = {
   insightCount: number
   result: AnalysisResult
   at: string
+  /** The conversation a question belongs to. Absent on the report turn. */
+  threadId?: string
+}
+
+/**
+ * The conversation a question with no thread id belongs to.
+ *
+ * Questions kept before conversations existed carry none; they are the
+ * report's first conversation, which is what they always were.
+ */
+export const FIRST_THREAD = 'thread-1'
+
+/** One conversation on a report: its questions, oldest first. */
+export type Thread = {
+  id: string
+  questions: AnalysisVersion[]
 }
 
 export type Attachment = { name: string; type: string; size: number; dataBase64: string }
@@ -73,9 +89,16 @@ const heldReport = (name: string): Report | null => {
       result: q.result,
       durationMs: q.durationMs ?? 0,
       insightCount: r.snapshot?.results.length ?? 0,
-      at: q.at
+      at: q.at,
+      threadId: q.threadId ?? FIRST_THREAD
     }))
   }
+}
+
+/** The conversation a report was last asked in, or null when none has been. */
+const newestThread = (r: Report | null) => {
+  const last = r?.questions[r.questions.length - 1]
+  return last ? (last.threadId ?? FIRST_THREAD) : null
 }
 
 /**
@@ -109,6 +132,21 @@ export const useAnalysis = (
    *  two passes rather than one. */
   const [draft, setDraft] = useState<AnalysisDraft | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * The ask that was not answered, kept beside the error.
+   *
+   * A failed turn stays in the conversation as what was asked and what went
+   * wrong, and Retry sends it again. Without this the question vanished with
+   * the pending state and the error hung under the previous answer.
+   */
+  const [failed, setFailed] = useState<{
+    prompt: string
+    skills?: string[]
+    typed?: string
+    policy?: Array<{ id: string; name: string; instructions: string; insightIds?: string[] }>
+    reportId: string | null
+    at: string
+  } | null>(null)
 
   /** The request being waited on. Held in state, not a ref, so polling is an
    *  effect that re-establishes itself — StrictMode double-mounts the tree, and
@@ -121,10 +159,14 @@ export const useAnalysis = (
     skills?: string[]
     typed?: string
     policy?: Array<{ id: string; name: string }>
+    /** The same, whole, so a failed run can be sent again as it was. */
+    fullPolicy?: Array<{ id: string; name: string; instructions: string; insightIds?: string[] }>
     kind: 'report' | 'question'
     startedAt: number
     /** Which report a question was asked of. Null on a report. */
     reportId: string | null
+    /** Which conversation a question joins. Null on a report. */
+    threadId: string | null
     /** What the page was reading when it was sent. Frozen then, not on landing:
      *  a four-minute run belongs to the inputs it was asked with. */
     snapshot: ReportSnapshot | null
@@ -133,10 +175,24 @@ export const useAnalysis = (
   const giveUpTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const waiting = pending !== null
 
+  /**
+   * Which conversation is open.
+   *
+   * Starts on the newest one the report holds, or the first if it holds none
+   * yet. "New conversation" mints a fresh id, which exists only here until a
+   * question is asked in it — an empty conversation is not worth keeping.
+   */
+  const [activeThreadId, setActiveThreadId] = useState<string>(
+    () => newestThread(heldReport(record.name)) ?? FIRST_THREAD
+  )
+
   // A different business is a different analysis.
   useEffect(() => {
-    setReport(heldReport(record.name))
+    const held = heldReport(record.name)
+    setReport(held)
+    setActiveThreadId(newestThread(held) ?? FIRST_THREAD)
     setError(null)
+    setFailed(null)
     setPending(null)
     setDraft(null)
   }, [record.id])
@@ -145,7 +201,19 @@ export const useAnalysis = (
   useEffect(() => {
     if (!pending) return
 
+    /** What was asked, for the error turn and for Retry. */
+    const keep = () =>
+      setFailed({
+        prompt: pending.asked,
+        skills: pending.skills,
+        typed: pending.typed,
+        policy: pending.fullPolicy,
+        reportId: pending.reportId,
+        at: new Date(pending.startedAt).toISOString()
+      })
+
     giveUpTimer.current = setTimeout(() => {
+      keep()
       setPending(null)
       setDraft(null)
       setError('This run was not answered. Send it again to retry.')
@@ -174,6 +242,7 @@ export const useAnalysis = (
       if (pending.recordId !== record.id) return setPending(null)
 
       if ('error' in data) {
+        keep()
         setError(data.error)
         setPending(null)
         return
@@ -202,7 +271,8 @@ export const useAnalysis = (
           result: data,
           durationMs: Date.now() - pending.startedAt,
           insightCount: results.length,
-          at: new Date().toISOString()
+          at: new Date().toISOString(),
+          threadId: pending.threadId ?? FIRST_THREAD
         }
         setReport((prev) =>
           prev && prev.id === pending.reportId ? { ...prev, questions: [...prev.questions, landed] } : prev
@@ -242,6 +312,41 @@ export const useAnalysis = (
   const reportVersion = useMemo(() => versions[0] ?? null, [versions])
   const questions = useMemo(() => versions.slice(1), [versions])
 
+  /**
+   * The report's conversations, oldest first, each with its questions.
+   *
+   * Grouped from the flat list rather than stored as a tree: the store keeps
+   * one list per report and a conversation is a label on a question, so an
+   * older store with no labels reads as one conversation without migrating.
+   */
+  const threads = useMemo<Thread[]>(() => {
+    const byId = new Map<string, AnalysisVersion[]>()
+    for (const q of questions) {
+      const id = q.threadId ?? FIRST_THREAD
+      byId.set(id, [...(byId.get(id) ?? []), q])
+    }
+    return [...byId.entries()].map(([id, qs]) => ({ id, questions: qs }))
+  }, [questions])
+
+  /** The open conversation's questions. Empty for a conversation just started. */
+  const thread = useMemo(
+    () => threads.find((t) => t.id === activeThreadId)?.questions ?? [],
+    [threads, activeThreadId]
+  )
+
+  /** Start a conversation. It is only kept once something is asked in it. */
+  const newThread = useCallback(() => {
+    setActiveThreadId(`thread-${Date.now()}`)
+    setError(null)
+    setFailed(null)
+  }, [])
+
+  const openThread = useCallback((id: string) => {
+    setActiveThreadId(id)
+    setError(null)
+    setFailed(null)
+  }, [])
+
   const run = useCallback(
     (
       prompt: string,
@@ -269,6 +374,7 @@ export const useAnalysis = (
       const asked = prompt.trim()
       if (!asked) return
       setError(null)
+      setFailed(null)
 
       void fetch('/api/analyse', {
         method: 'POST',
@@ -295,7 +401,15 @@ export const useAnalysis = (
             evidence: r.evidence
           })),
           attachments,
-          history: versions.map((v) => ({ prompt: v.prompt, result: v.result })),
+          // The report, then this conversation's turns. Another conversation
+          // on the same report is a different line of questioning; feeding it
+          // in would answer this one against things nobody here asked.
+          history: [
+            ...versions.filter((v) => v.kind === 'report'),
+            ...versions.filter((v) => v.kind === 'question' && (v.threadId ?? FIRST_THREAD) === activeThreadId)
+          ].map((v) => ({ prompt: v.prompt, result: v.result })),
+          typed,
+          threadId: kind === 'question' ? activeThreadId : undefined,
           // What the page is reading, frozen at the moment it is asked. Only on
           // a report: a question inherits the snapshot of the report it joins.
           snapshot:
@@ -312,9 +426,11 @@ export const useAnalysis = (
             skills,
             typed,
             policy: policy?.map(({ id, name }) => ({ id, name })),
+            fullPolicy: policy,
             kind,
             startedAt: Date.now(),
             reportId: kind === 'question' ? (target ?? report?.id ?? null) : null,
+            threadId: kind === 'question' ? activeThreadId : null,
             snapshot: kind === 'report' ? { recordId: record.id, record, results } : null
           })
         )
@@ -322,8 +438,25 @@ export const useAnalysis = (
           setError(e instanceof Error ? e.message : 'Could not reach the dev server.')
         )
     },
-    [record, results, report?.id, versions]
+    [record, results, report?.id, versions, activeThreadId]
   )
+
+  /**
+   * Ask the conversation's last question again.
+   *
+   * The same prompt, the same skills, against the same report — what "Retry"
+   * means on an answer that did not land or did not satisfy. Nothing to
+   * replay is a no-op rather than an error.
+   */
+  const retry = useCallback(() => {
+    if (failed) {
+      run(failed.prompt, [], 'question', failed.skills, failed.typed, failed.policy, failed.reportId ?? undefined)
+      return
+    }
+    const last = thread[thread.length - 1]
+    if (!last) return
+    run(last.prompt, [], 'question', last.skills, last.typed, undefined, report?.id)
+  }, [failed, thread, run, report?.id])
 
   return {
     draft,
@@ -335,10 +468,19 @@ export const useAnalysis = (
     versions,
     reportVersion,
     questions,
+    /** The report's conversations, and the one that is open. */
+    threads,
+    thread,
+    activeThreadId,
+    newThread,
+    openThread,
+    retry,
     /** The business's report — its assessment, and the snapshot the tabs render. */
     selected: report,
     waiting,
     error,
+    /** The ask the error belongs to, when there is one. */
+    failed,
     run,
     active: versions[versions.length - 1]
   }

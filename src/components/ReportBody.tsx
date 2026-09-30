@@ -89,9 +89,12 @@ const CiteList = ({
   intro,
   sections,
   anchor,
+  revealed,
   onJumpToSource
 }: {
   cited: Derived[]
+  /** Rows a citation in the assistant has just led to: open, and marked. */
+  revealed?: ReadonlySet<string>
   record?: BusinessRecord
   /** The section's id: each part card is anchored `section-{id}-{part}`
    *  (`partAnchor`), for the Needs review card's jump. */
@@ -165,6 +168,7 @@ const CiteList = ({
       result={r}
       record={record}
       negative={negatives?.has(r.insightId)}
+      reveal={revealed?.has(r.insightId)}
       onJumpToSource={onJumpToSource}
     />
   )
@@ -387,6 +391,7 @@ export const SectionBody = ({
   record,
   negatives,
   closed,
+  revealed,
   onJumpToSource
 }: {
   section: AssessmentSection
@@ -406,6 +411,7 @@ export const SectionBody = ({
    * acts on is left for the section to state.
    */
   closed?: ReadonlySet<string>
+  revealed?: ReadonlySet<string>
   onJumpToSource?: (cardId: string) => void
 }) => {
   /*
@@ -475,6 +481,7 @@ export const SectionBody = ({
         intro={intro}
         sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
         anchor={section.id}
+        revealed={revealed}
         onJumpToSource={onJumpToSource}
       />
     </>
@@ -488,9 +495,12 @@ export const ReportBody = ({
   record,
   negatives,
   summaries,
+  revealed,
   onJumpToSource
 }: {
   result: AnalysisResult | AnalysisDraft
+  /** Insight ids an assistant citation has just led to: their rows open. */
+  revealed?: ReadonlySet<string>
   results: Derived[]
   /** The assessments this run was composed of — the report's layout. */
   policy: Array<{ id: string; name: string }>
@@ -519,7 +529,7 @@ export const ReportBody = ({
   // What the recommendation already says to do, so the sections do not say
   // it again as what is missing.
   const closed = new Set((verdict?.followUps ?? []).flatMap((f) => f.closes ?? []))
-  const pass = { results, record, negatives, closed, onJumpToSource }
+  const pass = { results, record, negatives, closed, revealed, onJumpToSource }
 
   return (
     <>

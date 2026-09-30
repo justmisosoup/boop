@@ -10,7 +10,7 @@ import { ReportBody } from './ReportBody'
  *
  * It used to be a chat message — an assistant bubble with a sources roll-up in
  * its footer, one per turn, with every typed question stacked underneath it in
- * the same column. The conversation has its own column now (`AnalysisChat`), so
+ * the same column. The conversation has its own panel now (`Assistant/AssistantPanel`), so
  * what is left here is the thing itself: one standing report, laid out as a
  * report. A bubble around it would be an affordance for a conversation that is
  * no longer happening in this column.
@@ -28,10 +28,13 @@ export const AnalysisPanel = ({
   negatives,
   tiers,
   summaries,
+  revealed,
   onJumpToSource
 }: {
   /** The report turn, or null before one has been run. */
   version: AnalysisVersion | null
+  /** Insight ids an assistant citation has just led to: their rows open. */
+  revealed?: ReadonlySet<string>
   /** Stage one, on screen while the verdict is still being written. */
   draft: AnalysisDraft | null
   /** A REPORT is in flight. A typed question does not put this column to work. */
@@ -73,6 +76,7 @@ export const AnalysisPanel = ({
           })}
           negatives={negatives}
           summaries={summaries}
+          revealed={revealed}
           onJumpToSource={onJumpToSource}
         />
       )}

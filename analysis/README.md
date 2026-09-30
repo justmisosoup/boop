@@ -38,7 +38,7 @@ changing before you change it:
 | Registration standing | `standingOf` in `src/lib/registrationStatus.ts`, from `src/data/registrationStanding.json` |
 | Open questions that hold an area for review | **The section's gaps** without `noAction` |
 | Which gaps are hidden | **Follow-ups' `closes`** |
-| Paragraph prose, the headline, follow-up text | **Saved, not shown** on a standing report; a typed question shows its headline |
+| Paragraph prose, the headline, follow-up text | **Saved, not shown** on a standing report; a typed question shows its paragraphs in the assistant, never its headline |
 
 ## Work the assessments at the same time
 
@@ -123,9 +123,11 @@ structuring it this way rather than by where the data came from.
 
 The headline is the account-opening answer, not a summary of the record. On a
 standing report it does not render — the follow-ups under `Recommendations` are what
-the reader acts on — and on a typed question it is the answer, printed above the
-message. Write it either way: the endpoint requires it, and it is what says which of
-the three decisions was reached.
+the reader acts on — and on a typed question it is not shown either: the assistant
+prints the paragraphs, and a one-line summary over them said everything twice. Write
+it either way: the endpoint requires it, and it is what says which of the three
+decisions was reached. On a question, put the direct answer in the **first
+paragraph** — that is the line the reader sees first.
 
 **`question`** — a follow-up the user typed. Answer that, directly, using the same
 rules. Prior turns arrive in `history`.
@@ -169,9 +171,14 @@ The verdict — `result-<id>.json`, written once every assessment has landed:
   "followUps": [
     { "text": "The thing that most needs doing.", "cites": ["liens"], "closes": ["lien_detail"] },
     { "text": "The next thing." }
-  ]
+  ],
+  "suggestions": ["What still needs a closer look?", "What does the report show about this address?"]
 }
 ```
+
+`suggestions` is optional: two or three questions the reader might ask next, written
+as they would type them. The assistant offers them under the answer. They are things
+to ask, never things to do — those are `followUps`.
 
 ### The sections
 
@@ -205,8 +212,8 @@ as it stands. The judging still belongs to `recommendation`: a stage says what i
 present and what is outstanding, not whether the outcome is acceptable.
 
 A `question` does **not** use these. Answer it on its own terms in one section with
-`"id": "answer"` — it renders with no heading, beneath the headline, which leads
-because there is no recommendation for it to land in. Forcing a follow-up through six
+`"id": "answer"` — it renders with no heading, as the paragraphs of the assistant's
+turn, the first of which answers directly. Forcing a follow-up through six
 the workflow's headings is filing, not answering.
 
 `used` ids must round-trip **exactly**. An id that matches no row is dropped from the

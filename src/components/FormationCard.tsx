@@ -112,6 +112,7 @@ export const FormationCard = ({
   record,
   results,
   groupFor,
+  revealed,
   onJumpToSource,
   className
 }: {
@@ -119,6 +120,8 @@ export const FormationCard = ({
   /** The report's insights, which is where the record's attributes are read from. */
   results: Derived[]
   groupFor: (insightId: string) => GroupId
+  /** Insight ids an assistant citation has just led to: their rows open. */
+  revealed?: ReadonlySet<string>
   /** The header chip opens the source's card in Sources. */
   onJumpToSource?: (cardId: string) => void
   className?: string
@@ -283,7 +286,13 @@ export const FormationCard = ({
           {/* Divided the way every report card's rows are (`InsightStack`). */}
           {cardRows.map((r, i) => (
             <div key={r.insightId} className={cn(i > 0 && ROW_HAIRLINE)}>
-              <InsightRow result={r} record={record} negative={negatives.has(r.insightId)} onJumpToSource={onJumpToSource} />
+              <InsightRow
+                result={r}
+                record={record}
+                negative={negatives.has(r.insightId)}
+                reveal={revealed?.has(r.insightId)}
+                onJumpToSource={onJumpToSource}
+              />
             </div>
           ))}
         </div>
