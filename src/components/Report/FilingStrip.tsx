@@ -4,6 +4,7 @@ import {
   Building2,
   Check,
   CircleOff,
+  FilePenLine,
   ClockAlert,
   History,
   MapPin,
@@ -31,6 +32,7 @@ import {
   newDetails,
   registrationState,
   subStatusLabel,
+  troubled,
   type Registration
 } from '../../lib/registrationStatus'
 import { stateName } from '../../lib/states'
@@ -60,6 +62,12 @@ const TONE: Record<Kind, MetaChipTone> = {
   inactive: 'danger',
   none: 'neutral'
 }
+
+/** A filing's tone: its status's, except an active filing the state has
+ *  started taking away — Indiana's "Pending Admin Dissolution" under a
+ *  pending inactive sub status — which reads amber, not green. The standing
+ *  table decides, not the words (`troubled`). */
+const toneOf = (reg: Registration): MetaChipTone => (troubled(reg) ? 'warning' : TONE[kindOf(reg)])
 
 /** The selected tile, inverted: its tone's strong colour as the fill and the
  *  card's colour as the text, so the one open reads at a glance among twenty
@@ -160,7 +168,7 @@ const StatusChip = ({ reg }: { reg: Registration }) => {
   const kind = kindOf(reg)
   const st = registrationState(reg)
   return (
-    <MetaChip tone={TONE[kind]} size="compact" className={cn(kind === 'none' && ABSENT)}>
+    <MetaChip tone={toneOf(reg)} size="compact" className={cn(kind === 'none' && ABSENT)}>
       {kind === 'active' ? (
         <Check {...chipIcon} />
       ) : kind === 'inactive' ? (
@@ -263,7 +271,7 @@ const CellList = ({ items }: { items: ListItem[] }) => {
  * Built on the Radix primitive with the popover's tokens, as `MenuContent`
  * is: core's `Tooltip` still draws its colours from the legacy palette.
  */
-const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLead: boolean; office: boolean }) => {
+export const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLead: boolean; office: boolean }) => {
   const st = registrationState(group.current)
   const sub = st.subStatus
   const subLine = sub
@@ -289,7 +297,11 @@ const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLead: boo
     ) : !sub ? (
       // Not provided by state: the tile's dash for absence.
       <Minus {...mark} />
-    ) : undefined
+    ) : (
+      // Any other sub status the state gives — "Not good standing" — is a
+      // standing it has not got: the cross.
+      <X {...mark} />
+    )
   const line = (icon: ReactNode, text: string) => (
     <span className="flex items-center gap-1">
       {icon ?? <span aria-hidden="true" className="w-3 shrink-0" />}
@@ -312,7 +324,8 @@ const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLead: boo
       </span>
       {line(statusIcon, WORD[group.kind])}
       {line(subIcon, subLine)}
-      {details && line(undefined, details)}
+      {/* The registry's own words: a page and a pen. */}
+      {details && line(<FilePenLine {...mark} />, details.charAt(0).toUpperCase() + details.slice(1))}
       {notes.length > 0 && (
         <div className="mt-1.5 flex flex-col border-t border-[var(--core-color-border-divider)] pt-1.5 text-text-secondary">
           {notes.map((n) => (
@@ -345,6 +358,25 @@ export const otherStateStandings = (
 }
 
 /**
+ * The strip's tiles, in order: the formation filing's state leads, then the
+ * states that publish no status — Delaware, New Jersey, Wyoming — together,
+ * beside it, then the lapsed registrations, the ones to look at, then the
+ * active. Exported for the audit that renders every tooltip.
+ */
+export const stateGroupsOf = (record: BusinessRecord, lead?: Registration): StateGroup[] => {
+  const byState = new Map<string, Registration[]>()
+  for (const r of record.registrations) {
+    if (!r.state) continue
+    byState.set(r.state, [...(byState.get(r.state) ?? []), r])
+  }
+  const rank = (g: StateGroup) =>
+    lead && g.state === lead.state ? -1 : g.kind === 'none' ? 0 : g.kind === 'inactive' ? 1 : 2
+  return [...byState.entries()]
+    .map(([state, filings]) => groupOf(state, filings))
+    .sort((a, b) => rank(a) - rank(b) || a.state.localeCompare(b.state))
+}
+
+/**
  * Every state filing, as a strip: a bar of how they stand, then one tile per
  * state, then the selected state's filings.
  *
@@ -364,28 +396,18 @@ export const otherStateStandings = (
 export const FilingStrip = ({
   record,
   lead,
+  legalName: cardLegalName,
   className
 }: {
   record: BusinessRecord
   /** The formation filing the card is about. It leads the strip. */
   lead?: Registration
+  /** The legal name the card states, where it is not the lead filing's —
+   *  Sprig's own, over Mixboard Inc.'s linked Delaware filing. */
+  legalName?: string
   className?: string
 }) => {
-  const groups = useMemo<StateGroup[]>(() => {
-    const byState = new Map<string, Registration[]>()
-    for (const r of record.registrations) {
-      if (!r.state) continue
-      byState.set(r.state, [...(byState.get(r.state) ?? []), r])
-    }
-    /* The formation filing's state leads, then the states that publish no
-       status — Delaware, New Jersey, Wyoming — together, beside it, then the
-       lapsed registrations, the ones to look at, then the active. */
-    const rank = (g: StateGroup) =>
-      lead && g.state === lead.state ? -1 : g.kind === 'none' ? 0 : g.kind === 'inactive' ? 1 : 2
-    return [...byState.entries()]
-      .map(([state, filings]) => groupOf(state, filings))
-      .sort((a, b) => rank(a) - rank(b) || a.state.localeCompare(b.state))
-  }, [record.registrations, lead])
+  const groups = useMemo(() => stateGroupsOf(record, lead), [record, lead])
   // Where the business says it is: the submitted office address's state.
   // Whether it is registered there is Activity & Permission's to judge; the
   // strip only marks the tile.
@@ -395,8 +417,9 @@ export const FilingStrip = ({
   // card opens on. Derived, not seeded, so a lead that arrives a render late
   // (or a record switched in place) still opens on its own formation.
   const [picked, setSelected] = useState<string | undefined>(undefined)
-  // Clicking the open state again closes its details; any state reopens them.
-  const [collapsed, setCollapsed] = useState(false)
+  // Closed until a state is picked: the tiles are the summary, a state's
+  // details are on demand. Clicking the open state again closes them.
+  const [collapsed, setCollapsed] = useState(true)
   const selected = picked ?? lead?.state ?? groups[0]?.state
   // Which of a state's filings is open, where it holds more than one. None
   // picked is its current filing.
@@ -455,15 +478,11 @@ export const FilingStrip = ({
     const sameDay = filings.filter((g) => g.registrationDate === f.registrationDate).length > 1
     return sameDay ? `${day} · ${/^domestic$/i.test(f.jurisdiction ?? '') ? 'Domestic' : 'Foreign'}` : day
   }
-  // The formation state opens on the formation filing, even where a later
-  // filing there is the current one (Alliance Transfer's New York).
-  const leadIndex = lead ? filings.indexOf(lead) : -1
-  const chosenKey =
-    filingPick && filingPick.state === current.state
-      ? filingPick.key
-      : leadIndex >= 0
-        ? keyOf(filings[leadIndex], leadIndex)
-        : keyOf(filings[0], 0)
+  // Every state opens on the filing we read as standing now — the active
+  // one, else the newest — the formation state included: Alliance Transfer's
+  // New York opens on its active 2007 filing, and the 1976 formation filing
+  // is one pick away in the menu, labelled Formation when shown.
+  const chosenKey = filingPick && filingPick.state === current.state ? filingPick.key : keyOf(filings[0], 0)
   const shownFiling = filings.find((f, i) => keyOf(f, i) === chosenKey) ?? filings[0]
   // The people the customer submitted, to mark where a filing names one.
   const submittedPeople = new Set(record.people.filter((p) => p.submitted).map((p) => nameKey(p.name)))
@@ -485,7 +504,7 @@ export const FilingStrip = ({
     ])
   )
   // The legal name the card states: the formation filing's, else the record's.
-  const legalName = lead?.name ?? record.name
+  const legalName = cardLegalName ?? lead?.name ?? record.name
   const cells: AttributeCell[] = [shownFiling].flatMap((f) => {
     const s = registrationState(f)
     // A filing under another spelling of the name — Sorenson's Idaho filings
@@ -666,10 +685,10 @@ export const FilingStrip = ({
                     )}
                   >
                     <MetaChip
-                      tone={TONE[g.kind]}
+                      tone={toneOf(g.current)}
                       size="compact"
                       className={cn('w-full justify-center font-mono', g.kind === 'none' && !on && ABSENT)}
-                      style={on ? selectedStyle(TONE[g.kind]) : undefined}
+                      style={on ? selectedStyle(toneOf(g.current)) : undefined}
                     >
                       {isLead ? (
                         <Building2 aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />

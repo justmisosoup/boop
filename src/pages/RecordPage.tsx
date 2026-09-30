@@ -22,6 +22,7 @@ import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { Timeline } from '../components/Timeline'
+import type { Kind } from '../lib/timeline/types'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
@@ -559,6 +560,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     }, 60)
   }
 
+  /** Open the timeline on one change and mark it. */
+  const [timelineFocus, setTimelineFocus] = useState<{ eventId: string; kinds?: Kind[]; n: number }>()
+  const jumpToTimeline = (eventId: string, kinds?: Kind[]) => {
+    showPanel('timeline')
+    setTimelineFocus((f) => ({ eventId, kinds, n: (f?.n ?? 0) + 1 }))
+  }
+
   const jumpToSource = (cardId: string) => {
     const hit = resolveSource(scopeSources, cardId)
     showPanel('sources')
@@ -770,6 +778,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               groupFor={groupFor}
               revealed={revealedSet}
               onJumpToSource={jumpToSource}
+              onJumpToTimeline={jumpToTimeline}
               // Spaced from the determination above it.
               className={view || running ? 'mt-4' : undefined}
             />
@@ -928,7 +937,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
 
             {panelView === 'timeline' && (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 panel-scroll">
-                <Timeline businessId={selected.id} />
+                <Timeline businessId={selected.id} focus={timelineFocus} />
               </div>
             )}
 

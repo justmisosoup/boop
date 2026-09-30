@@ -1,6 +1,7 @@
 import { Surface } from '@/core'
 
 import { attributesFor, cityRegistrationRows, isPlaceholder, licenseRows, nameKey, type AttributeRow } from '../lib/attributes'
+import { convertedFormationOf } from '../lib/registrationStatus'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
@@ -243,7 +244,8 @@ export const AttributeGroupDetail = ({
       </Surface>
     )
   const cells = cellsFromRows(group.rows, {
-    domesticState: record.formation?.state,
+    // Where it stands now: Andytown converted to Delaware, so DE leads.
+    domesticState: convertedFormationOf(record)?.now.state ?? record.formation?.state,
     onJumpToSource
   })
   // The business's own name takes the Names card's first row alone, so its

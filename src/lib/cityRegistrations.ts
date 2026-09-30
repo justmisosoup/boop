@@ -1,5 +1,8 @@
 import store from '../data/cityRegistrations.json'
+import rawRecords from '../data/records.json'
+import timeline from '../data/timeline.json'
 import type { BusinessRecord } from './deriveResults'
+import { sameName } from './registrationStatus'
 
 /**
  * City registrations, merged onto the records they belong to.
@@ -15,7 +18,39 @@ const BY_NAME = (store as unknown as { registrations: Record<string, CityRegistr
 
 const nameKey = (name: string) => (name ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
 
+/**
+ * Only the locations that name this business, as its trade name or as their
+ * owner. The register is per account, and one account can hold a company's
+ * whole history: San Francisco's 1080965 is Mixboard Inc.'s, and was Mixboard,
+ * then Userleap, then Sprig. Sprig's record gets its two Sprig Technologies
+ * locations, Userleap's its Userleap one, Mixboard's — the owner — all four.
+ */
+const namesIt = (record: BusinessRecord, r: CityRegistration) =>
+  sameName(r.dba, record.name) || sameName(r.owner, record.name)
+
 export const withCityRegistrations = (record: BusinessRecord): BusinessRecord => {
-  const found = BY_NAME[nameKey(record.name)]
-  return found && !record.cityRegistrations ? { ...record, cityRegistrations: found } : record
+  // A report's snapshot can already carry the whole account from before this
+  // filter; it is filtered the same way.
+  const found = (record.cityRegistrations ?? BY_NAME[nameKey(record.name)])?.filter((r) => namesIt(record, r))
+  return found ? { ...record, cityRegistrations: found } : record
+}
+
+type NameEvent = { type: string; data: { object: { object?: string; name?: string; sources?: Array<{ type?: string }> } } }
+
+/**
+ * The business under a name it has since dropped, where another record in the
+ * account carries that name. The timeline says when a filing's name changed:
+ * Sprig's California filing was USERLEAP INC until October 2021. The Userleap
+ * INC record holds the city registration under that name, so Sprig's Sources
+ * show it too, as its own card.
+ */
+export const priorNameRecords = (record: BusinessRecord): BusinessRecord[] => {
+  const events = ((timeline as unknown as { byBusiness: Record<string, NameEvent[]> }).byBusiness[record.id] ?? [])
+  const prior = events
+    .filter((e) => e.type === 'name.deleted' && (e.data.object.sources ?? []).some((x) => x.type === 'registration'))
+    .map((e) => e.data.object.name)
+    .filter((n): n is string => Boolean(n) && !sameName(n, record.name))
+  return (rawRecords as unknown as BusinessRecord[])
+    .filter((r) => r.id !== record.id && prior.some((n) => sameName(n, r.name)))
+    .map(withCityRegistrations)
 }

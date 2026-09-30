@@ -5,6 +5,7 @@ import { ActionButton, MetaChip, MutedText, Text, TruncatedText } from '@/core'
 
 import { attributesFor, isPlaceholder, type AttributeRow } from '../lib/attributes'
 import { PROTOTYPE_INSIGHTS, type BusinessRecord } from '../lib/deriveResults'
+import { convertedFormationOf } from '../lib/registrationStatus'
 import type { InsightResult } from '../types'
 import { cn } from '../utils/twUtils'
 import { AttributeCells } from './AttributeGrid'
@@ -102,8 +103,8 @@ export const InsightRow = ({
   const isResult = result.state === 'result'
   /**
    * Flagged: the record came back adverse, or the score read it against the
-   * identity. The dashboard's convention for a flagged insight — the mark
-   * takes the danger colour and the statement goes bold; the row itself is not
+   * identity. The mark takes the danger colour; the statement stays in the
+   * row's weight — bold read a flag as a heading — and the row is not
    * tinted. It used to be: a red wash over the whole row, which made three
    * findings in a stack of twenty read as three alarms rather than three
    * sentences to read first.
@@ -137,7 +138,8 @@ export const InsightRow = ({
   const showBecause = Boolean(!isResult && because && (adverse || open))
 
   const cells = cellsFromRows(attributes, {
-    domesticState: record.formation?.state,
+    // Where it stands now: Andytown converted to Delaware, so DE leads.
+    domesticState: convertedFormationOf(record)?.now.state ?? record.formation?.state,
     onJumpToSource,
     // The reading this check is making — a property type, a count of
     // businesses at an address — is the finding here and nowhere else.
@@ -181,7 +183,7 @@ export const InsightRow = ({
   }
 
   const statement = open ? (
-    <span className={cn('block text-sm leading-5', !isResult && 'text-text-secondary', flagged && 'font-semibold')}>
+    <span className={cn('block text-sm leading-5', !isResult && 'text-text-secondary')}>
       {result.statement}
     </span>
   ) : (
@@ -191,7 +193,7 @@ export const InsightRow = ({
        gives it all the lines it wants. Same 14/20 in both states, so the row
        does not shift under the cursor as it opens. */
     <TruncatedText
-      className={cn('text-sm leading-5', !isResult && 'text-muted-foreground', flagged && 'font-semibold')}
+      className={cn('text-sm leading-5', !isResult && 'text-muted-foreground')}
     >
       {result.statement}
     </TruncatedText>

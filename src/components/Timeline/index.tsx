@@ -15,7 +15,7 @@ import { summaryText } from '../../lib/timeline/format'
 import { countChanges, groupUpdates, yearsOf } from '../../lib/timeline/group'
 import { layoutVars } from '../../lib/timeline/layout'
 import type { Stem } from '../../lib/timeline/strip'
-import type { TimelineEvent } from '../../lib/timeline/types'
+import type { Kind, TimelineEvent } from '../../lib/timeline/types'
 import { OverviewStrip, type StripBrush } from './OverviewStrip'
 import { Spine } from './Spine'
 import { TimelineToolbar } from './TimelineToolbar'
@@ -41,7 +41,15 @@ import { updateDomId } from './UpdateEntry'
  *   them to session storage per business (`hooks.ts`); here they are state, and
  *   go away with the page.
  */
-export const Timeline = ({ businessId }: { businessId: string }) => {
+export const Timeline = ({
+  businessId,
+  focus
+}: {
+  businessId: string
+  /** A change to open on and mark — the Formation card's name history — with
+   *  the change types to filter to. `n` makes a second click follow it again. */
+  focus?: { eventId: string; kinds?: Kind[]; n: number }
+}) => {
   // This business's stored response (`scripts/pull-timeline.ts`); none stored
   // reads as no events, which the empty state covers.
   const events = useMemo(
@@ -112,6 +120,26 @@ export const Timeline = ({ businessId }: { businessId: string }) => {
         ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     )
   }
+
+  /* Followed from the report: every filter off, the update holding the
+     change in the list and marked until something else is. */
+  useEffect(() => {
+    if (!focus) return
+    const next = { ...EMPTY_FILTERS, kinds: focus.kinds ?? [] }
+    const list = applyFilters(allUpdates, next)
+    const index = list.findIndex((u) => u.changes.some((c) => c.id === focus.eventId))
+    if (index === -1) return
+    const target = list[index]
+    setFilters(next)
+    setShown((current) => Math.max(current, Math.ceil((index + 1) / LIST_WINDOW) * LIST_WINDOW))
+    if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
+    setHighlightedIds(new Set([target.id]))
+    const t = window.setTimeout(
+      () => document.getElementById(updateDomId(target.id))?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+      80
+    )
+    return () => window.clearTimeout(t)
+  }, [focus, allUpdates])
 
   if (allUpdates.length === 0)
     return (

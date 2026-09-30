@@ -65,6 +65,8 @@ export type Dba = {
   since?: string | null
   /** A location still open under it; undefined where the source says nothing. */
   open?: boolean
+  /** When the last location under it closed, where none is open. */
+  until?: string | null
 }
 
 export type NameStanding = {
@@ -100,10 +102,16 @@ const TRADE_AS = /\s+(?:DBA|D\/B\/A|A\/K\/A|AKA)\s+/i
  * that is its owner's own name (Checkr's city DBA is CHECKR, INC.) is not a
  * trade name and is dropped; the same name from two sources is one DBA.
  */
-export const dbasOf = (record: BusinessRecord): Dba[] => {
+export const dbasOf = (
+  record: BusinessRecord,
+  /** Keep a trade name that is its owner's own. The Formation card drops the
+   *  one that is its legal name instead: Sprig's card reads SPRIG
+   *  TECHNOLOGIES INC., so its register's Mixboard Inc. is another name. */
+  keepOwnerName = false
+): Dba[] => {
   const out: Dba[] = []
   const add = (d: Dba) => {
-    if (!d.name.trim() || (d.owner && sameName(d.name, d.owner))) return
+    if (!d.name.trim() || (!keepOwnerName && d.owner && sameName(d.name, d.owner))) return
     const seen = out.find((x) => sameName(x.name, d.name) && (!x.owner || !d.owner || sameName(x.owner, d.owner)))
     if (seen) {
       seen.owner = seen.owner ?? d.owner
@@ -125,7 +133,10 @@ export const dbasOf = (record: BusinessRecord): Dba[] => {
       refIds: [...new Set(same.map((x) => x.refId).filter((x): x is string => Boolean(x)))],
       account: r.accountNumber,
       since: same.map((x) => x.businessStart).filter(Boolean).sort()[0] ?? r.businessStart,
-      open: same.some((x) => !x.locationEnd && !x.businessEnd)
+      open: same.some((x) => !x.locationEnd && !x.businessEnd),
+      until: same.some((x) => !x.locationEnd && !x.businessEnd)
+        ? undefined
+        : same.map((x) => x.businessEnd ?? x.locationEnd).filter(Boolean).sort().at(-1)
     })
   }
 
@@ -191,6 +202,9 @@ export const nameStandingOf = (record: BusinessRecord): NameStanding => {
 export const ownDbas = (n: NameStanding, record: BusinessRecord) =>
   n.dbas.filter(
     (d) =>
+      // A trade name every location of which has closed is the account's
+      // history, not a name it trades under: Mixboard's Userleap Inc., 2017–2021.
+      d.open !== false &&
       !sameName(d.name, n.submitted) &&
       (!d.owner || sameName(d.owner, n.submitted) || record.registrations.some((r) => sameName(r.name, d.owner)))
   )

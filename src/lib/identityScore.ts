@@ -1,6 +1,6 @@
 import type { BusinessRecord, Derived } from './deriveResults'
 import { describeRegistration, standingOf } from './registrationStatus'
-import { nameStandingOf } from './businessNames'
+import { entityFallback, nameStandingOf } from './businessNames'
 import { domesticFilingOf } from './linkedFormation'
 import { validHitCount } from './watchlist'
 import { stateName } from './states'
@@ -256,7 +256,13 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   // name is the finding, and the record carries that as its own flag.
   tin: (_r, record) =>
     (record.tin as { mismatch?: boolean } | null)?.mismatch ? 'negative' : 'positive',
-  entity_type: () => 'positive',
+  /* The form, where a filing states it. Unknown with no filing to state it is
+     against the file — Userleap, Miette Patisserie — except a likely sole
+     proprietorship, which has no form to file (Firebird Yarns). */
+  entity_type: (_r, record) =>
+    /^unverified$/i.test(sub(record, 'entity_type') ?? '') && entityFallback(record) !== 'Likely sole proprietorship'
+      ? 'negative'
+      : 'positive',
   /* The submitted name across legal names and DBAs (`nameStandingOf`): a legal
      name, a registered business's DBA or a sole proprietor's DBA stands; a DBA
      of an unregistered business, or no filing and no DBA, is against it. */

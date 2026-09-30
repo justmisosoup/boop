@@ -148,8 +148,27 @@ export type Source = {
   kind?: string
 }
 
-const add = (into: Map<GroupId, Supplied[]>, group: GroupId, item: Supplied) =>
-  into.set(group, [...(into.get(group) ?? []), item])
+/** A row a city registration states itself (`cityRegistrationRows`). */
+const registers = (row: AttributeRow) => (row.matchValue ?? '').startsWith('city:')
+
+const add = (into: Map<GroupId, Supplied[]>, group: GroupId, item: Supplied) => {
+  const list = into.get(group) ?? []
+  const same = (row: AttributeRow) => norm(row.value) === norm(item.row.value)
+  // One address once per card: a submitted address and the registration's
+  // own reading of it are the same line on that registration.
+  if (group === 'address' && list.some(({ row }) => same(row))) return
+  /* A name the registration states itself is its own row, under its own
+     label: Mixboard Inc. as the Business name, Firebird Yarns as the DBA.
+     The record's name row, cited to the same registration, says it again. */
+  if (group === 'name') {
+    if (!registers(item.row) && list.some(({ row }) => registers(row) && same(row))) return
+    if (registers(item.row)) {
+      into.set(group, [...list.filter(({ row }) => registers(row) || !same(row)), item])
+      return
+    }
+  }
+  into.set(group, [...list, item])
+}
 
 /**
  * The record inverted: by source rather than by attribute.
@@ -251,13 +270,19 @@ export const sourcesFor = (
         if (PER_JURISDICTION.has(named) && mine.length > 0) {
           const byState = new Map<string, SourceRef[]>()
           for (const x of mine) {
-            const st = ((x.metadata as { state?: string })?.state ?? '').toUpperCase()
+            // A city registration is its own card, one per registration, as
+            // the dashboard shows Sprig's two San Francisco ones.
+            const st =
+              named === 'City registration'
+                ? `${((x.metadata as { state?: string })?.state ?? '').toUpperCase()}|${x.id}`
+                : ((x.metadata as { state?: string })?.state ?? '').toUpperCase()
             byState.set(st, [...(byState.get(st) ?? []), x])
           }
 
-          for (const [st, refs] of byState) {
+          for (const [key, refs] of byState) {
+            const st = key.split('|')[0]
             const scoped = st ? `${named} · ${stateName(st)}` : named
-            const card = get(`src:${scoped}`, scoped, undefined, undefined, named)
+            const card = get(`src:${scoped}${key.includes('|') ? `|${key.split('|')[1]}` : ''}`, scoped, undefined, undefined, named)
             for (const x of refs)
               if (!card.refs.some((r) => r.id === x.id)) card.refs.push(x)
             add(card.supplied, group, { row, ref: refs[0] })

@@ -18,6 +18,7 @@ import { convertedFormationOf, formationConfirmed, formationFilingOf, NOT_PROVID
 import { judgeHit } from './watchlist'
 import { domesticFilingOf, formationCardFilingOf } from './linkedFormation'
 import { stateLabel, stateName } from './states'
+import { priorNameRecords } from './cityRegistrations'
 import { sourceLabel as sourceLabelOf, readableUrl } from './sourceLabels'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
@@ -50,7 +51,20 @@ export const corroborated = (a: {
   source?: string
   registrations?: unknown[] | null
 }) =>
-  (a.sources?.length ?? 0) > 0 || Boolean(a.source) || (a.registrations?.length ?? 0) > 0
+  (a.sources ?? []).some((x) => !NOT_CORROBORATING.has(x)) ||
+  (Boolean(a.source) && !NOT_CORROBORATING.has(a.source ?? '')) ||
+  (a.registrations?.length ?? 0) > 0
+
+/**
+ * Sources that show a value without attesting it. USPS says mail can be
+ * delivered to an address, not that the business is there: Miette
+ * Patisserie's 2252 Fillmore St read "Submitted, verified" on its
+ * deliverability row while both address checks came back unverified. A
+ * website showing the business's name is the business saying it, not a
+ * source of record agreeing: Miette Patisserie's name read "verified" on
+ * its own site's say-so. Both still show as sources; neither verifies.
+ */
+const NOT_CORROBORATING = new Set(['USPS', 'Website'])
 
 export type AttributeRow = {
   label: string
@@ -630,7 +644,10 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
     // four letters — see `entityFormLabel`.
     ...field(
       'Entity type',
-      entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
+      // A filing that says UNKNOWN has not given one: Zions Bank's Idaho filing.
+      /^unknown$/i.test(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType ?? '')
+        ? NOT_PROVIDED
+        : entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
       undefined,
       // Every filing declaring the same form, not the domestic one alone.
       corroboration(record, 'entityType', domestic?.entityType)
@@ -1017,6 +1034,11 @@ export const websiteStatesName = (record: BusinessRecord, value: string | null |
   nameKey(record.name) === nameKey(value ?? '') &&
   /^verified$/i.test(record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? '')
 
+/** A trade name registered to another business entity — Sprig Technologies
+ *  Inc under Mixboard Inc. The website can say the name; it cannot say that. */
+const dbaOfOther = (record: BusinessRecord, owner: string | null | undefined) =>
+  Boolean(owner) && isBusinessName(owner ?? '') && !sameName(owner, record.name)
+
 /** A row's sources with the website added where it states the name. */
 const withWebsite = (record: BusinessRecord, value: string | null | undefined, sources: string[] = []): string[] =>
   websiteStatesName(record, value) && !sources.includes('Website') ? [...sources, 'Website'] : sources
@@ -1049,6 +1071,14 @@ const filingsListing = (record: BusinessRecord, value: string, field: 'addresses
  *
  * Empty when nothing states it, so the row keeps whatever it cited before.
  */
+/** The filing the Formation card stands on first, so a chip reads as the
+ *  card's does: Andytown's "SOS · DE", not its converted-out California
+ *  filing's. */
+const leadFirst = (record: BusinessRecord, filings: BusinessRecord['registrations']) => {
+  const lead = convertedFormationOf(record)?.now ?? formationFilingOf(record)
+  return lead && filings.includes(lead) ? [lead, ...filings.filter((f) => f !== lead)] : filings
+}
+
 const corroboration = (
   record: BusinessRecord,
   field: 'name' | 'entityType' | 'registeredAgent',
@@ -1056,7 +1086,7 @@ const corroboration = (
 ): Partial<AttributeRow> => {
   const target = nameKey(value ?? '')
   if (!target) return {}
-  const registrations = record.registrations.filter((r) => nameKey(r[field] ?? '') === target)
+  const registrations = leadFirst(record, record.registrations.filter((r) => nameKey(r[field] ?? '') === target))
   const carriers =
     field === 'name'
       ? (record.names ?? []).filter((n) => nameKey(n.name) === target)
@@ -1271,7 +1301,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const names = legal.length > 0 ? legal.map((n) => n.name) : [record.name]
 
     return names.map((name) => {
-      const filings = record.registrations.filter((r) => nameKey(r.name ?? '') === nameKey(name))
+      const filings = leadFirst(record, record.registrations.filter((r) => nameKey(r.name ?? '') === nameKey(name)))
       /*
        * The legal name is the filing's, not the application's.
        *
@@ -1286,7 +1316,10 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         formationFilingOf(record) ??
         record.registrations[0]
       const onFile = filings[0]?.name ?? domestic?.name
-      const differs = Boolean(onFile) && nameKey(onFile as string) !== nameKey(name)
+      // Spelled as the filing spells it: WOO YOUNG LEE, D.D.S., INC., which the
+      // check matched to the submitted WOO YOUNG LEE DDS INC. Case alone is not
+      // a different spelling.
+      const differs = Boolean(onFile) && (onFile as string).trim().toLowerCase() !== name.trim().toLowerCase()
       return {
         group: 'name' as const,
         label: onFile ? 'Legal name' : 'Business name',
@@ -1299,13 +1332,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         // submitted instead.
         submitted: !differs,
         registrations: filings.length > 0 ? filings : differs && domestic ? [domestic] : undefined,
-        // An empty chip column would read as "not rendered yet". A match check
-        // with nothing matched has to say so.
-        trailing: differs
-          ? `Submitted: ${name}`
-          : filings.length === 0
-            ? 'No state registration carries this name'
-            : undefined
+        // What they submitted, where the filing spells it differently. No
+        // line where nothing matched: the insight's own sentence says so.
+        trailing: differs ? `Submitted: ${name}` : undefined
       }
     })
   }
@@ -1320,7 +1349,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const n = nameStandingOf(record)
     const submittedRow: AttributeRow = {
       group: 'name',
-      label: 'Submitted business name',
+      label: 'Business name',
       value: n.submitted,
       source: '',
       sources: withWebsite(record, n.submitted),
@@ -1333,7 +1362,12 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       label: 'Doing business as',
       value: d.name,
       source: d.city ? 'City registration' : d.source,
-      sources: withWebsite(record, d.name, [d.city ? 'City registration' : d.source]),
+      // The website shows the name, not whose name it is: Sprig's site says
+      // nothing of Mixboard Inc., so a DBA of another business cites its
+      // registration alone.
+      sources: dbaOfOther(record, d.owner)
+        ? [d.city ? 'City registration' : d.source]
+        : withWebsite(record, d.name, [d.city ? 'City registration' : d.source]),
       refs: (d.refIds ?? []).map((id) => ({ id, type: 'city_registration', metadata: { city: d.city, status: d.open ? 'Active' : 'Inactive' } })),
       trailing: [d.owner ? `Owner: ${d.owner}` : '', d.since ? `since ${d.since.slice(0, 4)}` : ''].filter(Boolean).join(' · ') || undefined,
       evidenceOnly: true,
@@ -1348,7 +1382,13 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const listedRow = (d: Dba): AttributeRow => ({
       ...dbaRow(d),
       label: d.city ? `${d.city} registration` : d.source,
-      trailing: [d.owner ? `DBA of ${d.owner}` : '', d.since ? `since ${d.since.slice(0, 4)}` : ''].filter(Boolean).join(' · ') || undefined
+      trailing:
+        [
+          d.owner ? `DBA of ${d.owner}` : '',
+          d.since ? `since ${d.since.slice(0, 4)}` : ''
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined
     })
     const dbaOfBusinessRows = (d: Dba) => (d.owner && isBusinessName(d.owner) ? [listedRow(d)] : [dbaRow(d)])
 
@@ -1407,7 +1447,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     return [
       {
         group: 'name',
-        label: 'Submitted business name',
+        label: 'Business name',
         value: (record.names ?? []).find((n) => n.submitted)?.name ?? record.name,
         trailing: `Suffix: ${m.suffix}`,
         source: '',
@@ -1784,7 +1824,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         refs: p.sourceRefs,
         matchOn: 'officer' as const,
         matchValue: p.name,
-        evidenceNote: roles.length > 0 ? roles.join(' · ') : 'No role on the filings'
+        // No note where no filing gives a role: Miette Patisserie has no
+        // filings, and "No role on the filings" said that under every name.
+        evidenceNote: roles.length > 0 ? roles.join(' · ') : undefined
       }
     })
   }
@@ -2509,74 +2551,80 @@ export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
  * city_registration reference it stands behind, so the Sources tab files it
  * under the city registration and the Formation card reads it as that source.
  */
-export const cityRegistrationRows = (record: BusinessRecord): AttributeRow[] => {
-  const regs = record.cityRegistrations ?? []
-  if (regs.length === 0) return []
-  const byAccount = new Map<string, typeof regs>()
-  for (const r of regs) {
-    const k = r.accountNumber ?? r.locationId ?? r.address
-    byAccount.set(k, [...(byAccount.get(k) ?? []), r])
-  }
+export const cityRegistrationRows = (record: BusinessRecord): AttributeRow[] =>
+  // The business's own registrations, then those under a name it has dropped
+  // (`priorNameRecords`): Sprig's Userleap Inc. registration, each its own card.
+  [record, ...priorNameRecords(record)].flatMap((src) => registrationRowsOf(record, src))
+
+const registrationRowsOf = (record: BusinessRecord, src: BusinessRecord): AttributeRow[] => {
+  const regs = src.cityRegistrations ?? []
+  /* One per registration Middesk cites on this record, as the dashboard's
+     City Registration cards are: Sprig's two, `3b60f7` and `53854e`, are two
+     cards, never one account. The record's own references first; the
+     register's where the record cites none. */
+  const cited = new Map<string, SourceRef>()
+  for (const item of [...(src.names ?? []), ...src.addresses, ...src.people])
+    for (const x of item.sourceRefs ?? [])
+      if (x.type === 'city_registration' && !cited.has(x.id)) cited.set(x.id, x)
+  for (const r of regs)
+    if (r.refId && !cited.has(r.refId))
+      cited.set(r.refId, { id: r.refId, type: 'city_registration', metadata: { city: r.city, state: r.state } })
+
   const rows: AttributeRow[] = []
-  for (const [account, list] of byAccount) {
-    const first = list[0]
-    const openHere = list.filter((r) => !r.locationEnd && !r.businessEnd)
-    const open = openHere.length > 0
-    const refs = [...new Set(list.map((r) => r.refId).filter((x): x is string => Boolean(x)))].map((id) => ({
-      id,
-      type: 'city_registration',
-      metadata: { city: first.city, state: first.state, status: open ? 'Active' : 'Inactive' }
-    }))
+  for (const [id, cite] of cited) {
+    const list = regs.filter((r) => r.refId === id)
+    const ref = { ...cite, metadata: { ...(cite.metadata ?? {}), labels: undefined } }
     const base = {
       source: 'City registration',
       sources: ['City registration'],
-      refs,
-      href: first.sourceUrl ?? undefined
+      refs: [ref],
+      href: list[0]?.sourceUrl ?? undefined
     }
-    rows.push({
-      ...base,
-      group: 'licenses' as GroupId,
-      label: 'City business registration',
-      value: `${first.city} · account ${account}`,
-      matchValue: `city:${account}`
-    })
-    if (first.owner)
-      rows.push({ ...base, group: 'people' as GroupId, label: 'Owner', value: first.owner, matchValue: first.owner })
-    // One row per trade name, however the register punctuated it ("Sprig Technologies Inc" / "Inc.").
+
+    // Whose registration it is: the register's owner, else the name the
+    // record cites to it — Mixboard Inc.
+    const owner =
+      list.find((r) => r.owner)?.owner ??
+      (src.names ?? []).find((n) => (n.sourceRefs ?? []).some((x) => x.id === id))?.name
+    if (owner)
+      rows.push({ ...base, group: 'name' as GroupId, label: 'Business name', value: owner, matchValue: `city:${id}:owner:${nameKey(owner)}` })
+
+    // What it trades as, one row per spelling the register gives.
     const dbas = new Map<string, string>()
     for (const d of list.map((r) => r.dba).filter((d): d is string => Boolean(d)))
-      if (!dbas.has(nameKey(d))) dbas.set(nameKey(d), d)
-    for (const dba of dbas.values())
+      if (!dbas.has(d)) dbas.set(d, d)
+    for (const dba of dbas.values()) {
       rows.push({
         ...base,
         group: 'name' as GroupId,
         label: 'Doing business as',
         value: dba,
-        sources: withWebsite(record, dba, base.sources),
-        // The submitted name, when the register carries it: the same key as the
-        // name row, so one name is one row carrying both sources.
-        matchValue: sameName(dba, submittedNameOf(record)) ? `legal:${nameKey(submittedNameOf(record))}` : dba
+        sources: dbaOfOther(record, owner) ? base.sources : withWebsite(record, dba, base.sources),
+        // The submitted name, when the register carries it as the business's
+        // own: the same key as the name row, so one name is one row carrying
+        // both sources. Not another business's DBA — Sprig Technologies Inc
+        // under Mixboard Inc. is a trade name on that register.
+        matchValue:
+          `city:${id}:dba:${dba}`
       })
-    if (first.businessStart)
-      rows.push({
-        ...base,
-        group: 'licenses' as GroupId,
-        label: 'Registered with the city',
-        value: longDate(first.businessStart) ?? first.businessStart,
-        qualifier: filingAge(first.businessStart) ?? undefined,
-        matchValue: `city:${account}:start`
-      })
-    rows.push({
-      ...base,
-      group: 'licenses' as GroupId,
-      label: 'City registration status',
-      value: open
-        ? list.length > 1
-          ? `Open · ${openHere.length} of ${list.length} locations open`
-          : 'Open'
-        : `Closed${first.businessEnd ? ` ${longDate(first.businessEnd)}` : ''}`,
-      matchValue: `city:${account}:status`
-    })
+    }
+
+    // The addresses Middesk read off this registration, each as it labels it:
+    // 1759 Chestnut St physical, 2021 Fillmore St mailing.
+    for (const a of dedupeAddresses(src.addresses)) {
+      const here = (a.sourceRefs ?? []).filter((x) => x.id === id)
+      if (here.length > 0)
+        rows.push({
+          ...base,
+          group: 'address' as GroupId,
+          label: 'Address',
+          value: a.fullAddress,
+          refs: here.slice(0, 1),
+          // Keyed to this registration: the same address on two registrations
+          // is a line on each card, not one row.
+          matchValue: `city:${id}:address:${a.fullAddress}`
+        })
+    }
   }
   return rows
 }

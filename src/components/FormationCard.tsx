@@ -1,3 +1,7 @@
+import * as RadixTooltip from '@radix-ui/react-tooltip'
+import { Building2, Clock, FileText, History } from 'lucide-react'
+import type { ReactNode } from 'react'
+
 import { Surface, Text } from '@/core'
 
 import { currentDomesticRows, formationIdentityRows, websiteStatesName, type AttributeRow } from '../lib/attributes'
@@ -11,13 +15,17 @@ import {
   formationConfirmed,
   formationFilingOf,
   formationStandingNote,
+  NOT_PROVIDED,
   registrationState,
   sameName
 } from '../lib/registrationStatus'
-import { nameStandingOf } from '../lib/businessNames'
+import { dbasOf, nameStandingOf } from '../lib/businessNames'
+import { priorNamesOf } from '../lib/nameHistory'
+import { formatDate } from '../lib/reportLabels'
 import { soleProprietorOf } from '../lib/soleProprietor'
 import { stateName } from '../lib/states'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
+import type { Kind } from '../lib/timeline/types'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { cn } from '../utils/twUtils'
 import { AttributeCells, type AttributeCell } from './AttributeGrid'
@@ -53,7 +61,7 @@ type Tier = 'formation' | 'city' | 'submitted'
 const TITLE: Record<Tier, string> = {
   formation: 'Formation',
   city: 'City registration',
-  submitted: 'Submitted'
+  submitted: 'Submitted details not linked to a formation'
 }
 
 /** The fields other sources state as well as the card's filing. */
@@ -68,15 +76,40 @@ const allRows = (record: BusinessRecord, results: Derived[], groupFor: (id: stri
   return GROUPS.flatMap((g) => [...(byGroup.get(g.id)?.values() ?? [])])
 }
 
-/** One row per fact: the same label and value from two producers is one row. */
+/** One row per fact: the same label and value from two producers is one row.
+ *  A person is one row whatever label a producer gave them — Miette
+ *  Patisserie's Meg Ray came back as "Person" from the person match and
+ *  "Officer" from the website's, and read as two people. */
 const dedupe = (rows: AttributeRow[]) => {
   const seen = new Set<string>()
   return rows.filter((r) => {
-    const key = `${r.label}|${r.value}`
+    const key =
+      r.group === 'people' ? `people|${(r.value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')}` : `${r.label}|${r.value}`
     if (seen.has(key)) return false
     seen.add(key)
     return true
   })
+}
+
+/**
+ * No state filing and no city registration: what the submitted details were
+ * matched against instead, from the checks that found them — never a reading
+ * of what was not found beyond that it was not. Miette Patisserie: the
+ * website shows the business name; nothing else matched.
+ */
+const submittedFoundNote = (record: BusinessRecord): string => {
+  const verified = (key: string) =>
+    /^verified$/i.test(record.reviewTasks.find((t) => t.key === key)?.subLabel ?? '')
+  const found = [
+    verified('web_business_name_verification') ? 'the website shows the business name' : undefined,
+    verified('web_person_verification') ? 'the website names the submitted person' : undefined,
+    verified('web_address_verification') ? 'the website shows the submitted office address' : undefined,
+    verified('address_verification') ? 'a source of record lists the submitted office address' : undefined
+  ].filter((x): x is string => Boolean(x))
+  const joined = found.length > 1 ? `${found.slice(0, -1).join(', ')} and ${found[found.length - 1]}` : found[0]
+  return `No state filing or city registration was found for the submitted details. ${
+    joined ? `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.` : 'None of them were matched elsewhere.'
+  }`
 }
 
 /**
@@ -142,12 +175,119 @@ export const formationCardTitle = (
         : TITLE[tier]
 }
 
+/** The tooltip the state filing tiles use, over a quiet icon button. */
+const HoverTip = ({
+  label,
+  icon,
+  onClick,
+  children
+}: {
+  label: string
+  icon: ReactNode
+  onClick?: () => void
+  children: ReactNode
+}) => (
+  <RadixTooltip.Provider>
+    <RadixTooltip.Root delayDuration={200}>
+      <RadixTooltip.Trigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          onClick={onClick}
+          className="ml-1.5 inline-flex translate-y-[2px] items-center text-text-secondary hover:text-text-primary"
+        >
+          {icon}
+        </button>
+      </RadixTooltip.Trigger>
+      <RadixTooltip.Portal>
+        <RadixTooltip.Content
+          side="top"
+          sideOffset={6}
+          collisionPadding={10}
+          className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+        >
+          <div className="flex flex-col">{children}</div>
+        </RadixTooltip.Content>
+      </RadixTooltip.Portal>
+    </RadixTooltip.Root>
+  </RadixTooltip.Provider>
+)
+
+const MARK = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
+
+/**
+ * The names the legal name's filing has dropped, behind a past icon beside
+ * it: Sprig's California filing was USERLEAP INC.
+ */
+const NameHistory = ({
+  names,
+  onOpen
+}: {
+  names: Array<{ name: string; at: string; eventId: string }>
+  /** Open the timeline on the change — the newest one. */
+  onOpen?: (eventId: string) => void
+}) => {
+  const count = `${names.length} name change${names.length === 1 ? '' : 's'}`
+  return (
+    <HoverTip
+      label={count}
+      icon={<History aria-hidden="true" size={14} strokeWidth={2} />}
+      onClick={onOpen ? () => onOpen(names[0].eventId) : undefined}
+    >
+      <span className="font-semibold text-foreground">Previous names</span>
+      {/* One row per name, newest first, each with the date the timeline
+          shows for its change. */}
+      {names.map((n) => (
+        <span key={n.name} className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1">
+            <History {...MARK} />
+            {n.name}
+          </span>
+          <span className="shrink-0 text-text-secondary">{formatDate(n.at)}</span>
+        </span>
+      ))}
+      {/* Where they come from, under a rule as the tiles' notes are: the
+          business timeline, opened on the change. */}
+      {onOpen && (
+        <div className="mt-1.5 border-t border-[var(--core-color-border-divider)] pt-1.5">
+          <button
+            type="button"
+            onClick={() => onOpen(names[0].eventId)}
+            className="flex items-center gap-1 text-text-secondary hover:text-text-primary"
+          >
+            <Clock {...MARK} />
+            View timeline
+          </button>
+        </div>
+      )}
+    </HoverTip>
+  )
+}
+
+/**
+ * The businesses a city register lists this name as a DBA of, behind a paper
+ * icon beside it: San Francisco lists Sprig Technologies Inc as Mixboard
+ * Inc.'s.
+ */
+const ListedAsDba = ({ owners }: { owners: string[] }) => (
+  <HoverTip label={`Listed as DBA for ${owners.join(', ')}`} icon={<FileText aria-hidden="true" size={14} strokeWidth={2} />}>
+    <span className="font-semibold text-foreground">Listed as DBA for</span>
+    {owners.map((o) => (
+      <span key={o} className="flex items-center gap-1">
+        <Building2 {...MARK} />
+        {o}
+      </span>
+    ))}
+  </HoverTip>
+)
+
 export const FormationCard = ({
   record,
   results,
   groupFor,
   revealed,
   onJumpToSource,
+  onJumpToTimeline,
   className
 }: {
   record: BusinessRecord
@@ -158,6 +298,9 @@ export const FormationCard = ({
   revealed?: ReadonlySet<string>
   /** The header chip opens the source's card in Sources. */
   onJumpToSource?: (cardId: string) => void
+  /** The name history icon opens the timeline on that change, filtered to
+   *  the change types given. */
+  onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
   className?: string
 }) => {
   // The card's insights sit behind "Show insights" (`InsightsDisclosure`); a
@@ -207,7 +350,21 @@ export const FormationCard = ({
      are active, inactive, or silent — so those rows give way to it. The
      insights stay in the data and in the Insights panel; only this card's
      way of showing them changes. */
-  const strip = tier === 'formation' && record.registrations.length > 0
+  /* A linked formation leads the strip too: Sprig's Delaware filing is on the
+     Mixboard Inc. record, and it is the filing the card stands on, so it
+     sits first, before Sprig's own California registration. */
+  const stripRecord: BusinessRecord = linked
+    ? {
+        ...record,
+        registrations: [
+          linked.filing,
+          ...record.registrations.filter(
+            (f) => !(f.state === linked.filing.state && f.fileNumber === linked.filing.fileNumber)
+          )
+        ]
+      }
+    : record
+  const strip = tier === 'formation' && stripRecord.registrations.length > 0
   const COUNTED = new Set(['sos_active', 'sos_inactive', 'sos_unknown', 'sos_status', 'sos_not_found'])
   const cardRows = FORMATION_CARD_INSIGHTS.flatMap((id) =>
     results.filter(
@@ -251,7 +408,22 @@ export const FormationCard = ({
         )
       : tierRows
 
-  const cells = cellsFromRows(shownRows, {
+  /* A linked formation, but a filing of the business's own under its own
+     name: Sprig's California foreign registration reads SPRIG TECHNOLOGIES
+     INC. That is its legal name, cited to that filing alone; the Delaware
+     filing's MIXBOARD INC. is its name on filing, in the strip. */
+  const ownFilings = linked ? record.registrations.filter((f) => sameName(f.name, record.name)) : []
+  const legalName = ownFilings[0]?.name ?? domestic?.name ?? record.name
+  const identityRows =
+    ownFilings.length > 0
+      ? shownRows.map((r) =>
+          r.label === 'Legal name'
+            ? { ...r, value: ownFilings[0].name as string, registrations: ownFilings, sources: [], source: '' }
+            : r
+        )
+      : shownRows
+
+  const cells = cellsFromRows(identityRows, {
     domesticState,
     onJumpToSource,
     // The source is named once, in the header; only corroboration beyond it shows.
@@ -269,19 +441,113 @@ export const FormationCard = ({
   const FILING_FIELDS = new Set(['Formation state', 'Status', 'Sub status', 'Status details'])
   const shownCells = strip ? cells.filter((c) => !FILING_FIELDS.has(c.label ?? '')) : cells
   const [lead, ...rest] = shownCells
+  // Every name the business's filings have dropped, beside its legal name.
+  const priorNames = tier === 'formation' && lead?.label === 'Legal name' ? priorNamesOf(record) : []
+  /* The names the business trades under, beside its legal name: Andytown LLC
+     as Andytown, Andytown Coffee Roasters. The names only — who owns them is
+     the legal name beside them. Cited by whatever states them — the city
+     registration or a name on file. A formation with none says so. */
+  // Every trade name still open, as the dashboard lists them — a closed one
+  // is history, and stays in Sources with its dates — but the legal name
+  // beside it: Userleap's card reads
+  // MIXBOARD INC., so Userleap Inc. is one of the names it trades under;
+  // Sprig's reads its own name, so Sprig Technologies Inc is not.
+  const dbas =
+    tier === 'formation' ? dbasOf(record, true).filter((d) => d.open !== false && !sameName(d.name, legalName)) : []
+  /* The legal name itself, where a register lists it as another business's
+     DBA: San Francisco lists Sprig Technologies Inc under Mixboard Inc. It
+     shows under DBA as the legal name spells it, with who lists it. */
+  const listedFor = [
+    ...new Set(
+      (tier === 'formation' ? dbasOf(record, true) : [])
+        .filter((d) => d.open !== false && sameName(d.name, legalName) && d.owner && !sameName(d.owner, legalName))
+        .map((d) => d.owner as string)
+    )
+  ]
+  const dbaEntries: Array<{ name: string; owners?: string[] }> = [
+    ...(listedFor.length > 0 ? [{ name: legalName, owners: listedFor }] : []),
+    ...dbas.map((d) => ({ name: d.name }))
+  ]
+  const dbaSources = [
+    ...new Set([
+      ...dbas.map((d) => (d.city ? CITY : d.source)),
+      ...(listedFor.length > 0 ? [CITY] : [])
+    ])
+  ]
+  const dbaCell: AttributeCell | undefined =
+    tier === 'formation' && lead?.label === 'Legal name'
+      ? {
+          key: 'dba',
+          label: 'Doing business as (DBA)',
+          ...(dbaEntries.length > 0
+            ? {
+                badge: (
+                  <AttributeSources
+                    sources={dbaSources}
+                    domesticState={domesticState}
+                    onJumpToSource={onJumpToSource}
+                  />
+                )
+              }
+            : {}),
+          values: [
+            {
+              value:
+                dbaEntries.length > 0 ? (
+                  dbaEntries.map((d, i) => (
+                    <span key={d.name}>
+                      {i > 0 && ', '}
+                      {d.name}
+                      {d.owners && <ListedAsDba owners={d.owners} />}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-text-secondary">None submitted</span>
+                )
+            }
+          ]
+        }
+      : undefined
   const items = [
     {
       ...lead,
-      span: 'full' as const,
-      values: lead.values.map((v) => ({
+      // No filing to cite, but the website states the name: Miette
+      // Patisserie's site shows MIETTE PATISSERIE & CONFISERIE.
+      ...(tier === 'submitted' && lead.label === 'Business name' && websiteStatesName(record, record.name)
+        ? {
+            badge: (
+              <AttributeSources
+                sources={['Website']}
+                domesticState={record.formation?.state}
+                onJumpToSource={onJumpToSource}
+              />
+            )
+          }
+        : {}),
+      ...(dbaCell ? {} : { span: 'full' as const }),
+      values: lead.values.map((v, i) => ({
         ...v,
-        value: <span className="font-semibold">{v.value}</span>
+        value: (
+          <>
+            <span className="font-semibold">{v.value}</span>
+            {i === 0 && priorNames.length > 0 && <NameHistory names={priorNames} onOpen={onJumpToTimeline && ((id) => onJumpToTimeline(id, ['name']))} />}
+          </>
+        )
       }))
     },
+    ...(dbaCell ? [dbaCell] : []),
     // The formation date is the domestic filing's, and says so: with no
     // chip in the card's header, the date carries its own source.
     ...rest.map((c) =>
-      c.label === 'Formation date' && tier === 'formation' && domestic
+      c.values.some((v) => v.value === NOT_PROVIDED)
+        ? {
+            ...c,
+            badge: undefined,
+            values: c.values.map((v) =>
+              v.value === NOT_PROVIDED ? { ...v, value: <span className="text-text-secondary">{NOT_PROVIDED}</span> } : v
+            )
+          }
+        : c.label === 'Formation date' && tier === 'formation' && domestic
         ? {
             ...c,
             badge: (
@@ -334,7 +600,9 @@ export const FormationCard = ({
               sole.since ? ` since ${sole.since.slice(0, 4)}` : ''
             }${sole.account ? ` (account ${sole.account})` : ''}, at the submitted office address.`
           : `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. The ${sole.city} city registration at the submitted office address is in ${sole.person}'s own name, so ${sole.person} appears to operate ${record.name} as a sole proprietor.`
-        : undefined
+        : tier === 'submitted'
+          ? submittedFoundNote(record)
+          : undefined
 
   /*
    * A sole proprietorship, split the way the Formation card is.
@@ -484,7 +752,7 @@ export const FormationCard = ({
           domestic filing — and the filing view names every other. */}
       <CardHeader
         title={title}
-        trailing={tier === 'formation' || soleItems ? undefined : chip}
+        trailing={tier === 'formation' || tier === 'submitted' || soleItems ? undefined : chip}
         className={note ? 'border-b-0 pb-1' : undefined}
       />
       {note && (
@@ -493,7 +761,7 @@ export const FormationCard = ({
         </div>
       )}
       <AttributeCells items={soleItems ?? items} className="-mb-px" />
-      {strip && <FilingStrip record={record} lead={converted?.now ?? domestic ?? undefined} />}
+      {strip && <FilingStrip record={stripRecord} lead={converted?.now ?? domestic ?? undefined} legalName={legalName} />}
       {/* The one registration view, as a single state filing shows it. */}
       {soleItems && cityReg && (
         <div className="border-t border-[var(--core-color-border-divider)]">
