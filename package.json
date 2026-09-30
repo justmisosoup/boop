@@ -9,7 +9,9 @@
     "build": "vite build",
     "build:refresh": "bun run pull && bun run data && vite build",
     "pull": "bun run scripts/pull-records.ts",
-    "pull:timeline": "bun run scripts/pull-timeline.ts"
+    "pull:timeline": "bun run scripts/pull-timeline.ts",
+    "questions": "bun run scripts/export-questions.ts",
+    "answers": "bun run scripts/build-answers.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.8.0",

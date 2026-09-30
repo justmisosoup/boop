@@ -6,6 +6,7 @@ import { deriveResults, type BusinessRecord, type Derived } from './deriveResult
 // In dev this changes nothing: the endpoint answers first and the live run
 // replaces it. Deployed, it is the whole of what the page can show.
 import { heldReportFor } from './heldReports'
+import { heldAnswerFor, type StoredAnswer } from './heldAnswers'
 
 /** One turn: the report, or a question asked of it. */
 export type AnalysisVersion = {
@@ -167,6 +168,9 @@ export const useAnalysis = (
     reportId: string | null
     /** Which conversation a question joins. Null on a report. */
     threadId: string | null
+    /** A stored starter answer (`heldAnswers.ts`), served instead of asking
+     *  the session. Absent on anything that goes to the endpoint. */
+    served?: StoredAnswer
     /** What the page was reading when it was sent. Frozen then, not on landing:
      *  a four-minute run belongs to the inputs it was asked with. */
     snapshot: ReportSnapshot | null
@@ -225,11 +229,18 @@ export const useAnalysis = (
         | { stage: 'assessments'; draft: AnalysisDraft; arrived: string[] }
         | { error: string }
         | AnalysisResult
-      try {
-        const r = await fetch(`/api/analyse?id=${pending.id}`)
-        data = await r.json()
-      } catch {
-        return // the session may be mid-write; keep polling
+      if (pending.served) {
+        // A stored answer, revealed at the pace a written one would be: the
+        // working turn shows for the answer's own `durationMs`, then it lands.
+        if (Date.now() - pending.startedAt < pending.served.durationMs) return
+        data = pending.served.result
+      } else {
+        try {
+          const r = await fetch(`/api/analyse?id=${pending.id}`)
+          data = await r.json()
+        } catch {
+          return // the session may be mid-write; keep polling
+        }
       }
       if ('pending' in data) return
 
@@ -375,6 +386,36 @@ export const useAnalysis = (
       if (!asked) return
       setError(null)
       setFailed(null)
+
+      /**
+       * A starter question has its answer already.
+       *
+       * Written once by the session against this report's snapshot and kept
+       * in `analysis/answers.json`, so the first click answers deployed or
+       * not — the same rule as the endpoint replaying an unchanged brief. It
+       * is filed into the conversation like any other turn and not written
+       * back: a served answer is a replay. Anything else typed still goes to
+       * the session.
+       */
+      const held = kind === 'question' ? heldAnswerFor(record.name, typed ?? asked) : null
+      if (held) {
+        setPending({
+          id: `held-${Date.now()}`,
+          recordId: record.id,
+          asked,
+          skills,
+          typed,
+          policy: undefined,
+          fullPolicy: policy,
+          kind,
+          startedAt: Date.now(),
+          reportId: target ?? report?.id ?? null,
+          threadId: activeThreadId,
+          snapshot: null,
+          served: held
+        })
+        return
+      }
 
       void fetch('/api/analyse', {
         method: 'POST',

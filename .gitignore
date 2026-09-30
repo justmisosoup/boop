@@ -15,3 +15,6 @@ analysis/result-*.json
 analysis/result-*.assessments/
 analysis/replay-*.json
 analysis/attachments/
+# The session's working files for the stored starter answers; the store itself
+# is analysis/answers.json, which IS tracked.
+analysis/questions/

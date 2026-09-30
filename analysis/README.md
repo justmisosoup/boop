@@ -376,3 +376,24 @@ The Vite console prints the exact path on each request:
   read  prototype/analysis/pending.json
   write prototype/analysis/result-1789403052207.json
 ```
+
+## The stored starter answers
+
+The assistant opens with three starter questions (`src/components/Assistant/starters.ts`).
+Their answers are written once per business and kept in **`analysis/answers.json`**, so a
+starter has an answer from the first click, deployed or not, without this session behind
+it. A typed question that is not a starter still comes here as a `question`.
+
+To regenerate them, for a new business or after the report changes:
+
+1. `bun run questions` — writes `analysis/questions/<key>.json` per business with a held
+   report: the business, its report (sections, gaps, follow-ups) and every insight the
+   report's snapshot reported. This is what a live question would carry.
+2. Write `analysis/questions/<key>.answers.json` beside each: three entries keyed
+   `brief`, `closer-look`, `address`, each `{ headline, answer: { id: "answer", body },
+   followUps: [] }`, under the rules above. Cite only ids in that file's `insights`.
+3. `bun run answers` — validates every answers file (all three present, a headline, a
+   body, every cite reported) and assembles `analysis/answers.json`. It fails by file
+   and cite rather than shipping a chip that opens on nothing.
+
+`analysis/questions/` is the session's working folder and is not tracked; the store is.
