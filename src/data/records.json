@@ -1,5 +1,737 @@
 [
   {
+    "id": "95df04bd-d443-4007-81ab-0e0b20efdb20",
+    "name": "MIETTE, LLC",
+    "status": "in_review",
+    "createdAt": "2026-09-29T18:27:23.979Z",
+    "formation": {
+      "date": "2008-11-17",
+      "entityType": "LLC",
+      "state": "CA"
+    },
+    "names": [
+      {
+        "name": "MIETTE, LLC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "status": "inactive",
+              "file_number": "200832410153",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "85 Webster St, Oakland, CA 94607-3720",
+        "state": "CA",
+        "labels": [],
+        "locationCount": 1,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": "COMMERCIAL",
+        "latitude": 37.79399630374343,
+        "longitude": -122.2750393401195,
+        "deliverable": true,
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "labels": [],
+              "status": "inactive",
+              "file_number": "200832410153",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "MIETTE CAKES LLC",
+        "titles": [
+          "MANAGER"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "status": "inactive",
+              "file_number": "200832410153",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      },
+      {
+        "name": "MEGAN RAY",
+        "titles": [
+          "REGISTERED AGENT"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "status": "inactive",
+              "file_number": "200832410153",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "MIETTE, LLC",
+        "state": "CA",
+        "entityType": "LLC",
+        "registeredAgent": "MEGAN RAY",
+        "status": "inactive",
+        "subStatus": null,
+        "statusDetails": "Terminated",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "200832410153",
+        "registrationDate": "2008-11-17",
+        "sourceUrl": "https://bizfileonline.sos.ca.gov/search/business",
+        "addresses": [
+          "85 WEBSTER ST, OAKLAND, CA 94607-3720"
+        ],
+        "officers": [
+          "MIETTE CAKES LLC"
+        ],
+        "officerRoles": [
+          {
+            "name": "MIETTE CAKES LLC",
+            "roles": [
+              "Manager"
+            ]
+          }
+        ]
+      }
+    ],
+    "tin": null,
+    "fmcsaRegistrations": [],
+    "documents": [
+      {
+        "id": "744c6017-a40c-4fd1-a065-9b312d9de26b",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "f38a423a-fda4-49d0-b8d6-79af194fce32",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-29T18:31:25.697Z"
+      },
+      {
+        "id": "ba420c28-5405-4b6d-ac1b-eecc5bd8752f",
+        "documentType": "Initial_filing",
+        "filename": "200832410153_Initial_Filing_2008-11-17.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2008-11-17T00:00:00.000Z",
+        "source": {
+          "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "inactive",
+            "name": "MIETTE, LLC"
+          }
+        },
+        "createdAt": "2026-09-29T18:29:38.441Z"
+      },
+      {
+        "id": "ccf0b218-a27f-4333-a76b-3391c54e11c4",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "9c25c42c-a129-4a1c-b9c5-1203218aab60",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-29T18:31:14.589Z"
+      },
+      {
+        "id": "409c4c82-125c-47a6-b66c-2e044f218c0d",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "fd62f8ae-bf7c-42e4-a4f6-4e0b82592aef",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-29T18:31:36.740Z"
+      },
+      {
+        "id": "7eadb19d-bfcc-4c86-901e-160cc79b136e",
+        "documentType": "Initial filing",
+        "filename": "Initial Filing.pdf",
+        "contentType": "application/pdf",
+        "filingDate": null,
+        "source": {
+          "id": "038752bb-2c9e-4950-8d38-72b5a37aef05",
+          "type": "lien",
+          "metadata": {
+            "state": "CA",
+            "status": "open"
+          }
+        },
+        "createdAt": "2026-09-29T18:31:01.761Z"
+      },
+      {
+        "id": "9fc3b39f-2245-425c-936c-32410183d00e",
+        "documentType": "Certificate of good standing",
+        "filename": "200832410153_Certificate_of_Good_Standing_2026-09-29.pdf",
+        "contentType": "application/pdf",
+        "filingDate": "2026-09-29T00:00:00.000Z",
+        "source": {
+          "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+          "type": "registration",
+          "metadata": {
+            "state": "CA",
+            "status": "inactive",
+            "name": "MIETTE, LLC"
+          }
+        },
+        "createdAt": "2026-09-29T18:30:42.058Z"
+      }
+    ],
+    "taxExemptOrganization": null,
+    "website": null,
+    "profiles": [],
+    "industry": [],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": null,
+    "adverseMedia": null,
+    "litigations": [],
+    "liens": [
+      {
+        "id": "fd62f8ae-bf7c-42e4-a4f6-4e0b82592aef",
+        "type": "ucc",
+        "fileNumber": "U220239165632",
+        "state": "CA",
+        "status": "open",
+        "filingDate": "2022-10-27",
+        "lapseDate": "2027-10-27",
+        "collateral": "All Inventory, Chattel Paper, Accounts, Equipment and General Intangibles; whether any of the foregoing is owned now or acquired later; all accessions, additions, replacements, and substitutions relating to any of the foregoing; all records of any kind relating to any of the foregoing; all proceeds relating to any of the foregoing (including insurance, general intangibles and other accounts proceeds)",
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://bizfileonline.sos.ca.gov/search/ucc",
+        "debtors": [
+          {
+            "name": "MIETTE INC",
+            "type": "ORGANIZATION"
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "JPMORGAN CHASE BANK NA",
+            "type": "ORGANIZATION"
+          }
+        ]
+      },
+      {
+        "id": "f38a423a-fda4-49d0-b8d6-79af194fce32",
+        "type": "ucc",
+        "fileNumber": "U200015821422",
+        "state": "CA",
+        "status": "open",
+        "filingDate": "2020-09-02",
+        "lapseDate": "2030-09-02",
+        "collateral": "All tangible and intangible personal property, including, but not limited to: (a) inventory, (b) equipment, (c) instruments, including promissory notes (d) chattel paper, including tangible chattel paper and electronic chattel paper, (e) documents, (f) letter of credit rights, (g) accounts, including health-care insurance receivables and credit card receivables, (h) deposit accounts, (i) commercial tort claims, (j) general intangibles, including payment intangibles and software and (k) as-extracted collateral as such terms may from time to time be defined in the Uniform Commercial Code. The security interest Borrower grants includes all accessions, attachments, accessories, parts, supplies and replacements for the Collateral, all products, proceeds and collections thereof and all records and data relating thereto. EXEMPT Per California Government Code Section 6103 PLEASE EXPEDITE 641072 8201",
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://bizfileonline.sos.ca.gov/search/ucc",
+        "debtors": [
+          {
+            "name": "MIETTE INCORPORATED",
+            "type": "ORGANIZATION"
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "U S SMALL BUSINESS ADMINISTRATION",
+            "type": "ORGANIZATION"
+          }
+        ]
+      },
+      {
+        "id": "9c25c42c-a129-4a1c-b9c5-1203218aab60",
+        "type": "ucc",
+        "fileNumber": "197692648153",
+        "state": "CA",
+        "status": "open",
+        "filingDate": "2019-01-16",
+        "lapseDate": "2029-01-16",
+        "collateral": "All Inventory, Chattel Paper, Accounts, Equipment and General Intangibles; whether any of the foregoing is owned now or acquired later; all accessions, additions, replacements, and substitutions relating to any of the foregoing; all records of any kind relating to any of the foregoing; all proceeds relating to any of the foregoing (including insurance, general intangibles and other accounts proceeds) 5. Check only if applicable and check only one box: Collateral is being administered by a Decedent's Personal Representative held in a Trust (see UCC1Ad item 17 and instructions) 6b. Check only if applicable and check only one box: 6a. Check only if applicable and check only one box: Non-UCC Filing Public-Finance Transaction Agricultural Lien Manufactured-Home Transaction A Debtor is a Transmitting Utility 7. ALTERNATIVE DESIGNATION (if applicable): Consignee/Consignor Licensee/Licensor Lessee/Lessor Seller/Buyer Bailee/Bailor 8. OPTIONAL FILER REFERENCE DATA: CA-0-68179191-56441726 FILING OFFICE COPY",
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://bizfileonline.sos.ca.gov/search/ucc",
+        "debtors": [
+          {
+            "name": "MIETTE INC",
+            "type": "ORGANIZATION"
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "JPMORGAN CHASE BANK NA",
+            "type": "ORGANIZATION"
+          }
+        ]
+      },
+      {
+        "id": "038752bb-2c9e-4950-8d38-72b5a37aef05",
+        "type": "ucc",
+        "fileNumber": "157500576278",
+        "state": "CA",
+        "status": "open",
+        "filingDate": "2015-12-21",
+        "lapseDate": "2030-12-21",
+        "collateral": "All Inventory, Chattel Paper, Accounts, Equipment and General I ntangibles; whether any of the foregoing is owned now or acquired later; all accessions, additions, replacements, and substitutions relating to any of the foregoing; all records of any kind relating to any of the foregoing; all proceeds relating to any of the foregoing (including insurance, general intangibles and other accounts proceeds) 5. Check only if applicable and check only one box: Collateral is being administered by a Decedent's Personal Representative held in a Trust (see UCC1A item 17 and instructions) 6b. Check only if applicable and check only one box: 6a. Check only if applicable and check only one box: Non-UCC Filing A Debtor is a Transmitting Utility Public-Finance Transaction Manufactured-Home Transaction Agricultural Lien 7. ALTERNATIVE DESIGNATION (if applicable): Seller/Buyer Licensee/Licensor Consignee/Consignor Lessee/Lessor Bailee/Bailor 8. OPTIONAL FILER REFERENCE DATA: CA-0-51746831-50886672 FILING OFFICE COPY",
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://bizfileonline.sos.ca.gov/search/ucc",
+        "debtors": [
+          {
+            "name": "MIETTE INC",
+            "type": "ORGANIZATION"
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "JPMORGAN CHASE BANK NA",
+            "type": "ORGANIZATION"
+          }
+        ]
+      },
+      {
+        "id": "2ab9f2b4-6668-4f6c-9f19-5c6efd168bd0",
+        "type": "ucc",
+        "fileNumber": "097203655209",
+        "state": "CA",
+        "status": "closed",
+        "filingDate": "2009-07-28",
+        "lapseDate": "2014-07-28",
+        "collateral": "",
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://bizfileonline.sos.ca.gov/search/ucc",
+        "debtors": [
+          {
+            "name": "MIETTE LLC",
+            "type": "ORGANIZATION"
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "GREATAMERICA LEASING CORPORATION",
+            "type": "ORGANIZATION"
+          }
+        ]
+      }
+    ],
+    "bankruptcies": [],
+    "connections": [
+      {
+        "id": "b24d33ac-1e89-4b8e-9bf0-c8ef4febac5e",
+        "name": "MIETTE CAKES, LLC",
+        "confidence": 1,
+        "connectedBusinessId": "5147d887-87d7-4803-9388-1cc9e6468390",
+        "people": [
+          {
+            "name": "MEGAN RAY",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
+        ],
+        "addresses": [
+          {
+            "fullAddress": "85 Webster St, Oakland, CA 94607-3720",
+            "labels": [
+              "associated_person"
+            ],
+            "sources": [
+              {
+                "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "200832410153",
+                  "jurisdiction": "DOMESTIC"
+                }
+              }
+            ]
+          }
+        ],
+        "businesses": [
+          {
+            "name": "MIETTE CAKES LLC",
+            "titles": []
+          }
+        ]
+      },
+      {
+        "id": "450d8d5a-e166-4051-837e-58efbecddc59",
+        "name": "REEMS CA JLS COOPERATIVE INC.",
+        "confidence": 0.881,
+        "connectedBusinessId": null,
+        "people": [],
+        "addresses": [
+          {
+            "fullAddress": "85 Webster St, Oakland, CA 94607-3720",
+            "labels": [
+              "associated_person"
+            ],
+            "sources": [
+              {
+                "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "200832410153",
+                  "jurisdiction": "DOMESTIC"
+                }
+              }
+            ]
+          }
+        ],
+        "businesses": []
+      }
+    ],
+    "orders": [
+      {
+        "id": "5cc32934-9dc0-4c45-a8b4-bfac69391682",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:24.024Z",
+        "completedAt": "2026-09-29T18:27:25.686Z"
+      },
+      {
+        "id": "a4373848-fb92-47c9-9c8f-156db1ec9e2a",
+        "package": "ucc_liens",
+        "subproducts": [
+          "ucc_documents"
+        ],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:24.019Z",
+        "completedAt": "2026-09-29T18:31:53.178Z"
+      },
+      {
+        "id": "7372d596-2a15-4361-a077-12bbb4e3aa7c",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:24.014Z",
+        "completedAt": "2026-09-29T18:27:25.707Z"
+      },
+      {
+        "id": "839b0828-8ec8-49db-955a-0f82cc368a7a",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:24.010Z",
+        "completedAt": "2026-09-29T18:27:25.887Z"
+      },
+      {
+        "id": "09125854-10b4-49e0-9cb8-a62b5f8557dd",
+        "package": "documents",
+        "subproducts": [
+          "Articles of Incorporation",
+          "Certificate of Good Standing"
+        ],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:24.006Z",
+        "completedAt": "2026-09-29T18:31:10.984Z"
+      },
+      {
+        "id": "e07c415a-849c-4532-8488-f0869a97a5ca",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-09-29T18:27:23.998Z",
+        "completedAt": "2026-09-29T18:27:25.252Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Inactive",
+        "message": "The business is Inactive in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "sos_inactive",
+        "subLabel": "Inactive",
+        "message": "The business has no Active Secretary of State filings",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Inactive",
+        "message": "Inactive domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Found",
+        "message": "2 connections found",
+        "category": "business_connections"
+      },
+      {
+        "key": "liens",
+        "subLabel": "Open Liens Found",
+        "message": "We found 4 Open Lien(s)",
+        "category": "liens"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Not Provided by State",
+        "message": "The domestic sub-status is Not Provided by State.",
+        "category": "sos"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Deliverable",
+        "message": "The USPS is able to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Commercial",
+        "message": "Submitted Office Address is a Commercial property",
+        "category": "address"
+      },
+      {
+        "key": "address_risk",
+        "subLabel": "Low",
+        "message": "Address risk is low",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "Low frequency",
+        "message": "1 business uses this location",
+        "category": "address"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a LLC",
+        "category": "formation"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      }
+    ]
+  },
+  {
     "id": "45036c2e-02f2-453d-beb5-7a2325590a3e",
     "name": "Mixboard Inc.",
     "status": "in_review",
@@ -9972,7 +10704,12 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "JOSE A ORNELAS"
+          {
+            "name": "JOSE A ORNELAS",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -9983,7 +10720,12 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "JOSE A ORNELAS"
+          {
+            "name": "JOSE A ORNELAS",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -9994,7 +10736,12 @@
         "confidence": 0.944,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -10042,7 +10789,12 @@
         "confidence": 0.891,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -10053,7 +10805,12 @@
         "confidence": 0.891,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -10064,7 +10821,16 @@
         "confidence": 0.891,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "CHIEF FINANCIAL OFFICER",
+              "DIRECTOR",
+              "REGISTERED AGENT",
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -10075,7 +10841,12 @@
         "confidence": 0.891,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -10086,7 +10857,13 @@
         "confidence": 0.891,
         "connectedBusinessId": null,
         "people": [
-          "MANUEL P RODRIGUEZ"
+          {
+            "name": "MANUEL P RODRIGUEZ",
+            "titles": [
+              "GENERAL PARTNER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -11659,7 +12436,12 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "WOO Y LEE"
+          {
+            "name": "WOO Y LEE",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -11670,7 +12452,14 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "WOO Y LEE"
+          {
+            "name": "WOO Y LEE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -14794,9 +15583,14 @@
         "id": "e06a666c-056e-43fd-abcf-12ca0fc62463",
         "name": "MIETTE, LLC",
         "confidence": 1,
-        "connectedBusinessId": null,
+        "connectedBusinessId": "95df04bd-d443-4007-81ab-0e0b20efdb20",
         "people": [
-          "MEGAN RAY"
+          {
+            "name": "MEGAN RAY",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -14817,7 +15611,12 @@
           }
         ],
         "businesses": [
-          "MIETTE CAKES LLC"
+          {
+            "name": "MIETTE CAKES LLC",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ]
       },
       {
@@ -23756,8 +24555,20 @@
         "confidence": 0.999,
         "connectedBusinessId": null,
         "people": [
-          "Keith  Luh",
-          "James  V Continenza"
+          {
+            "name": "Keith  Luh",
+            "titles": [
+              "GOVERNOR",
+              "MANAGER"
+            ]
+          },
+          {
+            "name": "James  V Continenza",
+            "titles": [
+              "GOVERNOR",
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -24090,11 +24901,41 @@
         "confidence": 0.996,
         "connectedBusinessId": null,
         "people": [
-          "PATRICK MICHAEL NOLAN",
-          "\tDavid Johnson",
-          "SCOTT   SORENSEN",
-          "REED E STEINER",
-          "R SCOTT WOOD"
+          {
+            "name": "PATRICK MICHAEL NOLAN",
+            "titles": [
+              "MANAGER"
+            ]
+          },
+          {
+            "name": "\tDavid Johnson",
+            "titles": [
+              "MANAGER"
+            ]
+          },
+          {
+            "name": "SCOTT   SORENSEN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
+              "MANAGER"
+            ]
+          },
+          {
+            "name": "REED E STEINER",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER",
+              "MANAGER",
+              "REAL PROPERTY"
+            ]
+          },
+          {
+            "name": "R SCOTT WOOD",
+            "titles": [
+              "MANAGER",
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -24600,8 +25441,23 @@
           }
         ],
         "businesses": [
-          "% C T CORP. SYSTEM, INC.",
-          "SORENSON COMMUNICATIONS LLC"
+          {
+            "name": "% C T CORP. SYSTEM, INC.",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "SORENSON COMMUNICATIONS LLC",
+            "titles": [
+              "GOVERNOR",
+              "MANAGER",
+              "MEM",
+              "MEMBER",
+              "MMEMBER",
+              "OTHER"
+            ]
+          }
         ]
       },
       {
@@ -24610,9 +25466,24 @@
         "confidence": 0.986,
         "connectedBusinessId": null,
         "people": [
-          "\tDavid Johnson",
-          "SCOTT   SORENSEN",
-          "R SCOTT WOOD"
+          {
+            "name": "\tDavid Johnson",
+            "titles": [
+              "VICE PRESIDENT"
+            ]
+          },
+          {
+            "name": "SCOTT   SORENSEN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "R SCOTT WOOD",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -24956,8 +25827,19 @@
           }
         ],
         "businesses": [
-          "% C T CORP. SYSTEM, INC.",
-          "SORENSON COMMUNICATIONS LLC"
+          {
+            "name": "% C T CORP. SYSTEM, INC.",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "SORENSON COMMUNICATIONS LLC",
+            "titles": [
+              "GOVERNOR",
+              "MANAGER"
+            ]
+          }
         ]
       },
       {
@@ -24966,7 +25848,12 @@
         "confidence": 0.938,
         "connectedBusinessId": null,
         "people": [
-          "REED E STEINER"
+          {
+            "name": "REED E STEINER",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -24977,7 +25864,13 @@
         "confidence": 0.938,
         "connectedBusinessId": null,
         "people": [
-          "REED E STEINER"
+          {
+            "name": "REED E STEINER",
+            "titles": [
+              "MEMBER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -24988,7 +25881,12 @@
         "confidence": 0.858,
         "connectedBusinessId": null,
         "people": [
-          "JAMES  LEVOY SORENSON"
+          {
+            "name": "JAMES  LEVOY SORENSON",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -25079,7 +25977,12 @@
         "confidence": 0.853,
         "connectedBusinessId": null,
         "people": [
-          "JAMES  LEVOY SORENSON"
+          {
+            "name": "JAMES  LEVOY SORENSON",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -25141,7 +26044,13 @@
         "confidence": 0.85,
         "connectedBusinessId": null,
         "people": [
-          "JAMES  LEVOY SORENSON"
+          {
+            "name": "JAMES  LEVOY SORENSON",
+            "titles": [
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30428,8 +31337,19 @@
         "confidence": 0.993,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON",
-          "JACOB G SELBY"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "GOVERNING PERSON",
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "JACOB G SELBY",
+            "titles": [
+              "GOVERNING PERSON"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30495,8 +31415,21 @@
         "confidence": 0.986,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON",
-          "JACOB G SELBY"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "MANAGER",
+              "MEMBER",
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "JACOB G SELBY",
+            "titles": [
+              "MANAGER",
+              "MEMBER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30562,7 +31495,13 @@
         "confidence": 0.958,
         "connectedBusinessId": null,
         "people": [
-          "JACOB G SELBY"
+          {
+            "name": "JACOB G SELBY",
+            "titles": [
+              "MEMBER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30592,7 +31531,14 @@
         "confidence": 0.958,
         "connectedBusinessId": null,
         "people": [
-          "JACOB G SELBY"
+          {
+            "name": "JACOB G SELBY",
+            "titles": [
+              "DIRECTOR",
+              "PRESIDENT",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30622,7 +31568,13 @@
         "confidence": 0.933,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "DIRECTOR",
+              "VICE PRESIDENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30670,7 +31622,14 @@
         "confidence": 0.933,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "DIRECTOR",
+              "OFFICER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30718,7 +31677,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "JACOB G SELBY"
+          {
+            "name": "JACOB G SELBY",
+            "titles": [
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -30729,7 +31694,13 @@
         "confidence": 0.906,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30759,7 +31730,17 @@
         "confidence": 0.906,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "ASSISTANT SECRETARY",
+              "CONTRACTOR OWNER",
+              "DIRECTOR",
+              "DOPL OFFICER",
+              "PRESIDENT",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30789,7 +31770,13 @@
         "confidence": 0.906,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "MEMBER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30819,7 +31806,12 @@
         "confidence": 0.906,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30849,7 +31841,14 @@
         "confidence": 0.906,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "DIRECTOR",
+              "PRESIDENT",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -30879,7 +31878,12 @@
         "confidence": 0.849,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL  E.  ESKELSON"
+          {
+            "name": "MICHAEL  E.  ESKELSON",
+            "titles": [
+              "VICE PRESIDENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33357,8 +34361,18 @@
         "confidence": 0.999,
         "connectedBusinessId": null,
         "people": [
-          "BENJAMIN RATTRAY",
-          "Duncan Lockard"
+          {
+            "name": "BENJAMIN RATTRAY",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "Duncan Lockard",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -33450,9 +34464,24 @@
         "confidence": 0.998,
         "connectedBusinessId": null,
         "people": [
-          "BENJAMIN RATTRAY",
-          "RAHOUL SETH",
-          "EVE CHAURAND"
+          {
+            "name": "BENJAMIN RATTRAY",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "RAHOUL SETH",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "EVE CHAURAND",
+            "titles": [
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -33542,7 +34571,12 @@
         "confidence": 0.955,
         "connectedBusinessId": null,
         "people": [
-          "EVE CHAURAND"
+          {
+            "name": "EVE CHAURAND",
+            "titles": [
+              "AGENT FOR SERVICE OF PROCESS"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33553,7 +34587,12 @@
         "confidence": 0.955,
         "connectedBusinessId": null,
         "people": [
-          "EVE CHAURAND"
+          {
+            "name": "EVE CHAURAND",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33564,7 +34603,13 @@
         "confidence": 0.955,
         "connectedBusinessId": null,
         "people": [
-          "RAHOUL SETH"
+          {
+            "name": "RAHOUL SETH",
+            "titles": [
+              "DIRECTOR",
+              "GOVERNINGPERSON"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -33604,7 +34649,19 @@
         "confidence": 0.955,
         "connectedBusinessId": null,
         "people": [
-          "RAHOUL SETH"
+          {
+            "name": "RAHOUL SETH",
+            "titles": [
+              "CFO",
+              "CFO TREASURER",
+              "CHIEF FINANCIAL OFFICER",
+              "GOVERNINGPERSON",
+              "OFFICER",
+              "SECRETARY",
+              "TREASURER",
+              "VICE PRESIDENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -33698,7 +34755,12 @@
         "confidence": 0.942,
         "connectedBusinessId": null,
         "people": [
-          "JOE GREENSTEIN"
+          {
+            "name": "JOE GREENSTEIN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33709,7 +34771,12 @@
         "confidence": 0.942,
         "connectedBusinessId": null,
         "people": [
-          "JOE GREENSTEIN"
+          {
+            "name": "JOE GREENSTEIN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33720,7 +34787,13 @@
         "confidence": 0.938,
         "connectedBusinessId": null,
         "people": [
-          "EVE CHAURAND"
+          {
+            "name": "EVE CHAURAND",
+            "titles": [
+              "REGISTERED AGENT",
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33731,7 +34804,12 @@
         "confidence": 0.938,
         "connectedBusinessId": null,
         "people": [
-          "RAHOUL SETH"
+          {
+            "name": "RAHOUL SETH",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33742,7 +34820,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "JOE GREENSTEIN"
+          {
+            "name": "JOE GREENSTEIN",
+            "titles": [
+              "CHAIRPERSON OF BOARD",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33753,7 +34837,14 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "JOE GREENSTEIN"
+          {
+            "name": "JOE GREENSTEIN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -33764,7 +34855,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "JOE GREENSTEIN"
+          {
+            "name": "JOE GREENSTEIN",
+            "titles": [
+              "MANAGER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -38902,12 +39999,49 @@
         "confidence": 0.997,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH",
-          "DANIEL  YANISSE",
-          "JENNIFER  YEH",
-          "'C/O C T CORPORATION SYSTEM'",
-          "NAEEM  ISHAQ",
-          "TODD FREEDMAN"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CEO",
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "GOVERNOR",
+              "OTHER",
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "GOVERNINGPERSON",
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "'C/O C T CORPORATION SYSTEM'",
+            "titles": [
+              "SERVICE OF PROCESS"
+            ]
+          },
+          {
+            "name": "NAEEM  ISHAQ",
+            "titles": [
+              "CFO",
+              "GOVERNINGPERSON",
+              "TREASURER"
+            ]
+          },
+          {
+            "name": "TODD FREEDMAN",
+            "titles": []
+          }
         ],
         "addresses": [
           {
@@ -39336,12 +40470,56 @@
         "confidence": 0.997,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH",
-          "DANIEL  YANISSE",
-          "JENNIFER  YEH",
-          "'C/O C T CORPORATION SYSTEM'",
-          "NAEEM  ISHAQ",
-          "TODD FREEDMAN"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER",
+              "TREASURER"
+            ]
+          },
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CEO",
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "OFFICER",
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "'C/O C T CORPORATION SYSTEM'",
+            "titles": [
+              "SERVICE OF PROCESS"
+            ]
+          },
+          {
+            "name": "NAEEM  ISHAQ",
+            "titles": [
+              "CFO",
+              "CHIEF FINANCIAL OFFICER",
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "OFFICER",
+              "TREASURER"
+            ]
+          },
+          {
+            "name": "TODD FREEDMAN",
+            "titles": [
+              "CFO",
+              "TREASURER CFO"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -39824,10 +41002,32 @@
         "confidence": 0.988,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH",
-          "DANIEL  YANISSE",
-          "JENNIFER  YEH",
-          "NAEEM  ISHAQ"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "NAEEM  ISHAQ",
+            "titles": [
+              "TREASURER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40102,10 +41302,36 @@
         "confidence": 0.988,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH",
-          "DANIEL  YANISSE",
-          "JENNIFER  YEH",
-          "NAEEM  ISHAQ"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "GOVERNINGPERSON",
+              "TREASURER"
+            ]
+          },
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "PRESIDENT"
+            ]
+          },
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "GOVERNINGPERSON",
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "NAEEM  ISHAQ",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER",
+              "TREASURER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40388,9 +41614,28 @@
         "confidence": 0.979,
         "connectedBusinessId": null,
         "people": [
-          "DANIEL  YANISSE",
-          "JENNIFER  YEH",
-          "NAEEM  ISHAQ"
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CEO",
+              "MANAGER",
+              "OTHER"
+            ]
+          },
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "OTHER",
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "NAEEM  ISHAQ",
+            "titles": [
+              "CFO",
+              "OTHER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40701,7 +41946,12 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "TODD FREEDMAN"
+          {
+            "name": "TODD FREEDMAN",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40731,7 +41981,12 @@
         "confidence": 0.943,
         "connectedBusinessId": null,
         "people": [
-          "DANIEL  YANISSE"
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "OFFICER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40942,7 +42197,13 @@
         "confidence": 0.929,
         "connectedBusinessId": null,
         "people": [
-          "DANIEL  YANISSE"
+          {
+            "name": "DANIEL  YANISSE",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER",
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -40972,7 +42233,16 @@
         "confidence": 0.895,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "CFO",
+              "CHIEF FINANCIAL OFFICER",
+              "GOVERNINGPERSON",
+              "OFFICER",
+              "OTHER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -40983,7 +42253,12 @@
         "confidence": 0.895,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "MANAGING MEMBER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -40994,7 +42269,12 @@
         "confidence": 0.895,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -41024,7 +42304,12 @@
         "confidence": 0.857,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -41035,7 +42320,12 @@
         "confidence": 0.857,
         "connectedBusinessId": null,
         "people": [
-          "TIM YARBROUGH"
+          {
+            "name": "TIM YARBROUGH",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -41046,7 +42336,12 @@
         "confidence": 0.822,
         "connectedBusinessId": null,
         "people": [
-          "JENNIFER  YEH"
+          {
+            "name": "JENNIFER  YEH",
+            "titles": [
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -51602,8 +52897,18 @@
         "confidence": 0.998,
         "connectedBusinessId": null,
         "people": [
-          "ELENA GOMEZ",
-          "JOHN GESCHKE"
+          {
+            "name": "ELENA GOMEZ",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          },
+          {
+            "name": "JOHN GESCHKE",
+            "titles": [
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -51933,7 +53238,12 @@
         "confidence": 0.991,
         "connectedBusinessId": null,
         "people": [
-          "CARYN MAROONEY"
+          {
+            "name": "CARYN MAROONEY",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -51944,7 +53254,12 @@
         "confidence": 0.991,
         "connectedBusinessId": null,
         "people": [
-          "TOM EGGEMMEIER"
+          {
+            "name": "TOM EGGEMMEIER",
+            "titles": [
+              "PRESIDENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -51955,7 +53270,12 @@
         "confidence": 0.991,
         "connectedBusinessId": null,
         "people": [
-          "Michael Frandsen"
+          {
+            "name": "Michael Frandsen",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -51985,9 +53305,25 @@
         "confidence": 0.991,
         "connectedBusinessId": null,
         "people": [
-          "ELENA GOMEZ",
-          "MIKKEL SVANE",
-          "HASANI CARAWAY"
+          {
+            "name": "ELENA GOMEZ",
+            "titles": [
+              "CHIEF FINANCIAL OFFICER",
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "titles": [
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -52130,8 +53466,18 @@
         "confidence": 0.971,
         "connectedBusinessId": null,
         "people": [
-          "SHANA A SIMMONS",
-          "HASANI CARAWAY"
+          {
+            "name": "SHANA A SIMMONS",
+            "titles": [
+              "DIRECTOR"
+            ]
+          },
+          {
+            "name": "HASANI CARAWAY",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -52217,7 +53563,14 @@
         "confidence": 0.955,
         "connectedBusinessId": null,
         "people": [
-          "ELENA GOMEZ"
+          {
+            "name": "ELENA GOMEZ",
+            "titles": [
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "OTHER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -52402,7 +53755,12 @@
         "confidence": 0.938,
         "connectedBusinessId": null,
         "people": [
-          "ELENA GOMEZ"
+          {
+            "name": "ELENA GOMEZ",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52413,7 +53771,14 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "HASANI CARAWAY"
+          {
+            "name": "HASANI CARAWAY",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "CHIEF FINANCIAL OFFICER",
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52424,7 +53789,12 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "HASANI CARAWAY"
+          {
+            "name": "HASANI CARAWAY",
+            "titles": [
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -52519,7 +53889,12 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "SHANA A SIMMONS"
+          {
+            "name": "SHANA A SIMMONS",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52530,7 +53905,12 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "SHANA A SIMMONS"
+          {
+            "name": "SHANA A SIMMONS",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52541,7 +53921,14 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "HASANI CARAWAY"
+          {
+            "name": "HASANI CARAWAY",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "CHIEF FINANCIAL OFFICER",
+              "SECRETARY"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52552,7 +53939,13 @@
         "confidence": 0.931,
         "connectedBusinessId": null,
         "people": [
-          "SHANA A SIMMONS"
+          {
+            "name": "SHANA A SIMMONS",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52563,7 +53956,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -52661,7 +54059,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -53364,7 +54767,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -53375,7 +54784,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -53386,7 +54800,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -53397,7 +54816,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MIKKEL SVANE"
+          {
+            "name": "MIKKEL SVANE",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -53408,7 +54832,15 @@
         "confidence": 0.904,
         "connectedBusinessId": null,
         "people": [
-          "HILARIE KOPLOW-MCADAMS"
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "titles": [
+              "DIRECTOR",
+              "GOVERNINGPERSON",
+              "GOVERNOR",
+              "OTHER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -53466,7 +54898,14 @@
         "confidence": 0.904,
         "connectedBusinessId": null,
         "people": [
-          "HILARIE KOPLOW-MCADAMS"
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "titles": [
+              "DIRECTOR",
+              "EXECUTIVE DIRECTOR",
+              "GOVERNINGPERSON"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -53477,9 +54916,24 @@
         "confidence": 0.904,
         "connectedBusinessId": null,
         "people": [
-          "(Secretary of State)",
-          "WITHDRAWN",
-          "HILARIE KOPLOW-MCADAMS"
+          {
+            "name": "(Secretary of State)",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          },
+          {
+            "name": "WITHDRAWN",
+            "titles": [
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "HILARIE KOPLOW-MCADAMS",
+            "titles": [
+              "DIRECTOR"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -55297,7 +56751,12 @@
         "confidence": 0.978,
         "connectedBusinessId": null,
         "people": [
-          "RICHARD C. KAWAS"
+          {
+            "name": "RICHARD C. KAWAS",
+            "titles": [
+              "CEO"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -55327,7 +56786,12 @@
         "confidence": 0.978,
         "connectedBusinessId": null,
         "people": [
-          "RICHARD C. KAWAS"
+          {
+            "name": "RICHARD C. KAWAS",
+            "titles": [
+              "CEO"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -55357,7 +56821,12 @@
         "confidence": 0.968,
         "connectedBusinessId": null,
         "people": [
-          "RICHARD C. KAWAS"
+          {
+            "name": "RICHARD C. KAWAS",
+            "titles": [
+              "CEO"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -55368,7 +56837,12 @@
         "confidence": 0.932,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL KAWAS"
+          {
+            "name": "MICHAEL KAWAS",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -55437,7 +56911,15 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL KAWAS"
+          {
+            "name": "MICHAEL KAWAS",
+            "titles": [
+              "CFO",
+              "CHIEF FINANCIAL OFFICER",
+              "EVP",
+              "TREASURER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -55448,7 +56930,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL KAWAS"
+          {
+            "name": "MICHAEL KAWAS",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -55459,7 +56947,12 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL KAWAS"
+          {
+            "name": "MICHAEL KAWAS",
+            "titles": [
+              "GOVERNOR"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -55470,7 +56963,13 @@
         "confidence": 0.925,
         "connectedBusinessId": null,
         "people": [
-          "MICHAEL KAWAS"
+          {
+            "name": "MICHAEL KAWAS",
+            "titles": [
+              "MANAGER",
+              "MEMBER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -58427,7 +59926,12 @@
         "confidence": 0.991,
         "connectedBusinessId": null,
         "people": [
-          "ZB, NATIONAL ASSOCIATION"
+          {
+            "name": "ZB, NATIONAL ASSOCIATION",
+            "titles": [
+              "OWNER"
+            ]
+          }
         ],
         "addresses": [
           {
@@ -61539,7 +63043,12 @@
         "confidence": 0.951,
         "connectedBusinessId": null,
         "people": [
-          "DEVARIS BROWN"
+          {
+            "name": "DEVARIS BROWN",
+            "titles": [
+              "MANAGER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -61550,7 +63059,13 @@
         "confidence": 0.951,
         "connectedBusinessId": null,
         "people": [
-          "DEVARIS BROWN"
+          {
+            "name": "DEVARIS BROWN",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER",
+              "CHIEF FINANCIAL OFFICER"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []
@@ -61561,7 +63076,12 @@
         "confidence": 0.951,
         "connectedBusinessId": null,
         "people": [
-          "DEVARIS BROWN"
+          {
+            "name": "DEVARIS BROWN",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
         ],
         "addresses": [],
         "businesses": []

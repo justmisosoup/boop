@@ -6,7 +6,8 @@
     "data": "bun run scripts/build-data.ts",
     "drift": "bun run scripts/catalog-drift.ts",
     "dev": "bun run pull && bun run data && vite",
-    "build": "bun run pull && bun run data && tsc -b && vite build",
+    "build": "vite build",
+    "build:refresh": "bun run pull && bun run data && vite build",
     "pull": "bun run scripts/pull-records.ts",
     "pull:timeline": "bun run scripts/pull-timeline.ts"
   },

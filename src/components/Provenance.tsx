@@ -150,6 +150,9 @@ const APP_CARD: Record<
   'EPA FRS facility': { title: 'EPA FRS Facility' }
 }
 
+/** The prefix a court record's source carries (`attributes.ts`, litigations). */
+const COURT = 'Court record · '
+
 /** One entry per record the card would show — per city, per state — as the
  *  dashboard's cards are one per record. Empty for a source with no card. */
 const appEntries = (name: string, refs: SourceRef[], sourceNames?: Record<string, string>) => {
@@ -284,14 +287,30 @@ export const AttributeSources = ({
     // record, not at the URL, so those chips still follow to it.
     const linksOut = showsPage(sourceLabel(name)) && Boolean(href)
 
+    // A court record's chip names the court — "Albany County Supreme Court" —
+    // and says what it is under it.
+    const court = name.startsWith(COURT) ? name.slice(COURT.length) : undefined
+    if (court)
+      return {
+        id: name,
+        label: court,
+        domain: court,
+        title: court,
+        annotation: 'Court record',
+        onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined
+      }
+
+    // A record source with no page of its own is named by what it carries —
+    // the site by its address — rather than "Website" over "Website".
+    const carried = sourceNames?.[sourceLabel(name)]
     return {
       id: name,
       label: sourceLabel(name),
-      domain: sourceLabel(name),
+      domain: href ? sourceLabel(name) : (carried ?? sourceLabel(name)),
       // Headline, then host. The link is an affordance in the preview's foot
       // now ("View site"): printed in full it was an address nobody reads,
       // wrapped over three lines.
-      title: title ?? (href ? readableUrl(href) : sourceLabel(name)),
+      title: title ?? (href ? readableUrl(href) : (carried ?? sourceLabel(name))),
       icon: href ? (
         <img
           src={faviconFor(href)}

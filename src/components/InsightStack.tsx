@@ -41,12 +41,15 @@ export const ROW_HAIRLINE = cn(
  * name is a frame.
  */
 export const InsightStack = ({
+  id,
   title,
   trailing,
   intro,
   children,
   className
 }: {
+  /** An anchor, for a jump from the Needs review card. */
+  id?: string
   title?: ReactNode
   trailing?: ReactNode
   intro?: ReactNode
@@ -57,7 +60,7 @@ export const InsightStack = ({
   if (rows.length === 0 && !intro) return null
 
   return (
-    <Surface variant="card" padding="none" className={cn('overflow-hidden', className)}>
+    <Surface id={id} variant="card" padding="none" className={cn('overflow-hidden', id && 'scroll-mt-6', className)}>
       {/* The summary reads as the header's own sentence, so no rule between them. */}
       {title && <CardHeader title={title} trailing={trailing} className={intro ? 'border-b-0 pb-1' : undefined} />}
       {intro && (

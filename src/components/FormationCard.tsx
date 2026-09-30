@@ -2,6 +2,7 @@ import { Surface } from '@/core'
 
 import { currentDomesticRows, formationIdentityRows, type AttributeRow } from '../lib/attributes'
 import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
+import { FORMATION_CARD_ID } from '../lib/needsReview'
 import { negativesFor } from '../lib/identityScore'
 import { domesticFilingOf, formationCardFilingOf, linkedFormationNote } from '../lib/linkedFormation'
 import {
@@ -74,6 +75,37 @@ const dedupe = (rows: AttributeRow[]) => {
     seen.add(key)
     return true
   })
+}
+
+/**
+ * The card's title, as it reads on the page — for the Needs review card,
+ * which names this card by its header. The same reading the component makes:
+ * a linked formation, a confirmed one, a likely sole proprietorship, or the
+ * tier's plain name.
+ */
+export const formationCardTitle = (
+  record: BusinessRecord,
+  results: Derived[],
+  groupFor: (insightId: string) => GroupId
+): string => {
+  const linked = domesticFilingOf(record)?.linked
+  const domestic = formationCardFilingOf(record)
+  const rows = allRows(record, results, groupFor)
+  const tier: Tier =
+    record.formation || domestic
+      ? 'formation'
+      : rows.some((r) => (r.sources ?? []).includes(CITY))
+        ? 'city'
+        : 'submitted'
+  const strong = !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
+  const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
+  return linked
+    ? 'Possible formation found under different business name'
+    : strong
+      ? 'Formation found for this business'
+      : sole
+        ? 'Likely sole proprietorship'
+        : TITLE[tier]
 }
 
 export const FormationCard = ({
@@ -209,13 +241,7 @@ export const FormationCard = ({
     !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
   // No state filing at all, and a city registration in the submitted person's own name.
   const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
-  const title = linked
-    ? 'Possible formation found under different business name'
-    : strong
-      ? 'Formation found for this business'
-      : sole
-        ? 'Likely sole proprietorship'
-        : TITLE[tier]
+  const title = formationCardTitle(record, results, groupFor)
   const note = linked
     ? linkedFormationNote(record, linked, stateName)
     : strong
@@ -232,9 +258,10 @@ export const FormationCard = ({
 
   return (
     <Surface
+      id={FORMATION_CARD_ID}
       variant="card"
       padding="none"
-      className={cn('overflow-hidden', className)}
+      className={cn('scroll-mt-6 overflow-hidden', className)}
       aria-label={title}
       role="region"
     >

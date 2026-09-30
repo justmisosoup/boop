@@ -26,13 +26,15 @@ import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPan
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 import { DeterminationCard } from '../components/DeterminationCard'
+import { NeedsReviewCard } from '../components/NeedsReviewCard'
+import { cardsNeedingReview } from '../lib/needsReview'
 import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
 import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
 import { scoreLine } from '../lib/scoreReasons'
 import { changedInsights } from '../lib/diff'
 import { reportDate, reportLabel, reportStamp } from '../lib/reportLabels'
-import { FormationCard } from '../components/FormationCard'
+import { FormationCard, formationCardTitle } from '../components/FormationCard'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
 import { SUBMITTED_CARD } from '../lib/sourceCards'
@@ -363,6 +365,28 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   // on it (00-MASTER-PLAN.md rule 3).
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
+  /* The report's cards with something to review, in the order the report
+     lays them out (the panel's: the agent's tier order, stored areas after). */
+  const reviewCards = useMemo(() => {
+    const version = analysis.reportVersion
+    if (!version?.result || running) return []
+    const order = [...(tiers?.keys() ?? [])]
+    const policyInOrder = [...(version.policy ?? [])].sort((a, b) => {
+      const ia = order.indexOf(a.id)
+      const ib = order.indexOf(b.id)
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+    })
+    return cardsNeedingReview({
+      score,
+      result: version.result,
+      results,
+      record,
+      summaries,
+      policy: policyInOrder,
+      groupFor,
+      formationTitle: formationCardTitle(record, results, groupFor)
+    })
+  }, [analysis.reportVersion, running, tiers, score, results, record, summaries, groupFor])
 
   /**
    * Run the standing workflow, from where the report would be.
@@ -457,6 +481,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     return () => observer.disconnect()
   }, [])
 
+  /** A Needs review row scrolls the report to the card it names. */
+  const jumpToCard = (c: { anchorId: string }) =>
+    document.getElementById(c.anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   /** The decision card, stacked for the left column or wide for the flow. */
   const decisionCard = (stacked: boolean) => (
               <DeterminationCard
@@ -710,7 +737,14 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                       call and what it rests on are read side by side. */}
                   {(view || running) && (
                     <div className={railed ? 'w-80 shrink-0' : 'hidden'}>
-                      <div className="sticky top-0">{decisionCard(true)}</div>
+                      <div className="sticky top-0">
+                        {decisionCard(true)}
+                        {/* Under the determination, in the rail: where the
+                            attention is due, beside the call it bears on. */}
+                        {reviewCards.length > 0 && (
+                          <NeedsReviewCard cards={reviewCards} onJump={jumpToCard} className="mt-4" />
+                        )}
+                      </div>
                     </div>
                   )}
                   {/*
@@ -742,6 +776,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             {/* Below `desk` there is no room beside the report, so the
                 decision leads it in the flow. */}
             {(view || running) && !railed && decisionCard(false)}
+            {/* Where the attention is due, before the record's facts: the
+                report's cards with something flagged or left open, named as
+                their headers read below. Only what this report surfaced. */}
+            {!railed && reviewCards.length > 0 && (
+              <NeedsReviewCard cards={reviewCards} onJump={jumpToCard} className="mt-4" />
+            )}
             {/* What the state holds, under the call and before the argument.
                 With or without a report: these are the record's facts. */}
             <FormationCard

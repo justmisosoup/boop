@@ -7,6 +7,7 @@ import { categoriesOf } from '../lib/deriveResults'
 import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
 import { FORMATION_CARD_INSIGHTS, IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
+import { partAnchor } from '../lib/needsReview'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type {
   AnalysisDraft,
@@ -87,10 +88,14 @@ const CiteList = ({
   trailing,
   intro,
   sections,
+  anchor,
   onJumpToSource
 }: {
   cited: Derived[]
   record?: BusinessRecord
+  /** The section's id: each part card is anchored `section-{id}-{part}`
+   *  (`partAnchor`), for the Needs review card's jump. */
+  anchor?: string
   /** Insight ids the assessment score read as a point against the identity. */
   negatives?: ReadonlySet<string>
   /** The assessment's name and its band, as the card's header. */
@@ -164,15 +169,8 @@ const CiteList = ({
     />
   )
 
-  const flaggedChip = (rows: Derived[]) => {
-    const n = rows.filter(isFlagged).length
-    return (
-      <span className="flex items-center gap-2">
-        {n > 0 && <span className="text-caption tabular-nums text-text-secondary">{n} flagged</span>}
-        {trailing}
-      </span>
-    )
-  }
+  // No "N flagged" count: the flagged rows are marked where they stand.
+  const flaggedChip = (_rows: Derived[]) => trailing
 
   /*
    * An area in parts is a card per part, not one card with sub-headings. The
@@ -186,13 +184,14 @@ const CiteList = ({
   if (sections) {
     const here = ordered
     const parts = [
-      ...sections.map((s) => ({
+      ...sections.map((s, i) => ({
+        i,
         title: s.headline(record),
         note: s.note?.(record),
         // A check the title states is not repeated as a row under it.
         rows: here.filter((r) => sectionOf(r) === s && !s.stated?.(record).includes(r.insightId.split(':')[0]))
       })),
-      { title: 'Other', note: undefined, rows: here.filter((r) => !sectionOf(r)) }
+      { i: sections.length, title: 'Other', note: undefined, rows: here.filter((r) => !sectionOf(r)) }
     ].filter((p) => p.rows.length > 0)
     return (
       <div className="flex flex-col gap-4">
@@ -206,7 +205,13 @@ const CiteList = ({
               </>
             ) : undefined
           return (
-            <InsightStack key={p.title} title={p.title} trailing={flaggedChip(p.rows)} intro={summary}>
+            <InsightStack
+              key={p.title}
+              id={anchor ? partAnchor(anchor, p.i) : undefined}
+              title={p.title}
+              trailing={flaggedChip(p.rows)}
+              intro={summary}
+            >
               {p.rows.map(row)}
             </InsightStack>
           )
@@ -469,6 +474,7 @@ export const SectionBody = ({
            reviewer reading this business needs beside the area's name. */
         intro={intro}
         sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
+        anchor={section.id}
         onJumpToSource={onJumpToSource}
       />
     </>

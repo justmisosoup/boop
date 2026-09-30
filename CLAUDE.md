@@ -46,7 +46,7 @@ Two further contracts, both authoritative:
 
 4. **Don't invent records.** `src/data/records.json` holds the ingested
    businesses; `bun run pull` rewrites it wholesale from the live API. Never add
-   rows by hand, and don't run `pull` (or `bun run build`, which calls it)
+   rows by hand, and don't run `pull` (or `bun run build:refresh`, which calls it)
    unless a data refresh is the actual task.
 
 ## Running it
@@ -54,9 +54,12 @@ Two further contracts, both authoritative:
 `preview_start` with name `prototype` (`.claude/launch.json`), or `bun run vite`
 — port 3000. Verify changes in the browser on both screens, not just one.
 
-`bun run build` fails on `tsc -b`, and has since before this prototype had a
-second screen: the cloned `src/core` ships its colocated tests, and the test
-dependencies aren't installed. `bunx vite build` is the real build check.
+`bun run build` is `vite build` alone — what Vercel runs. The committed
+`src/data/*.json` are the inputs; `bun run build:refresh` is the local variant
+that re-pulls and rebuilds them first (it needs `.env.local` and the `catalog/`
+folder beside the prototype). `tsc -b` is not part of either: the cloned
+`src/core` ships its colocated tests and the test dependencies aren't installed,
+so use `bunx tsc --noEmit -p tsconfig.json` and ignore `src/core` errors.
 
 ## Business formation and standing
 

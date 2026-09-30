@@ -18,7 +18,7 @@ import { convertedFormationOf, formationConfirmed, formationFilingOf, NOT_PROVID
 import { judgeHit } from './watchlist'
 import { domesticFilingOf, formationCardFilingOf } from './linkedFormation'
 import { stateLabel, stateName } from './states'
-import { sourceLabel as sourceLabelOf } from './sourceLabels'
+import { sourceLabel as sourceLabelOf, readableUrl } from './sourceLabels'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for
  *  $4,500.37 and the cents column is noise beside a case number. */
@@ -424,6 +424,26 @@ export const shortDate = (iso: string | null | undefined) => {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+/**
+ * Industry codes as the dashboard prints them (`formatCodes`,
+ * `app/src/components/Industry/utils.tsx`): consecutive codes become a range —
+ * "7371-7373, 7379".
+ */
+const formatCodes = (codes: ReadonlyArray<string>) => {
+  const out: string[] = []
+  let start = -1
+  codes.forEach((code, i) => {
+    const runs = Number(code) + 1 === Number(codes[i + 1])
+    if (runs) {
+      if (start < 0) start = i
+      return
+    }
+    out.push(start >= 0 ? `${codes[start]}-${code}` : code)
+    start = -1
+  })
+  return out.join(', ')
+}
+
 /** A source's status, as it states it; "unknown" states nothing and is left out. */
 const statusWord = (status: string | null | undefined) =>
   status && !/^unknown$/i.test(status) ? (sentence(status) ?? status) : undefined
@@ -501,15 +521,9 @@ const registrationRowsFor = (filings: BusinessRecord['registrations']): Attribut
   // Name is not here — Names carries it, and four qualifications restating the
   // legal name says only that they describe the same entity.
   /*
-   * One row per distinct value, every filing that states it behind it, and the
-   * states spelled out beside the value.
-   *
-   * Emitted per filing and merged downstream, the chip read "SOS · AL +35":
-   * thirty-six filings agreed and the reader could not see which states
-   * without opening the popover. For a company qualified in forty
-   * jurisdictions, which states are active and which have lapsed IS the fact,
-   * so the states ride on the row as its qualifier — "(36 filings: AL, AZ,
-   * CA …)" — and the chip stays as the provenance.
+   * One row per distinct value, every filing that states it behind it. The
+   * chip names those filings ("SOS · AL +2", its list the states), so the value
+   * carries no "(3 filings: AL, AZ, CA)" of its own — that restated the chip.
    */
   const byLabel = (
     label: string,
@@ -523,17 +537,11 @@ const registrationRowsFor = (filings: BusinessRecord['registrations']): Attribut
       groups.set(v, [...(groups.get(v) ?? []), r])
     }
     return [...groups.entries()].map(([v, list]) => {
-      const states = [...new Set(list.map((r) => r.state).filter(Boolean))].sort()
-      const own = qualifier?.(list[0])
-      const where =
-        list.length === 1
-          ? undefined
-          : `(${list.length} filings: ${states.join(', ')})`
       return {
         label,
         value: v,
         source: '',
-        qualifier: [own, where].filter(Boolean).join(' ') || undefined,
+        qualifier: qualifier?.(list[0]),
         matchValue: `${label}:${v}`,
         registrations: list
       }
@@ -1010,7 +1018,15 @@ const corroboration = (
       : field === 'registeredAgent'
         ? record.people.filter((p) => nameKey(p.name) === target)
         : []
-  const sources = [...new Set(carriers.flatMap((c) => provenanceList(c)))].filter((x) => !REGISTRATION_SOURCES.has(x))
+  // The website states the name too, when its business-name check matched
+  // the submitted name and that is the name in question.
+  const siteStatesIt =
+    field === 'name' &&
+    nameKey(record.name) === target &&
+    /^verified$/i.test(record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? '')
+  const sources = [
+    ...new Set([...carriers.flatMap((c) => provenanceList(c)), ...(siteStatesIt ? ['Website'] : [])])
+  ].filter((x) => !REGISTRATION_SOURCES.has(x))
   if (registrations.length === 0 && sources.length === 0) return {}
   return {
     ...(registrations.length > 0 ? { registrations } : {}),
@@ -1084,67 +1100,31 @@ const CONNECTIONS = 'Middesk connections'
  * The businesses connected to this one, each as one node.
  *
  * A connection is a business, so it renders as one: the name, and under it the
- * people and addresses that link the two. Those are facts ABOUT the connection
- * and stay inside its node — a shared address shown as an address row reads as
- * one more place this business is, which is not what it is.
- *
- * The reading, likely or possible, is ours and appears only where an insight
- * is expanded (`evidenceNote`), beside the facts it is read from. What makes a
- * connection likely is what is shared: a person, more than one address, an
- * address few businesses use, or the name itself. One address on a floor that
- * twenty other businesses file from is a floor, not a relationship. The
- * provider's own confidence stays on the row, the way a classifier's does.
+ * provider's confidence and how many people and addresses the two share —
+ * "100% · 6 shared people · 12 shared addresses". Not the people and
+ * addresses themselves: listed one per line, a connection ran past forty lines,
+ * and a shared address shown as an address reads as one more place this
+ * business is, which is not what it is.
  */
 const connectionRows = (record: BusinessRecord): AttributeRow[] => {
   const connections = record.connections ?? []
   if (connections.length === 0) return []
 
-  const countAt = new Map(
-    record.addresses.map((a) => [norm(a.fullAddress), a.locationCount ?? null] as const)
-  )
-  const stem = (name: string) => name.trim().split(/\s+/)[0]?.toLowerCase() ?? ''
-  const own = stem(record.name)
+  const count = (n: number, one: string, many: string) => (n > 0 ? `${n} ${n === 1 ? one : many}` : undefined)
 
-  return connections.map((c) => {
-    const people = c.people ?? []
-    const addresses = c.addresses ?? []
-    // Few businesses at it: somebody's address, not a floor everyone files from.
-    const distinct = addresses.filter((a) => {
-      const n = countAt.get(norm(a.fullAddress))
-      return typeof n === 'number' && n <= 20
-    })
-    const sharesName = own.length > 3 && stem(c.name) === own
-    const likely = people.length > 0 || addresses.length > 1 || distinct.length > 0 || sharesName
-
-    // One line each: the reading, then every shared person and shared address
-    // on its own, and a shared address's business count as its own line.
-    const facts: Array<{ label?: string; value: string }> = [
-      { value: likely ? 'Likely related' : 'Possibly related' },
-      ...(sharesName ? [{ label: 'Shared name', value: own.toUpperCase() }] : []),
-      ...(people.length > 0 ? people.map((p) => ({ label: 'Shared person', value: p })) : [{ value: 'No shared people' }]),
-      ...(addresses.length > 0
-        ? addresses.flatMap((a) => {
-            const n = countAt.get(norm(a.fullAddress))
-            return [
-              { label: 'Shared address', value: a.fullAddress },
-              ...(typeof n === 'number' ? [{ label: 'Businesses at this address', value: String(n) }] : [])
-            ]
-          })
-        : [{ value: 'No shared addresses' }])
-    ]
-
-    return {
-      group: 'connections' as const,
-      label: 'Connected business',
-      value: c.name,
-      matchValue: c.name,
-      trailing:
-        typeof c.confidence === 'number' ? `${Math.round(c.confidence * 100)}% confidence` : undefined,
-      evidenceFields: facts,
-      source: CONNECTIONS,
-      sources: [CONNECTIONS]
-    }
-  })
+  return connections.map((c) => ({
+    group: 'connections' as const,
+    label: 'Business name',
+    value: c.name,
+    matchValue: c.name,
+    meta: [
+      typeof c.confidence === 'number' ? `${Math.round(c.confidence * 100)}%` : undefined,
+      count((c.people ?? []).length, 'shared person', 'shared people'),
+      count((c.addresses ?? []).length, 'shared address', 'shared addresses')
+    ].filter((x): x is string => Boolean(x)),
+    source: CONNECTIONS,
+    sources: [CONNECTIONS]
+  }))
 }
 
 const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[] => {
@@ -1481,23 +1461,33 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
   // statement alone says an address is deliverable without saying which, and
   // the record holds ten.
   if (key === 'address_deliverability') {
-    const submitted = addresses.find((a) => a.submitted)
-    if (!submitted)
+    // Every submitted address: the customer may give more than one office.
+    const submitted = addresses.filter((a) => a.submitted)
+    if (submitted.length === 0)
       return [{ group: 'address', label: 'Address', value: 'None submitted', source: '' }]
-    const row = addressRow(submitted, 'deliverability')
     // Deliverability is USPS's answer, not the registry's — the address may be
     // on a filing, but no filing says it can be posted to.
-    return [{ ...row, source: USPS, sources: [...new Set([...(row.sources ?? []), USPS])] }]
+    return submitted.map((a) => {
+      const row = addressRow(a, 'deliverability')
+      return { ...row, source: USPS, sources: [...new Set([...(row.sources ?? []), USPS])] }
+    })
   }
 
-  // Which addresses are commercial and which residential — the check is about
-  // the property type, so it reads out every address that has one rather than
-  // the submitted address alone.
-  if (key === 'address_property_type')
-    return inGroup(
-      'address',
-      addresses.filter((a) => a.propertyType).map((a) => addressRow(a, 'property'))
+  // The submitted addresses and their property types — the addresses the
+  // check is about. It used to list every address on the record with a type,
+  // the registered agent's included, under a statement about the submitted one.
+  if (key === 'address_property_type') {
+    // Only the addresses that ARE what the statement says. "Submitted office
+    // address is a commercial property" evidenced by a residential one states
+    // the opposite of the check.
+    const said = record.reviewTasks.find((t) => t.key === key)?.subLabel?.toLowerCase()
+    const submitted = addresses.filter(
+      (a) => a.submitted && a.propertyType && (!said || a.propertyType.toLowerCase() === said)
     )
+    if (submitted.length === 0)
+      return [{ group: 'address', label: 'Address', value: 'None submitted', source: '' }]
+    return inGroup('address', submitted.map((a) => addressRow(a, 'property')))
+  }
 
   // Only the ones that ARE mail drops. A CMRA row against an address that is
   // not one states the opposite of the check.
@@ -1531,6 +1521,11 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     const domestic = formationFiling ? [formationFiling] : []
     const byStatus = (status: string) =>
       record.registrations.filter((r) => (r.status || 'unknown').toLowerCase() === status)
+    // The submitted office: submitted, and not the registered agent's address.
+    const officeAddresses = addresses.filter(
+      (a) => a.submitted && !a.isRegisteredAgent && !a.labels.includes('registered_agent')
+    )
+    const matchSaid = record.reviewTasks.find((t) => t.key === 'sos_match')?.subLabel ?? ''
 
     const filings =
       key === 'sos_active'
@@ -1540,8 +1535,15 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           : key === 'sos_unknown'
             ? byStatus('unknown')
             : key === 'sos_match'
-              ? record.registrations.filter((r) =>
-                  addresses.some((a) => a.submitted && a.state === r.state)
+              ? // The filings in the OFFICE address's state — the registered
+                // agent's address is submitted too, but it is not the office,
+                // and Checkr's Utah agent pulled two Utah filings, one inactive,
+                // under a statement about California. Where the check says
+                // Active, only the active filings there evidence it.
+                record.registrations.filter(
+                  (r) =>
+                    officeAddresses.some((a) => a.state === r.state) &&
+                    (!/active/i.test(matchSaid) || /^active$/i.test(r.status ?? ''))
                 )
               : record.registrations
 
@@ -1606,12 +1608,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     // says nothing about what was found there.
     if (key === 'sos_match')
       return [
-        // The address the check asked about, on its own row; what the registry
-        // answered, side by side under it.
-        ...inGroup('address', addressRows(record, { submittedOnly: true })).map((r) => ({
-          ...r,
-          span: 'full' as const
-        })),
+        // What the registry answered — the filing state and its status, side
+        // by side — then the submitted addresses it was asked about, each on
+        // its own row.
         ...inGroup(
           'registration',
           filings.flatMap((r) => [
@@ -1636,7 +1635,11 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
                 ]
               : [])
           ])
-        )
+        ),
+        ...inGroup('address', addressRows(record, { submittedOnly: true }))
+          // The office addresses the check asked about, not the agent's.
+          .filter((r) => officeAddresses.some((a) => nameKey(a.fullAddress) === nameKey(r.matchValue ?? r.value)))
+          .map((r) => ({ ...r, span: 'full' as const }))
       ]
 
     if (STATUS_KEYS.has(key)) {
@@ -1951,12 +1954,28 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
                 agency: a.agency
               }))
             : undefined,
+          // What the media is, under the name: how many items, the tags the
+          // provider put on them (its labels, no confidence words), and whether
+          // any headline names the business. The articles themselves are the
+          // chip; this is what a reader gets without opening nineteen of them.
+          fields:
+            key === 'adverse_media' && found
+              ? [
+                  {
+                    value: [
+                      `${articles.length} ${articles.length === 1 ? 'item' : 'items'}`,
+                      ...new Set(articles.flatMap((a) => (a.risks ?? []).map((r) => r.name.replace(/_/g, ' '))))
+                    ].join(' · ')
+                  },
+                  ...(articles.some((a) => nameKey(a.title ?? '').includes(nameKey(record.name)))
+                    ? []
+                    : [{ value: 'None names the business' }])
+                ]
+              : undefined,
           // No Submitted chip on a screening row. Whether the customer gave us
           // the name is a fact about the name, and it lives on the name's own
           // attribute; here the only question is what the screen ran against
           // and what it returned.
-          // No count — the chip already reads "Www.wafb.com +8" — and no risk
-          // grade: the provider's band is a judgement, the articles the finding.
           submitted: false
         }
 
@@ -1981,6 +2000,11 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             }
           }
         ]
+      // Adverse media: each name its own cell, two to a row — what the screen
+      // returned for one person beside what it returned for the next, rather
+      // than the second name folded under the first as a detail line.
+      if (key === 'adverse_media' && found)
+        return [{ name: item.name, found, row: { ...row, detail: undefined, span: 'half' as const } }]
       return [{ name: item.name, found, row }]
     })
 
@@ -2023,23 +2047,28 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       // debt.
       const awarded = c.judgments.reduce((n, j) => n + (j.amountCents ?? 0), 0)
 
+      const caseType = c.caseType && c.caseType.toUpperCase() !== 'UNKNOWN' ? c.caseType : undefined
+      const caseNo = c.caseNumber ? `Case ${c.caseNumber}` : undefined
+      const party = c.partyType && c.partyType !== 'UNKNOWN' ? (sentence(c.partyType) ?? c.partyType) : undefined
+
       return {
         group: 'litigation' as const,
-        // The court's own "UNKNOWN" is not a case type; printed as the label it
-        // read as the finding, eight rows deep.
-        label: c.caseType && c.caseType.toUpperCase() !== 'UNKNOWN' ? c.caseType : 'Case',
-        // Who is involved is the title; the case's status, number and filing
-        // date are its metadata line. One record, one full row.
+        // What kind of case; the court that heard it is the source chip. The
+        // court's own "UNKNOWN" is not a case type.
+        label: caseType ?? 'Case',
+        // Who is involved is the title; the case's status, number, parties, the
+        // business's role and the filing date are its metadata line. One
+        // record, one full row.
         value: c.caseName ?? 'Unnamed case',
         span: 'full' as const,
-        meta: [statusWord(c.caseStatus), c.caseNumber ? `Case ${c.caseNumber}` : undefined, shortDate(c.filingDate)].filter(
-          (x): x is string => Boolean(x)
-        ),
-        evidenceFields: [
-          ...(c.partyType && c.partyType !== 'UNKNOWN' ? [{ label: 'Party role', value: sentence(c.partyType) ?? c.partyType }] : []),
-          ...(c.parties.length > 1 ? [{ label: 'Parties', value: String(c.parties.length) }] : []),
-          ...(awarded > 0 ? [{ label: 'Awarded', value: money(awarded) }] : [])
-        ],
+        meta: [
+          statusWord(c.caseStatus),
+          caseNo,
+          c.parties.length > 0 ? `${c.parties.length} ${c.parties.length === 1 ? 'party' : 'parties'}` : undefined,
+          party,
+          shortDate(c.filingDate)
+        ].filter((x): x is string => Boolean(x)),
+        fields: awarded > 0 ? [{ label: 'Awarded', value: money(awarded) }] : undefined,
         source,
         sources: [source]
       }
@@ -2305,41 +2334,42 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
      * without 541511 is the half a reviewer cannot look up or match a policy
      * against.
      */
-    // Grouped by the scheme that owns the code — NAICS, then SIC, then MCC —
-    // one full-width row per classification in it: the scheme as the label,
-    // the classification's name as the title, and its code(s) with the
-    // classifier's confidence score as the metadata line.
+    // One row per classification: the scheme as the label, the category as the
+    // value, its code(s) in `lead` and the classifier's confidence in
+    // `trailing`. `IndustryTable` draws them as the dashboard's
+    // IndustryClassificationCard does — a row per scheme, each code, category
+    // and confidence lined up across it.
     const confidence = (score?: number | null) =>
-      typeof score === 'number' ? `${Math.round(score * 100)}% confidence` : undefined
+      typeof score === 'number' ? `${Math.round(score * 100)}%` : undefined
     const SCHEMES = [
       ['NAICS', 'naicsCodes'],
       ['SIC', 'sicCodes'],
       ['MCC', 'mccCodes']
     ] as const
 
-    const byScore = [...industry].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    const row = (label: string, name: string, meta: Array<string | undefined>): AttributeRow => ({
+    const row = (label: string, name: string, code: string | undefined, score?: number | null): AttributeRow => ({
       label,
       value: name,
-      span: 'full',
-      meta: meta.filter((x): x is string => Boolean(x)),
+      lead: code,
+      trailing: confidence(score),
       // No source chip: the classification is Middesk's reading of the business,
       // not a record anyone holds, so it cites none and has no Sources card.
       source: '',
       sources: []
     })
 
+    // In the record's order within a scheme, as the dashboard lists them.
     const rows: AttributeRow[] = SCHEMES.flatMap(([scheme, field]) =>
-      byScore
+      industry
         .filter((c) => c.name && (c[field] ?? []).length > 0)
-        .map((c) => row(scheme, c.name as string, [(c[field] ?? []).join(', '), confidence(c.score)]))
+        .map((c) => row(scheme, c.name as string, formatCodes(c[field] ?? []), c.score))
     )
 
     // The prohibited check shows only when it names a prohibited industry —
     // "Other Non-Prohibited" and "Insufficient data" say there is none.
-    for (const c of byScore)
+    for (const c of industry)
       if (/^prohibited$/i.test(c.system ?? '') && c.name && !/^(other non-prohibited|insufficient data)$/i.test(c.name))
-        rows.push(row('Prohibited', c.name, [confidence(c.score)]))
+        rows.push(row('Prohibited', c.name, undefined, c.score))
 
     return rows
   }
@@ -2553,6 +2583,8 @@ export const withSourceNames = (record: BusinessRecord) => (row: AttributeRow): 
       const label = sourceLabelOf(ref.type)
       if (!names[label]) names[label] = n.name
     }
+  // The website is named by its address: "meroxa.com" over "Website".
+  if (record.website?.url) names.Website = readableUrl(record.website.url)
   return Object.keys(names).length ? { ...row, sourceNames: names } : row
 }
 

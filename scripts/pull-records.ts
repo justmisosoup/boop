@@ -398,13 +398,26 @@ const normalise = (b: Any) => ({
           name: c.name,
           confidence: typeof c.confidence === 'number' ? c.confidence : null,
           connectedBusinessId: c.connected_business_id ?? null,
-          people: (c.connecting_people ?? []).map((p: Any) => p.name ?? p).filter(Boolean),
+          // Each shared person as the filing names them, with the titles it gives.
+          people: (c.connecting_people ?? [])
+            .map((p: Any) => ({
+              name: typeof p === 'string' ? p : p.name,
+              titles: (p.titles ?? []).map((t: Any) => (typeof t === 'string' ? t : t.title)).filter(Boolean)
+            }))
+            .filter((p: Any) => p.name),
           addresses: (c.connecting_addresses ?? []).map((a: Any) => ({
             fullAddress: a.full_address,
             labels: a.labels ?? [],
             sources: a.sources ?? []
           })),
-          businesses: (c.connecting_businesses ?? []).map((x: Any) => x.name ?? x).filter(Boolean)
+          // A business named on the other's filing — this record itself, as its
+          // manager, say — with the title it is named under.
+          businesses: (c.connecting_businesses ?? [])
+            .map((x: Any) => ({
+              name: typeof x === 'string' ? x : x.name,
+              titles: (x.titles ?? []).map((t: Any) => (typeof t === 'string' ? t : t.title)).filter(Boolean)
+            }))
+            .filter((x: Any) => x.name)
         }))
       }
     : {}),

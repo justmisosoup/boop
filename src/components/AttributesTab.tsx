@@ -1,9 +1,13 @@
+import { Surface } from '@/core'
+
 import { attributesFor, cityRegistrationRows, isPlaceholder, licenseRows, nameKey, type AttributeRow } from '../lib/attributes'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
 import { AttributeGrid } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
+import { CardHeader } from './CardHeader'
+import { IndustryTable } from './IndustryTable'
 
 /** Names across a registry's casing and punctuation. */
 const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
@@ -230,6 +234,14 @@ export const AttributeGroupDetail = ({
   /** Follow a source chip to that source's card in the Sources tab. */
   onJumpToSource?: (cardId: string) => void
 }) => {
+  // The classifications in the dashboard's table, one row per scheme.
+  if (group.id === 'industry')
+    return (
+      <Surface variant="card" padding="none" className="overflow-hidden">
+        <CardHeader title={group.label} />
+        <IndustryTable rows={group.rows} />
+      </Surface>
+    )
   const cells = cellsFromRows(group.rows, {
     domesticState: record.formation?.state,
     onJumpToSource

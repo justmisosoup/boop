@@ -19,6 +19,7 @@ import { formationCardFilingOf } from '../lib/linkedFormation'
 import { STATE_NAMES, stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 import { Collapsible } from './Collapsible'
+import { ConnectionSections } from './ConnectionSections'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
@@ -816,7 +817,9 @@ const FmcsaSections = ({ s }: { s: Source }) => (
  *  their own entry, not one list under a single label. */
 const SuppliedCells = ({ rows }: { rows: Supplied[] }) => {
   const cells = cellsFromRows(
-      rows.map((item) => item.row),
+      // A profile here is its page — site and link. What the page says (its
+      // followers, ratings, activity) is the Attributes panel's.
+      rows.map((item) => (item.row.pageUrl ? { ...item.row, fields: undefined } : item.row)),
       {
         labelFor: (_, i) => roleLabel(rows[i]),
         // A profile's page is linked here, on its source, not in Attributes.
@@ -840,11 +843,48 @@ const SuppliedCells = ({ rows }: { rows: Supplied[] }) => {
   return <AttributeCells items={cells} />
 }
 
+/**
+ * One entry per person, the roles the record gives them under it.
+ *
+ * A record that names Ali Hamidi as registered agent, CEO, CFO, secretary and
+ * CTO is one person with five roles, not five people; five cells said the
+ * name five times and the reader counted them. Grouped on the name as written
+ * (case and punctuation aside), never a look-alike. Labelled "Officer" where
+ * any role is an office; a name given only as registered agent keeps that.
+ */
+const onePerPerson = (rows: Supplied[]): Supplied[] => {
+  const byName = new Map<string, { first: Supplied; name: string; roles: string[] }>()
+  for (const item of rows) {
+    const name = withoutRole(supplied(item), roleLabel(item))
+    const key = norm(name)
+    const entry = byName.get(key) ?? { first: item, name, roles: [] }
+    const role = roleLabel(item)
+    if (role && !entry.roles.includes(role)) entry.roles.push(role)
+    byName.set(key, entry)
+  }
+  return [...byName.values()].map(({ first, name, roles }) => {
+    const label = roles.length === 1 ? roles[0] : roles.every((r) => /registered agent/i.test(r)) ? 'Registered agent' : 'Officer'
+    return {
+      ...first,
+      role: label,
+      row: {
+        ...first.row,
+        label,
+        value: name,
+        matchValue: name,
+        // Every role once, in the record's order — the label alone says nothing.
+        trailing: roles.length > 1 ? roles.join(', ') : undefined
+      }
+    }
+  })
+}
+
 /** Any other source, under the app's section names for it. */
 const RecordSections = ({ s }: { s: Source }) => {
   const groups = sourceGroups(s)
   const names = s.supplied.get('name') ?? []
-  const people = s.supplied.get('people') ?? []
+  // The Submitted card already holds one entry per person.
+  const people = s.id === SUBMITTED_CARD ? (s.supplied.get('people') ?? []) : onePerPerson(s.supplied.get('people') ?? [])
   const addresses = s.supplied.get('address') ?? []
   const rest = groups.filter(([g]) => g !== 'name' && g !== 'people' && g !== 'address')
   const details = metaCells(s)
@@ -901,6 +941,7 @@ const RecordSections = ({ s }: { s: Source }) => {
  */
 export const SourceDetail = ({
   source: s,
+  record,
   focused = false
 }: {
   source: Source
@@ -958,6 +999,9 @@ export const SourceDetail = ({
             <FmcsaSections s={s} />
           ) : s.id === STREET_VIEW_CARD ? (
             <StreetViewCaptures items={all} />
+          ) : s.id === namedCard('Connections') && (record?.connections ?? []).length > 0 ? (
+            // Each connected business, opening to the people and addresses it shares.
+            <ConnectionSections record={record!} />
           ) : (
             <>
               <RecordSections s={s} />

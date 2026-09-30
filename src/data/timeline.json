@@ -1,6 +1,122 @@
 {
   "_comment": "GET /v1/businesses/:id/timeline for every business in records.json, as the API returns each event. Written by scripts/pull-timeline.ts.",
   "byBusiness": {
+    "95df04bd-d443-4007-81ab-0e0b20efdb20": [
+      {
+        "object": "event",
+        "id": "0881a180-57bb-4f00-86f7-f3d560f425c4",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "person.created",
+        "data": {
+          "object": {
+            "object": "person",
+            "name": "MIETTE CAKES LLC",
+            "submitted": false,
+            "business_id": "95df04bd-d443-4007-81ab-0e0b20efdb20",
+            "titles": [
+              {
+                "object": "person_title",
+                "title": "MANAGER"
+              }
+            ],
+            "people_bankruptcies": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+                  "state": "CA",
+                  "file_number": "200832410153",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23"
+              }
+            ]
+          }
+        },
+        "created_at": "2026-09-29T18:27:25.583Z",
+        "occurred_at": "2022-05-11T18:41:52.095Z"
+      },
+      {
+        "object": "event",
+        "id": "233051fd-c883-40c6-a223-e501eb1692ad",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "address.deleted",
+        "data": {
+          "object": {
+            "object": "address",
+            "id": null,
+            "address_line1": null,
+            "address_line2": null,
+            "city": null,
+            "state": null,
+            "postal_code": null,
+            "full_address": "85 WEBSTER ST",
+            "submitted": false,
+            "latitude": null,
+            "longitude": null,
+            "property_type": null,
+            "deliverable": null,
+            "deliverability_analysis": null,
+            "street_view_available": null,
+            "labels": null,
+            "created_at": "2019-11-13T05:24:17.311Z",
+            "updated_at": "2019-11-13T05:24:17.311Z",
+            "registered_agent_name": null,
+            "cmra": false,
+            "business_id": "95df04bd-d443-4007-81ab-0e0b20efdb20",
+            "location_count": null,
+            "is_registered_agent": false,
+            "country_code": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+                  "state": "CA",
+                  "file_number": "200832410153",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23"
+              }
+            ],
+            "rating": {
+              "risk_rating": "not_available"
+            }
+          }
+        },
+        "created_at": "2026-09-29T18:27:25.583Z",
+        "occurred_at": "2019-11-13T05:24:17.311Z"
+      },
+      {
+        "object": "event",
+        "id": "30bc4234-9363-4a2e-8d75-7da5de7fc20d",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "registration.created",
+        "data": {
+          "object": {
+            "object": "registration",
+            "id": "4d9882dc-db50-4e31-8e7f-b82d1edbfb23",
+            "business_id": "95df04bd-d443-4007-81ab-0e0b20efdb20",
+            "name": null,
+            "status": null,
+            "sub_status": null,
+            "status_details": null,
+            "jurisdiction": "DOMESTIC",
+            "entity_type": null,
+            "file_number": "200832410153",
+            "addresses": null,
+            "officers": null,
+            "registered_agent": null,
+            "registration_date": "2008-11-17",
+            "state": "CA",
+            "source": null
+          }
+        },
+        "created_at": "2026-09-29T18:27:25.583Z",
+        "occurred_at": "2008-11-17T00:00:00.000Z"
+      }
+    ],
     "45036c2e-02f2-453d-beb5-7a2325590a3e": [
       {
         "object": "event",

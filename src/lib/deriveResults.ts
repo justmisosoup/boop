@@ -225,9 +225,21 @@ export type BusinessRecord = {
     confidence?: number | null
     /** Set when the connected entity is itself a business in this account. */
     connectedBusinessId?: string | null
-    people?: string[]
-    addresses?: Array<{ fullAddress: string; labels?: string[]; sources?: string[] }>
-    businesses?: string[]
+    /** As the filing names them, with the titles it gives; none invented. */
+    people?: Array<{ name: string; titles?: string[] }>
+    /** Each with the role it played and the record it was found on — a
+     *  registration's state and file number. */
+    addresses?: Array<{
+      fullAddress: string
+      labels?: string[]
+      sources?: Array<{
+        id?: string
+        type: string
+        metadata?: { state?: string; file_number?: string; jurisdiction?: string; status?: string } | null
+      }>
+    }>
+    /** A business named on the other's filing, under the title it gives. */
+    businesses?: Array<{ name: string; titles?: string[] }>
   }>
   website?: {
     id?: string | null

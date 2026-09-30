@@ -23,7 +23,7 @@ const SOS_STATUS = new Set(['sos_domestic', 'sos_unknown'])
 
 /** The flags a reviewer has to weigh, and the ones that only describe the
  *  registry — named so the line can say why they were left out. */
-const splitFlags = (record: BusinessRecord, results: Derived[]) => {
+export const splitFlags = (record: BusinessRecord, results: Derived[]) => {
   const negative = negativesFor(record, results)
   const domestic = domesticFilingOf(record)?.filing
   const silent = Boolean(domestic && notPublished(domestic))

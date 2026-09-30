@@ -10,6 +10,7 @@ import { cn } from '../utils/twUtils'
 import { AttributeCells } from './AttributeGrid'
 import { cellsFromRows } from './attributeCells'
 import { Collapsible } from './Collapsible'
+import { IndustryTable } from './IndustryTable'
 import { StateMark } from './StateMark'
 
 /** One row per distinct fact: same label, value and sources collapse to one. */
@@ -154,6 +155,7 @@ export const InsightRow = ({
 
   /** A row with nothing behind it does not pretend to open. */
   const expandable = cells.length > 0
+  const industry = result.insightId.split(':')[0] === 'industry'
 
   const toggle = () =>
     setOpen((v) => {
@@ -358,7 +360,8 @@ export const InsightRow = ({
         <div data-evidence className="col-span-2 -mx-4 cursor-auto">
           <Collapsible id={regionId} open={open}>
             <div className="overflow-hidden border-t border-[var(--core-color-border-divider)] bg-[var(--core-color-surface-inset)]">
-              <AttributeCells items={cells} className="-mb-px" />
+              {/* The classifications in the dashboard's table, one row per scheme. */}
+              {industry ? <IndustryTable rows={attributes} /> : <AttributeCells items={cells} className="-mb-px" />}
             </div>
           </Collapsible>
         </div>

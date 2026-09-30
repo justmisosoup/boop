@@ -47,6 +47,13 @@ const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
     profiles: (record.profiles ?? []).map((p) =>
       p.metadata ? p : { ...p, ...((live.profiles ?? []).find((x) => x.url === p.url) ?? {}) }
     ),
+    // The connections with each shared person's titles, pulled after the
+    // reports were written. A snapshot's own list named people as strings.
+    connections: (live.connections ?? record.connections)?.map((c) => ({
+      ...c,
+      people: (c.people ?? []).map((p) => (typeof p === 'string' ? { name: p as string } : p)),
+      businesses: (c.businesses ?? []).map((b) => (typeof b === 'string' ? { name: b as string } : b))
+    })),
     registrations: record.registrations.map((r) => {
       if (r.officerRoles) return r
       const same = live.registrations.find((x) => x.state === r.state && x.fileNumber === r.fileNumber)

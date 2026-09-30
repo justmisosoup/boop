@@ -1,4 +1,4 @@
-import { entityTypeCode, money } from './attributes'
+import { entityTypeCode, money, nameKey } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
 import { nameStandingOf } from './businessNames'
@@ -28,6 +28,33 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const hits = validHitCount(record)
   const returned = watchlistVerdicts(record)
   const notMatches = returned.filter((v) => !v.valid)
+
+  /* Adverse media, by the name it matched. A result is the screen's answer
+     for one name; the name carries the result's id among its source refs.
+     Whether any item is about the business itself is read off the headlines. */
+  const mediaResults = (record.adverseMedia?.results ?? []).filter((r) => r.items.length > 0)
+  const mediaIds = new Set(mediaResults.map((r) => r.id))
+  const refsOf = (x: { sourceRefs?: Array<{ id: string; type: string }> }) =>
+    (x.sourceRefs ?? []).filter((ref) => ref.type === 'adverse_media_screening_result').map((ref) => ref.id)
+  const mediaNames = [
+    ...record.people.filter((p) => refsOf(p).some((id) => mediaIds.has(id))).map((p) => p.name),
+    ...(record.names ?? []).filter((n) => refsOf(n).some((id) => mediaIds.has(id))).map((n) => n.name)
+  ].filter((n, i, all) => all.findIndex((m) => nameKey(m) === nameKey(n)) === i)
+  const business = nameKey(record.name)
+  const mediaNamesBusiness = mediaResults.some((r) =>
+    r.items.some((item) => nameKey(item.title ?? '').includes(business))
+  )
+  const mediaWho =
+    mediaNames.length === 0
+      ? 'a name on the record'
+      : mediaNames.length <= 2
+        ? mediaNames.join(' and ')
+        : `${mediaNames.length} names`
+  const mediaAbout = mediaNamesBusiness ? 'including the business' : 'none about the business'
+  // The finding, without the names; the names are the sentence under it.
+  const mediaHeadline = mediaResults.length === 0 ? undefined : `Adverse media matched names but ${mediaAbout}`
+  // Each screen named, so media and watchlist read as two answers, not one.
+  const mediaSummary = mediaResults.length === 0 ? undefined : `Media matched ${mediaWho}; ${mediaAbout}.`
 
   // A professional entity is owned by licensed practitioners; the licence
   // record answers it, and is named rather than restated.
@@ -216,20 +243,31 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     [
       'skill-kyb-3',
       {
-        headline: hits > 0 ? `${hits} watchlist ${hits === 1 ? 'hit' : 'hits'} to clear before opening` : 'No sanctions or watchlist hits',
+        // A valid watchlist hit outranks the media; media matched outranks a
+        // clean screen — the card is named for what it found.
+        headline:
+          hits > 0
+            ? `${hits} watchlist ${hits === 1 ? 'hit' : 'hits'} to clear before opening`
+            : (mediaHeadline ?? 'No sanctions or watchlist hits'),
         /* Only what the headline and the rows do not already say. A clean
            screen needs no sentence: "No sanctions or watchlist hits" over
            "No watchlist hits were identified" was the same fact twice, and a
            summary saying it again made three. Names returned and ruled out are
            the evidence's to name; the card says only what they were. */
-        summary:
+        summary: [
           hits > 0
             ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
-            : notMatches.length > 0
-              ? notMatches.length === 1
-                ? 'The name returned is a close match, not a valid one.'
-                : 'The names returned are close matches, not valid ones.'
-              : ''
+            : undefined,
+          // Who the media matched, under the finding that names no one.
+          hits === 0 ? mediaSummary : undefined,
+          notMatches.length > 0
+            ? notMatches.length === 1
+              ? 'Watchlist returned one close match, not a valid one.'
+              : 'Watchlist returned close matches only, none valid.'
+            : undefined
+        ]
+          .filter(Boolean)
+          .join(' ')
       }
     ],
     [
