@@ -260,12 +260,12 @@
       "kind": "assessment",
       "weight": "high",
       "instructions": "Does the business carry debts, judgments or insolvency that bear on the account?\n\nAlways:\n- Identify UCC and tax liens on the business, open and closed, with the secured party and what is secured\n- Identify litigation naming the business, which side it is on, and any money judgment\n- Identify bankruptcy filings by the business\n- Read each against the business's age and line of work: equipment finance and an SBA loan are ordinary for a bakery; a state tax lien or an all-assets blanket filing is not\n\nWhen submitted:\n- Identify liens, litigation and bankruptcies naming the submitted people",
-      "createdBy": "smenefee@middesk.com",
+      "createdBy": "alex.morgan@middesk.com",
       "createdAt": "2026-09-22T21:00:00.000Z",
       "history": [
         {
           "at": "2026-09-22T21:00:00.000Z",
-          "by": "smenefee@middesk.com"
+          "by": "alex.morgan@middesk.com"
         }
       ],
       "insightIds": [
