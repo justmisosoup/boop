@@ -960,6 +960,35 @@ export const AGENT = /registered agent/i
  * all-caps role is read in words, anything else is left as the source wrote it.
  * "Other" and no role at all say nothing, and read as "Officer".
  */
+/**
+ * One name per role, whatever the filing called it.
+ *
+ * Fifty filings write one CEO as "CEO", "Chief Executive", "Chief Executive
+ * Officer" and "CEO CHIEF EXECUTIVE OFFICER"; Arizona's "Governor" and
+ * "GoverningPerson" are one thing, and "Officer Director" is a director. Read
+ * out together they are spellings, not roles.
+ */
+export const canonicalRole = (role: string | null | undefined): string => {
+  const r = (role ?? '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!r || r === 'other') return 'Officer'
+  if (/\bceo\b|chief executive/.test(r)) return 'Chief executive officer'
+  if (/\bcfo\b|chief financial/.test(r)) return 'Chief financial officer'
+  if (/\bcoo\b|chief operating/.test(r)) return 'Chief operating officer'
+  if (/\bcto\b|chief technology/.test(r)) return 'Chief technology officer'
+  if (/governing ?person|\bgovernor\b/.test(r)) return 'Governor'
+  if (/\bdirector\b/.test(r)) return 'Director'
+  if (/\bpresident\b/.test(r)) return /vice/.test(r) ? 'Vice president' : 'President'
+  if (/\bsecretary\b/.test(r)) return 'Secretary'
+  if (/\btreasurer\b/.test(r)) return 'Treasurer'
+  if (/managing member/.test(r)) return 'Managing member'
+  if (/\bmember\b/.test(r)) return 'Member'
+  if (/\bmanager\b/.test(r)) return 'Manager'
+  if (/\bowner\b/.test(r)) return 'Owner'
+  if (/registered agent|\bagent\b/.test(r)) return 'Registered agent'
+  if (/\bofficer\b/.test(r)) return 'Officer'
+  return roleLabel(role)
+}
+
 export const roleLabel = (role: string | null | undefined) => {
   const r = (role ?? '').trim()
   if (!r || /^other$/i.test(r)) return 'Officer'
@@ -975,6 +1004,22 @@ export const filedName = (n: string) =>
 /** Identity of a name across spellings: "MIDDESK, INC." and "Middesk Inc" are
  *  the same name, and a registry dropping the space is not a second name. */
 export const nameKey = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '')
+
+/**
+ * Whether the website states this name: its business-name check matched the
+ * submitted name, and this is that name. Every row that shows the business
+ * name or a DBA of it cites the website too — Firebird Yarns' DBA read as the
+ * city register's alone when its site says it as well. A similar match is a
+ * different name, and does not count.
+ */
+export const websiteStatesName = (record: BusinessRecord, value: string | null | undefined): boolean =>
+  Boolean(value) &&
+  nameKey(record.name) === nameKey(value ?? '') &&
+  /^verified$/i.test(record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? '')
+
+/** A row's sources with the website added where it states the name. */
+const withWebsite = (record: BusinessRecord, value: string | null | undefined, sources: string[] = []): string[] =>
+  websiteStatesName(record, value) && !sources.includes('Website') ? [...sources, 'Website'] : sources
 
 /** The filings that actually list this value. Empty when none do — in which case
  *  the record does not say which filing it came from, and nothing is claimed. */
@@ -1020,10 +1065,7 @@ const corroboration = (
         : []
   // The website states the name too, when its business-name check matched
   // the submitted name and that is the name in question.
-  const siteStatesIt =
-    field === 'name' &&
-    nameKey(record.name) === target &&
-    /^verified$/i.test(record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? '')
+  const siteStatesIt = field === 'name' && websiteStatesName(record, value)
   const sources = [
     ...new Set([...carriers.flatMap((c) => provenanceList(c)), ...(siteStatesIt ? ['Website'] : [])])
   ].filter((x) => !REGISTRATION_SOURCES.has(x))
@@ -1150,7 +1192,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         matchValue: `legal:${nameKey(submittedNames.map((n) => n.name).join(', '))}`,
         value: submittedNames.map((n) => n.name).join(', '),
         source: '',
-        sources: [...new Set(submittedNames.flatMap((n) => provenanceList(n)))],
+        sources: withWebsite(record, submittedNames[0]?.name, [...new Set(submittedNames.flatMap((n) => provenanceList(n)))]),
         // The record's own source objects, not just their types. Without them a
         // per-jurisdiction source could not be resolved to a jurisdiction, and
         // the row landed in an unscoped "Tax permit" card beside the three real
@@ -1164,7 +1206,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         matchValue: `legal:${nameKey(record.name)}`,
         value: record.name,
         source: '',
-        sources: [],
+        sources: withWebsite(record, record.name),
         submitted: true
       }
 
@@ -1251,7 +1293,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         value: differs ? (onFile as string) : name,
         matchValue: `legal:${nameKey(name)}`,
         source: '',
-        sources: [],
+        sources: withWebsite(record, differs ? onFile : name),
         // The chip says the customer supplied THIS value. When the value shown
         // is the filing's, they did not — the line under it carries what they
         // submitted instead.
@@ -1281,6 +1323,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       label: 'Submitted business name',
       value: n.submitted,
       source: '',
+      sources: withWebsite(record, n.submitted),
       submitted: true,
       evidenceOnly: true,
       matchValue: `submitted:${nameKey(n.submitted)}`
@@ -1290,7 +1333,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       label: 'Doing business as',
       value: d.name,
       source: d.city ? 'City registration' : d.source,
-      sources: [d.city ? 'City registration' : d.source],
+      sources: withWebsite(record, d.name, [d.city ? 'City registration' : d.source]),
       refs: (d.refIds ?? []).map((id) => ({ id, type: 'city_registration', metadata: { city: d.city, status: d.open ? 'Active' : 'Inactive' } })),
       trailing: [d.owner ? `Owner: ${d.owner}` : '', d.since ? `since ${d.since.slice(0, 4)}` : ''].filter(Boolean).join(' · ') || undefined,
       evidenceOnly: true,
@@ -1368,6 +1411,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         value: (record.names ?? []).find((n) => n.submitted)?.name ?? record.name,
         trailing: `Suffix: ${m.suffix}`,
         source: '',
+        sources: withWebsite(record, (record.names ?? []).find((n) => n.submitted)?.name ?? record.name),
         submitted: true,
         evidenceOnly: true
       },
@@ -1421,7 +1465,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             label: 'DBA',
             value: n.name,
             source: '',
-            sources: provenanceList(n),
+            sources: withWebsite(record, n.name, provenanceList(n)),
             submitted: n.submitted,
             domesticOnly: (n.sources ?? []).some((x) => REGISTRATION_SOURCES.has(x))
           }))
@@ -1714,59 +1758,35 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
 
   // --- People --------------------------------------------------------------
   if (key === 'person_verification') {
-    const people = [...submittedPeople, ...officers]
-
-    // Agents named on a filing but absent from `people[]` — Delaware's is only
-    // ever stated on the registration itself, so it was missing from the People
-    // group entirely while agents who happen to also be in `people[]` appeared.
-    const agentsOnFilings: AttributeRow[] = record.registrations
-      .filter(
-        (r) =>
-          r.registeredAgent &&
-          !people.some((p) => norm(p.name) === norm(r.registeredAgent ?? ''))
+    // Only the people the customer submitted, once each. The insight is
+    // whether THEY matched a filing, so its evidence is each of them and the
+    // filings that name them — not every officer, agent and Form 5500 name on
+    // the record, which is the People attribute's roll. The roles the filings
+    // give them are the reading of the match, under the name, deduplicated
+    // across the spellings the filings use: seven rows for one CEO said the
+    // same thing seven times.
+    return submittedPeople.map((p) => {
+      // The filings spell one role several ways — "Ceo", "Chief executive",
+      // "Chief executive officer", "Ceo chief executive officer" — and read
+      // out together they are noise, not roles. A title whose words are all
+      // inside another title's is that title; the bare "Officer" says nothing
+      // a named role does not.
+      const roles = [...new Set(p.titles.map(canonicalRole).filter(Boolean))].filter(
+        (t, _, all) => all.length === 1 || t !== 'Officer'
       )
-      .map((r) => ({
+      return {
         group: 'people' as const,
-        label: 'Registered agent',
-        value: r.registeredAgent as string,
+        label: 'Person',
+        value: p.name,
         source: '',
-        matchValue: r.registeredAgent as string,
-        registrations: [r]
-      }))
-
-    // Each filing's officers under the name the filing gives them, where no
-    // person on the record carries that exact name. Labelled by the role filed.
-    const filedNames = new Set(record.people.map((p) => norm(p.name)))
-    const officersOnFilings: AttributeRow[] = record.registrations.flatMap((r) =>
-      (r.officerRoles ?? [])
-        .filter((o) => o.name && !filedNames.has(norm(o.name)))
-        .map((o) => ({
-          group: 'people' as const,
-          label: roleLabel(o.roles[0]),
-          value: filedName(o.name),
-          source: '',
-          matchValue: o.name,
-          registrations: [r]
-        }))
-    )
-
-    // Everyone on the record, not just the submitted people and the officers on
-    // filings. Richard Tatum appears only through Middesk's Form 5500 — a
-    // person the customer never named and no registration lists — and he was
-    // missing from People entirely while being screened for adverse media.
-    const others = record.people.filter(
-      (p) => !people.some((q) => norm(q.name) === norm(p.name))
-    )
-
-    return [
-      ...peopleRow(submittedPeople, 'Person'),
-      ...(officers.length
-        ? peopleRow(officers, 'Officer')
-        : [{ label: 'Officers on state registrations', value: 'None published', source: '' }]),
-      ...peopleRow(others, 'Person on file'),
-      ...officersOnFilings,
-      ...agentsOnFilings
-    ]
+        sources: provenanceList(p),
+        submitted: true,
+        refs: p.sourceRefs,
+        matchOn: 'officer' as const,
+        matchValue: p.name,
+        evidenceNote: roles.length > 0 ? roles.join(' · ') : 'No role on the filings'
+      }
+    })
   }
 
   // --- Screening -----------------------------------------------------------
@@ -2365,12 +2385,11 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         .map((c) => row(scheme, c.name as string, formatCodes(c[field] ?? []), c.score))
     )
 
-    // The prohibited check shows only when it names a prohibited industry —
-    // "Other Non-Prohibited" and "Insufficient data" say there is none.
-    for (const c of industry)
-      if (/^prohibited$/i.test(c.system ?? '') && c.name && !/^(other non-prohibited|insufficient data)$/i.test(c.name))
-        rows.push(row('Prohibited', c.name, undefined, c.score))
-
+    // No row for the Prohibited scheme. "High-Risk Businesses" at 0.95 is not
+    // a classification of what the business does; it is Middesk's curated
+    // risk rule over the classifications above — a judgment the brief puts
+    // out of scope. The NAICS, MCC and SIC rows are the data; the customer
+    // reads them against their own list.
     return rows
   }
 
@@ -2533,6 +2552,7 @@ export const cityRegistrationRows = (record: BusinessRecord): AttributeRow[] => 
         group: 'name' as GroupId,
         label: 'Doing business as',
         value: dba,
+        sources: withWebsite(record, dba, base.sources),
         // The submitted name, when the register carries it: the same key as the
         // name row, so one name is one row carrying both sources.
         matchValue: sameName(dba, submittedNameOf(record)) ? `legal:${nameKey(submittedNameOf(record))}` : dba

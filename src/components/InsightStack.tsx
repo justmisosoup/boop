@@ -1,9 +1,10 @@
-import { Children, type ReactNode } from 'react'
+import { Children, useEffect, useId, useState, type ReactNode } from 'react'
 
 import { Surface } from '@/core'
 
 import { cn } from '../utils/twUtils'
 import { CardHeader } from './CardHeader'
+import { Collapsible } from './Collapsible'
 
 /**
  * The hairline between two rows in a card.
@@ -19,6 +20,50 @@ export const ROW_HAIRLINE = cn(
   'before:top-0 before:border-t before:border-[var(--core-color-border-divider)]',
   'before:content-[""]'
 )
+
+/**
+ * A report card's insight rows, behind "Show insights".
+ *
+ * The card's finding — its prose, its grid — is the answer; the rows are the
+ * working, one click away rather than always open. Closed by default. `open`
+ * forces it open when a citation or the attention list leads to one of its
+ * rows, so the row it names is there to land on; the reader can close it
+ * again after. The Insights tab does not use this: it is the list of every
+ * row, and hiding them there hides the tab.
+ */
+export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; open?: boolean }) => {
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  useEffect(() => {
+    if (forced) setOpen(true)
+  }, [forced])
+  if (rows.length === 0) return null
+  return (
+    <>
+      <Collapsible open={open} id={id}>
+        <div className="border-t border-[var(--core-color-border-divider)]">
+          {rows.map((row, i) => (
+            <div key={(row as { key?: string | null }).key ?? i} className={cn(i > 0 && ROW_HAIRLINE)}>
+              {row}
+            </div>
+          ))}
+        </div>
+      </Collapsible>
+      <div className="border-t border-[var(--core-color-border-divider)] px-4 py-2.5">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((v) => !v)}
+          className="text-caption font-medium text-[var(--core-color-interactive-default)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {open ? 'Hide insights' : 'Show insights'}
+          <span className="ml-1.5 tabular-nums text-text-secondary">{rows.length}</span>
+        </button>
+      </div>
+    </>
+  )
+}
 
 /**
  * A stack of insight rows in one card.
@@ -46,8 +91,14 @@ export const InsightStack = ({
   trailing,
   intro,
   children,
+  disclose,
+  open,
   className
 }: {
+  /** The rows behind "Show insights" (`InsightsDisclosure`) — the report's cards. */
+  disclose?: boolean
+  /** With `disclose`: open it, because something led to one of its rows. */
+  open?: boolean
   /** An anchor, for a jump from the Needs review card. */
   id?: string
   title?: ReactNode
@@ -68,17 +119,21 @@ export const InsightStack = ({
           className={cn(
             'px-4 pb-3',
             title ? 'pt-0' : 'pt-3',
-            rows.length > 0 && 'border-b border-[var(--core-color-border-divider)]'
+            rows.length > 0 && !disclose && 'border-b border-[var(--core-color-border-divider)]'
           )}
         >
           {intro}
         </div>
       )}
-      {rows.map((row, i) => (
-        <div key={(row as { key?: string | null }).key ?? i} className={cn(i > 0 && ROW_HAIRLINE)}>
-          {row}
-        </div>
-      ))}
+      {disclose ? (
+        <InsightsDisclosure rows={rows} open={open} />
+      ) : (
+        rows.map((row, i) => (
+          <div key={(row as { key?: string | null }).key ?? i} className={cn(i > 0 && ROW_HAIRLINE)}>
+            {row}
+          </div>
+        ))
+      )}
     </Surface>
   )
 }

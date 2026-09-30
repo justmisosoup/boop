@@ -201,11 +201,14 @@ const CiteList = ({
       <div className="flex flex-col gap-4">
         {parts.map((p, i) => {
           const lead = i === 0 ? intro : undefined
+          // The part's note restates its headline in a sentence; with the
+          // assessment's own lead under it, that was the same thing twice.
+          const note = lead ? undefined : p.note
           const summary =
-            lead || p.note ? (
+            lead || note ? (
               <>
-                {p.note && <span className="block text-sm leading-5 text-text-secondary">{p.note}</span>}
-                {lead && <div className={p.note ? 'mt-2' : undefined}>{lead}</div>}
+                {note && <span className="block text-sm leading-5 text-text-secondary">{note}</span>}
+                {lead && <div className={note ? 'mt-2' : undefined}>{lead}</div>}
               </>
             ) : undefined
           return (
@@ -215,6 +218,8 @@ const CiteList = ({
               title={p.title}
               trailing={flaggedChip(p.rows)}
               intro={summary}
+              disclose
+              open={p.rows.some((r) => revealed?.has(r.insightId))}
             >
               {p.rows.map(row)}
             </InsightStack>
@@ -227,7 +232,13 @@ const CiteList = ({
   return (
     // The Insights tab's own frame, the same component: one card, named in its
     // own header, rows divided by the inset hairline.
-    <InsightStack title={title} trailing={flaggedChip(ordered)} intro={intro}>
+    <InsightStack
+      title={title}
+      trailing={flaggedChip(ordered)}
+      intro={intro}
+      disclose
+      open={ordered.some((r) => revealed?.has(r.insightId))}
+    >
       {ordered.map(row)}
     </InsightStack>
   )
@@ -371,6 +382,42 @@ export const Para = ({
 }
 
 /**
+ * An assessment's lead: the first sentence of its first paragraph, which the
+ * session is asked to write as the direct answer.
+ *
+ * Every paragraph at once opened each card on a wall of prose, and the rest
+ * behind a "More" toggle was a second disclosure beside "Show insights". The
+ * rest is the working, and the rows under "Show insights" are its evidence.
+ */
+const ProseLead = ({
+  paragraphs,
+  results,
+  record
+}: {
+  paragraphs: string[]
+  results: Derived[]
+  record?: BusinessRecord
+}) => (
+  <Para inline className="text-sm leading-5 text-foreground" results={results} record={record}>
+    {firstSentence(paragraphs[0] ?? '').lead}
+  </Para>
+)
+
+/**
+ * A paragraph's first sentence, and what follows it.
+ *
+ * The break is a full stop followed by a space and a capital, so "file
+ * 7816270, formed 24 January 2020" and "Inc. and" stay whole; the split is
+ * a reading aid, not a parse.
+ */
+const firstSentence = (text: string): { lead: string; tail: string } => {
+  const m = /^(.+?[.!?])\s+(?=[A-Z"“])/.exec(text)
+  if (!m || m[1].length < 40 || /\b(Inc|LLC|Co|Corp|Ltd|No|St|Mr|Ms|Dr)\.$/.test(m[1]))
+    return { lead: text, tail: '' }
+  return { lead: m[1], tail: text.slice(m[0].length) }
+}
+
+/**
  * One section: its insights, and nothing else.
  *
  * It opened with prose, then with a card of every attribute it cited. Both
@@ -458,13 +505,24 @@ export const SectionBody = ({
           )
         })
       : null
-  /* What the area is asking, first — so a reader knows what the rows under
-     it are evidence for — then any gap the assessment wrote about it. */
+  /* The assessment's own reading of the record leads: its paragraphs, with
+     the values they name marked, so the rows under them read as the evidence
+     for an argument rather than as a list. It was "saved, not shown" while the
+     rows carried the argument alone (`analysis/README.md`); the report reads
+     as a document again. What the area asks, in the summary's words, stands
+     in only when the assessment wrote nothing; then any gap it left. */
+  const prose = section.body.filter((b) => b.text.trim())
+  const lead =
+    prose.length > 0 ? (
+      <ProseLead paragraphs={prose.map((b) => b.text)} results={results} record={record} />
+    ) : summary ? (
+      <span className="block text-sm leading-5 text-text-secondary">{summary}</span>
+    ) : null
   const intro =
-    summary || gapIntro ? (
+    lead || gapIntro ? (
       <>
-        {summary && <span className="block text-sm leading-5 text-text-secondary">{summary}</span>}
-        {gapIntro && <div className={summary ? 'mt-2' : undefined}>{gapIntro}</div>}
+        {lead}
+        {gapIntro && <div className={lead ? 'mt-2' : undefined}>{gapIntro}</div>}
       </>
     ) : undefined
 

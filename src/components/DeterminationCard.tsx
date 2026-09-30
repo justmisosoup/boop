@@ -5,7 +5,7 @@ import { Heading, MutedText, Surface, Text } from '@/core'
 import type { BandId, IdentityScore, ScoreBand } from '../lib/identityScore'
 import { formatStamp as stamp } from '../lib/reportLabels'
 import { cn } from '../utils/twUtils'
-import { CardLabel } from './CardLabel'
+import { CardHeader } from './CardHeader'
 
 /**
  * The band's colour.
@@ -157,8 +157,9 @@ export type DeterminationChange = { from: string; to: string; by: string; at: st
  * lines are kept behind a disclosure as the original determination, so what
  * was generated can still be read.
  *
- * It opens the report and stays in the body at every width. The follow-ups
- * are not here; they live in the transcript.
+ * It opens the report, full width, with what it was judged against beside it
+ * (`facts`). What needs the reviewer's attention is the card under it
+ * (`AttentionCard`); the recommendation's steps are not on the report at all.
  */
 export const DeterminationCard = ({
   score,
@@ -166,7 +167,7 @@ export const DeterminationCard = ({
   status,
   reason,
   determinedAt,
-  context,
+  attention,
   change,
   stacked = false,
   className
@@ -181,8 +182,12 @@ export const DeterminationCard = ({
   reason?: string
   /** When the assessment determined it, as `reportStamp` prints it. */
   determinedAt?: string
-  /** What was considered — the Context roll-up. */
-  context?: React.ReactNode
+  /**
+   * What stands between the call and approval — the `AttentionBand`. The
+   * reason sentence says "confirm before approving"; this is what to
+   * confirm, in the same card. Under the words stacked, beside them wide.
+   */
+  attention?: React.ReactNode
   /** A reviewer's change, when the status no longer matches the determination. */
   change?: DeterminationChange
   /** A narrow column: the ring over the words rather than beside them. */
@@ -207,10 +212,9 @@ export const DeterminationCard = ({
      The card's body when nothing has changed; the disclosure's body when
      something has. The date stands alone — the pill above it already says
      what was determined. */
-  const byline = (determinedAt || context) && (
+  const byline = determinedAt && (
     <span className={cn('flex items-center', layout ? 'mt-3 flex-nowrap gap-2' : 'mt-2 flex-wrap gap-3')}>
-      {context}
-      {determinedAt && <MutedText className="whitespace-nowrap text-caption">{determinedAt}</MutedText>}
+      <MutedText className="whitespace-nowrap text-caption">Determined {determinedAt}</MutedText>
     </span>
   )
   const determination = (
@@ -224,7 +228,7 @@ export const DeterminationCard = ({
      who and when and what it was before. It adds to the decision; it does
      not replace the assessment's reason or its context. */
   const analystNote = change ? (
-    <div className="-mx-[var(--core-spacing-md)] mt-4 border-t border-[var(--core-color-border-divider)] px-[var(--core-spacing-md)] pt-4">
+    <div className="-mx-4 mt-3 border-t border-[var(--core-color-border-divider)] px-4 pt-3">
       {change.note && <Text size="sm">{change.note}</Text>}
       <MutedText className={cn('block text-caption', change.note && 'mt-1')}>
         Changed by {change.by} · {stamp(change.at)} · was {STATUS_WORD[change.from] ?? change.from}
@@ -232,57 +236,44 @@ export const DeterminationCard = ({
     </div>
   ) : null
 
+  /* The card's name and the decision on one line, as every card on the
+     report names itself: the header row, with the status control — or the
+     band's word, or "Assessing" — as the identifying tag at its edge. */
+  const trailing =
+    score && status ? (
+      <div className="flex shrink-0 items-center gap-3">{status}</div>
+    ) : score ? (
+      <Heading level={3}>{score.band.label}</Heading>
+    ) : (
+      <Heading level={3} className={cn('text-muted-foreground', running && 'shimmer-text')}>
+        {running ? 'Assessing' : 'Not assessed'}
+      </Heading>
+    )
+
   return (
     <div ref={box} className={className}>
-      <Surface variant="card" padding="md">
-        {/* The score at the far left, standing for the whole card; beside it
-            the card's own header — its name at the left, the decision (the
-            status control) in the top-right corner on the same line — and under
-            that the explanation, then the context and date. The reviewer's
-            status does not change what the assessment measured, so the ring
-            reads the same in both states. */}
-        {layout ? (
-          /* The label with the status control at the far edge of its line;
-             under them the ring, centred, over the reason and its byline. */
-          <div className="flex flex-col items-stretch gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <CardLabel as="h4">Determination</CardLabel>
-              {score && status && <div className="flex shrink-0 items-center">{status}</div>}
-            </div>
-            <div>
-              {/* The ring centred as the card's one mark; the prose under it
-                  stays left-aligned, as prose on the rest of the report does. */}
-              <div className="flex justify-center">
-                <ScoreRing score={score} size="lg" />
-              </div>
-              {reason && <Text className="mt-4">{reason}</Text>}
-              {byline}
-            </div>
+      <Surface variant="card" padding="none" className="overflow-hidden">
+        {/* No rule under the header: the ring and the reason read as its body. */}
+        <CardHeader title="Determination" trailing={trailing} className="border-b-0 pb-0" />
+        {/* The score and the reason as cells of the same grid the rest of the
+            report is drawn on — the dashed rules of the Formation and entity
+            cards — rather than a layout of their own. The ring is one cell,
+            the reason the other; stacked, they are one column. */}
+        <div className={cn('grid [&>div]:attribute-cell', layout ? 'grid-cols-1' : 'grid-cols-[auto_1fr]')}>
+          <div className={cn('flex items-center justify-center p-4', !layout && 'pr-5')}>
+            <ScoreRing score={score} size="lg" />
+          </div>
+          {/* Centred on the ring beside it, where the two share a row. */}
+          <div className={cn('min-w-0 px-4 py-3', !layout && 'flex flex-col justify-center')}>
+            {determination}
+            {/* After the assessment's own lines, ruled off: the analyst's note
+                adds to the decision, it does not stand in for the reason. */}
             {analystNote}
           </div>
-        ) : (
-          <div className="flex items-center gap-5">
-            <ScoreRing score={score} size="lg" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-4">
-                <CardLabel as="h4">Determination</CardLabel>
-                {score && status ? (
-                  <div className="flex shrink-0 items-center gap-3">{status}</div>
-                ) : score ? (
-                  <Heading level={3}>{score.band.label}</Heading>
-                ) : (
-                  <Heading level={3} className={cn('text-muted-foreground', running && 'shimmer-text')}>
-                    {running ? 'Assessing' : 'Not assessed'}
-                  </Heading>
-                )}
-              </div>
-              <div className="mt-2">{determination}</div>
-              {/* After the assessment's own lines, ruled off: the analyst's note
-                  adds to the decision, it does not stand in for the reason. */}
-              {analystNote}
-            </div>
-          </div>
-        )}
+        </div>
+        {/* What to confirm, under the call at every width: a column beside it
+            left the call floating in the middle of a tall list. */}
+        {attention}
       </Surface>
     </div>
   )

@@ -388,8 +388,12 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
     const grade = (sub(record, 'adverse_media') ?? '').toLowerCase()
     return grade.startsWith('high') || grade.startsWith('moderate') ? 'negative' : 'positive'
   },
-  industry: (_r, record) =>
-    (record.industry ?? []).some((i) => i.highRisk) ? 'negative' : 'positive',
+  // A classification is a lookup that succeeded. The "high-risk" label on a
+  // Prohibited-scheme match is a curated rule of Middesk's, not a fact about
+  // the business — one of the judgments the brief puts out of scope — so it
+  // never counts against the identity. What the business does is the
+  // customer's to weigh, against their own list.
+  industry: () => 'positive',
 
   /*
    * Financial standing. Nothing found is a point for the file. Something found

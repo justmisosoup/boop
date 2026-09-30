@@ -136,6 +136,24 @@ export const statementFor = (
     if (!form && entityFallback(record) === 'Likely sole proprietorship') return 'Entity type is likely a sole proprietorship'
   }
 
+  /*
+   * The industry row states the classification, not the risk label.
+   *
+   * The provider's sentence for a Prohibited-scheme match — "This business
+   * may operate in the 'High-Risk Businesses' industry" — is a curated rule
+   * over the classifications, one of the judgments the brief puts out of
+   * scope; "likely does not operate in a high risk industry" is the same rule
+   * the other way. What the lookup found is the NAICS classification, and
+   * that is what the row says. The codes are the evidence's.
+   */
+  if (key === 'industry') {
+    const naics = (record.industry ?? [])
+      .filter((c) => /^naics$/i.test(c.system ?? '') && c.name)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    if (naics.length === 0) return 'No industry classification on record'
+    return `Industry classified as ${naics[0].name}`
+  }
+
   // `business_connections` keeps the product's own count — "2 connections
   // found". Which businesses they are is the evidence's: a statement names no
   // entity.

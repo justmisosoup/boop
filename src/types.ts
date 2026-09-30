@@ -229,6 +229,9 @@ export type AssessmentSection = {
    * It is not a gap in our data, and filing it under `gaps` would render the one
    * thing counting against the business as missing information.
    *
+   * The paragraphs lead the assessment's card on the report, above the rows
+   * they cite, with the values they name marked in place.
+   *
    * Nothing here is marked, coloured or ranked, not even a finding that counts
    * against the business. State what the record shows, never whether the
    * business is good or bad — the same rule the insight rows follow. What to do

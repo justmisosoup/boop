@@ -38,7 +38,8 @@ changing before you change it:
 | Registration standing | `standingOf` in `src/lib/registrationStatus.ts`, from `src/data/registrationStanding.json` |
 | Open questions that hold an area for review | **The section's gaps** without `noAction` |
 | Which gaps are hidden | **Follow-ups' `closes`** |
-| Paragraph prose, the headline, follow-up text | **Saved, not shown** on a standing report; a typed question shows its paragraphs in the assistant, never its headline |
+| Paragraph prose | **Shown**: each assessment's paragraphs lead its card on the report, above the rows they cite; a typed question's paragraphs are the assistant's turn |
+| The headline, follow-up text | **Saved, not shown** on the report or in the assistant |
 
 ## Work the assessments at the same time
 

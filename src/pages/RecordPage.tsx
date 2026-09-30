@@ -3,7 +3,6 @@ import { ArrowLeft } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 
 import {
-  ChatSources,
   EmptyState,
   IconActionButton,
   MutedText,
@@ -27,8 +26,8 @@ import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPan
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 import { DeterminationCard } from '../components/DeterminationCard'
-import { NeedsReviewCard } from '../components/NeedsReviewCard'
-import { FORMATION_CARD_ID, cardsNeedingReview } from '../lib/needsReview'
+
+import { FORMATION_CARD_ID } from '../lib/needsReview'
 import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
 import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
@@ -36,18 +35,13 @@ import { statusForBand, useReview } from '../lib/review'
 import { scoreLine } from '../lib/scoreReasons'
 import { changedInsights } from '../lib/diff'
 import { reportDate, reportLabel, reportStamp } from '../lib/reportLabels'
-import { FormationCard, formationCardTitle } from '../components/FormationCard'
+import { FormationCard } from '../components/FormationCard'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
 import { SUBMITTED_CARD } from '../lib/sourceCards'
 import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
-import { entityTypeCode } from '../lib/attributes'
-import { entityFallback } from '../lib/businessNames'
-import { formationConfirmed } from '../lib/registrationStatus'
-import { stateName } from '../lib/states'
-import { industrySectorOf } from '../lib/naics'
 import { areaSummaries } from '../lib/areaSummaries'
 import { byId } from '../lib/records'
 import { GROUPS, makeGroupFor } from '../lib/groups'
@@ -94,17 +88,14 @@ const RAIL_W = '49px'
  * page wrapper has already set 24px in from the window's edge — with 48 inside
  * that, a 660px window put its prose 72px in from either side.
  *
- * 1200 is core's `PageContainer` "comfortable" width. It was 1000, set when
- * the report was one column of prose; with the reports panel taking 240 of it
- * and a gutter, 1000 left the report about 730px and a third of the region
- * empty. At 1200 the report gets about 830px — the two-column grids and the
- * insight rows fill without a line running long.
+ * 992 leaves the report 896px (56rem) of content at `wide`, less the 48 either
+ * side: one column now — the determination, the Formation card, the
+ * assessment cards — with no rail or reports panel beside it, so the 1200 it
+ * was ran the two-column grids and the prose long. Core's widths either side
+ * are 768 (`narrow`) and 1200.
  */
 
-const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
-
-/** The report column's width, in px, from which the decision sits in a left rail. */
-const RAIL_AT = 860
+const MEASURE = 'mx-auto w-full max-w-[992px] px-6 wide:px-12'
 
 /**
  * The assistant's state and presentation, remembered per browser.
@@ -216,57 +207,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const record = view?.record ?? selected
   const results: Derived[] = view?.results ?? []
 
-  /**
-   * The context the run was read in. The use case it was assessed for, the
-   * customer asking, what kind of entity the business is, and the industry it
-   * is in — the four things the assessment holds the insights against. Core's
-   * own `ChatSources` roll-up, which stacks the tiles and opens to the list.
-   * On the determination card, to the right of the run's date.
-   */
-  /**
-   * Where the business is registered: the domestic state by name, then how
-   * many other states hold a foreign registration. "Delaware · 2 foreign
-   * registrations" says what a list of codes made the reader count.
-   */
-  const domesticState = formationConfirmed(record)
-    ? record.formation?.state
-    : record.registrations.find((r) => r.jurisdiction === 'DOMESTIC')?.state
-  const foreignCount = record.registrations.filter((r) => r.state && r.state !== domesticState).length
-  const jurisdiction = domesticState
-    ? [
-        stateName(domesticState),
-        foreignCount > 0 ? `${foreignCount} foreign ${foreignCount === 1 ? 'registration' : 'registrations'}` : ''
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    : record.registrations.length > 0
-      ? `No domestic filing · ${record.registrations.length} ${record.registrations.length === 1 ? 'registration' : 'registrations'}`
-      : 'No registrations'
-  const analysedWith = analysis.selected ? (
-    <ChatSources
-      // Opens from its own left edge, so the list does not swing out over the ring.
-      align="start"
-      label="Context"
-      // The dimension leads and the value sits under it: a reader scanning the
-      // list is looking for "Jurisdiction", not for "DE, CA, UT".
-      sources={[
-        { id: 'use-case', label: 'Use case', title: 'Use case', annotation: reportLabel(analysis.selected) },
-        { id: 'customer', label: 'Business', title: 'Business', annotation: 'Neobank' },
-        // As the filing abbreviates it — LLC, PLLC — or Unknown when the
-        // record has no formation.
-        { id: 'entity', label: 'Entity', title: 'Entity', annotation: entityTypeCode(record) ?? entityFallback(record) ?? 'Unknown' },
-        // The domestic state, and how many others hold a foreign registration.
-        { id: 'jurisdiction', label: 'Jurisdiction', title: 'Jurisdiction', annotation: jurisdiction },
-        // The top of the NAICS scheme the business's classification sits in.
-        {
-          id: 'customer-industry',
-          label: 'Industry',
-          title: 'Industry',
-          annotation: industrySectorOf(record) ?? 'Unknown'
-        }
-      ]}
-    />
-  ) : null
   const [agentOpen, setAgentOpen] = useState<string | null>(null)
 
   /**
@@ -433,28 +373,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   // on it (00-MASTER-PLAN.md rule 3).
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
-  /* The report's cards with something to review, in the order the report
-     lays them out (the panel's: the agent's tier order, stored areas after). */
-  const reviewCards = useMemo(() => {
-    const version = analysis.reportVersion
-    if (!version?.result || running) return []
-    const order = [...(tiers?.keys() ?? [])]
-    const policyInOrder = [...(version.policy ?? [])].sort((a, b) => {
-      const ia = order.indexOf(a.id)
-      const ib = order.indexOf(b.id)
-      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
-    })
-    return cardsNeedingReview({
-      score,
-      result: version.result,
-      results,
-      record,
-      summaries,
-      policy: policyInOrder,
-      groupFor,
-      formationTitle: formationCardTitle(record, results, groupFor)
-    })
-  }, [analysis.reportVersion, running, tiers, score, results, record, summaries, groupFor])
 
   /**
    * Run the standing workflow, from where the report would be.
@@ -534,25 +452,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       </MutedText>
     ) : null
 
-  /**
-   * The decision moves into the left rail once the report column can spare
-   * 344px for it and still keep a readable measure. Measured, not a viewport
-   * breakpoint: whether the chat has a column decides the width, not the window.
-   */
-  const railBox = useRef<HTMLDivElement>(null)
-  const [railed, setRailed] = useState(false)
-  useEffect(() => {
-    const el = railBox.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(([entry]) => setRailed(entry.contentRect.width >= RAIL_AT))
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  /** A Needs review row scrolls the report to the card it names. */
-  const jumpToCard = (c: { anchorId: string }) =>
-    document.getElementById(c.anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  /** The decision card, stacked for the left column or wide for the flow. */
+  /** The decision card: wide at the head of the report; it stacks itself when narrow. */
   const decisionCard = (stacked: boolean) => (
               <DeterminationCard
                 stacked={stacked}
@@ -563,8 +463,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                    determined — Approve as Approved, Reject as Rejected. */
                 status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
                 reason={score ? scoreLine(score, scoreAreas, { record, results }) : undefined}
-                determinedAt={analysis.selected ? reportStamp(analysis.selected) : undefined}
-                context={analysedWith}
+                determinedAt={analysis.selected ? reportDate(analysis.selected) : undefined}
+                /* No "what needs your attention" list: the report's cards say
+                   what they found, and their insights open where they sit. */
                 /* Only a change away from the determination is a change worth
                    citing; a status that matches it is the determination. */
                 change={review.change && review.status !== determined ? review.change : undefined}
@@ -829,22 +730,11 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-6 wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
             >
               <div className={MEASURE}>
-                <div ref={railBox} className={cn('flex', railed && 'gap-6')}>
-                  {/* The decision, beside the report rather than above it: pinned
-                      in the left margin while the evidence scrolls past, so the
-                      call and what it rests on are read side by side. */}
-                  {(view || running) && (
-                    <div className={railed ? 'w-80 shrink-0' : 'hidden'}>
-                      <div className="sticky top-0">
-                        {decisionCard(true)}
-                        {/* Under the determination, in the rail: where the
-                            attention is due, beside the call it bears on. */}
-                        {reviewCards.length > 0 && (
-                          <NeedsReviewCard cards={reviewCards} onJump={jumpToCard} className="mt-4" />
-                        )}
-                      </div>
-                    </div>
-                  )}
+                {/* One report column: the determination opens it at every
+                    width, rather than pinned in a rail beside it. On a phone
+                    the card takes its stacked lock-up on its own (`NARROW_AT`
+                    in `DeterminationCard`). */}
+                <div className="flex">
                   {/*
                     * The list column, in the margin.
                     *
@@ -871,15 +761,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * a business the report is about to assess. What a reader opens
               * the record for is the decision, so the decision is first.
               */}
-            {/* Below `desk` there is no room beside the report, so the
-                decision leads it in the flow. */}
-            {(view || running) && !railed && decisionCard(false)}
-            {/* Where the attention is due, before the record's facts: the
-                report's cards with something flagged or left open, named as
-                their headers read below. Only what this report surfaced. */}
-            {!railed && reviewCards.length > 0 && (
-              <NeedsReviewCard cards={reviewCards} onJump={jumpToCard} className="mt-4" />
-            )}
+            {(view || running) && decisionCard(false)}
             {/* What the state holds, under the call and before the argument.
                 With or without a report: these are the record's facts. */}
             <FormationCard
@@ -888,7 +770,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               groupFor={groupFor}
               revealed={revealedSet}
               onJumpToSource={jumpToSource}
-              className={(view || running) && !railed ? 'mt-4' : undefined}
+              // Spaced from the determination above it.
+              className={view || running ? 'mt-4' : undefined}
             />
             {/* What the record holds about the business, before the report
                 starts reading it. Attributes only — the filing facts an account
