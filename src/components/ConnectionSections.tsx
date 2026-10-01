@@ -1,6 +1,7 @@
 import { MutedText, Text } from '@/core'
 
 import type { BusinessRecord } from '../lib/deriveResults'
+import { relatedBusinessesOf } from '../lib/relatedBusinesses'
 import { AttributeCells } from './AttributeGrid'
 import type { AttributeCell } from './AttributeGrid'
 
@@ -97,7 +98,7 @@ const cellsFor = (c: Connection, i: number): AttributeCell[] => {
 }
 
 /**
- * The Connections source card's body: each connected business, strongest
+ * The Related businesses source card's body: each related business, strongest
  * first, and under it how it is connected to this one — the people it shares
  * (with the titles the filing gives), then a business named on the other's
  * filing, then the addresses. The report counts these; this is where the
@@ -105,7 +106,7 @@ const cellsFor = (c: Connection, i: number): AttributeCell[] => {
  */
 export const ConnectionSections = ({ record }: { record: BusinessRecord }) => (
   <>
-    {(record.connections ?? []).map((c, i) => (
+    {relatedBusinessesOf(record).map((c, i) => (
       // A solid rule between businesses; the dashed rules stay within one.
       <div key={c.id ?? i} className="overflow-hidden border-b border-[var(--core-color-border-divider)] last:border-b-0">
         <AttributeCells items={cellsFor(c, i)} className="-mb-px" />

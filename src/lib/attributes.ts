@@ -219,7 +219,7 @@ const SCREENING_RESULTS = new Set([
   'adverse_media_screening_result'
 ])
 
-const provenanceList = (item: { submitted?: boolean; sources?: string[] }): string[] => [
+export const provenanceList = (item: { submitted?: boolean; sources?: string[] }): string[] => [
   ...new Set(
     (item.sources ?? []).filter((x) => !SCREENING_RESULTS.has(x)).map(readSource)
   )
@@ -241,7 +241,7 @@ const SOURCE_LABELS: Record<string, string> = {
   tin: 'IRS TIN record'
 }
 
-const readSource = (raw: string) => SOURCE_LABELS[raw] ?? raw.replace(/_/g, ' ')
+export const readSource = (raw: string) => SOURCE_LABELS[raw] ?? raw.replace(/_/g, ' ')
 
 /** Stamps every row a producer emits with the group it belongs to. */
 const inGroup = (group: GroupId, rows: AttributeRow[]): AttributeRow[] =>
@@ -379,7 +379,7 @@ const addressRows = (
  * every check about the submitted office showed it twice. Merged on the
  * normalised string: a source either entry carries, the merged one carries.
  */
-const dedupeAddresses = (
+export const dedupeAddresses = (
   addresses: BusinessRecord['addresses']
 ): BusinessRecord['addresses'] => {
   const seen = new Map<string, BusinessRecord['addresses'][number]>()
@@ -443,7 +443,7 @@ export const shortDate = (iso: string | null | undefined) => {
  * `app/src/components/Industry/utils.tsx`): consecutive codes become a range —
  * "7371-7373, 7379".
  */
-const formatCodes = (codes: ReadonlyArray<string>) => {
+export const formatCodes = (codes: ReadonlyArray<string>) => {
   const out: string[] = []
   let start = -1
   codes.forEach((code, i) => {
@@ -767,18 +767,17 @@ export const currentDomesticRows = (
 /**
  * What the IRS holds: the number, and the name it is held against.
  *
- * The number alone was half the record. The IRS match is a match of two things
- * — a TIN and a business name — and "the IRS has a record for the submitted TIN
- * and business name combination" is the insight it feeds; showing only the last
- * four digits left the other half of that sentence with nothing behind it.
- *
- * Both are printed in full. The number was masked to its last four, which is
- * the habit from consumer PII — but this is an EIN on a business the reviewer
- * is deciding about, it is the value the customer submitted, and a reviewer
- * checking it against a filing or a letter needs the whole thing. The name is
- * in full for the same reason: comparing it against the legal name above takes
- * every character of both.
+ * The number is obscured to its last four — "••-•••6319" — with no label
+ * saying so: the dots say it. It is the one
+ * value on the page that identifies the taxpayer rather than the business's
+ * public record, and a prototype shown around should not carry it in full. The
+ * IRS match is still a match of two things — the number and the name — so the
+ * name stays in full: comparing it against the legal name above takes every
+ * character of both, and the last four say which number the IRS matched.
  */
+/** "92-1166319" as "••-•••6319". */
+export const maskTin = (tin: string) => `••-•••${tin.replace(/\D/g, '').slice(-4)}`
+
 const tinRows = (record: BusinessRecord): AttributeRow[] => {
   const tin = record.tin as { tin?: string; name?: string; mismatch?: boolean } | null
 
@@ -786,7 +785,7 @@ const tinRows = (record: BusinessRecord): AttributeRow[] => {
     {
       group: 'tin' as const,
       label: 'TIN',
-      value: tin?.tin ?? 'Not held',
+      value: tin?.tin ? maskTin(tin.tin) : 'Not held',
       source: 'IRS TIN record',
       // The customer gave us the number; the IRS holding a record against it is
       // what makes it verified. The identity card has said so from the start —
@@ -1045,7 +1044,7 @@ const withWebsite = (record: BusinessRecord, value: string | null | undefined, s
 
 /** The filings that actually list this value. Empty when none do — in which case
  *  the record does not say which filing it came from, and nothing is claimed. */
-const filingsListing = (record: BusinessRecord, value: string, field: 'addresses' | 'officers') => {
+export const filingsListing = (record: BusinessRecord, value: string, field: 'addresses' | 'officers') => {
   const target = norm(value)
   if (!target) return []
   return record.registrations.filter((r) => {
@@ -1179,7 +1178,8 @@ const CONNECTIONS = 'Middesk connections'
  * business is, which is not what it is.
  */
 const connectionRows = (record: BusinessRecord): AttributeRow[] => {
-  const connections = record.connections ?? []
+  // The related businesses, not every neighbour the provider connected.
+  const connections = relatedBusinessesOf(record)
   if (connections.length === 0) return []
 
   const count = (n: number, one: string, many: string) => (n > 0 ? `${n} ${n === 1 ? one : many}` : undefined)
@@ -1269,14 +1269,18 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         !record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
       const others = onlyAgentOnFilings ? [] : p.titles.filter((t) => !AGENT.test(t))
       // One row per title, as each filing states it — never several titles run
-      // together under "Officer". No title at all reads as "Officer".
+      // together under "Officer". No title at all reads as "Officer" where a
+      // filing names the person; a person only the customer submitted holds
+      // no office anyone recorded, and is a "Person" — the same row the
+      // person check states, not a second one beside it.
+      const onFilings = record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
       return [
         ...(agent ? [{ ...base, label: 'Registered agent' }] : []),
         ...(others.length > 0
           ? others.map((t) => ({ ...base, label: roleLabel(t) }))
           : agent
             ? []
-            : [{ ...base, label: 'Officer' }])
+            : [{ ...base, label: p.submitted && !onFilings ? 'Person' : 'Officer' }])
       ]
     })
 

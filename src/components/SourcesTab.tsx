@@ -20,6 +20,7 @@ import { STATE_NAMES, stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 import { Collapsible } from './Collapsible'
 import { ConnectionSections } from './ConnectionSections'
+import { relatedBusinessesOf } from '../lib/relatedBusinesses'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
@@ -372,6 +373,23 @@ export const sourcesFor = (
     }
     if (r.registeredAgent)
       add(source.supplied, 'people', { row: person('Registered agent', r.registeredAgent, r.registeredAgent), role: 'Registered agent' })
+
+    // A filing's addresses, as the filing lists them — every one, not only
+    // the ones an insight happened to cite to it: Kairos PT's New York filing
+    // carries Bayside and Little Neck beside the submitted office, and the
+    // card said only the office. Each under the role the filing gave it
+    // (mailing, physical), read from the record's reference to this filing.
+    for (const filed of r.addresses ?? []) {
+      const known = record.addresses.find((a) => norm(a.fullAddress) === norm(filed))
+      const ref = known?.sourceRefs?.find(
+        (x) => x.type === 'registration' && (x.metadata as { state?: string }).state === r.state
+      )
+      add(source.supplied, 'address', {
+        row: { group: 'address', label: 'Address', value: known?.fullAddress ?? filed, source: '', sources: [], matchValue: known?.fullAddress ?? filed },
+        ref,
+        bare: true
+      })
+    }
   }
 
   // The FMCSA's own records, on the card its references built — or a card of
@@ -1024,8 +1042,8 @@ export const SourceDetail = ({
             <FmcsaSections s={s} />
           ) : s.id === STREET_VIEW_CARD ? (
             <StreetViewCaptures items={all} />
-          ) : s.id === namedCard('Connections') && (record?.connections ?? []).length > 0 ? (
-            // Each connected business, opening to the people and addresses it shares.
+          ) : s.id === namedCard('Related businesses') && relatedBusinessesOf(record!).length > 0 ? (
+            // Each related business, opening to the people and addresses it shares.
             <ConnectionSections record={record!} />
           ) : (
             <>

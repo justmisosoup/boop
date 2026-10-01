@@ -6,7 +6,7 @@ import { attributesFor } from '../lib/attributes'
 import { categoriesOf } from '../lib/deriveResults'
 import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
-import { FORMATION_CARD_INSIGHTS, IDENTITY_SECTIONS, type IdentitySection } from '../lib/identitySections'
+import { FORMATION_CARD_INSIGHTS, IDENTITY_SECTIONS, OPERATIONS_CARD_INSIGHTS, type IdentitySection } from '../lib/identitySections'
 import { partAnchor } from '../lib/needsReview'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type {
@@ -17,6 +17,7 @@ import type {
 } from '../types'
 import { cn } from '../utils/twUtils'
 import { InsightRow } from './InsightRow'
+import { OperationsBody } from './Report/OperationsCard'
 import { ScreeningResults } from './Report/ScreeningCard'
 import { InsightStack } from './InsightStack'
 
@@ -435,6 +436,10 @@ const firstSentence = (text: string): { lead: string; tail: string } => {
  * A gap prints only when nothing acts on it — see `closed` — and then as a
  * sentence, since an open question is not a value the record holds.
  */
+/** Cards whose sentence is computed from the record — counts, in one
+ *  voice — rather than the report's own paragraph. */
+const COMPUTED = new Set(['skill-kyb-3', 'skill-kyb-activity', 'skill-financial-standing', 'skill-1789767328449'])
+
 export const SectionBody = ({
   section,
   heading,
@@ -478,6 +483,18 @@ export const SectionBody = ({
     ],
     results
   )
+  /* The industry-and-locations card carries its own rows from the record, as
+     the Formation card does — the office, the office-state check, the
+     licence — whatever the report happened to cite. The cited rows stay. */
+  const carried =
+    section.id === 'skill-kyb-activity'
+      ? results.filter(
+          (r) =>
+            !r.notReported &&
+            (OPERATIONS_CARD_INSIGHTS as ReadonlyArray<string>).includes(r.insightId.split(':')[0]) &&
+            !cited.some((c) => c.insightId === r.insightId)
+        )
+      : []
 
   /* Only the gaps nobody has written a step for. A `noAction` gap is one
      nobody is going to act on, and a closed one is already an instruction on
@@ -516,9 +533,7 @@ export const SectionBody = ({
      rows carried the argument alone (`analysis/README.md`); the report reads
      as a document again. What the area asks, in the summary's words, stands
      in only when the assessment wrote nothing; then any gap it left. */
-  // The screening card states its outcome from the screens themselves
-  // (`screeningOf`), not the report's paragraph: the table under it is the detail.
-  const prose = section.id === 'skill-kyb-3' && summary ? [] : section.body.filter((b) => b.text.trim())
+  const prose = COMPUTED.has(section.id) && summary ? [] : section.body.filter((b) => b.text.trim())
   const lead =
     prose.length > 0 ? (
       <ProseLead paragraphs={prose.map((b) => b.text)} results={results} record={record} />
@@ -536,7 +551,7 @@ export const SectionBody = ({
   return (
     <>
       <CiteList
-        cited={cited}
+        cited={[...cited, ...carried]}
         record={record}
         negatives={negatives}
         title={heading}
@@ -546,7 +561,14 @@ export const SectionBody = ({
         intro={intro}
         sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
         // The compliance screens: the hits, then what was dismissed.
-        body={section.id === 'skill-kyb-3' && record ? <ScreeningResults record={record} /> : undefined}
+        body={
+          section.id === 'skill-kyb-3' && record ? (
+            <ScreeningResults record={record} />
+          ) : section.id === 'skill-kyb-activity' && record ? (
+            // What it does, where, and the licence its industry needs.
+            <OperationsBody record={record} onJumpToSource={onJumpToSource} />
+          ) : undefined
+        }
         anchor={section.id}
         revealed={revealed}
         onJumpToSource={onJumpToSource}

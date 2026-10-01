@@ -1,4 +1,48 @@
 {
-  "_comment": "Professional licences, keyed by normalised business name. Kept out of src/data/records.json because that file is gitignored and rewritten by `bun run pull` — a licence found by hand would be lost on the next pull. Keyed by name rather than business id because every re-order mints a new id for the same company. Emptied 2026-09-22: the one entry, an NPI Registry record for Kairos Physical Therapy, was not a real lookup and has been withdrawn.",
-  "licenses": {}
+  "_comment": "Professional licences from the NPI Registry (CMS), keyed by normalised business name. Kept out of records.json because `bun run pull` rewrites it, and keyed by name because a re-order mints a new business id. Only businesses whose lead NAICS is a health-practitioner office (621) are looked up, only submitted people are searched, and a record is kept only when its practice address is the submitted office. Regenerate with `bun run scripts/pull-licenses.ts`.",
+  "source": {
+    "title": "NPI Registry (CMS National Plan and Provider Enumeration System)",
+    "url": "https://npiregistry.cms.hhs.gov/"
+  },
+  "pulledAt": "2026-10-01",
+  "licenses": {
+    "kairos physical therapy pllc": [
+      {
+        "id": "npi-1477211969",
+        "registry": "NPI Registry",
+        "number": "1477211969",
+        "holder": "JOSHUA Y GEE",
+        "credential": "DPT",
+        "profession": "Physical Therapist",
+        "taxonomyCode": "225100000X",
+        "licenseState": "NY",
+        "licenseNumber": "048266",
+        "status": "Active",
+        "enumeratedAt": "2021-12-02",
+        "lastUpdated": "2024-03-11",
+        "address": "801 Madison Ave, New York, NY 10065-5930",
+        "phone": "646-300-0954",
+        "sourceUrl": "https://npiregistry.cms.hhs.gov/provider-view/1477211969"
+      }
+    ],
+    "woo young lee dds inc": [
+      {
+        "id": "npi-1902092943",
+        "registry": "NPI Registry",
+        "number": "1902092943",
+        "holder": "WOO YOUNG LEE",
+        "credential": "DDS",
+        "profession": "Dentist, General Practice",
+        "taxonomyCode": "1223G0001X",
+        "licenseState": "CA",
+        "licenseNumber": "52883",
+        "status": "Active",
+        "enumeratedAt": "2007-09-24",
+        "lastUpdated": "2026-05-01",
+        "address": "350 Divisadero St, San Francisco, CA 94117",
+        "phone": "415-921-8867",
+        "sourceUrl": "https://npiregistry.cms.hhs.gov/provider-view/1902092943"
+      }
+    ]
+  }
 }

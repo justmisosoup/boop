@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Check, ChevronDown, Minus, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, Minus, TriangleAlert } from 'lucide-react'
 
-import { ChatSourceChip, MetaChip } from '@/core'
+import { ChatSourceChip, ChatSources, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { SCREENS, screeningOf, type Dismissal, type Finding, type Screen } from '../../lib/screening'
@@ -17,14 +17,20 @@ const screenLabel = (id: Finding['screen']) => SCREENS.find((s) => s.id === id)?
  * each opening in a new tab.
  */
 const ArticlesChip = ({ list }: { list: NonNullable<Finding['articles']> }) => (
-  <ChatSourceChip
+  // "Articles · 4", each publication's own mark stacked on the trigger; each
+  // row the headline, its publication under it, and the out-arrow: it opens
+  // the article elsewhere.
+  <ChatSources
+    label="Articles"
     sources={list.map((a, i) => ({
       id: `${a.url ?? a.title}-${i}`,
-      label: a.title,
-      domain: 'Articles',
+      label: a.source ?? a.title,
+      domain: a.source ?? undefined,
       title: a.title,
       url: a.url ?? undefined,
-      annotation: a.source ?? 'Adverse media'
+      badge: a.url ? (
+        <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
+      ) : undefined
     }))}
   />
 )

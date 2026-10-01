@@ -2,7 +2,7 @@ import reportStore from '../../analysis/reports.json'
 import liveRecords from '../data/records.json'
 
 import type { StoredReport } from '../types'
-import { withCityRegistrations } from './cityRegistrations'
+import { withCityRegistrations, withLicenses } from './cityRegistrations'
 import { presented, type BusinessRecord } from './deriveResults'
 
 /**
@@ -78,7 +78,7 @@ export const heldReportFor = (name: string): StoredReport | null => {
   const r = (RAW[reportKey(name)] ?? []).at(-1)
   if (!r) return null
   if (!r.snapshot?.record) return r
-  const record = withOfficerRoles(withCityRegistrations(r.snapshot.record))
+  const record = withOfficerRoles(withLicenses(withCityRegistrations(r.snapshot.record)))
   // The snapshot's rows were derived when the report was written; what the
   // page shows of them follows today's rules.
   return { ...r, snapshot: { ...r.snapshot, record, results: presented(record, r.snapshot.results) } }

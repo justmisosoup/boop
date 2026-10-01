@@ -50,3 +50,21 @@ export const industrySectorOf = (record: BusinessRecord): string | undefined => 
   const code = (top.naicsCodes ?? [])[0]
   return top.name ?? SECTORS[code.slice(0, 2)] ?? undefined
 }
+
+/**
+ * Six-digit NAICS titles, as the 2022 census names them — the codes the city
+ * registers in `src/data/cityRegistrations.json` carry. The register gives the
+ * code alone; a code not in this list is shown without a title rather than
+ * guessed (477174 is not a 2022 NAICS code).
+ */
+const TITLES: Record<string, string> = {
+  '459130': 'Sewing, Needlework, and Piece Goods Retailers',
+  '513210': 'Software Publishers',
+  '519190': 'All Other Information Services',
+  '541511': 'Custom Computer Programming Services',
+  '621210': 'Offices of Dentists'
+}
+
+/** "459130" as "459130 · Sewing, Needlework, and Piece Goods Retailers". */
+export const naicsTitle = (code: string): string | undefined => TITLES[code]
+

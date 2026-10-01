@@ -1,8 +1,7 @@
 import rawRecords from '../data/records.json'
-import licenseStore from '../data/licenses.json'
 import { deriveResults, type BusinessRecord } from './deriveResults'
 import agentStore from '../../analysis/agent.json'
-import { withCityRegistrations } from './cityRegistrations'
+import { withCityRegistrations, withLicenses } from './cityRegistrations'
 import { heldReportFor } from './heldReports'
 import {
   areasOf,
@@ -28,23 +27,9 @@ const TIER_OF = new Map(
  * and the record it opens are looking at the same 25 rows.
  */
 
-/**
- * Licences, merged onto the records they belong to.
- *
- * `records.json` is rewritten wholesale by `bun run pull`, so anything found
- * by hand and written there is lost on the next pull. The store is keyed by
- * business NAME rather than id, because re-ordering the same company mints a
- * new business id every time and an id-keyed store would come back empty for
- * the business it was written for.
- */
-const LICENSES = (licenseStore as { licenses: Record<string, unknown[]> }).licenses
-const licenseKey = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim()
-
 /** Every ingested record. Nothing is synthesised — this is what `pull` wrote. */
 export const ALL: BusinessRecord[] = (rawRecords as BusinessRecord[]).map((raw) => {
-  const r = withCityRegistrations(raw)
-  const found = LICENSES[licenseKey(r.name)]
-  return found ? { ...r, licenses: found as BusinessRecord['licenses'] } : r
+  return withLicenses(withCityRegistrations(raw))
 })
 
 const BY_ID = new Map(ALL.map((r) => [r.id, r]))

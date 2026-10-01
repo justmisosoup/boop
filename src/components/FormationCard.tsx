@@ -35,6 +35,7 @@ import { CardHeader } from './CardHeader'
 import { InsightRow } from './InsightRow'
 import { InsightsDisclosure } from './InsightStack'
 import { AttributeSources, SubmittedChip } from './Provenance'
+import { CityStrip } from './Report/CityStrip'
 import { FilingStrip, otherStateStandings } from './Report/FilingStrip'
 
 /**
@@ -57,6 +58,9 @@ import { FilingStrip, otherStateStandings } from './Report/FilingStrip'
  * follows to that source's card in Sources the way an attribute row's does.
  */
 type Tier = 'formation' | 'city' | 'submitted'
+
+/** FIREBIRD YARNS as Firebird Yarns, as the register spells it. */
+const titleCase = (n: string) => n.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 
 const TITLE: Record<Tier, string> = {
   formation: 'Formation',
@@ -533,7 +537,7 @@ export const FormationCard = ({
         ...v,
         value: (
           <>
-            <span className="font-semibold">{v.value}</span>
+            <span>{v.value}</span>
             {i === 0 && priorNames.length > 0 && <NameHistory names={priorNames} onOpen={onJumpToTimeline && ((id) => onJumpToTimeline(id, ['name']))} />}
           </>
         )
@@ -599,11 +603,15 @@ export const FormationCard = ({
         ? convertedFormationNote(converted)
         : [formationNote(record), registrationsNote(record, domestic?.state)].filter(Boolean).join(' ') || undefined
       : sole
-        ? nameStandingOf(record).category === 'DBA_OF_PERSON'
-          ? `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. ${sole.city} registers the business to ${sole.person}, doing business as ${record.name}${
-              sole.since ? ` since ${sole.since.slice(0, 4)}` : ''
-            }${sole.account ? ` (account ${sole.account})` : ''}, at the submitted office address.`
-          : `No state filing is expected: a sole proprietorship doesn't register with the Secretary of State. The ${sole.city} city registration at the submitted office address is in ${sole.person}'s own name, so ${sole.person} appears to operate ${record.name} as a sole proprietor.`
+        ? /* What was not found, what was, and what it suggests — generic: the
+             grid under it names the owner, the DBA and the city. */
+          // Not "city" or "state": a DBA is a city registration in San
+          // Francisco and a fictitious name filed with the state in Florida.
+          `No formation filing was found. A DBA registration ${
+            nameStandingOf(record).category === 'DBA_OF_PERSON'
+              ? 'lists the owner doing business as the DBA name'
+              : "is in the owner's own name"
+          } at the submitted office address, suggesting it is likely a sole proprietorship.`
         : tier === 'submitted'
           ? submittedFoundNote(record)
           : undefined
@@ -685,62 +693,6 @@ export const FormationCard = ({
             : [])
         ]
       : null
-  const soleRegistration: AttributeCell[] =
-    sole && cityReg
-      ? [
-          ...(cityReg.accountNumber
-            ? [
-                {
-                  key: 'acct',
-                  label: 'Account number',
-                  values: [{ value: cityReg.accountNumber }]
-                }
-              ]
-            : []),
-          ...(cityReg.locationId
-            ? [
-                {
-                  key: 'loc',
-                  label: 'Location ID',
-                  values: [{ value: cityReg.locationId }]
-                }
-              ]
-            : []),
-          {
-            key: 'addr',
-            label: 'Address',
-            span: 'full' as const,
-            values: [{ value: cityReg.address }]
-          },
-          ...(cityReg.locationStart
-            ? [
-                {
-                  key: 'ls',
-                  label: 'Location start',
-                  values: [{ value: longDate(cityReg.locationStart) }]
-                }
-              ]
-            : []),
-          {
-            key: 'le',
-            label: 'Location end',
-            values: [
-              {
-                value: cityReg.locationEnd ? longDate(cityReg.locationEnd) : 'Open'
-              }
-            ]
-          },
-          ...(cityReg.naics
-            ? [
-                {
-                  key: 'naics',
-                  label: 'NAICS',
-                  values: [{ value: cityReg.naics }]
-                }
-              ]
-            : [])
-        ]
-      : []
 
   return (
     <Surface
@@ -766,17 +718,8 @@ export const FormationCard = ({
       )}
       <AttributeCells items={soleItems ?? items} className="-mb-px" />
       {strip && <FilingStrip record={stripRecord} lead={converted?.now ?? domestic ?? undefined} legalName={legalName} />}
-      {/* The one registration view, as a single state filing shows it. */}
-      {soleItems && cityReg && (
-        <div className="border-t border-[var(--core-color-border-divider)]">
-          <div className="px-4 pt-3">
-            <Text size="sm" className="font-semibold">
-              {cityReg.registry}
-            </Text>
-          </div>
-          <AttributeCells items={soleRegistration} className="-mb-px" />
-        </div>
-      )}
+      {/* The city registrations, as the state filings are shown. */}
+      {soleItems && cityReg && <CityStrip regs={record.cityRegistrations ?? []} />}
       {/* The record's own insights about its filings, under the filing they
           are about: the lead filing's standing, a former domestic filing, the
           other filings and their statuses, whether it is registered where its

@@ -13,6 +13,7 @@
  * invented sentence.
  */
 import catalog from '../data/catalog.json'
+import { relatedBusinessesOf } from './relatedBusinesses'
 import { entityFallback } from './businessNames'
 import { trueEntityType, type BusinessRecord } from './deriveResults'
 import { watchlistVerdicts } from './watchlist'
@@ -154,9 +155,14 @@ export const statementFor = (
     return `Industry classified as ${naics[0].name}`
   }
 
-  // `business_connections` keeps the product's own count — "2 connections
-  // found". Which businesses they are is the evidence's: a statement names no
-  // entity.
+  // `business_connections` counts the RELATED businesses — the provider's
+  // connections less the neighbours (`relatedBusinessesOf`) — so the sentence
+  // and the rows under it agree. Which businesses they are is the evidence's:
+  // a statement names no entity.
+  if (key === 'business_connections' && record.connections) {
+    const n = relatedBusinessesOf(record).length
+    return n === 0 ? 'No related businesses found' : `${n} related ${n === 1 ? 'business' : 'businesses'} found`
+  }
 
   /*
    * The website checks. The source's sentences — "Match identified to the

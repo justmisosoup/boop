@@ -190,9 +190,14 @@ export const AttributeSources = ({
   note,
   title,
   label,
+  extra,
   onJumpToSource
 }: {
   sources: string[]
+  /** Records from registers the row's sources never name — a licence from
+   *  the NPI Registry at this address — folded into the same chip, after the
+   *  rest: one provenance, not a second citation beside it. */
+  extra?: ChatSourceData[]
   /** The record's own source objects, so a record source can say where it is
    *  from and its status rather than only its kind. */
   refs?: SourceRef[]
@@ -262,7 +267,7 @@ export const AttributeSources = ({
     url: undefined,
     onSelect: onJumpToSource ? () => onJumpToSource(registrationCard(filings[i])) : undefined
   }))
-  if (sources.length === 0 && origin.length === 0) return null
+  if (sources.length === 0 && origin.length === 0 && !extra?.length) return null
 
   // A source with a `url` becomes a link chip — the same affordance every other
   // source chip has, rather than an underlined word in the value.
@@ -348,7 +353,7 @@ export const AttributeSources = ({
   return (
     <ChatSourceChip
       className={href ? undefined : CHIP_NO_GLYPH}
-      sources={[...origin, ...data]}
+      sources={[...origin, ...data, ...(extra ?? [])]}
     />
   )
 }

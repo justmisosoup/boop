@@ -1,6 +1,7 @@
 import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
+import { operationsOf } from './operations'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
@@ -75,90 +76,74 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const licences = record.licenses ?? []
   const licencePointer = licences.length
     ? `See the ${licences[0].registry ?? 'licence'} record for the practitioner's licence.`
-    : 'No licence record was found; confirm the practitioner is licensed.'
+    : "No licence record was found; confirm the practitioner is licensed."
 
   // A sole proprietorship has one owner: the person it is registered under.
   const sole = soleProprietorOf(record)
+  /* Who was submitted and whether the filings name them, counted — as the
+     screening card's sentence is. The rows under it name them and their roles. */
+  const submitted = record.people.filter((p) => p.submitted && p.name && !ENTITY.test(p.name))
+  const onFilings = submitted.filter((p) => (p.sources ?? []).includes('registration'))
+  const submittedLine =
+    submitted.length === 0
+      ? 'No people submitted.'
+      : submitted.length === 1
+        ? `One person submitted, ${onFilings.length === 1 ? 'named on the state filing' : 'not named on the state filings'}.`
+        : `${submitted.length} people submitted, ${
+            onFilings.length === submitted.length
+              ? `${submitted.length === 2 ? 'both' : 'all'} named on the state filings`
+              : onFilings.length === 0
+                ? 'none named on the state filings'
+                : `${onFilings.length} named on the state filings`
+          }.`
+  // A sole proprietorship's owner is the person it is registered to; a
+  // professional entity's needs a licence. Everything else is the count.
   const ownership = sole
-    ? `A sole proprietorship has one owner, the person it is registered under; ${
-        nameStandingOf(record).category === 'DBA_OF_PERSON' ? `${sole.city}'s business registration lists ${sole.person} as the owner` : `the ${sole.city} city registration is in ${sole.person}'s name`
-      }. Confirm it on the customer certification.`
+    ? `${sole.city} registers it to ${sole.person}.`
     : professional
-    ? `A ${entity} is typically owned by one or a few licensed practitioners who also run the practice.${
-        people.length
-          ? ` Check that ${list(people)} ${people.length === 1 ? 'holds' : 'hold'} the professional licence the practice requires.`
-          : NAMES_NO_MEMBERS.has(record.formation?.state ?? '')
-            ? ` ${state} filings name no members or managers, only an address for service of process, so no practitioner appearing on the state record is normal here.`
-            : ' No individual is named on the state filing.'
-      }`
-    : upper === 'CORPORATION'
-      ? 'A corporation is owned by shareholders, who are not named on its filings; officers are. Beneficial owners come from the customer certification, which is normal for this structure.'
-      : upper === 'LLC' && members.length > 0
-        ? `The ${stateName(members[0].state)} filing names ${list(members.map((m) => titleCase(m.name)))} as ${members.length === 1 ? 'a member' : 'members'}. Ownership percentages and any other beneficial owners come from the customer certification.`
-      : upper === 'LLC'
-        ? 'An LLC is owned by its members, who are rarely named on state filings. Beneficial owners come from the customer certification, which is normal for this structure.'
-        : 'Owners are rarely named on public filings. Beneficial owners come from the customer certification.'
+      ? `${submittedLine} ${licencePointer}`
+      : submittedLine
 
-  /* Activity & Permission answers three things: what the business does,
-     where it is registered to do it, and whether it needs a licence to. The
-     headline names the classification, so the first sentence under it says
-     whether that classification is high-risk rather than naming it again. */
-  /* The classification is the subject, so the verb agrees with its head noun:
-     the last word, once parentheses, a trailing qualifier (", Local") and
-     anything after "of", "for", "with" or "related to" are set aside. "Credit
-     Bureaus" and "Offices of Dentists" are; "Commercial Banking" and "General
-     Freight Trucking, Local" is. */
-  const headNoun = (industry ?? '')
-    .replace(/\s*\([^)]*\)/g, '')
-    .replace(/\s(?:of|for|with|related to)\s.*$/i, '')
-    .replace(/(?:,\s*[\w-]+)+$/, '')
-    .split(/\s+/)
-    .at(-1)
-  const be = /[^s]s$/i.test(headNoun ?? '') ? 'are' : 'is'
-  /* The high-risk flag can sit on a classification other than the one named:
-     Zendesk's is on "High-Risk Businesses", not "Software Publishers". It is
-     named where it sits, not pinned on the classification in the headline. */
-  const flagged = (record.industry ?? []).filter((c) => c.highRisk)
-  const flaggedElsewhere = flagged.filter((c) => c.name !== industry)
-  const elsewhereNames = [...new Set(flaggedElsewhere.map((c) => c.name).filter((n): n is string => !!n))]
-  const elsewhere =
-    flaggedElsewhere.length === 0
-      ? ''
-      : elsewhereNames.length > 1
-        ? `, but other classifications on the record, ${list(elsewhereNames)}, are`
-        : `, but another classification on the record${elsewhereNames.length ? `, ${elsewhereNames[0]},` : ''} is`
-  /* A professional entity's licence answers the permission question in place
-     of the risk flag, after where it is registered. */
-  // The classifier's own "Insufficient data" is not a line of business.
-  const insufficient = /^insufficient data$/i.test(industry ?? '')
-  const what = !industry
-    ? 'We cannot confirm what the business does: no industry classification is on the record.'
-    : insufficient
-      ? 'The classifier returned insufficient data to say what the business does.'
-    : professional
-      ? ''
-      : flagged.some((c) => c.name === industry)
-        ? `${industry} ${be} classified as a high-risk industry.`
-        : `${industry} ${be} not classified as a high-risk industry${elsewhere}.`
-  /* Where it operates, in the office-state check's own terms — the check this
-     card carries. Which filings it holds, and each one's status, are the
-     Formation card's; listing every state here repeated them, and read a
-     Delaware filing that publishes no status as "no active registration". */
-  const officeState = record.addresses.find((a) => a.submitted && a.state)?.state
-  const officeCheck = record.reviewTasks.find((t) => t.key === 'sos_match')?.subLabel ?? ''
-  const office = officeState ? stateName(officeState) : undefined
+  /* What the business does, where it does it, and whether it needs a licence
+     to — the card's own reading (`operationsOf`), counted and named in the
+     voice of the other cards. The headline names the classification, so the
+     first clause says only what the Prohibited scheme made of it. */
+  const ops = operationsOf(record)
+  const article = (w: string) => (/^[aeiou]/i.test(w) ? 'an' : 'a')
+  const what =
+    ops.industry.prohibited === 'flagged'
+      ? `Flagged as ${list([...new Set(ops.industry.flagged.map((c) => c.name).filter((n): n is string => !!n))])}.`
+      : ops.industry.prohibited === 'clear'
+        ? 'Not a prohibited industry.'
+        : 'Prohibited status not assessed.'
+  const office = ops.office ? stateName(ops.office.state) : undefined
   const where = !record.registrations.length
     ? 'No state registration shows where it operates.'
     : !office
-      ? ''
-      : /submitted active/i.test(officeCheck)
+      ? 'No office address submitted.'
+      : ops.office?.verdict === 'active'
         ? `Registered and active in ${office}, the state of its office.`
-        : /inactive/i.test(officeCheck)
+        : ops.office?.verdict === 'inactive'
           ? `Its registration in ${office}, the state of its office, is inactive.`
-          : /not registered/i.test(officeCheck)
+          : ops.office?.verdict === 'not_registered'
             ? `Not registered in ${office}, the state of its office.`
             : ''
-  const permission = professional ? `Operating as a ${entity} requires a professional licence. ${licencePointer}` : ''
+  const otherPlaces = ops.locations.filter((a) => !a.submitted).length
+  const elsewhere = otherPlaces > 0 ? `${otherPlaces === 1 ? 'One other location' : `${otherPlaces} other locations`} on record.` : ''
+  const lic = ops.licence
+  const permission = !lic.required
+    ? ''
+    : lic.registry === 'none'
+      ? `Requires ${article(lic.profession)} ${lic.profession} licence; no public register checked.`
+      : lic.registry === 'FMCSA'
+        ? lic.found.length > 0
+          ? `Requires motor carrier authority; USDOT ${lic.found.map((f) => f.dotNumber).filter(Boolean).join(', ')} on record.`
+          : 'Requires motor carrier authority; no FMCSA registration on record.'
+        : lic.found.length > 0
+          ? `Requires ${article(lic.profession)} ${lic.profession} licence; ${lic.found
+              .map((x) => `${x.licenseState && x.licenseNumber ? `${x.licenseState} licence ${x.licenseNumber}` : `NPI ${x.number}`} found for ${titleCase(x.holder)}`)
+              .join(', ')}.`
+          : `Requires ${article(lic.profession)} ${lic.profession} licence; none found for the people submitted.`
 
   /* A lien or a bankruptcy is a claim on money; a litigation is a case that
      may or may not become one, so it is named as what it is. */
@@ -194,32 +179,31 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         : claims > 0
           ? 'Liens on file, all closed'
           : 'No liens, judgments or bankruptcies'
+  /* Counts, as the screening card's sentence is: what is open, what is
+     closed, whether any of it states an amount. The cards under it name the
+     filings. */
+  const closedLiens = liens.length - liveLiens.length
+  const taxLiens = liveLiens.filter((l) => /tax/i.test(l.type ?? '')).length
   const standingSummary = [
-    live > 0
-      ? `Liens, judgments and bankruptcies show money the ${kind} owes elsewhere, which can reach funds held in the account.`
-      : '',
     liens.length === 0
       ? ''
       : liveLiens.length === 0
-        ? `${liens.length === 1 ? 'Its one lien is' : `All ${liens.length} of its liens are`} closed.`
-        : `${liveLiens.length} of its ${liens.length} liens ${liveLiens.length === 1 ? 'is' : 'are'} not closed${
+        ? `${liens.length === 1 ? 'One lien, closed' : `${liens.length} liens, all closed`}.`
+        : `${liveLiens.length === 1 ? 'One open lien' : `${liveLiens.length} open liens`}${
+            closedLiens > 0 ? ` and ${closedLiens} closed` : ''
+          }; ${
             lienAmounts.length === 0
-              ? `, and ${liveLiens.length === 1 ? 'it states no amount' : 'none states an amount'}`
-              : lienAmounts.length < liveLiens.length
-                ? `; ${lienAmounts.length === 1 ? 'one states' : `${lienAmounts.length} state`} an amount`
-                : ''
-          }.`,
+              ? liveLiens.length === 1
+                ? 'it states no amount'
+                : 'none states an amount'
+              : `${money(lienAmounts.reduce((a, b) => a + b, 0))} stated`
+          }${taxLiens === 0 ? (liveLiens.length === 1 ? ", and it isn't a tax lien" : ', and none is a tax lien') : ''}.`,
     cases > 0
-      ? `${cases} ${cases === 1 ? 'lawsuit names' : 'lawsuits name'} it, ${
-          judgments.length > 0 ? `with ${money(judgments.reduce((a, b) => a + b, 0))} in judgments against it` : 'none with a money judgment against it'
+      ? `${cases === 1 ? 'One lawsuit' : `${cases} lawsuits`}${
+          judgments.length > 0 ? `, with ${money(judgments.reduce((a, b) => a + b, 0))} in judgments against it` : ', no money judgment'
         }.`
       : '',
-    bankrupt > 0 ? `${bankrupt === 1 ? 'One bankruptcy is' : `${bankrupt} bankruptcies are`} on file.` : '',
-    stated > 0
-      ? `The amount stated on the record is ${money(stated)}${unstated ? '; the rest carries no figure' : ''}.`
-      : live > 0
-        ? 'No amount is stated anywhere on the record.'
-        : ''
+    bankrupt > 0 ? `${bankrupt === 1 ? 'One bankruptcy' : `${bankrupt} bankruptcies`} on file.` : ''
   ]
     .filter(Boolean)
     .join(' ')
@@ -262,7 +246,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
           : /^insufficient data$/i.test(industry)
             ? 'Industry classification returned insufficient data'
             : `Industry classified as ${industry}`,
-        summary: [what, where, permission].filter(Boolean).join(' ')
+        summary: [what, where, elsewhere, permission].filter(Boolean).join(' ')
       }
     ],
     [
@@ -283,8 +267,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       {
         headline: standingHeadline,
         summary:
-          standingSummary ||
-          `No liens, judgments or bankruptcies against the ${kind}, so there is no sign of claims that could reach funds in the account.`
+          standingSummary || 'Nothing on file.'
       }
     ]
   ])

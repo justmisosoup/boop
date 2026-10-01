@@ -1,3 +1,4 @@
+import licenseStore from '../data/licenses.json'
 import store from '../data/cityRegistrations.json'
 import rawRecords from '../data/records.json'
 import timeline from '../data/timeline.json'
@@ -53,4 +54,16 @@ export const priorNameRecords = (record: BusinessRecord): BusinessRecord[] => {
   return (rawRecords as unknown as BusinessRecord[])
     .filter((r) => r.id !== record.id && prior.some((n) => sameName(n, r.name)))
     .map(withCityRegistrations)
+}
+
+/**
+ * Licences, merged onto the records they belong to — the live record and
+ * every report's snapshot alike, so the card and the sentence read the same
+ * thing wherever the record came from. Keyed by name for the same reason the
+ * registrations are: `bun run pull` rewrites records.json and mints new ids.
+ */
+const LICENSES = (licenseStore as { licenses: Record<string, unknown[]> }).licenses
+export const withLicenses = (r: BusinessRecord): BusinessRecord => {
+  const found = LICENSES[nameKey(r.name)]
+  return found ? { ...r, licenses: found as BusinessRecord['licenses'] } : r
 }

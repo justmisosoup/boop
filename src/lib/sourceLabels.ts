@@ -24,7 +24,7 @@ const SHORT: Record<string, string> = {
   'Third-party profile': 'Profile',
   'Website crawl': 'Website',
   'Public records': 'Public records',
-  'Middesk connections': 'Connections',
+  'Middesk connections': 'Related businesses',
   'Source not stated': 'Not stated',
   registration: 'State registration',
   parsed_sos_document: 'SOS document',

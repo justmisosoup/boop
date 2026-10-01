@@ -79,3 +79,25 @@ export const FORMATION_CARD_INSIGHTS = [
  * gone. What the assessment cites beyond the card reads as one card.
  */
 export const IDENTITY_SECTIONS: ReadonlyArray<IdentitySection> = []
+
+/**
+ * The rows the industry-and-locations card carries, from the record whatever
+ * the report cited: what the business does, whether it is registered where
+ * its office is, the office itself and what USPS says of it, how many
+ * businesses share it, the website's address, and the licence its industry
+ * requires. `address_risk` is a grade over these and is not a row.
+ */
+export const OPERATIONS_CARD_INSIGHTS = [
+  'industry',
+  'sos_match',
+  'address_verification',
+  'address_property_type',
+  'address_deliverability',
+  'address_cmra',
+  'address_registered_agent',
+  'location_frequency',
+  'web_address_verification',
+  'license',
+  'license_person_match',
+  'license_address_match'
+] as const
