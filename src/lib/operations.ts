@@ -123,7 +123,33 @@ export const operationsOf = (record: BusinessRecord): Operations => {
   // Every place a source puts the business: the submitted address(es) first —
   // whatever they are, the customer gave them — then the rest, a registered
   // agent's address and anything that never parsed to a state left out.
-  const places = dedupeAddresses(record.addresses.filter((a) => a.state && (a.submitted || !isAgent(a))))
+  const deduped = dedupeAddresses(record.addresses.filter((a) => a.state && (a.submitted || !isAgent(a))))
+  /* The same suite once: a filing writes "Salt Lake Cty" where the rest say
+     "Salt Lake City", which `dedupeAddresses` (whole string) keeps as two. The
+     street line — suite included, so Ste 100 and Ste 207A stay two — and the
+     ZIP5 are the address; the submitted spelling wins, and the sources of both
+     are kept. */
+  const bySite = new Map<string, (typeof deduped)[number]>()
+  for (const a of deduped) {
+    const line = (a.fullAddress.split(',')[0] ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
+    const zip = (a.fullAddress.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1]
+    const key = line && zip ? `${line}|${zip}` : a.fullAddress
+    const prior = bySite.get(key)
+    if (!prior) bySite.set(key, a)
+    else {
+      const lead = prior.submitted || !a.submitted ? prior : a
+      const other = lead === prior ? a : prior
+      bySite.set(key, {
+        ...lead,
+        sources: [...new Set([...(lead.sources ?? []), ...(other.sources ?? [])])],
+        sourceRefs: [...(lead.sourceRefs ?? []), ...(other.sourceRefs ?? [])],
+        propertyType: lead.propertyType ?? other.propertyType,
+        deliverable: lead.deliverable ?? other.deliverable,
+        locationCount: lead.locationCount ?? other.locationCount
+      })
+    }
+  }
+  const places = [...bySite.values()]
   const locations: Location[] = [...places.filter((a) => a.submitted), ...places.filter((a) => !a.submitted)].map((a) => ({
     ...a,
     sourceNames: provenanceList(a)

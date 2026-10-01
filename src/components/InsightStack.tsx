@@ -53,7 +53,8 @@ export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; 
         className="flex w-full items-center justify-between gap-3 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left text-sm text-text-primary hover:bg-[var(--core-color-list-item-hover-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <span>
-          {open ? 'Hide insights' : 'Show insights'}
+          {/* The chevron says open or closed; the label only names what is behind it. */}
+          Insights
           <span className="ml-1.5 tabular-nums text-text-secondary">{rows.length}</span>
         </span>
         <ChevronDown

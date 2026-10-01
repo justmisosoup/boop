@@ -1104,8 +1104,13 @@ const corroboration = (
   const sources = [
     ...new Set([...carriers.flatMap((c) => provenanceList(c)), ...(siteStatesIt ? ['Website'] : [])])
   ].filter((x) => !REGISTRATION_SOURCES.has(x))
-  if (registrations.length === 0 && sources.length === 0) return {}
+  // The customer's own claim, where this is the name they gave: the card
+  // marks it submitted, and verified when a filing or the website states it.
+  const submittedName = (record.names ?? []).find((n) => n.submitted)?.name ?? record.name
+  const submitted = field === 'name' && nameKey(submittedName ?? '') === target ? { submitted: true } : {}
+  if (registrations.length === 0 && sources.length === 0) return submitted
   return {
+    ...submitted,
     ...(registrations.length > 0 ? { registrations } : {}),
     sources,
     source: '',
@@ -2677,5 +2682,118 @@ export const withSourceNames = (record: BusinessRecord) => (row: AttributeRow): 
   return Object.keys(names).length ? { ...row, sourceNames: names } : row
 }
 
-export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] =>
-  attributesForKey(rawKey, record).map(nameTheFiling(record)).map(withSourceNames(record))
+export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] => {
+  const rows = attributesForKey(rawKey, record).map(nameTheFiling(record)).map(withSourceNames(record))
+  if (rows.some((r) => !isPlaceholder(r.value))) return rows
+  // Nothing came back: say what the check ran on instead — the record's own
+  // data, as the dashboard's card for the check shows it.
+  const checked = checkedRows(rawKey.split(':')[0], record)
+  return checked.length > 0 ? checked : rows
+}
+
+/**
+ * What a check ran on, for a check that returned nothing.
+ *
+ * Middesk's review tasks carry no sources for a clean result — "No Watchlist
+ * hits were identified" arrives with an empty list — so a row that opened on
+ * nothing could not say what was searched. The dashboard shows it on the
+ * check's card: the names screened and the lists searched, the business and
+ * people a court search ran on, the URL the crawl was given. These are those,
+ * from the record, each under the label the card uses.
+ */
+const checkedRows = (key: string, record: BusinessRecord): AttributeRow[] => {
+  const submittedPeople = record.people.filter((p) => p.submitted && p.name)
+  const submittedAddresses = dedupeAddresses(record.addresses.filter((a) => a.submitted))
+  const business = (label = 'Business name'): AttributeRow => ({
+    group: 'name',
+    label,
+    value: record.name,
+    source: '',
+    sources: [],
+    submitted: true
+  })
+  const people = (): AttributeRow[] =>
+    submittedPeople.map((p) => ({ group: 'people' as const, label: 'Person', value: p.name, source: '', sources: [], submitted: true }))
+  const addresses = (): AttributeRow[] =>
+    submittedAddresses.map((a) => ({
+      group: 'address' as const,
+      label: 'Address',
+      value: a.fullAddress,
+      source: '',
+      sources: provenanceList(a),
+      submitted: true,
+      refs: a.sourceRefs,
+      matchOn: 'address' as const,
+      matchValue: a.fullAddress
+    }))
+  // Not "None submitted" — that reads as a placeholder and is dropped.
+  const none = (label: string): AttributeRow => ({ label, value: 'No website submitted', source: '', sources: [] })
+
+  switch (key) {
+    case 'watchlist': {
+      const lists = (record.watchlist?.lists ?? []).map((l) => l.title ?? l.abbr).filter((x): x is string => Boolean(x))
+      return [
+        ...screened(record),
+        ...(lists.length > 0
+          ? [{ group: 'screening' as const, label: `Lists searched (${lists.length})`, value: lists.join(', '), source: 'Watchlist screening', sources: ['Watchlist screening'], span: 'full' as const }]
+          : [])
+      ]
+    }
+    case 'politically_exposed_persons': {
+      // PEP screens people only: with none submitted, say so.
+      const people = screened(record).filter((r) => r.label === 'Person screened')
+      return people.length > 0 ? people : [{ group: 'screening' as const, label: 'People screened', value: 'No people submitted', source: '', sources: [] }]
+    }
+    case 'adverse_media':
+      return screened(record)
+    case 'liens':
+    case 'litigations':
+    case 'bankruptcies':
+      return [business('Business searched'), ...people()]
+    case 'website_url_discovery':
+    case 'web_business_name_verification':
+    case 'web_address_verification':
+    case 'web_person_verification':
+      return [
+        record.website?.url
+          ? { group: 'website' as const, label: 'Website', value: record.website.url, source: 'Website', sources: ['Website'] }
+          : none('Website'),
+        ...(key === 'web_business_name_verification' ? [business('Submitted business name')] : []),
+        ...(key === 'web_address_verification' ? addresses() : []),
+        ...(key === 'web_person_verification' ? people() : [])
+      ]
+    case 'profile_discovery':
+      return [business('Business searched')]
+    case 'business_connections':
+      return [business(), ...addresses(), ...people()]
+    case 'sos_not_found':
+    case 'sos_match':
+      return [business('Submitted business name'), ...addresses()]
+    case 'address_property_type':
+      return addresses()
+    case 'entity_type':
+      return [business('Submitted business name')]
+    case 'sos_domestic':
+      return [business('Submitted business name'), ...(record.formation?.state ? [{ group: 'formation' as const, label: 'Formation state', value: stateName(record.formation.state) ?? record.formation.state, source: '', sources: [] }] : [])]
+    case 'tin_issued': {
+      const tin = record.tin as { tin?: string } | null
+      return [
+        ...(tin?.tin ? [{ group: 'tin' as const, label: 'TIN', value: maskTin(tin.tin), source: 'IRS TIN record', sources: ['IRS TIN record'], submitted: true }] : []),
+        ...(record.formation?.date ? [{ group: 'formation' as const, label: 'Formation date', value: longDate(record.formation.date) ?? record.formation.date, source: '', sources: [] }] : [])
+      ]
+    }
+    default:
+      return []
+  }
+}
+
+/** Every name the screens ran on: the business's names, then each person. */
+const screened = (record: BusinessRecord): AttributeRow[] => {
+  const names = [...new Set([record.name, ...(record.names ?? []).map((n) => n.name).filter(Boolean)])]
+  return [
+    ...names.map((n) => ({ group: 'screening' as const, label: 'Business screened', value: n, source: '', sources: [] })),
+    ...record.people
+      .filter((p) => p.submitted && p.name)
+      .map((p) => ({ group: 'screening' as const, label: 'Person screened', value: p.name, source: '', sources: [], submitted: true }))
+  ]
+}

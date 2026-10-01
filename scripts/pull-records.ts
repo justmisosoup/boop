@@ -270,7 +270,18 @@ const normalise = (b: Any) => ({
             id: x.id,
             entityName: x.entity_name ?? null,
             aliases: x.entity_aliases ?? [],
-            url: x.agency_information_url ?? null
+            // The entry itself, then the list and the agency: a hit is opened
+            // at its own page, not at the list's front door.
+            url: x.url ?? x.agency_list_url ?? x.agency_information_url ?? null,
+            agencyListUrl: x.agency_list_url ?? null,
+            agencyInfoUrl: x.agency_information_url ?? null,
+            // What the listing says of the entity beyond its name — where it
+            // is, when it was listed, how closely the name matched.
+            addresses: (x.addresses ?? []).map((a: Any) => a.full_address).filter(Boolean),
+            listedAt: x.listed_at ?? null,
+            score: typeof x.score === 'number' ? x.score : null,
+            status: x.status ?? null,
+            listCountry: x.list_country ?? null
           }))
         }))
       }
@@ -312,6 +323,8 @@ const normalise = (b: Any) => ({
         results: (b.adverse_media_screening.results ?? []).map((r: Any) => ({
           id: r.id,
           matchScore: typeof r.match_score === 'number' ? r.match_score : null,
+          status: r.status ?? null,
+          riskScores: r.risk_scores ?? null,
           items: (r.items ?? []).map((i: Any) => ({
             sourceName: i.source_name ?? null,
             title: i.title ?? null,
@@ -323,7 +336,8 @@ const normalise = (b: Any) => ({
               name: x.name,
               confidence: x.confidence_level ?? null
             })),
-            sentiment: (i.flags?.sentiments ?? [])[0]?.name ?? null
+            sentiment: (i.flags?.sentiments ?? [])[0]?.name ?? null,
+            sentimentConfidence: (i.flags?.sentiments ?? [])[0]?.confidence_level ?? null
           }))
         }))
       }

@@ -59,6 +59,31 @@ const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
           }))
         }
       : record.pep,
+    // Each watchlist hit's own page, address, listing date and score, and each
+    // adverse-media result's status — pulled after the reports were written,
+    // from the same result on the live record (by id).
+    watchlist: record.watchlist
+      ? {
+          ...record.watchlist,
+          lists: record.watchlist.lists.map((l) => ({
+            ...l,
+            results: (l.results ?? []).map((r) => ({
+              ...((live.watchlist?.lists ?? []).flatMap((x) => x.results ?? []).find((x) => x.id === r.id) ?? {}),
+              ...r,
+              url: (live.watchlist?.lists ?? []).flatMap((x) => x.results ?? []).find((x) => x.id === r.id)?.url ?? r.url
+            }))
+          }))
+        }
+      : record.watchlist,
+    adverseMedia: record.adverseMedia
+      ? {
+          ...record.adverseMedia,
+          results: record.adverseMedia.results.map((r) => {
+            const same = (live.adverseMedia?.results ?? []).find((x) => x.id === r.id)
+            return same ? { ...same, ...r, status: r.status ?? same.status, items: same.items.length >= r.items.length ? same.items : r.items } : r
+          })
+        }
+      : record.adverseMedia,
     // The connections with each shared person's titles, pulled after the
     // reports were written. A snapshot's own list named people as strings.
     connections: (live.connections ?? record.connections)?.map((c) => ({

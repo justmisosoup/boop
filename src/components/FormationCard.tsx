@@ -519,7 +519,19 @@ export const FormationCard = ({
   /* The TIN, when the record holds one: the number obscured to its last four,
      submitted by the customer and checked against the IRS — the check's own
      row is the card's (`tin` in FORMATION_CARD_INSIGHTS). */
-  const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean } | null
+  const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean; issued?: boolean } | null
+  /* Not issued: the IRS holds no record of the number yet. For a business
+     formed in the last few months that is the IRS's processing delay, not a
+     finding, and the cell says so — with how recently it was formed. */
+  const formedDays = record.formation?.date
+    ? Math.floor((Date.now() - new Date(`${record.formation.date}T00:00:00`).getTime()) / 86_400_000)
+    : undefined
+  const tinNote =
+    tinRec?.tin && tinRec.issued === false
+      ? formedDays !== undefined && formedDays <= 120
+        ? `The IRS has not issued the TIN yet. The business was formed ${formedDays === 0 ? 'today' : `${formedDays} day${formedDays === 1 ? '' : 's'} ago`}, and new businesses often take a few weeks to appear in the IRS database.`
+        : 'The TIN has not been issued by the IRS.'
+      : undefined
   const tinCell: AttributeCell | undefined = tinRec?.tin
     ? {
         key: 'tin',
@@ -530,7 +542,11 @@ export const FormationCard = ({
             <AttributeSources sources={['IRS TIN record']} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
           </span>
         ),
-        values: [{ value: maskTin(tinRec.tin) }]
+        values: [
+          {
+            value: maskTin(tinRec.tin)
+          }
+        ]
       }
     : undefined
 
@@ -601,7 +617,7 @@ export const FormationCard = ({
         />
       )
     ) : tier === 'submitted' ? (
-      <SubmittedChip onJumpToSource={onJumpToSource} />
+      <SubmittedChip verified={websiteStatesName(record, record.name)} onJumpToSource={onJumpToSource} />
     ) : (
       <AttributeSources sources={[CITY]} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
     )
@@ -634,6 +650,8 @@ export const FormationCard = ({
         : tier === 'submitted'
           ? submittedFoundNote(record)
           : undefined
+  // Beside the IRS note the filing reads as plain fact: "is active", not "is still active".
+  const summary = [tinNote ? note?.replace(/ is still active/, ' is active') : note, tinNote].filter(Boolean).join(' ') || undefined
 
   /*
    * A sole proprietorship, split the way the Formation card is.
@@ -729,11 +747,11 @@ export const FormationCard = ({
       <CardHeader
         title={title}
         trailing={tier === 'formation' || tier === 'submitted' || soleItems ? undefined : chip}
-        className={note ? 'border-b-0 pb-1' : undefined}
+        className={summary ? 'border-b-0 pb-1' : undefined}
       />
-      {note && (
+      {summary && (
         <div className="border-b border-[var(--core-color-border-divider)] px-4 pb-3">
-          <span className="block text-sm leading-5 text-text-secondary">{note}</span>
+          <span className="block text-sm leading-5 text-text-secondary">{summary}</span>
         </div>
       )}
       <AttributeCells items={soleItems ?? items} columns={3} className="-mb-px" />

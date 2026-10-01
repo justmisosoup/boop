@@ -329,7 +329,16 @@ export type BusinessRecord = {
         id: string
         entityName: string | null
         aliases?: string[]
+        /** The entry's own page where the list has one; else the list, else the agency. */
         url: string | null
+        agencyListUrl?: string | null
+        agencyInfoUrl?: string | null
+        addresses?: string[]
+        listedAt?: string | null
+        /** The provider's name-match score, 0–100. */
+        score?: number | null
+        status?: string | null
+        listCountry?: string | null
       }>
     }>
   } | null
@@ -358,12 +367,15 @@ export type BusinessRecord = {
     results: Array<{
       id: string
       matchScore?: number | null
+      status?: string | null
+      riskScores?: Record<string, unknown> | null
       items: Array<{
         sourceName: string | null
         title: string | null
         url: string | null
         risks?: Array<{ name: string; confidence: string | null }>
         sentiment?: string | null
+        sentimentConfidence?: string | null
       }>
     }>
   } | null
@@ -928,7 +940,12 @@ export const PROTOTYPE_INSIGHTS: ReadonlySet<string> = new Set([
   'dba_owner_filing',
   'linked_domestic',
   'former_formation',
-  'name_entity_type'
+  'name_entity_type',
+  // From the NPI Registry lookup (`scripts/pull-licenses.ts`): no Middesk
+  // review task reaches a licence.
+  'license',
+  'license_person_match',
+  'license_address_match'
 ])
 
 const derived = (record: BusinessRecord): Derived[] => [
@@ -1045,12 +1062,9 @@ export const presented = (record: BusinessRecord, results: Derived[]): Derived[]
     .map((d) => {
       if (d.insightId !== 'adverse_media') return d
       const found = (record.adverseMedia?.results ?? []).length > 0
-      return {
-        ...d,
-        statement: found ? 'Adverse media was found' : d.statement,
-        because: found ? 'Adverse media was found' : d.because,
-        evidence: d.evidence?.filter((e) => !RISK_GRADE.test(e))
-      }
+      // The platform's sentence stands; only the grade lines leave the evidence.
+      void found
+      return { ...d, evidence: d.evidence?.filter((e) => !RISK_GRADE.test(e)) }
     })
 }
 

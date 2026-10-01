@@ -328,3 +328,75 @@ export const screeningOf = (record: BusinessRecord): Screening => {
 /** A subject's findings on one screen. */
 export const findingsFor = (s: Screening, subject: string, screen: Screen) =>
   s.findings.filter((f) => f.subject === subject && f.screen === screen)
+
+/**
+ * The screens as the platform reports them: every result each screen
+ * returned, tied to the name it was run on, and what was screened. No
+ * dismissals — a result is a hit, and the analyst dispositions it.
+ */
+export type WatchlistHit = NonNullable<NonNullable<BusinessRecord['watchlist']>['lists'][number]['results']>[number] & {
+  list: { title: string | null; abbr: string | null; agency: string | null; agencyAbbr: string | null; organization: string | null }
+}
+export type PepHit = NonNullable<BusinessRecord['pep']>['results'][number]
+export type MediaHit = NonNullable<BusinessRecord['adverseMedia']>['results'][number]
+
+/** The name a result was run on: who it is to the record. */
+export type ScreenedName = {
+  name: string
+  kind: 'business' | 'person'
+  submitted: boolean
+  /** Where the record holds the name — its sources and their references, so
+   *  the card can chip them as every other cell chips its sources. */
+  sources?: string[]
+  refs?: Array<{ id: string; type: string; metadata?: Record<string, unknown> }>
+}
+export type Screened = {
+  watchlist: { hits: Array<ScreenedName & { hit: WatchlistHit }>; names: string[]; lists: number; ran: boolean }
+  pep: { hits: Array<ScreenedName & { hit: PepHit }>; names: string[]; ran: boolean }
+  media: { hits: Array<ScreenedName & { hit: MediaHit }>; names: string[]; ran: boolean }
+}
+
+export const screenedOf = (record: BusinessRecord): Screened => {
+  const business = (record.names ?? []).find((n) => n.submitted)?.name ?? record.name
+  const businessNames = [...new Set([record.name, ...(record.names ?? []).map((n) => n.name).filter(Boolean)])]
+  const people = [...new Set(record.people.filter((p) => p.submitted && p.name).map((p) => p.name))]
+  const holders: Holder[] = [...(record.names ?? []).map((n) => ({ ...n, entity: true })), ...record.people]
+  // Who a result was returned against: the names carrying its id; else the
+  // business. Each with what it is to the record — a business name or a
+  // person, submitted by the customer or found on a filing.
+  const namesFor = (screen: Screen, id: string): ScreenedName[] => {
+    const held = holders.filter((h) => (h.sourceRefs ?? []).some((r) => r.type === REF[screen] && r.id === id))
+    const seen = new Set<string>()
+    const out: ScreenedName[] = []
+    const own = holders.find((h) => h.entity && h.name === business) ?? ({ name: business, entity: true, submitted: true } as Holder)
+    for (const h of held.length > 0 ? held : [own]) {
+      if (seen.has(h.name)) continue
+      seen.add(h.name)
+      out.push({
+        name: h.name,
+        kind: h.entity ? 'business' : 'person',
+        submitted: Boolean(h.submitted),
+        sources: (h as Holder & { sources?: string[] }).sources,
+        refs: (h.sourceRefs ?? []).filter((r) => !r.type.endsWith('_result'))
+      })
+    }
+    return out
+  }
+
+  const watchlistHits = (record.watchlist?.lists ?? []).flatMap((l) =>
+    (l.results ?? []).flatMap((r) =>
+      namesFor('watchlist', r.id).map((who) => ({
+        ...who,
+        hit: { ...r, list: { title: l.title, abbr: l.abbr, agency: l.agency, agencyAbbr: l.agencyAbbr, organization: l.organization } }
+      }))
+    )
+  )
+  const pepHits = (record.pep?.results ?? []).flatMap((r) => namesFor('pep', r.id).map((who) => ({ ...who, hit: r })))
+  const mediaHits = (record.adverseMedia?.results ?? []).flatMap((r) => namesFor('media', r.id).map((who) => ({ ...who, hit: r })))
+
+  return {
+    watchlist: { hits: watchlistHits, names: [...businessNames, ...people], lists: (record.watchlist?.lists ?? []).length, ran: Boolean(record.watchlist) },
+    pep: { hits: pepHits, names: people, ran: Boolean(record.pep) },
+    media: { hits: mediaHits, names: [...businessNames, ...people], ran: Boolean(record.adverseMedia) }
+  }
+}

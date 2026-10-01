@@ -106,6 +106,15 @@ export const statementFor = (
   record: BusinessRecord,
   message?: string | null
 ): string => {
+  /*
+   * The platform's own sentence, verbatim, whenever the record carries one.
+   * The rewrites below — the industry's NAICS name, "related businesses",
+   * "the website …", the PLLC entity type, "No valid watchlist hits" — read
+   * differently from the dashboard, so a reviewer comparing the two saw two
+   * products. They stay as the fallback for a task that arrives without a
+   * message.
+   */
+  if (message && message.trim()) return message
   /**
    * The one place the product's own sentence is corrected rather than repeated.
    *

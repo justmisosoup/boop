@@ -12,7 +12,7 @@ import { GROUPS, type GroupId } from '../lib/groups'
 import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
 import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { filedName, longDate, roleLabel as filedRole } from '../lib/attributes'
+import { filedName, longDate, maskTin, roleLabel as filedRole } from '../lib/attributes'
 import { NOT_PROVIDED, registrationState } from '../lib/registrationStatus'
 import { entityFormLabel } from '../lib/normalise'
 import { formationCardFilingOf } from '../lib/linkedFormation'
@@ -392,6 +392,33 @@ export const sourcesFor = (
         ref,
         bare: true
       })
+    }
+  }
+
+  // The IRS's own record of the TIN: the number the customer submitted, the
+  // name the IRS holds against it, and what the IRS said — the same sentence
+  // the assessment shows. The card read only the masked number, which named
+  // the source without saying what it returned.
+  const tin = record.tin as { tin?: string; name?: string } | null
+  if (tin?.tin) {
+    const card = get(namedCard('IRS TIN record'), 'IRS TIN record')
+    const held = card.supplied.get('tin') ?? []
+    const has = (label: string) => held.some(({ row }) => row.label === label)
+    const fact = (label: string, value: string): Supplied => ({
+      row: { group: 'tin', label, value, source: '', sources: [] },
+      bare: true
+    })
+    if (!has('TIN')) add(card.supplied, 'tin', fact('TIN', maskTin(tin.tin)))
+    if (tin.name && !has('IRS name')) add(card.supplied, 'tin', fact('IRS name', tin.name))
+    // Issuance first where the IRS has not issued the number: that is why
+    // there is no record for the combination, and the second sentence reads
+    // as its consequence.
+    for (const id of ['tin_issued', 'tin']) {
+      // Only what the IRS returned: a check the record never reported carries
+      // a placeholder sentence, not a result.
+      const said = results.find((r) => r.insightId === id && !r.notReported)?.statement
+      if (said && !held.some(({ row }) => row.value === said))
+        add(card.supplied, 'tin', fact('IRS result', said))
     }
   }
 

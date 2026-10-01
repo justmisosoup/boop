@@ -52,7 +52,12 @@ const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
  * strips (`Report/ClaimsStrips.tsx`) and its summary all still exist — remove
  * the id here to bring the card back.
  */
-export const HIDDEN_SECTIONS: ReadonlySet<string> = new Set(['skill-financial-standing'])
+export const HIDDEN_SECTIONS: ReadonlySet<string> = new Set([
+  'skill-financial-standing',
+  // Identity's leftover rows rendered as an "Other" card under the Formation
+  // card, which already carries the filings, the name and the TIN.
+  'skill-kyb-identification'
+])
 
 /**
  * What is actually happening while the analysis is being written, in the order
@@ -573,7 +578,7 @@ export const SectionBody = ({
         // The compliance screens: the hits, then what was dismissed.
         body={
           section.id === 'skill-kyb-3' && record ? (
-            <ScreeningResults record={record} />
+            <ScreeningResults record={record} onJumpToSource={onJumpToSource} />
           ) : section.id === 'skill-kyb-activity' && record ? (
             // What it does, where, and the licence its industry needs.
             <OperationsBody record={record} onJumpToSource={onJumpToSource} />

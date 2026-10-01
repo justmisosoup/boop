@@ -5,7 +5,7 @@ import { operationsOf } from './operations'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
-import { screeningOf, type Screening } from './screening'
+import { screenedOf, type Screened } from './screening'
 
 /**
  * What each area checks, for this business.
@@ -20,23 +20,28 @@ const NAMES_NO_MEMBERS: ReadonlySet<string> = new Set(['NY'])
 /** One area's finding: the clause on the card, and the sentences under it. */
 export type AreaSummary = { headline: string; summary: string }
 
-/** What the screens found, and what they dismissed, counted. */
-const screeningSummary = (s: Screening): string => {
-  const people = s.subjects.filter((x) => x.key !== 'business').length
-  const who = people > 0 ? `the business or the ${people === 1 ? 'person' : `${people} people`} submitted with it` : 'the business'
-  const hitNames = [...new Set(s.findings.map((f) => f.against))]
-  const named = hitNames.length <= 2 ? hitNames.join(' and ') : `${hitNames.length} names`
-  const first =
-    s.findings.length === 0
-      ? `Nothing on ${who}.`
-      : `${s.findings.length === 1 ? 'One hit' : `${s.findings.length} hits`} on ${named}.`
-  const n = s.dismissed.length
-  // Dismissed, counted; the table says on whom and why.
-  const second =
-    n === 0
-      ? ''
-      : ` ${n === 1 ? 'One' : String(n)} ${s.findings.length > 0 ? 'other ' : ''}${n === 1 ? 'result was' : 'results were'} dismissed.`
-  return first + second
+/** What the screens returned, as the platform counts them: every hit a hit. */
+const screeningSummary = (s: Screened): string => {
+  const list = (xs: string[]) => (xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`)
+  // Up to three names; beyond that the count, so Zendesk's eleven media
+  // matches do not become the sentence.
+  const names = (hits: Array<{ name: string }>) => {
+    const all = [...new Set(hits.map((h) => h.name))]
+    return all.length > 3 ? [`${all.length} names`] : all
+  }
+  const parts = [
+    s.watchlist.hits.length > 0
+      ? `${s.watchlist.hits.length === 1 ? 'One watchlist hit' : `${s.watchlist.hits.length} watchlist hits`} on ${list(names(s.watchlist.hits))}`
+      : '',
+    s.pep.hits.length > 0 ? `${s.pep.hits.length === 1 ? 'one PEP match' : `${s.pep.hits.length} PEP matches`} on ${list(names(s.pep.hits))}` : '',
+    s.media.hits.length > 0 ? `adverse media on ${list(names(s.media.hits))}` : ''
+  ].filter(Boolean)
+  if (parts.length === 0) {
+    const people = s.pep.names.length
+    return `Nothing on the business or the ${people === 0 ? 'names' : people === 1 ? 'person' : `${people} people`} submitted with it.`
+  }
+  const sentence = parts.join('; ')
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
 }
 
 export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<string, AreaSummary> => {
@@ -45,7 +50,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const upper = (entity ?? '').toUpperCase()
   const state = record.formation ? stateName(record.formation.state) : undefined
   const industry = industrySectorOf(record)
-  const screened = screeningOf(record)
+  const screened = screenedOf(record)
 
   // A professional entity is owned by licensed practitioners; the licence
   // record answers it, and is named rather than restated.
@@ -217,21 +222,11 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     [
       'skill-kyb-3',
       {
-        // A valid watchlist hit outranks the media; media matched outranks a
-        // clean screen — the card is named for what it found.
-        // What the screens found on the business and the submitted people
-        // (`screeningOf`); what they returned on anyone else is dismissed.
-        headline:
-          screened.findings.length > 0
-            ? `${screened.findings.length} screening ${screened.findings.length === 1 ? 'hit' : 'hits'} to review`
-            : 'No compliance screening hits',
-        /* Only what the headline and the rows do not already say. A clean
-           screen needs no sentence: "No sanctions or watchlist hits" over
-           "No watchlist hits were identified" was the same fact twice, and a
-           summary saying it again made three. Names returned and ruled out are
-           the evidence's to name; the card says only what they were. */
-        // The outcome in two plain sentences; the table under it says who
-        // and why, row by row.
+        // Counted as the platform counts: every result a screen returned.
+        headline: (() => {
+          const n = screened.watchlist.hits.length + screened.pep.hits.length + screened.media.hits.length
+          return n > 0 ? `${n} screening ${n === 1 ? 'hit' : 'hits'} to review` : 'No compliance screening hits'
+        })(),
         summary: screeningSummary(screened)
       }
     ],

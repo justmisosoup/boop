@@ -14,10 +14,16 @@ import { AttributeSources, SubmittedChip } from '../Provenance'
 import { Strip } from './Strip'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
-/** "San Francisco, CA" from a full address. */
+/** USPS's city abbreviations, written out so one city is one tile. */
+const CITY_ABBR: Record<string, string> = { cty: 'City', hts: 'Heights', mt: 'Mount', ft: 'Fort', spgs: 'Springs', jct: 'Junction', vlg: 'Village', twp: 'Township' }
+/** "San Francisco, CA" from a full address — "Salt Lake Cty" read as Salt Lake City. */
 const placeOf = (a: Location) => {
   const parts = a.fullAddress.split(',').map((x) => x.trim())
-  const city = parts.length >= 3 ? parts[parts.length - 2] : parts[1]
+  const raw = parts.length >= 3 ? parts[parts.length - 2] : parts[1]
+  const city = raw
+    ?.split(/\s+/)
+    .map((w) => CITY_ABBR[w.toLowerCase()] ?? w)
+    .join(' ')
   return city ? `${city}, ${a.state}` : (a.state ?? '')
 }
 const titleCase = (n: string) => n.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
@@ -248,40 +254,6 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
 
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
-      {/* Every place the record puts the business — the submitted office
-          first, with its mark — each opening its addresses as the grid up
-          top states a fact: Submitted, the filings that list it, the licence
-          practised from it, then the address. */}
-      {places.length > 0 && (
-        <Strip
-          label="Locations"
-          tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
-            const here = at(p)
-            const submitted = here.some((a) => a.submitted)
-            const undeliverable = here.some((a) => a.deliverable === false)
-            // The mark is the post's: a check where it delivers, an X where
-            // it cannot. The colour is the office's — green for the submitted
-            // one, grey for the rest, red wherever the post cannot reach.
-            const deliverable = here.some((a) => a.deliverable === true)
-            return {
-              key: p,
-              chip: (
-                <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
-                  {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
-                  {p}
-                  {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
-                </MetaChip>
-              )
-            }
-          })}
-          detail={(p) => (
-            <AttributeCells
-              className="-mb-px"
-              items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, a.submitted ? 'Office' : 'Address', ops, record, onJumpToSource))}
-            />
-          )}
-        />
-      )}
       {/* One tile: what the Prohibited scheme made of it, opening every
           classification — NAICS, MCC, SIC — as the dashboard's table. */}
       {industry.table.length > 0 && industry.prohibited !== 'unknown' && (
@@ -356,6 +328,40 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
                     }))
           }
           detail={() => <AttributeCells items={[licence]} className="-mb-px" />}
+        />
+      )}
+      {/* Every place the record puts the business — the submitted office
+          first, with its mark — each opening its addresses as the grid up
+          top states a fact: Submitted, the filings that list it, the licence
+          practised from it, then the address. */}
+      {places.length > 0 && (
+        <Strip
+          label="Locations"
+          tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
+            const here = at(p)
+            const submitted = here.some((a) => a.submitted)
+            const undeliverable = here.some((a) => a.deliverable === false)
+            // The mark is the post's: a check where it delivers, an X where
+            // it cannot. The colour is the office's — green for the submitted
+            // one, grey for the rest, red wherever the post cannot reach.
+            const deliverable = here.some((a) => a.deliverable === true)
+            return {
+              key: p,
+              chip: (
+                <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
+                  {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
+                  {p}
+                  {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
+                </MetaChip>
+              )
+            }
+          })}
+          detail={(p) => (
+            <AttributeCells
+              className="-mb-px"
+              items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, a.submitted ? 'Office' : 'Address', ops, record, onJumpToSource))}
+            />
+          )}
         />
       )}
     </div>

@@ -69,7 +69,8 @@ export const FORMATION_CARD_INSIGHTS = [
   'dba_owner_filing',
   'dba_name',
   'web_business_name_verification',
-  'tin'
+  'tin',
+  'tin_issued'
 ] as const
 
 /*
@@ -97,6 +98,13 @@ export const OPERATIONS_CARD_INSIGHTS = [
   'address_registered_agent',
   'location_frequency',
   'web_address_verification',
+  // Web presence: whether a site and profiles exist, are live, and name the
+  // submitted person — what the business shows of itself.
+  'website_url_discovery',
+  'website_status',
+  'profile_discovery',
+  'profile_status',
+  'web_person_verification',
   'license',
   'license_person_match',
   'license_address_match'
