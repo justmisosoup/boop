@@ -82,8 +82,13 @@ export const standingOf = (reg: Registration): Standing => {
     part(reg.subStatus?.toUpperCase()),
     part(reg.statusDetails)
   ].join('|')
-  const alias = TABLE.aliases[raw]
-  const entry = TABLE.entries[alias?.to ?? raw]
+  /* The details are matched as written first, then in capitals: Wyoming
+     writes the same standing "ACTIVE" on one filing and "Active" on the next
+     (CJG Holding's), and the second read as a combination never seen. */
+  const upper = raw.split('|').slice(0, 3).concat(part(reg.statusDetails?.toUpperCase())).join('|')
+  const key = TABLE.aliases[raw] || TABLE.entries[raw] ? raw : upper
+  const alias = TABLE.aliases[key]
+  const entry = TABLE.entries[alias?.to ?? key]
   const flags = [...(alias?.flags ?? []), ...(entry?.flags ?? [])]
   if (!entry)
     return { category: 'UNRESOLVED', assessment: TABLE._meta.assessment.UNRESOLVED, provisional: false, flags: [...flags, 'UNSEEN_STATUS'] }

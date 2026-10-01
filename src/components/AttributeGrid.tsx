@@ -98,17 +98,26 @@ export const cell = (
  * Counted over a running column rather than by `length % 2`, which one `span`
  * in the middle throws out by one for everything after it.
  */
-const spans = (items: AttributeCell[]) => {
-  const out: boolean[] = []
+/** How many columns each cell takes: a full cell the row, and the last cell
+ *  of a row cut short — the end of the list, or a full cell next — the rest
+ *  of it, so no row ends on an empty slot. */
+const spans = (items: AttributeCell[], cols = 2) => {
+  const out: number[] = []
   let col = 0
   items.forEach((item, i) => {
-    const alone = col === 0 && (i === items.length - 1 || items[i + 1].span === 'full')
-    const full = item.span === 'full' || alone
-    out.push(full)
-    col = full ? 0 : col === 0 ? 1 : 0
+    if (item.span === 'full') {
+      out.push(cols)
+      col = 0
+      return
+    }
+    const cut = i === items.length - 1 || items[i + 1].span === 'full'
+    const take = cut ? cols - col : 1
+    out.push(take)
+    col = (col + take) % cols
   })
   return out
 }
+const SPAN: Record<number, string> = { 2: 'sm:col-span-2', 3: 'sm:col-span-3' }
 
 const Mark = ({ verified }: { verified?: boolean }) => {
   const what = verified ? 'Submitted, verified' : 'Submitted, not verified'
@@ -192,19 +201,22 @@ const CellBody = ({ item }: { item: AttributeCell }) => (
  */
 export const AttributeCells = ({
   items,
+  columns = 2,
   className
 }: {
   items: AttributeCell[]
+  /** Two by default; the Formation card reads three across. */
+  columns?: 2 | 3
   className?: string
 }) => {
   if (items.length === 0) return null
-  const wide = spans(items)
+  const wide = spans(items, columns)
 
   return (
-    <div className={cn('-mr-px grid', items.length > 1 && 'sm:grid-cols-2', className)}>
+    <div className={cn('-mr-px grid', items.length > 1 && (columns === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'), className)}>
       {items.map((item, i) => {
         const key = item.key ?? `${item.label ?? ''}-${i}`
-        const cls = cn('attribute-cell p-4', wide[i] && 'sm:col-span-2')
+        const cls = cn('attribute-cell p-4', SPAN[wide[i]])
 
         return item.onSelect ? (
           <button

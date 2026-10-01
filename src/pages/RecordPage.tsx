@@ -16,7 +16,7 @@ import {
   type FloatingPanelState
 } from '@/core'
 
-import { AttributeGroupDetail, attributeGroups } from '../components/AttributesTab'
+const HIDDEN_GROUPS: ReadonlySet<string> = new Set(['liens', 'litigation', 'bankruptcy'])
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
@@ -412,7 +412,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const scopeGroupFor = useMemo(() => makeGroupFor(categoriesOf(scopeRecord)), [scopeRecord])
   const scopeGrouped = useMemo(
     () =>
-      GROUPS.map((g) => ({
+      // Liens, litigation and bankruptcy are stashed with the Financial
+      // Standing card (`HIDDEN_SECTIONS`): derived and scored, not shown.
+      GROUPS.filter((g) => !HIDDEN_GROUPS.has(g.id)).map((g) => ({
         ...g,
         rows: scopeResults.filter((r) => !r.notReported && scopeGroupFor(r.insightId) === g.id)
       })).filter((g) => g.rows.length > 0),
@@ -431,10 +433,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const changedSince = useMemo(
     () => (view && analysis.selected?.snapshot ? changedInsights(results, live) : []),
     [view, analysis.selected?.snapshot, results, live]
-  )
-  const scopeAttributeGroups = useMemo(
-    () => attributeGroups(scopeRecord, scopeResults, scopeGroupFor),
-    [scopeRecord, scopeResults, scopeGroupFor]
   )
   const scopeSources = useMemo(
     () => sourcesFor(scopeRecord, scopeResults, scopeGroupFor),
@@ -962,20 +960,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                       ))}
                     </InsightStack>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {panelView === 'attributes' && (
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 panel-scroll">
-                {drift}
-                {scopeAttributeGroups.map((group) => (
-                  <AttributeGroupDetail
-                    key={group.id}
-                    group={group}
-                    record={scopeRecord}
-                    onJumpToSource={jumpToSource}
-                  />
                 ))}
               </div>
             )}

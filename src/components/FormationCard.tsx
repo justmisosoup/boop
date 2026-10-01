@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 import { Surface, Text } from '@/core'
 
-import { currentDomesticRows, formationIdentityRows, websiteStatesName, type AttributeRow } from '../lib/attributes'
+import { currentDomesticRows, formationIdentityRows, maskTin, websiteStatesName, type AttributeRow } from '../lib/attributes'
 import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { FORMATION_CARD_ID } from '../lib/needsReview'
 import { negativesFor } from '../lib/identityScore'
@@ -516,6 +516,24 @@ export const FormationCard = ({
           ]
         }
       : undefined
+  /* The TIN, when the record holds one: the number obscured to its last four,
+     submitted by the customer and checked against the IRS — the check's own
+     row is the card's (`tin` in FORMATION_CARD_INSIGHTS). */
+  const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean } | null
+  const tinCell: AttributeCell | undefined = tinRec?.tin
+    ? {
+        key: 'tin',
+        label: 'TIN',
+        badge: (
+          <span className="flex flex-wrap items-center gap-1">
+            <SubmittedChip verified={Boolean(tinRec.verified) && !tinRec.mismatch} onJumpToSource={onJumpToSource} />
+            <AttributeSources sources={['IRS TIN record']} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
+          </span>
+        ),
+        values: [{ value: maskTin(tinRec.tin) }]
+      }
+    : undefined
+
   const items = [
     {
       ...lead,
@@ -568,7 +586,8 @@ export const FormationCard = ({
             )
           }
         : c
-    )
+    ),
+    ...(tinCell ? [tinCell] : [])
   ]
 
   const chip =
@@ -690,7 +709,8 @@ export const FormationCard = ({
                   ]
                 }
               ]
-            : [])
+            : []),
+          ...(tinCell ? [tinCell] : [])
         ]
       : null
 
@@ -716,7 +736,7 @@ export const FormationCard = ({
           <span className="block text-sm leading-5 text-text-secondary">{note}</span>
         </div>
       )}
-      <AttributeCells items={soleItems ?? items} className="-mb-px" />
+      <AttributeCells items={soleItems ?? items} columns={3} className="-mb-px" />
       {strip && <FilingStrip record={stripRecord} lead={converted?.now ?? domestic ?? undefined} legalName={legalName} />}
       {/* The city registrations, as the state filings are shown. */}
       {soleItems && cityReg && <CityStrip regs={record.cityRegistrations ?? []} />}

@@ -510,7 +510,12 @@ export const filingAge = (date: string | null | undefined) => {
   const rest = months % 12
   const say = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'}`
 
-  if (months < 1) return '(this month)'
+  // Under a month, in days: a business four days old is the point, and
+  // "this month" hid it.
+  if (months < 1) {
+    const days = Math.max(0, Math.floor((now.getTime() - filed.getTime()) / 86_400_000))
+    return days === 0 ? '(formed today)' : `(${say(days, 'day')} old)`
+  }
   if (years === 0) return `(${say(rest, 'month')} old)`
   if (rest === 0) return `(${say(years, 'year')} old)`
   return `(${say(years, 'year')}, ${say(rest, 'month')} old)`

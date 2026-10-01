@@ -93,6 +93,9 @@ const withoutRole = (value: string, role?: string) =>
  */
 const PER_JURISDICTION = new Set(['Tax permit', 'City registration', 'Lien'])
 
+/** Source kinds not shown for now — see `HIDDEN_SECTIONS` in ReportBody. */
+const HIDDEN_KINDS: ReadonlySet<string> = new Set(['Lien', 'Court record', 'Bankruptcy court'])
+
 const GOVERNMENT = new Set([
   'Tax permit',
   'City registration',
@@ -433,6 +436,10 @@ export const sourcesFor = (
   const trailing = (s: Source) => (s.id === STREET_VIEW_CARD ? 1 : 0)
 
   return [...byId.values()]
+    // Stashed with the Financial Standing card: liens, court records and
+    // bankruptcy courts are built but not shown. Drop the filter to bring
+    // them back.
+    .filter((s) => !HIDDEN_KINDS.has((s.kind ?? s.label).split(' · ')[0]))
     .map((s) => ({ ...s, band: band(s) }))
     .sort(
     (a, b) =>

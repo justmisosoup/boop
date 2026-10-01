@@ -1,5 +1,3097 @@
 [
   {
+    "id": "13b2c996-88bd-4a8a-9c55-f36d72530b9a",
+    "name": "XING PLUMBING INC",
+    "status": "in_review",
+    "createdAt": "2026-10-01T21:30:07.702Z",
+    "formation": {
+      "date": "2026-09-26",
+      "entityType": "CORPORATION",
+      "state": "CA"
+    },
+    "names": [
+      {
+        "name": "XING PLUMBING INC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d741754-ba7e-4596-b353-ee0c52d0c61a",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "status": "active",
+              "file_number": "CB20260437227",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "114 E Wistaria Ave, Arcadia, CA 91006-4674",
+        "state": "CA",
+        "labels": [],
+        "locationCount": 2,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": "RESIDENTIAL",
+        "latitude": 34.11716611771276,
+        "longitude": -118.027204457365,
+        "deliverable": true,
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d741754-ba7e-4596-b353-ee0c52d0c61a",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "labels": [],
+              "status": "active",
+              "file_number": "CB20260437227",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "YUSI XING",
+        "titles": [
+          "Registered Agent"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "4d741754-ba7e-4596-b353-ee0c52d0c61a",
+            "type": "registration",
+            "metadata": {
+              "state": "CA",
+              "status": "active",
+              "file_number": "CB20260437227",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "XING PLUMBING INC",
+        "state": "CA",
+        "entityType": "CORPORATION",
+        "registeredAgent": "YUSI XING",
+        "status": "active",
+        "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "CB20260437227",
+        "registrationDate": "2026-09-26",
+        "sourceUrl": "https://bizfileonline.sos.ca.gov/search/business",
+        "addresses": [
+          "114 E WISTARIA AVE ARCADIA, CA 91006",
+          "114 E WISTARIA AVE ARCADIA,CA91006"
+        ],
+        "officers": [],
+        "officerRoles": []
+      }
+    ],
+    "tin": {
+      "name": "XING PLUMBING INC",
+      "mismatch": false,
+      "unknown": true,
+      "verified": false,
+      "error": null,
+      "updated_at": "2026-10-01T21:30:13.577Z",
+      "issued": false,
+      "verified_by": null,
+      "business_id": "13b2c996-88bd-4a8a-9c55-f36d72530b9a",
+      "tin": "43-2140000"
+    },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
+    "website": {
+      "id": "e3009af2-011a-4e20-9d1d-d64005f34ed0",
+      "url": null,
+      "submitted": false,
+      "status": "unknown",
+      "httpStatusCode": null,
+      "title": null,
+      "platform": null,
+      "category": null,
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": false,
+      "domain": null,
+      "domainId": null,
+      "domainCreated": null,
+      "domainExpires": null,
+      "registrar": null,
+      "pages": [],
+      "emails": [],
+      "phones": []
+    },
+    "profiles": [],
+    "industry": [
+      {
+        "system": "MCC",
+        "name": "Heating, Plumbing, A/C",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "1711"
+        ],
+        "sector": null,
+        "score": 1,
+        "highRisk": false
+      },
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 1,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "Plumbing, Heating, and Air-Conditioning Contractors",
+        "naicsCodes": [
+          "238220"
+        ],
+        "sicCodes": [
+          "7699",
+          "1711",
+          "1791",
+          "1796"
+        ],
+        "mccCodes": [],
+        "sector": "CONSTRUCTION",
+        "score": 0.9,
+        "highRisk": false
+      }
+    ],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": {
+      "results": []
+    },
+    "adverseMedia": {
+      "results": []
+    },
+    "litigations": [],
+    "liens": [],
+    "bankruptcies": [],
+    "connections": [],
+    "orders": [
+      {
+        "id": "6db38bca-b79c-4fda-83d6-f595d811d504",
+        "package": "enhanced_screenings",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.773Z",
+        "completedAt": "2026-10-01T21:30:56.636Z"
+      },
+      {
+        "id": "0e6f3559-f3ac-4a4a-a05f-8374e94472c1",
+        "package": "adverse_media",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.769Z",
+        "completedAt": "2026-10-01T21:31:07.568Z"
+      },
+      {
+        "id": "6235df1b-4e60-40bb-8a8c-a7b2ffb131b6",
+        "package": "liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.764Z",
+        "completedAt": "2026-10-01T21:30:57.301Z"
+      },
+      {
+        "id": "2e38c944-e435-4c7c-80de-67853d2d6915",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.759Z",
+        "completedAt": "2026-10-01T21:30:45.750Z"
+      },
+      {
+        "id": "2e6c541c-531a-4041-897f-56e533fbd5e0",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.755Z",
+        "completedAt": "2026-10-01T21:30:45.992Z"
+      },
+      {
+        "id": "6dc49e8a-59f7-4ae1-b57c-78142065bef4",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.750Z",
+        "completedAt": "2026-10-01T21:30:45.746Z"
+      },
+      {
+        "id": "a06b10b5-c85d-465d-9130-689379064c58",
+        "package": "ucc_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.745Z",
+        "completedAt": "2026-10-01T21:30:57.804Z"
+      },
+      {
+        "id": "d8719b4e-84fa-4b2f-a069-934eaceaf67b",
+        "package": "website",
+        "subproducts": [
+          "industry_classification",
+          "web_analysis"
+        ],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.741Z",
+        "completedAt": "2026-10-01T21:30:27.593Z"
+      },
+      {
+        "id": "f8863279-256c-4a8a-bd30-c9a1337afebb",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:30:07.737Z",
+        "completedAt": "2026-10-01T21:30:45.370Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "tin_issued",
+        "subLabel": "Not Issued",
+        "message": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+        "category": "tin"
+      },
+      {
+        "key": "tin",
+        "subLabel": "Not Found",
+        "message": "The IRS does not have a record for the submitted TIN and Business Name combination",
+        "category": "tin"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Not Found",
+        "message": "No third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Not Found",
+        "message": "Website URL was not found",
+        "category": "web"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a Business Name",
+        "category": "web"
+      },
+      {
+        "key": "web_address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "web"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Residential",
+        "message": "Submitted Office Address is a Residential property",
+        "category": "address"
+      },
+      {
+        "key": "address_risk",
+        "subLabel": "Moderate",
+        "message": "Address risk is moderate",
+        "category": "address"
+      },
+      {
+        "key": "liens",
+        "subLabel": "No Liens",
+        "message": "No Liens found",
+        "category": "liens"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Deliverable",
+        "message": "The USPS is able to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "Low frequency",
+        "message": "2–20 businesses use this location",
+        "category": "address"
+      },
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Active",
+        "message": "The business is Active in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "sos_active",
+        "subLabel": "Active",
+        "message": "1 of 1 filings are Active",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Good Standing",
+        "message": "The domestic registration is in Good Standing.",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Active",
+        "message": "Active domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "adverse_media",
+        "subLabel": "No results",
+        "message": "No adverse media was found",
+        "category": "adverse_media"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "politically_exposed_persons",
+        "subLabel": "No hits",
+        "message": "There were no hits on submitted individuals or their relatives and close associates",
+        "category": "politically_exposed_persons"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a CORPORATION",
+        "category": "formation"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Not Found",
+        "message": "No connections found",
+        "category": "business_connections"
+      }
+    ]
+  },
+  {
+    "id": "e9b83906-77f0-4c96-bf16-6548e03b2425",
+    "name": "PT.XD SAKTI INDONESIA LLC",
+    "status": "in_review",
+    "createdAt": "2026-10-01T21:27:14.011Z",
+    "formation": {
+      "date": "2026-09-27",
+      "entityType": "LLC",
+      "state": "TN"
+    },
+    "names": [
+      {
+        "name": "PT.XD SAKTI INDONESIA LLC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "a4e4830a-5fbf-4707-939c-1c45618a2a68",
+            "type": "registration",
+            "metadata": {
+              "state": "TN",
+              "status": "active",
+              "file_number": "002149595",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "1001 Weaver Cv, Memphis, TN 38109-8702",
+        "state": "TN",
+        "labels": [],
+        "locationCount": 1,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": "RESIDENTIAL",
+        "latitude": 35.02916981446857,
+        "longitude": -90.09789188870606,
+        "deliverable": true,
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "a4e4830a-5fbf-4707-939c-1c45618a2a68",
+            "type": "registration",
+            "metadata": {
+              "state": "TN",
+              "labels": [],
+              "status": "active",
+              "file_number": "002149595",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "RACHEL MCFARLAND",
+        "titles": [
+          "Registered Agent"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration",
+          "adverse_media_screening_result"
+        ],
+        "sourceRefs": [
+          {
+            "id": "a4e4830a-5fbf-4707-939c-1c45618a2a68",
+            "type": "registration",
+            "metadata": {
+              "state": "TN",
+              "status": "active",
+              "file_number": "002149595",
+              "jurisdiction": "DOMESTIC"
+            }
+          },
+          {
+            "id": "86b016d8-9ec8-4e9d-8ae7-14d2a0d30d7d",
+            "type": "adverse_media_screening_result",
+            "metadata": {}
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "PT. XD SAKTI INDONESIA LLC",
+        "state": "TN",
+        "entityType": "LLC",
+        "registeredAgent": "RACHEL MCFARLAND",
+        "status": "active",
+        "subStatus": null,
+        "statusDetails": "Active",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "002149595",
+        "registrationDate": "2026-09-27",
+        "sourceUrl": "https://tncab.tnsos.gov/business-entity-search",
+        "addresses": [
+          "1001 WEAVER CV, MEMPHIS, TN 38109"
+        ],
+        "officers": [],
+        "officerRoles": []
+      }
+    ],
+    "tin": {
+      "name": "PT.XD SAKTI INDONESIA LLC",
+      "mismatch": false,
+      "unknown": true,
+      "verified": false,
+      "error": null,
+      "updated_at": "2026-10-01T21:27:17.546Z",
+      "issued": false,
+      "verified_by": null,
+      "business_id": "e9b83906-77f0-4c96-bf16-6548e03b2425",
+      "tin": "89-6389176"
+    },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
+    "website": {
+      "id": "fe0e2398-910b-4c00-92fc-fee00a3f502a",
+      "url": null,
+      "submitted": false,
+      "status": "unknown",
+      "httpStatusCode": null,
+      "title": null,
+      "platform": null,
+      "category": null,
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": false,
+      "domain": null,
+      "domainId": null,
+      "domainCreated": null,
+      "domainExpires": null,
+      "registrar": null,
+      "pages": [],
+      "emails": [],
+      "phones": []
+    },
+    "profiles": [
+      {
+        "id": "b2fcdf89-e5de-4700-9850-226b452f027f",
+        "externalId": null,
+        "name": "PT. XD SAKTI INDONESIA",
+        "metadata": {
+          "name": "PT. XD SAKTI INDONESIA",
+          "followers": 910,
+          "following": 160,
+          "posts_count": 36,
+          "last_post": "2026-09-10",
+          "website_urls": [
+            "http://www.xdsakti.com"
+          ],
+          "recent_posts": [
+            {
+              "text": "🇮🇩 DIRGAHAYU REPUBLIK INDONESIA KE-81 🇮🇩\n\nSemangat kemerdekaan, semangat kebersamaan, dan semangat untuk terus berkarya! ❤️🤍\n\nKeluarga besar PT. XD Sakti Indonesia mengucapkan Selamat HUT ke-81 Republik Indonesia.\n\nBersama kita kuat, bersama kita maju! 🇮🇩✨\n\n#HUTRI81 #17Agustus #IndonesiaMerdeka #PTXDSaktiIndonesia",
+              "posted_at": "2026-09-10T12:20:13Z",
+              "likes": 45,
+              "comments": 0
+            },
+            {
+              "text": "Tanda tangan Kontrak Pengadaan Material Terpusat Transformator Tenaga Tahun 2026 antara PT.PLN (Persero) Kantor Pusat dan PT.XD Sakti Indonesia pada Senin, 20 Juli 2026",
+              "posted_at": "2026-07-27T01:34:05Z",
+              "likes": 32,
+              "comments": 0
+            },
+            {
+              "text": "✨Healthy People, Stronger Future.✨\n\nTerima kasih kepada seluruh karyawan yang telah berpartisipasi. Kesehatan adalah aset berharga yang perlu dijaga, dan langkah kecil seperti pemeriksaan rutin dapat memberikan dampak besar untuk masa depan. \nMCU PT. XD Sakti Indonesia 2026.\n\n#xdsaktiindonesia #mcu2026",
+              "posted_at": "2026-06-04T10:01:43Z",
+              "likes": 28,
+              "comments": 0
+            },
+            {
+              "text": "Production Area Tour PT. XD Sakti Indonesia Inside Factory & Safety System\n\n#ptxdsaktiIndonesia #trafotenaga #IndustriManufaktur",
+              "posted_at": "2026-04-23T09:44:19Z",
+              "likes": 79,
+              "comments": 1
+            },
+            {
+              "text": "✨ Momen kebersamaan yang sederhana, tapi penuh makna.\n\nBuka Puasa Bersama keluarga besar PT XD Sakti Indonesia menjadi pengingat bahwa di balik kesibukan pekerjaan, selalu ada ruang untuk mempererat silaturahmi, berbagi cerita, dan menikmati kebersamaan.\n\nTerima kasih untuk suasana hangat, tawa, dan kebersamaan yang tercipta di acara ini. Semoga momen seperti ini selalu menjadi penguat hubungan kita semua.\n\nButuh dokumentasi untuk acara kantor, gathering, seminar, atau event spesial lainnya?\nSilakan hubungi **Yuan Potret**.\n\nKarena setiap momen layak untuk diabadikan dengan baik.\n\n#Bukber2026\n#BukaPuasaBersama\n#CorporateEvent\n#Silaturahmi\n#EventDocumentation\nEventPhotography\nDokumentasiEvent\nJasaFotografi\nFotograferIndonesia\nYuanPotret\nMomentCaptured\nEventPhotographer",
+              "posted_at": "2026-03-10T02:10:55Z",
+              "likes": 52,
+              "comments": 0
+            },
+            {
+              "text": "A Milestone Achievement of PT. XD Sakti Indonesia  for Power Transformer 500/150 kV 167 MVA – GITET 500 kV Kalipuro Project, Successfully Completed & Overcoming Challenges.\n\n#PowerTransformer #Kalipuro #xdsaktiindonesia",
+              "posted_at": "2026-02-12T10:28:16Z",
+              "likes": 58,
+              "comments": 2
+            },
+            {
+              "text": "Merry Christmas from PT XD Sakti Indonesia! 🎄😊\n\nWishing you a joyful and blessed holiday season!",
+              "posted_at": "2025-12-27T14:23:17Z",
+              "likes": 8,
+              "comments": 0
+            },
+            {
+              "text": "Final Ganda Putra Badminton Cup XD Sakti Indonesia 2025",
+              "posted_at": "2025-12-20T05:10:34Z",
+              "likes": 16,
+              "comments": 4
+            },
+            {
+              "text": "",
+              "posted_at": "2025-12-05T02:20:45Z",
+              "likes": 12,
+              "comments": 0
+            },
+            {
+              "text": "Penandatangan Kontrak Rinci PLN KHS 2025 lokasi GI Citra Habitat bersama PLN UIT JBB",
+              "posted_at": "2025-12-05T02:18:05Z",
+              "likes": 16,
+              "comments": 0
+            }
+          ],
+          "is_private": false,
+          "is_business_account": false,
+          "biography": "Power Transformer Manufaktur \nProduce 70 kV-500 kV Up To 500 MVA"
+        },
+        "url": "https://instagram.com/xdsaktiindonesia",
+        "type": "instagram",
+        "status": "online",
+        "submitted": false,
+        "rating": null,
+        "ratingCount": null,
+        "followers": 910,
+        "categories": []
+      }
+    ],
+    "industry": [
+      {
+        "system": "NAICS",
+        "name": "Power, Distribution, and Specialty Transformer Manufacturing",
+        "naicsCodes": [
+          "335311"
+        ],
+        "sicCodes": [
+          "3612",
+          "3548"
+        ],
+        "mccCodes": [],
+        "sector": "MANUFACTURING",
+        "score": 1,
+        "highRisk": false
+      },
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 1,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Electrical Parts and Equipment",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "5065"
+        ],
+        "sector": null,
+        "score": 0.9,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Plumbing, Heating Equipment, and Supplies",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "5074"
+        ],
+        "sector": null,
+        "score": 0.8,
+        "highRisk": false
+      }
+    ],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": {
+      "results": []
+    },
+    "adverseMedia": {
+      "results": [
+        {
+          "id": "86b016d8-9ec8-4e9d-8ae7-14d2a0d30d7d",
+          "matchScore": 0.8688099980354309,
+          "items": [
+            {
+              "sourceName": "www.justice4all.org",
+              "title": "Rachel McFarland - Legal Aid Justice Center",
+              "url": "https://www.justice4all.org/staff/rachel-mcfarland/",
+              "risks": [],
+              "sentiment": "negative"
+            },
+            {
+              "sourceName": "www.kcci.com",
+              "title": "Prosecutors: 'Secret' phone has texts, calls to one person - KCCI",
+              "url": "https://www.kcci.com/article/prosecutors-secret-phone-has-texts-calls-to-one-person/6336207",
+              "risks": [],
+              "sentiment": "positive"
+            }
+          ]
+        }
+      ]
+    },
+    "litigations": [],
+    "liens": [],
+    "bankruptcies": [],
+    "connections": [],
+    "orders": [
+      {
+        "id": "90bb3ab2-5397-4522-b503-a6ee1d5fc56e",
+        "package": "enhanced_screenings",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.057Z",
+        "completedAt": "2026-10-01T21:28:46.275Z"
+      },
+      {
+        "id": "dc043e17-5a44-4812-8b00-c4a860f03185",
+        "package": "adverse_media",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.054Z",
+        "completedAt": "2026-10-01T21:29:16.014Z"
+      },
+      {
+        "id": "1901b443-a8ac-4920-bcaa-29e6a2280b6e",
+        "package": "liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.051Z",
+        "completedAt": "2026-10-01T21:29:28.890Z"
+      },
+      {
+        "id": "995dc4c9-ae30-417d-8943-0961ab8585e6",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.047Z",
+        "completedAt": "2026-10-01T21:28:39.942Z"
+      },
+      {
+        "id": "b7803b60-985d-469e-a3df-34d466357687",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.044Z",
+        "completedAt": "2026-10-01T21:28:40.398Z"
+      },
+      {
+        "id": "991935bb-3a48-4321-8bdd-5d8a1eada368",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.041Z",
+        "completedAt": "2026-10-01T21:28:40.152Z"
+      },
+      {
+        "id": "8e10b5d3-9ef5-4ec4-96e8-385501cb4823",
+        "package": "ucc_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.038Z",
+        "completedAt": "2026-10-01T21:29:16.814Z"
+      },
+      {
+        "id": "612d5afb-e9ac-400c-8458-459e425043a1",
+        "package": "website",
+        "subproducts": [
+          "industry_classification",
+          "web_analysis"
+        ],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.036Z",
+        "completedAt": "2026-10-01T21:29:58.075Z"
+      },
+      {
+        "id": "cc112e6d-48da-455e-82d8-a8daf2711721",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:27:14.031Z",
+        "completedAt": "2026-10-01T21:28:39.550Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "tin_issued",
+        "subLabel": "Not Issued",
+        "message": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+        "category": "tin"
+      },
+      {
+        "key": "tin",
+        "subLabel": "Not Found",
+        "message": "The IRS does not have a record for the submitted TIN and Business Name combination",
+        "category": "tin"
+      },
+      {
+        "key": "web_address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "web"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Not Found",
+        "message": "Website URL was not found",
+        "category": "web"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Residential",
+        "message": "Submitted Office Address is a Residential property",
+        "category": "address"
+      },
+      {
+        "key": "address_risk",
+        "subLabel": "Moderate",
+        "message": "Address risk is moderate",
+        "category": "address"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Not Provided by State",
+        "message": "The domestic sub-status is Not Provided by State.",
+        "category": "sos"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Similar Match",
+        "message": "Similar match identified to the submitted Business Name",
+        "category": "web"
+      },
+      {
+        "key": "liens",
+        "subLabel": "No Liens",
+        "message": "No Liens found",
+        "category": "liens"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Deliverable",
+        "message": "The USPS is able to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "Low frequency",
+        "message": "1 business uses this location",
+        "category": "address"
+      },
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Active",
+        "message": "The business is Active in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "sos_active",
+        "subLabel": "Active",
+        "message": "1 of 1 filings are Active",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Active",
+        "message": "Active domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a LLC",
+        "category": "formation"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Not Found",
+        "message": "No connections found",
+        "category": "business_connections"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      },
+      {
+        "key": "adverse_media",
+        "subLabel": "Low risk",
+        "message": "No adverse media was found",
+        "category": "adverse_media"
+      },
+      {
+        "key": "politically_exposed_persons",
+        "subLabel": "No hits",
+        "message": "There were no hits on submitted individuals or their relatives and close associates",
+        "category": "politically_exposed_persons"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Found",
+        "message": "Third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "profile_status",
+        "subLabel": "Online",
+        "message": "All third party profiles are online",
+        "category": "web"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      }
+    ]
+  },
+  {
+    "id": "4ebfa6d3-5a10-4790-b0d8-0173feb77221",
+    "name": "3EXPLORERS LLC",
+    "status": "in_review",
+    "createdAt": "2026-10-01T21:26:39.265Z",
+    "formation": {
+      "date": "2026-09-28",
+      "entityType": "LLC",
+      "state": "WY"
+    },
+    "names": [
+      {
+        "name": "3EXPLORERS LLC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "5add4530-27ce-436b-bde0-9658db989a12",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "status": "active",
+              "file_number": "2026-002092575",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "30 N Gould St, Sheridan, WY 82801-6317",
+        "state": "WY",
+        "labels": [],
+        "locationCount": 10001,
+        "cmra": true,
+        "isRegisteredAgent": true,
+        "propertyType": "COMMERCIAL",
+        "latitude": 44.79769934311134,
+        "longitude": -106.954572046158,
+        "deliverable": true,
+        "submitted": true,
+        "sources": [],
+        "sourceRefs": []
+      },
+      {
+        "fullAddress": "30 N Gould St PMB R, Sheridan, WY 82801-6317",
+        "state": "WY",
+        "labels": [],
+        "locationCount": 10001,
+        "cmra": true,
+        "isRegisteredAgent": true,
+        "propertyType": "COMMERCIAL",
+        "latitude": 44.797691345214844,
+        "longitude": -106.95468139648438,
+        "deliverable": true,
+        "submitted": false,
+        "sources": [
+          "registration",
+          "historical_registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "5add4530-27ce-436b-bde0-9658db989a12",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "labels": [
+                "registered_agent"
+              ],
+              "status": "active",
+              "file_number": "2026-002092575",
+              "jurisdiction": "DOMESTIC"
+            }
+          },
+          {
+            "id": "a936413c-221c-4d12-b0d2-064fa201a6c5",
+            "type": "historical_registration",
+            "metadata": {
+              "state": "WY",
+              "labels": [],
+              "file_number": "2026-002092575",
+              "ingested_at": "2026-09-30T00:13:06.605Z"
+            }
+          }
+        ]
+      },
+      {
+        "fullAddress": "1010 10th Lane, Jayamalapura, Gampola 20500, Sri Lanka",
+        "state": null,
+        "labels": [],
+        "locationCount": 1,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": null,
+        "latitude": null,
+        "longitude": null,
+        "deliverable": false,
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "5add4530-27ce-436b-bde0-9658db989a12",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "labels": [],
+              "status": "active",
+              "file_number": "2026-002092575",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      },
+      {
+        "fullAddress": "3explorersllc@gmail.com Sheridan, Wyoming 82801",
+        "state": null,
+        "labels": [],
+        "locationCount": 1,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": null,
+        "latitude": null,
+        "longitude": null,
+        "deliverable": false,
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "5add4530-27ce-436b-bde0-9658db989a12",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "labels": [
+                "mailing"
+              ],
+              "status": "active",
+              "file_number": "2026-002092575",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "Subash Senavirathna",
+        "titles": [
+          "ORGANIZER"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "5add4530-27ce-436b-bde0-9658db989a12",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "status": "active",
+              "file_number": "2026-002092575",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "3Explorers LLC",
+        "state": "WY",
+        "entityType": "LLC",
+        "registeredAgent": "Registered Agents Inc",
+        "status": "active",
+        "subStatus": "GOOD_STANDING",
+        "statusDetails": "ACTIVE",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "2026-002092575",
+        "registrationDate": "2026-09-28",
+        "sourceUrl": "https://wyobiz.wyo.gov/business/filingsearch.aspx",
+        "addresses": [
+          "3EXPLORERSLLC@GMAIL.COM SHERIDAN, WYOMING 82801",
+          "1010 10TH LANE, JAYAMALAPURA, GAMPOLA 20500, SRI LANKA",
+          "30 N GOULD ST PMB R, SHERIDAN, WY 82801-6317"
+        ],
+        "officers": [
+          "SUBASH SENAVIRATHNA"
+        ],
+        "officerRoles": [
+          {
+            "name": "SUBASH SENAVIRATHNA",
+            "roles": [
+              "Organizer"
+            ]
+          }
+        ]
+      }
+    ],
+    "tin": {
+      "name": "3EXPLORERS LLC",
+      "mismatch": false,
+      "unknown": true,
+      "verified": false,
+      "error": null,
+      "updated_at": "2026-10-01T21:26:43.829Z",
+      "issued": false,
+      "verified_by": null,
+      "business_id": "4ebfa6d3-5a10-4790-b0d8-0173feb77221",
+      "tin": "98-1975690"
+    },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
+    "website": {
+      "id": "880d85bb-f413-468a-9931-34ec9f9dee52",
+      "url": null,
+      "submitted": false,
+      "status": "unknown",
+      "httpStatusCode": null,
+      "title": null,
+      "platform": null,
+      "category": null,
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": false,
+      "domain": null,
+      "domainId": null,
+      "domainCreated": null,
+      "domainExpires": null,
+      "registrar": null,
+      "pages": [],
+      "emails": [],
+      "phones": []
+    },
+    "profiles": [],
+    "industry": [
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 0.8,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Motor Freight Carriers and Trucking - Local and Long Distance, Moving and Storage Companies, and Local Delivery Services",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "4214"
+        ],
+        "sector": null,
+        "score": 0.75,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "Insufficient data",
+        "naicsCodes": [
+          "999999"
+        ],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 0,
+        "highRisk": false
+      }
+    ],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": {
+      "results": []
+    },
+    "adverseMedia": {
+      "results": []
+    },
+    "litigations": [],
+    "liens": [],
+    "bankruptcies": [],
+    "connections": [],
+    "orders": [
+      {
+        "id": "6671562e-2de5-4f4f-b48c-9fbdba197859",
+        "package": "enhanced_screenings",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.318Z",
+        "completedAt": "2026-10-01T21:26:50.517Z"
+      },
+      {
+        "id": "c2fb6652-c535-41e8-a7f4-6fb6cd685f2f",
+        "package": "adverse_media",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.313Z",
+        "completedAt": "2026-10-01T21:27:11.418Z"
+      },
+      {
+        "id": "4dc7f581-ac61-490f-b811-1f2a7d1402e2",
+        "package": "liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.310Z",
+        "completedAt": "2026-10-01T21:26:55.471Z"
+      },
+      {
+        "id": "9fa5e53f-564b-4e12-9fd2-5fceb5b03e12",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.307Z",
+        "completedAt": "2026-10-01T21:26:47.390Z"
+      },
+      {
+        "id": "f49e98d9-36dc-41af-9e41-c130337d52f4",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.303Z",
+        "completedAt": "2026-10-01T21:26:47.712Z"
+      },
+      {
+        "id": "bc05f4b1-44f4-436f-819c-c0a81ae2ca49",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.300Z",
+        "completedAt": "2026-10-01T21:26:47.360Z"
+      },
+      {
+        "id": "288f2da7-cc9e-435b-aff8-ce73a20746c0",
+        "package": "ucc_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.296Z",
+        "completedAt": "2026-10-01T21:26:54.003Z"
+      },
+      {
+        "id": "a376825c-40fd-49c7-9e38-5948c292c8ca",
+        "package": "website",
+        "subproducts": [
+          "industry_classification",
+          "web_analysis"
+        ],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.293Z",
+        "completedAt": "2026-10-01T21:26:49.030Z"
+      },
+      {
+        "id": "b008e578-be43-49c0-a481-9836c94b8222",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:39.288Z",
+        "completedAt": "2026-10-01T21:26:46.704Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "address_cmra",
+        "subLabel": "CMRA",
+        "message": "Submitted Office Address is zoned by USPS as a Commercial Mail Receiving Agency",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "High frequency",
+        "message": "10,000+ businesses use this location",
+        "category": "address"
+      },
+      {
+        "key": "address_risk",
+        "subLabel": "High",
+        "message": "Address risk is high",
+        "category": "address"
+      },
+      {
+        "key": "tin_issued",
+        "subLabel": "Not Issued",
+        "message": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+        "category": "tin"
+      },
+      {
+        "key": "tin",
+        "subLabel": "Not Found",
+        "message": "The IRS does not have a record for the submitted TIN and Business Name combination",
+        "category": "tin"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Not Found",
+        "message": "Website URL was not found",
+        "category": "web"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Not Found",
+        "message": "No third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "web_address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "web"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a Business Name",
+        "category": "web"
+      },
+      {
+        "key": "address_verification",
+        "subLabel": "Approximate Match",
+        "message": "Identified an address within 0.2 miles of the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_registered_agent",
+        "subLabel": "Registered Agent",
+        "message": "Submitted Office Address is associated with a known Registered Agent",
+        "category": "address"
+      },
+      {
+        "key": "liens",
+        "subLabel": "No Liens",
+        "message": "No Liens found",
+        "category": "liens"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Deliverable",
+        "message": "The USPS is able to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Commercial",
+        "message": "Submitted Office Address is a Commercial property",
+        "category": "address"
+      },
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Active",
+        "message": "The business is Active in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "sos_active",
+        "subLabel": "Active",
+        "message": "1 of 1 filings are Active",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Good Standing",
+        "message": "The domestic registration is in Good Standing.",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Active",
+        "message": "Active domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Not Found",
+        "message": "No connections found",
+        "category": "business_connections"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "politically_exposed_persons",
+        "subLabel": "No hits",
+        "message": "There were no hits on submitted individuals or their relatives and close associates",
+        "category": "politically_exposed_persons"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "adverse_media",
+        "subLabel": "No results",
+        "message": "No adverse media was found",
+        "category": "adverse_media"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a LLC",
+        "category": "formation"
+      }
+    ]
+  },
+  {
+    "id": "5f9f0b97-6671-4ebc-a330-d7fedcbdf4c7",
+    "name": "BIBLE & VELVET LLC",
+    "status": "in_review",
+    "createdAt": "2026-10-01T21:26:10.250Z",
+    "formation": {
+      "date": "2026-09-29",
+      "entityType": "LLC",
+      "state": "MN"
+    },
+    "names": [
+      {
+        "name": "BIBLE & VELVET LLC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "00677d0f-8d35-4286-a0bb-0659d24301ef",
+            "type": "registration",
+            "metadata": {
+              "state": "MN",
+              "status": "active",
+              "file_number": "1671795500027",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "18202 Minnetonka Blvd, Wayzata, MN 55391-3343",
+        "state": "MN",
+        "labels": [],
+        "locationCount": 10001,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": "COMMERCIAL",
+        "latitude": 44.94230233878361,
+        "longitude": -93.51165509225717,
+        "deliverable": true,
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "00677d0f-8d35-4286-a0bb-0659d24301ef",
+            "type": "registration",
+            "metadata": {
+              "state": "MN",
+              "labels": [],
+              "status": "active",
+              "file_number": "1671795500027",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "United States Corporation Agents, Inc.",
+        "titles": [
+          "Registered Agent"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "00677d0f-8d35-4286-a0bb-0659d24301ef",
+            "type": "registration",
+            "metadata": {
+              "state": "MN",
+              "status": "active",
+              "file_number": "1671795500027",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "Bible & Velvet LLC",
+        "state": "MN",
+        "entityType": "LLC",
+        "registeredAgent": "United States Corporation Agents, Inc.",
+        "status": "active",
+        "subStatus": null,
+        "statusDetails": "Active",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "1671795500027",
+        "registrationDate": "2026-09-29",
+        "sourceUrl": "https://mblsportal.sos.state.mn.us/Business/Search?filingGuid=1671795500027",
+        "addresses": [
+          "18202 MINNETONKA BOULEVARD DEEPHAVEN, MN 55391 USA"
+        ],
+        "officers": [],
+        "officerRoles": []
+      }
+    ],
+    "tin": {
+      "name": "BIBLE & VELVET LLC",
+      "mismatch": false,
+      "unknown": true,
+      "verified": false,
+      "error": null,
+      "updated_at": "2026-10-01T21:26:15.298Z",
+      "issued": false,
+      "verified_by": null,
+      "business_id": "5f9f0b97-6671-4ebc-a330-d7fedcbdf4c7",
+      "tin": "17-2195560"
+    },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
+    "website": {
+      "id": "14426600-0be8-469c-afcc-b678c56d7b37",
+      "url": null,
+      "submitted": false,
+      "status": "unknown",
+      "httpStatusCode": null,
+      "title": null,
+      "platform": null,
+      "category": null,
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": false,
+      "domain": null,
+      "domainId": null,
+      "domainCreated": null,
+      "domainExpires": null,
+      "registrar": null,
+      "pages": [],
+      "emails": [],
+      "phones": []
+    },
+    "profiles": [],
+    "industry": [
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 0.8,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Miscellaneous Apparel and Accessory Shops",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "5699"
+        ],
+        "sector": null,
+        "score": 0.7000000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Book Stores",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "5942"
+        ],
+        "sector": null,
+        "score": 0.6000000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "Florists",
+        "naicsCodes": [
+          "459310"
+        ],
+        "sicCodes": [
+          "5963",
+          "5992",
+          "5961"
+        ],
+        "mccCodes": [],
+        "sector": "RETAIL",
+        "score": 0.6000000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "NAICS",
+        "name": "All Other Miscellaneous Retailers",
+        "naicsCodes": [
+          "459999"
+        ],
+        "sicCodes": [
+          "5963",
+          "5085",
+          "5113",
+          "5162",
+          "5999",
+          "5961"
+        ],
+        "mccCodes": [],
+        "sector": "RETAIL",
+        "score": 0.55,
+        "highRisk": false
+      }
+    ],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": {
+      "results": []
+    },
+    "adverseMedia": {
+      "results": []
+    },
+    "litigations": [],
+    "liens": [],
+    "bankruptcies": [],
+    "connections": [],
+    "orders": [
+      {
+        "id": "982dc367-7374-4e99-8bf7-daff5ac28beb",
+        "package": "enhanced_screenings",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.296Z",
+        "completedAt": "2026-10-01T21:26:58.618Z"
+      },
+      {
+        "id": "ecfe7823-0bcf-42dc-963b-9fee756e8cc9",
+        "package": "adverse_media",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.292Z",
+        "completedAt": "2026-10-01T21:26:58.458Z"
+      },
+      {
+        "id": "af32ccf9-b910-4c66-b7dc-07e6da7f0c93",
+        "package": "liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.289Z",
+        "completedAt": "2026-10-01T21:27:04.840Z"
+      },
+      {
+        "id": "8ede7b7b-09ac-4cf7-9d4b-430e82b915dd",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.286Z",
+        "completedAt": "2026-10-01T21:26:42.327Z"
+      },
+      {
+        "id": "86926f4a-81f9-4522-9a7a-c0c0c239f897",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.283Z",
+        "completedAt": "2026-10-01T21:26:42.571Z"
+      },
+      {
+        "id": "b47ccd33-e141-4caa-aaaf-56c384adba92",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.279Z",
+        "completedAt": "2026-10-01T21:26:42.369Z"
+      },
+      {
+        "id": "2362a681-df81-481e-b7ed-8bfa113626d5",
+        "package": "ucc_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.276Z",
+        "completedAt": "2026-10-01T21:27:04.292Z"
+      },
+      {
+        "id": "eb6c61d2-e570-44e1-8161-bd416e3c98d3",
+        "package": "website",
+        "subproducts": [
+          "industry_classification",
+          "web_analysis"
+        ],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.274Z",
+        "completedAt": "2026-10-01T21:26:25.631Z"
+      },
+      {
+        "id": "f329be4f-59ec-42ed-99da-bb83a17346f7",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:26:10.270Z",
+        "completedAt": "2026-10-01T21:26:41.873Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "address_risk",
+        "subLabel": "High",
+        "message": "Address risk is high",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "High frequency",
+        "message": "10,000+ businesses use this location",
+        "category": "address"
+      },
+      {
+        "key": "tin_issued",
+        "subLabel": "Not Issued",
+        "message": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+        "category": "tin"
+      },
+      {
+        "key": "tin",
+        "subLabel": "Not Found",
+        "message": "The IRS does not have a record for the submitted TIN and Business Name combination",
+        "category": "tin"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a Business Name",
+        "category": "web"
+      },
+      {
+        "key": "web_address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "web"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Not Found",
+        "message": "No third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Not Found",
+        "message": "Website URL was not found",
+        "category": "web"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Not Provided by State",
+        "message": "The domestic sub-status is Not Provided by State.",
+        "category": "sos"
+      },
+      {
+        "key": "liens",
+        "subLabel": "No Liens",
+        "message": "No Liens found",
+        "category": "liens"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_verification",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Deliverable",
+        "message": "The USPS is able to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Commercial",
+        "message": "Submitted Office Address is a Commercial property",
+        "category": "address"
+      },
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Active",
+        "message": "The business is Active in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "sos_active",
+        "subLabel": "Active",
+        "message": "1 of 1 filings are Active",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Active",
+        "message": "Active domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      },
+      {
+        "key": "adverse_media",
+        "subLabel": "No results",
+        "message": "No adverse media was found",
+        "category": "adverse_media"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "politically_exposed_persons",
+        "subLabel": "No hits",
+        "message": "There were no hits on submitted individuals or their relatives and close associates",
+        "category": "politically_exposed_persons"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a LLC",
+        "category": "formation"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Not Found",
+        "message": "No connections found",
+        "category": "business_connections"
+      }
+    ]
+  },
+  {
+    "id": "a1fdb69e-65ce-4ab4-b162-e0976bc96ffa",
+    "name": "CJG HOLDING CO LLC",
+    "status": "in_review",
+    "createdAt": "2026-10-01T21:25:35.808Z",
+    "formation": {
+      "date": "2026-09-30",
+      "entityType": "LLC",
+      "state": "WY"
+    },
+    "names": [
+      {
+        "name": "CJG HOLDING CO LLC",
+        "type": "legal",
+        "submitted": true,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "473f28b9-6190-4efe-b65d-a3afa68bdcca",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "status": "active",
+              "file_number": "2026-002095367",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "addresses": [
+      {
+        "fullAddress": "Avila Ln, Sacramento, CA 95864",
+        "state": "CA",
+        "labels": [],
+        "locationCount": 1,
+        "cmra": false,
+        "isRegisteredAgent": false,
+        "propertyType": null,
+        "latitude": 38.60857049083725,
+        "longitude": -121.3658929727873,
+        "deliverable": false,
+        "submitted": true,
+        "sources": [],
+        "sourceRefs": []
+      },
+      {
+        "fullAddress": "30 N Gould St PMB R, Sheridan, WY 82801-6317",
+        "state": "WY",
+        "labels": [],
+        "locationCount": 10001,
+        "cmra": true,
+        "isRegisteredAgent": true,
+        "propertyType": "COMMERCIAL",
+        "latitude": 44.79769,
+        "longitude": -106.95468,
+        "deliverable": true,
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "473f28b9-6190-4efe-b65d-a3afa68bdcca",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "labels": [],
+              "status": "active",
+              "file_number": "2026-002095367",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "people": [
+      {
+        "name": "Registered Agents Inc",
+        "titles": [
+          "Registered Agent"
+        ],
+        "submitted": false,
+        "sources": [
+          "registration"
+        ],
+        "sourceRefs": [
+          {
+            "id": "473f28b9-6190-4efe-b65d-a3afa68bdcca",
+            "type": "registration",
+            "metadata": {
+              "state": "WY",
+              "status": "active",
+              "file_number": "2026-002095367",
+              "jurisdiction": "DOMESTIC"
+            }
+          }
+        ]
+      }
+    ],
+    "registrations": [
+      {
+        "name": "CJG HOLDING CO LLC",
+        "state": "WY",
+        "entityType": "LLC",
+        "registeredAgent": "Registered Agents Inc",
+        "status": "active",
+        "subStatus": "GOOD_STANDING",
+        "statusDetails": "Active",
+        "jurisdiction": "DOMESTIC",
+        "fileNumber": "2026-002095367",
+        "registrationDate": "2026-09-30",
+        "sourceUrl": "https://wyobiz.wyo.gov/business/filingsearch.aspx",
+        "addresses": [
+          "30 N GOULD ST STE R SHERIDAN, WY 82801 USA",
+          "30 N GOULD ST STE R SHERIDAN, WY 82801 USA"
+        ],
+        "officers": [],
+        "officerRoles": []
+      }
+    ],
+    "tin": {
+      "name": "CJG HOLDING CO LLC",
+      "mismatch": false,
+      "unknown": true,
+      "verified": false,
+      "error": null,
+      "updated_at": "2026-10-01T21:25:38.840Z",
+      "issued": false,
+      "verified_by": null,
+      "business_id": "a1fdb69e-65ce-4ab4-b162-e0976bc96ffa",
+      "tin": "43-2150062"
+    },
+    "fmcsaRegistrations": [],
+    "documents": [],
+    "taxExemptOrganization": null,
+    "website": {
+      "id": "476b1b62-f4f8-4273-a1a8-c0b478ee362f",
+      "url": null,
+      "submitted": false,
+      "status": "unknown",
+      "httpStatusCode": null,
+      "title": null,
+      "platform": null,
+      "category": null,
+      "parked": false,
+      "comingSoon": false,
+      "businessNameMatch": false,
+      "domain": null,
+      "domainId": null,
+      "domainCreated": null,
+      "domainExpires": null,
+      "registrar": null,
+      "pages": [],
+      "emails": [],
+      "phones": []
+    },
+    "profiles": [],
+    "industry": [
+      {
+        "system": "NAICS",
+        "name": "Offices of Other Holding Companies",
+        "naicsCodes": [
+          "551112"
+        ],
+        "sicCodes": [
+          "6719"
+        ],
+        "mccCodes": [],
+        "sector": "COMPANY_ENTERPRISES_MANAGEMENT",
+        "score": 0.7000000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "Prohibited",
+        "name": "Other Non-Prohibited",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [],
+        "sector": null,
+        "score": 0.7000000000000001,
+        "highRisk": false
+      },
+      {
+        "system": "MCC",
+        "name": "Insufficient data",
+        "naicsCodes": [],
+        "sicCodes": [],
+        "mccCodes": [
+          "9999"
+        ],
+        "sector": null,
+        "score": 0,
+        "highRisk": false
+      }
+    ],
+    "watchlist": {
+      "hitCount": 0,
+      "lists": [
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Capta List",
+          "abbr": "CAP",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Denied Persons List",
+          "abbr": "DPL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Directorate of Defense Trade Controls",
+          "agencyAbbr": "DDTC",
+          "organization": "U.S. Department of State",
+          "title": "AECA/ITAR Debarred",
+          "abbr": "DTC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Entity List",
+          "abbr": "EL",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Foreign Sanctions Evaders",
+          "abbr": "FSE",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of International Security and Non-Proliferation",
+          "agencyAbbr": "ISN",
+          "organization": "U.S. Department of State",
+          "title": "Nonproliferation Sanctions",
+          "abbr": "ISN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Military End User",
+          "abbr": "MEU",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Chinese Military-Industrial Complex Companies List",
+          "abbr": "NS-CMIC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Iranian Sanctions",
+          "abbr": "NS-ISA",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Non-SDN Menu-Based Sanctions",
+          "abbr": "NS-MBS",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Palestinian Legislative Council",
+          "abbr": "PLC",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Specially Designated Nationals",
+          "abbr": "SDN",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Office of Foreign Assets Control",
+          "agencyAbbr": "OFAC",
+          "organization": "U.S. Department of Treasury",
+          "title": "Sectoral Sanctions Identifications",
+          "abbr": "SSI",
+          "hits": 0,
+          "results": []
+        },
+        {
+          "agency": "Bureau of Industry and Security",
+          "agencyAbbr": "BIS",
+          "organization": "U.S. Department of Commerce",
+          "title": "Unverified List",
+          "abbr": "UVL",
+          "hits": 0,
+          "results": []
+        }
+      ]
+    },
+    "pep": {
+      "results": []
+    },
+    "adverseMedia": {
+      "results": []
+    },
+    "litigations": [],
+    "liens": [],
+    "bankruptcies": [],
+    "connections": [],
+    "orders": [
+      {
+        "id": "dff9fcf8-43c6-4b26-bf08-862e29bb096f",
+        "package": "enhanced_screenings",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.863Z",
+        "completedAt": "2026-10-01T21:26:44.634Z"
+      },
+      {
+        "id": "85ef2f34-062a-4aac-a04f-7ca80922b87d",
+        "package": "adverse_media",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.860Z",
+        "completedAt": "2026-10-01T21:26:44.804Z"
+      },
+      {
+        "id": "a01004ea-df6c-4896-b481-49808f3bbad7",
+        "package": "liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.857Z",
+        "completedAt": "2026-10-01T21:27:18.646Z"
+      },
+      {
+        "id": "368f0e94-d7e3-4a53-b057-251e4588cdb9",
+        "package": "bankruptcies",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.852Z",
+        "completedAt": "2026-10-01T21:26:25.038Z"
+      },
+      {
+        "id": "58ee719b-df37-4cf4-97dc-015229968fdd",
+        "package": "litigations",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.848Z",
+        "completedAt": "2026-10-01T21:26:25.290Z"
+      },
+      {
+        "id": "48d4ccb7-8fe4-4aa4-b993-70f2f69c345a",
+        "package": "tax_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.844Z",
+        "completedAt": "2026-10-01T21:26:25.044Z"
+      },
+      {
+        "id": "27a07843-094c-4618-a98e-77f488c51041",
+        "package": "ucc_liens",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.840Z",
+        "completedAt": "2026-10-01T21:26:45.840Z"
+      },
+      {
+        "id": "2530cdb4-fc05-46de-958b-3564e5a2c290",
+        "package": "website",
+        "subproducts": [
+          "industry_classification",
+          "web_analysis"
+        ],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.837Z",
+        "completedAt": "2026-10-01T21:25:54.376Z"
+      },
+      {
+        "id": "16df12bf-a479-4721-bc4a-b8e0103789fe",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-01T21:25:35.831Z",
+        "completedAt": "2026-10-01T21:26:24.639Z"
+      }
+    ],
+    "reviewTasks": [
+      {
+        "key": "address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_deliverability",
+        "subLabel": "Undeliverable",
+        "message": "The USPS is unable to deliver mail to the submitted Office Address",
+        "category": "address"
+      },
+      {
+        "key": "address_risk",
+        "subLabel": "High",
+        "message": "Address risk is high",
+        "category": "address"
+      },
+      {
+        "key": "sos_match",
+        "subLabel": "Submitted Not Registered",
+        "message": "The business is not registered in the state of the submitted Office Address",
+        "category": "sos"
+      },
+      {
+        "key": "tin_issued",
+        "subLabel": "Not Issued",
+        "message": "TIN has not been issued by the IRS. There is often a delay after formation for the IRS database to process TINs for new businesses.",
+        "category": "tin"
+      },
+      {
+        "key": "tin",
+        "subLabel": "Not Found",
+        "message": "The IRS does not have a record for the submitted TIN and Business Name combination",
+        "category": "tin"
+      },
+      {
+        "key": "website_url_discovery",
+        "subLabel": "Not Found",
+        "message": "Website URL was not found",
+        "category": "web"
+      },
+      {
+        "key": "profile_discovery",
+        "subLabel": "Not Found",
+        "message": "No third party profiles found",
+        "category": "web"
+      },
+      {
+        "key": "web_address_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a match to the submitted Office Address",
+        "category": "web"
+      },
+      {
+        "key": "web_business_name_verification",
+        "subLabel": "Unverified",
+        "message": "Unable to identify a Business Name",
+        "category": "web"
+      },
+      {
+        "key": "liens",
+        "subLabel": "No Liens",
+        "message": "No Liens found",
+        "category": "liens"
+      },
+      {
+        "key": "name",
+        "subLabel": "Verified",
+        "message": "Match identified to the submitted Business Name",
+        "category": "name"
+      },
+      {
+        "key": "address_property_type",
+        "subLabel": "Commercial",
+        "message": "Submitted Office Address is a Commercial property",
+        "category": "address"
+      },
+      {
+        "key": "location_frequency",
+        "subLabel": "Low frequency",
+        "message": "1 business uses this location",
+        "category": "address"
+      },
+      {
+        "key": "sos_active",
+        "subLabel": "Active",
+        "message": "1 of 1 filings are Active",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "subLabel": "Good Standing",
+        "message": "The domestic registration is in Good Standing.",
+        "category": "sos"
+      },
+      {
+        "key": "sos_domestic",
+        "subLabel": "Domestic Active",
+        "message": "Active domestic filing found",
+        "category": "sos"
+      },
+      {
+        "key": "watchlist",
+        "subLabel": "No Hits",
+        "message": "No Watchlist hits were identified",
+        "category": "watchlist"
+      },
+      {
+        "key": "industry",
+        "subLabel": "No Hits",
+        "message": "This business likely does not operate in a high risk industry",
+        "category": "industry"
+      },
+      {
+        "key": "bankruptcies",
+        "subLabel": "None Found",
+        "message": "The business has no bankruptcy filings",
+        "category": "bankruptcies"
+      },
+      {
+        "key": "adverse_media",
+        "subLabel": "No results",
+        "message": "No adverse media was found",
+        "category": "adverse_media"
+      },
+      {
+        "key": "entity_type",
+        "subLabel": "Verified",
+        "message": "Entity type is a LLC",
+        "category": "formation"
+      },
+      {
+        "key": "risky_keywords",
+        "subLabel": "None",
+        "message": "No risky keywords found.",
+        "category": "web"
+      },
+      {
+        "key": "politically_exposed_persons",
+        "subLabel": "No hits",
+        "message": "There were no hits on submitted individuals or their relatives and close associates",
+        "category": "politically_exposed_persons"
+      },
+      {
+        "key": "litigations",
+        "subLabel": "None Found",
+        "message": "The business has no related litigations",
+        "category": "litigations"
+      },
+      {
+        "key": "business_connections",
+        "subLabel": "Not Found",
+        "message": "No connections found",
+        "category": "business_connections"
+      }
+    ]
+  },
+  {
     "id": "9e012aab-e6ca-49de-9080-0bf9d63d1245",
     "name": "EXPERT FENCE LLC",
     "status": "in_review",
