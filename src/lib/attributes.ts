@@ -19,6 +19,7 @@ import { judgeHit } from './watchlist'
 import { domesticFilingOf, formationCardFilingOf } from './linkedFormation'
 import { stateLabel, stateName } from './states'
 import { priorNameRecords } from './cityRegistrations'
+import { relatedBusinessesOf } from './relatedBusinesses'
 import { sourceLabel as sourceLabelOf, readableUrl } from './sourceLabels'
 
 /** Cents as the filing states them. Whole dollars: a lien is never filed for

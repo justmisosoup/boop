@@ -1,16 +1,17 @@
-import { useId, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
 
-import { ChatSourceChip, MetaChip, Text } from '@/core'
+import { ChatSourceChip, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing } from '../../lib/attributes'
+import { namedCard } from '../../lib/sourceCards'
 import { licencesAt, locationBand, operationsOf, type Location, type Operations } from '../../lib/operations'
 import { cn } from '../../utils/twUtils'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { IndustryTable } from '../IndustryTable'
-import { Collapsible } from '../Collapsible'
 import { AttributeSources, SubmittedChip } from '../Provenance'
+import { Strip } from './Strip'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
 /** "San Francisco, CA" from a full address. */
@@ -65,7 +66,7 @@ const addressLine = (a: Location): ReactNode => {
 }
 
 /** A registry record as its source chip: the register, opening its page. */
-const RegistryChip = ({ id, label, title, url, annotation }: { id: string; label: string; title: string; url?: string | null; annotation: string }) => (
+const RegistryChip = ({ id, label, title, url, annotation, onSelect }: { id: string; label: string; title: string; url?: string | null; annotation: string; onSelect?: () => void }) => (
   <ChatSourceChip
     sources={[
       {
@@ -73,16 +74,20 @@ const RegistryChip = ({ id, label, title, url, annotation }: { id: string; label
         label,
         domain: label,
         title,
-        url: url ?? undefined,
+        // To the register's card in Sources, where the whole record and its
+        // link are, as every record chip follows; out to the page only where
+        // there is no card to go to.
+        url: onSelect ? undefined : (url ?? undefined),
+        onSelect,
         annotation,
-        badge: url ? <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" /> : undefined
+        badge: !onSelect && url ? <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" /> : undefined
       }
     ]}
   />
 )
 
 /** The licence the industry requires, and what the register holds. */
-const licenceCell = (ops: Operations): AttributeCell | undefined => {
+const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void): AttributeCell | undefined => {
   const l = ops.licence
   if (!l.required) return undefined
   // Under its own strip, so the cell names the record, not the strip again.
@@ -99,7 +104,15 @@ const licenceCell = (ops: Operations): AttributeCell | undefined => {
       badge: (
         <span className="flex flex-wrap items-center gap-1">
           {l.found.map((f) => (
-            <RegistryChip key={f.id} id={f.id} label="FMCSA" title={`USDOT ${f.dotNumber ?? ''}`} url={f.sourceUrl} annotation="Company snapshot" />
+            <RegistryChip
+              key={f.id}
+              id={f.id}
+              label="FMCSA"
+              title={`USDOT ${f.dotNumber ?? ''}`}
+              url={f.sourceUrl}
+              annotation="Company snapshot"
+              onSelect={onJumpToSource ? () => onJumpToSource(namedCard('FMCSA registration')) : undefined}
+            />
           ))}
         </span>
       ),
@@ -121,7 +134,15 @@ const licenceCell = (ops: Operations): AttributeCell | undefined => {
     badge: (
       <span className="flex flex-wrap items-center gap-1">
         {l.found.map((x) => (
-          <RegistryChip key={x.id} id={x.id} label={x.registry} title={`NPI ${x.number}`} url={x.sourceUrl} annotation={x.profession} />
+          <RegistryChip
+            key={x.id}
+            id={x.id}
+            label={x.registry}
+            title={`NPI ${x.number}`}
+            url={x.sourceUrl}
+            annotation={x.profession}
+            onSelect={onJumpToSource ? () => onJumpToSource(namedCard(x.registry)) : undefined}
+          />
         ))}
       </span>
     ),
@@ -189,7 +210,7 @@ const locationCell = (
               label: l.registry,
               domain: l.registry,
               title: `NPI ${l.number}`,
-              url: l.sourceUrl ?? undefined,
+              onSelect: onJumpToSource ? () => onJumpToSource(namedCard(l.registry)) : undefined,
               annotation: titleCase(l.holder)
             }))}
             onJumpToSource={onJumpToSource}
@@ -206,77 +227,6 @@ const locationCell = (
   }
 }
 
-/** A label over a table, as "State filings" heads the filing strip. */
-const Label = ({ children }: { children: ReactNode }) => (
-  <div className="px-4 pt-3">
-    <Text tone="secondary" size="sm" className="leading-snug">
-      {children}
-    </Text>
-  </div>
-)
-
-/**
- * A strip of tiles opening a detail under them — the filing strip's and the
- * city strip's behaviour: closed until a tile is picked, the picked one
- * closes it again.
- */
-const Strip = ({
-  label,
-  tiles,
-  detail,
-  open
-}: {
-  label: string
-  tiles: Array<{ key: string; chip: ReactNode; static?: boolean }>
-  detail: (key: string) => ReactNode
-  /** The tile open from the start — the submitted office. */
-  open?: string
-}) => {
-  const [selected, setSelected] = useState(open ?? tiles.find((t) => !t.static)?.key)
-  const [collapsed, setCollapsed] = useState(!open)
-  const detailId = useId()
-  if (tiles.length === 0) return null
-  return (
-    <div className="border-t border-[var(--core-color-border-divider)]">
-      <Label>{label}</Label>
-      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5 px-4 py-3">
-        {tiles.map((t) => {
-          const on = t.key === selected && !collapsed
-          // A verdict with nothing under it: Non-prohibited is the whole fact.
-          if (t.static)
-            return (
-              <span key={t.key} className="flex">
-                {t.chip}
-              </span>
-            )
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              aria-controls={detailId}
-              onClick={() => {
-                if (on) return setCollapsed(true)
-                setSelected(t.key)
-                setCollapsed(false)
-              }}
-              className={cn('flex rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', on && 'ring-1 ring-[var(--core-color-border-strong)]')}
-            >
-              {t.chip}
-            </button>
-          )
-        })}
-      </div>
-      <Collapsible open={!collapsed}>
-        <div id={detailId} className="border-t border-[var(--core-color-border-divider)]">
-          {selected && detail(selected)}
-        </div>
-      </Collapsible>
-    </div>
-  )
-}
-
 /**
  * What the business does, where, and whether it is allowed to.
  *
@@ -288,9 +238,9 @@ const Strip = ({
 export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
   const ops = useMemo(() => operationsOf(record), [record])
   const { industry, locations } = ops
-  const licence = licenceCell(ops)
+  const licence = licenceCell(ops, onJumpToSource)
 
-  // One tile per place, the submitted office's marked and open from the start.
+  // One tile per place, the submitted office's marked and first; closed until picked.
   const places = [...new Set(locations.map(placeOf))]
   const at = (p: string) => locations.filter((a) => placeOf(a) === p)
   const officePlace = places.find((p) => at(p).some((a) => a.submitted))
@@ -305,7 +255,6 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
       {places.length > 0 && (
         <Strip
           label="Locations"
-          open={officePlace}
           tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
             const here = at(p)
             const submitted = here.some((a) => a.submitted)
@@ -337,7 +286,9 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
           classification — NAICS, MCC, SIC — as the dashboard's table. */}
       {industry.table.length > 0 && industry.prohibited !== 'unknown' && (
         <Strip
-          label="Classifications"
+          label="Industry"
+          // The lead classification, in words, beside the verdict.
+          aside={industry.lead?.name}
           tiles={[
             industry.prohibited === 'flagged'
               ? {

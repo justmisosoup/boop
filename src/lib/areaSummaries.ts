@@ -199,7 +199,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
               : `${money(lienAmounts.reduce((a, b) => a + b, 0))} stated`
           }${taxLiens === 0 ? (liveLiens.length === 1 ? ", and it isn't a tax lien" : ', and none is a tax lien') : ''}.`,
     cases > 0
-      ? `${cases === 1 ? 'One lawsuit' : `${cases} lawsuits`}${
+      ? `${cases === 1 ? 'One litigation case' : `${cases} litigation cases`}${
           judgments.length > 0 ? `, with ${money(judgments.reduce((a, b) => a + b, 0))} in judgments against it` : ', no money judgment'
         }.`
       : '',

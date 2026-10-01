@@ -480,9 +480,15 @@ if (args[0] === '--id' && args[1]) {
 } else {
   const q = args[0] && !args[0].startsWith('--') ? `&q=${encodeURIComponent(args[0])}` : ''
   // Over-fetch a little so that records without review tasks can be dropped and
-  // still leave `limit` of them.
-  const page = await call(`/businesses?per_page=${Math.min(limit * 2, 100)}${q}`)
-  summaries = page.data ?? page.businesses ?? []
+  // still leave `limit` of them. The API serves at most 50 a page (100 is a
+  // 422), so the over-fetch pages in fifties.
+  const want = limit * 2
+  for (let page = 1; summaries.length < want; page++) {
+    const got = await call(`/businesses?per_page=50&page=${page}${q}`)
+    const rows: Any[] = got.data ?? got.businesses ?? []
+    summaries.push(...rows)
+    if (rows.length < 50) break
+  }
 }
 
 // The list endpoint returns summaries; addresses, registrations and people come

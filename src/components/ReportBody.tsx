@@ -17,7 +17,9 @@ import type {
 } from '../types'
 import { cn } from '../utils/twUtils'
 import { InsightRow } from './InsightRow'
+import { ClaimsStrips } from './Report/ClaimsStrips'
 import { OperationsBody } from './Report/OperationsCard'
+import { RelatedBusinesses } from './Report/RelatedBusinesses'
 import { ScreeningResults } from './Report/ScreeningCard'
 import { InsightStack } from './InsightStack'
 
@@ -42,7 +44,15 @@ import { InsightStack } from './InsightStack'
  * above the assessments by `ReportBody`, without a heading over it.
  */
 const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
-  policy.map(({ id, name }) => ({ id, heading: name }))
+  policy.filter(({ id }) => !HIDDEN_SECTIONS.has(id)).map(({ id, name }) => ({ id, heading: name }))
+
+/**
+ * Assessments written and scored but not shown. Financial Standing (liens,
+ * litigations, bankruptcies) is stashed for now: its report sections, its
+ * strips (`Report/ClaimsStrips.tsx`) and its summary all still exist — remove
+ * the id here to bring the card back.
+ */
+export const HIDDEN_SECTIONS: ReadonlySet<string> = new Set(['skill-financial-standing'])
 
 /**
  * What is actually happening while the analysis is being written, in the order
@@ -567,6 +577,12 @@ export const SectionBody = ({
           ) : section.id === 'skill-kyb-activity' && record ? (
             // What it does, where, and the licence its industry needs.
             <OperationsBody record={record} onJumpToSource={onJumpToSource} />
+          ) : section.id === 'skill-1789767328449' && record ? (
+            // The businesses related to this one.
+            <RelatedBusinesses record={record} />
+          ) : section.id === 'skill-financial-standing' && record ? (
+            // Its liens, litigations and bankruptcies.
+            <ClaimsStrips record={record} onJumpToSource={onJumpToSource} />
           ) : undefined
         }
         anchor={section.id}

@@ -24,22 +24,20 @@ const titleLabel = (t: string) =>
         .join(' ')
     : t
 
-/** The name as filed and, after it, the titles the filing gives — the first
- *  three and a count, as the dashboard's `TitleCell` caps them. */
+/** The name as filed, and under it every title the filing gives. */
 const Person = ({ name, titles = [] }: { name: string; titles?: string[] }) => (
-  <>
-    {name}
+  <span className="flex flex-col">
+    <span>{name}</span>
     {titles.length > 0 && (
-      <span className="text-[var(--core-color-text-secondary)]">
-        , {titles.slice(0, 3).map(titleLabel).join(', ')}
-        {titles.length > 3 && ` +${titles.length - 3} more`}
+      <span className="text-caption text-text-secondary">
+        {titles.map(titleLabel).join(', ')}
       </span>
     )}
-  </>
+  </span>
 )
 
 /** One connected business: its name and confidence, then what is shared. */
-const cellsFor = (c: Connection, i: number): AttributeCell[] => {
+export const cellsFor = (c: Connection, i: number): AttributeCell[] => {
   const people = c.people ?? []
   const addresses = c.addresses ?? []
   const businesses = c.businesses ?? []
@@ -84,16 +82,12 @@ const cellsFor = (c: Connection, i: number): AttributeCell[] => {
           }
         ]
       : []),
-    ...(addresses.length > 0
-      ? [
-          {
-            key: `${i}:addresses`,
-            span: 'full' as const,
-            label: countLabel(addresses.length, 'Shared address', 'Shared addresses'),
-            values: addresses.map((a, j) => ({ key: `${j}`, value: a.fullAddress }))
-          }
-        ]
-      : []),
+    // Each shared address its own cell, as the record's locations are.
+    ...addresses.map((a, j) => ({
+      key: `${i}:address:${j}`,
+      label: 'Shared address',
+      values: [{ value: a.fullAddress }]
+    })),
   ]
 }
 
