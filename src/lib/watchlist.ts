@@ -35,7 +35,7 @@ const clean = (s: string) => {
   n = n.replace(/\s+/g, ' ').trim()
   return n
 }
-const baseName = (s: string) => {
+export const baseName = (s: string) => {
   let n = clean(s).replace(/,/g, ' ').replace(/\s+/g, ' ').trim()
   for (let prev = ''; prev !== n; ) [prev, n] = [n, n.replace(SUFFIX, '').trim()]
   return n
@@ -53,7 +53,7 @@ const parsePerson = (name: string) => {
   return { surnames: t.slice(-1), given: t.slice(0, 1) }
 }
 
-const personMatch = (hit: string, person: string) => {
+export const personMatch = (hit: string, person: string) => {
   const h = parsePerson(hit)
   const p = parsePerson(person)
   const surname = p.surnames[p.surnames.length - 1]

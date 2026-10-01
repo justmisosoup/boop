@@ -31,8 +31,8 @@ export const reportKey = (name: string) => (name ?? '').toLowerCase().replace(/\
 /**
  * What a snapshot written before these were pulled does not carry: each
  * filing's officers as the filing states them (copied from the SAME filing on
- * the live record, by state and file number), and the business's FMCSA
- * records and documents. Nothing inferred.
+ * the live record, by state and file number), the business's FMCSA records and
+ * documents, and who each PEP result is. Nothing inferred.
  */
 const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
   const live = (liveRecords as unknown as BusinessRecord[]).find((x) => reportKey(x.name) === reportKey(record.name))
@@ -47,6 +47,18 @@ const withOfficerRoles = (record: BusinessRecord): BusinessRecord => {
     profiles: (record.profiles ?? []).map((p) =>
       p.metadata ? p : { ...p, ...((live.profiles ?? []).find((x) => x.url === p.url) ?? {}) }
     ),
+    // Who each PEP result is — born, citizenship, roles — pulled after the
+    // reports were written, from the same result on the live record (by id).
+    pep: record.pep
+      ? {
+          ...record.pep,
+          results: record.pep.results.map((r) => ({
+            ...((live.pep?.results ?? []).find((x) => x.id === r.id) ?? {}),
+            ...r,
+            url: r.url ?? (live.pep?.results ?? []).find((x) => x.id === r.id)?.url ?? null
+          }))
+        }
+      : record.pep,
     // The connections with each shared person's titles, pulled after the
     // reports were written. A snapshot's own list named people as strings.
     connections: (live.connections ?? record.connections)?.map((c) => ({

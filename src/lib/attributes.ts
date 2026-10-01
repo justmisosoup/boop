@@ -1956,9 +1956,20 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             ? (record.pep?.results ?? []).map((r) => ({
                 label: 'Match',
                 value: r.name ?? 'Unnamed',
-                href: r.url ?? undefined,
+                href: r.url ?? r.sourceUrls?.[0] ?? undefined,
                 source: 'PEP provider',
-                sources: ['PEP provider']
+                sources: ['PEP provider'],
+                // Who the listed person is, as the provider ties it to them:
+                // what a reviewer clears a name match on.
+                evidenceFields: [
+                  r.dob ? { label: 'Born', value: r.dob.replace(/-00/g, '') } : undefined,
+                  r.birthPlace ? { label: 'Birthplace', value: r.birthPlace } : undefined,
+                  r.citizenship ? { label: 'Citizenship', value: r.citizenship } : undefined,
+                  (r.professionalHistory ?? []).length > 0
+                    ? { label: 'Roles', value: (r.professionalHistory ?? []).join(' · ') }
+                    : undefined,
+                  r.hitType === 'association' ? { value: 'Listed as an associate, not the person' } : undefined
+                ].filter((x): x is { label?: string; value: string } => Boolean(x))
               }))
             : []
 

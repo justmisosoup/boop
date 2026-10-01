@@ -1,10 +1,10 @@
-import { entityTypeCode, money, nameKey } from './attributes'
+import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
-import { validHitCount, watchlistVerdicts } from './watchlist'
+import { screeningOf, type Screening } from './screening'
 
 /**
  * What each area checks, for this business.
@@ -19,42 +19,32 @@ const NAMES_NO_MEMBERS: ReadonlySet<string> = new Set(['NY'])
 /** One area's finding: the clause on the card, and the sentences under it. */
 export type AreaSummary = { headline: string; summary: string }
 
+/** What the screens found, and what they dismissed, counted. */
+const screeningSummary = (s: Screening): string => {
+  const people = s.subjects.filter((x) => x.key !== 'business').length
+  const who = people > 0 ? `the business or the ${people === 1 ? 'person' : `${people} people`} submitted with it` : 'the business'
+  const hitNames = [...new Set(s.findings.map((f) => f.against))]
+  const named = hitNames.length <= 2 ? hitNames.join(' and ') : `${hitNames.length} names`
+  const first =
+    s.findings.length === 0
+      ? `Nothing on ${who}.`
+      : `${s.findings.length === 1 ? 'One hit' : `${s.findings.length} hits`} on ${named}.`
+  const n = s.dismissed.length
+  // Dismissed, counted; the table says on whom and why.
+  const second =
+    n === 0
+      ? ''
+      : ` ${n === 1 ? 'One' : String(n)} ${s.findings.length > 0 ? 'other ' : ''}${n === 1 ? 'result was' : 'results were'} dismissed.`
+  return first + second
+}
+
 export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<string, AreaSummary> => {
   const entity = entityTypeCode(record)
   const kind = entity ?? 'business'
   const upper = (entity ?? '').toUpperCase()
   const state = record.formation ? stateName(record.formation.state) : undefined
   const industry = industrySectorOf(record)
-  const hits = validHitCount(record)
-  const returned = watchlistVerdicts(record)
-  const notMatches = returned.filter((v) => !v.valid)
-
-  /* Adverse media, by the name it matched. A result is the screen's answer
-     for one name; the name carries the result's id among its source refs.
-     Whether any item is about the business itself is read off the headlines. */
-  const mediaResults = (record.adverseMedia?.results ?? []).filter((r) => r.items.length > 0)
-  const mediaIds = new Set(mediaResults.map((r) => r.id))
-  const refsOf = (x: { sourceRefs?: Array<{ id: string; type: string }> }) =>
-    (x.sourceRefs ?? []).filter((ref) => ref.type === 'adverse_media_screening_result').map((ref) => ref.id)
-  const mediaNames = [
-    ...record.people.filter((p) => refsOf(p).some((id) => mediaIds.has(id))).map((p) => p.name),
-    ...(record.names ?? []).filter((n) => refsOf(n).some((id) => mediaIds.has(id))).map((n) => n.name)
-  ].filter((n, i, all) => all.findIndex((m) => nameKey(m) === nameKey(n)) === i)
-  const business = nameKey(record.name)
-  const mediaNamesBusiness = mediaResults.some((r) =>
-    r.items.some((item) => nameKey(item.title ?? '').includes(business))
-  )
-  const mediaWho =
-    mediaNames.length === 0
-      ? 'a name on the record'
-      : mediaNames.length <= 2
-        ? mediaNames.join(' and ')
-        : `${mediaNames.length} names`
-  const mediaAbout = mediaNamesBusiness ? 'including the business' : 'none about the business'
-  // The finding, without the names; the names are the sentence under it.
-  const mediaHeadline = mediaResults.length === 0 ? undefined : `Adverse media matched names but ${mediaAbout}`
-  // Each screen named, so media and watchlist read as two answers, not one.
-  const mediaSummary = mediaResults.length === 0 ? undefined : `Media matched ${mediaWho}; ${mediaAbout}.`
+  const screened = screeningOf(record)
 
   // A professional entity is owned by licensed practitioners; the licence
   // record answers it, and is named rather than restated.
@@ -245,29 +235,20 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       {
         // A valid watchlist hit outranks the media; media matched outranks a
         // clean screen — the card is named for what it found.
+        // What the screens found on the business and the submitted people
+        // (`screeningOf`); what they returned on anyone else is dismissed.
         headline:
-          hits > 0
-            ? `${hits} watchlist ${hits === 1 ? 'hit' : 'hits'} to clear before opening`
-            : (mediaHeadline ?? 'No sanctions or watchlist hits'),
+          screened.findings.length > 0
+            ? `${screened.findings.length} screening ${screened.findings.length === 1 ? 'hit' : 'hits'} to review`
+            : 'No compliance screening hits',
         /* Only what the headline and the rows do not already say. A clean
            screen needs no sentence: "No sanctions or watchlist hits" over
            "No watchlist hits were identified" was the same fact twice, and a
            summary saying it again made three. Names returned and ruled out are
            the evidence's to name; the card says only what they were. */
-        summary: [
-          hits > 0
-            ? `A sanctions or watchlist hit blocks account opening until it is cleared. ${hits === 1 ? 'One hit' : `${hits} hits`} on the ${kind} or the individuals named on its filings ${hits === 1 ? 'is' : 'are'} unresolved.`
-            : undefined,
-          // Who the media matched, under the finding that names no one.
-          hits === 0 ? mediaSummary : undefined,
-          notMatches.length > 0
-            ? notMatches.length === 1
-              ? 'Watchlist returned one close match, not a valid one.'
-              : 'Watchlist returned close matches only, none valid.'
-            : undefined
-        ]
-          .filter(Boolean)
-          .join(' ')
+        // The outcome in two plain sentences; the table under it says who
+        // and why, row by row.
+        summary: screeningSummary(screened)
       }
     ],
     [

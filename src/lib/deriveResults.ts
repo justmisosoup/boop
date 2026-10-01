@@ -333,7 +333,27 @@ export type BusinessRecord = {
       }>
     }>
   } | null
-  pep?: { results: Array<{ id: string; name: string | null; url: string | null }> } | null
+  pep?: {
+    results: Array<{
+      id: string
+      name: string | null
+      url: string | null
+      /** Who the listed person is, as the provider gives it. */
+      aliases?: string[]
+      birthName?: string | null
+      birthPlace?: string | null
+      citizenship?: string | null
+      dob?: string | null
+      employers?: string[]
+      memberships?: string[]
+      professionalHistory?: string[]
+      /** direct · direct_alias · association */
+      hitType?: string | null
+      score?: number | null
+      sourceUrls?: string[]
+      stakeholders?: string[]
+    }>
+  } | null
   adverseMedia?: {
     results: Array<{
       id: string

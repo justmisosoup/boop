@@ -2,7 +2,7 @@ import type { BusinessRecord, Derived } from './deriveResults'
 import { describeRegistration, standingOf } from './registrationStatus'
 import { entityFallback, nameStandingOf } from './businessNames'
 import { domesticFilingOf } from './linkedFormation'
-import { validHitCount } from './watchlist'
+import { screeningOf, type Screen } from './screening'
 import { stateName } from './states'
 
 /**
@@ -34,6 +34,10 @@ import { stateName } from './states'
  * - Serious findings CAP the score rather than deducting from it. A weighted
  *   sum turns an OFAC hit into rounding error.
  */
+
+/** Findings on one screen — hits on the business or a submitted person. */
+const screenHits = (record: BusinessRecord, screen: Screen) =>
+  screeningOf(record).findings.filter((f) => f.screen === screen).length
 
 export type BandId = 'established' | 'conditions' | 'not_established'
 
@@ -387,9 +391,10 @@ const POLARITY: Record<string, (r: Derived, record: BusinessRecord) => Polarity>
   // Screening. The absence of a hit is the point; a hit is the finding, and the
   // ceilings below carry the serious ones.
   // A returned name that is not a match (MICHAEL COX for Michael McCrory) is a clean screen — see watchlist.ts.
-  watchlist: (_r, record) => (validHitCount(record) > 0 ? 'negative' : 'positive'),
-  politically_exposed_persons: (_r, record) =>
-    (record.pep?.results ?? []).length > 0 ? 'negative' : 'positive',
+  // What the screens found on the business and the submitted people
+  // (`screeningOf`); a match on anyone else, or not naming them, is dismissed.
+  watchlist: (_r, record) => (screenHits(record, 'watchlist') > 0 ? 'negative' : 'positive'),
+  politically_exposed_persons: (_r, record) => (screenHits(record, 'pep') > 0 ? 'negative' : 'positive'),
   adverse_media: (_r, record) => {
     const grade = (sub(record, 'adverse_media') ?? '').toLowerCase()
     return grade.startsWith('high') || grade.startsWith('moderate') ? 'negative' : 'positive'
@@ -619,7 +624,7 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
       because: 'the TIN does not match the name',
       plain: 'The TIN does not match the business name at the IRS.'
     })
-  if (validHitCount(record) > 0)
+  if (screenHits(record, 'watchlist') > 0)
     out.push({
       id: 'watchlist_hit',
       at: 69,
@@ -648,17 +653,14 @@ const ceilingsFor = (record: BusinessRecord): ScoreCeiling[] => {
    */
   const mediaGrade = (sub(record, 'adverse_media') ?? '').toLowerCase()
   const mediaGradedLow = mediaGrade.startsWith('low') || mediaGrade.startsWith('no result')
-  if (
-    !mediaGradedLow &&
-    (record.adverseMedia?.results ?? []).some((r) => (r.matchScore ?? 0) >= 0.9)
-  )
+  if (!mediaGradedLow && screenHits(record, 'media') > 0)
     out.push({
       id: 'adverse_media_match',
       at: 89,
       because: 'an adverse-media match on a named person',
       plain: 'Adverse media matched a named person and has not been graded.'
     })
-  if ((record.pep?.results ?? []).length > 0)
+  if (screenHits(record, 'pep') > 0)
     out.push({
       id: 'pep_match',
       at: 89,

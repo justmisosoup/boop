@@ -9360,7 +9360,23 @@
         {
           "id": "6e0e9270-8bca-4a77-8b48-5f19eceadfda",
           "name": "Manuel Rodriguez",
-          "url": null
+          "url": "http://www.newyorkparalegalblog.com/2012/08/raymond-w.html",
+          "aliases": [],
+          "birthName": null,
+          "birthPlace": null,
+          "citizenship": "United States of America",
+          "dob": null,
+          "employers": [],
+          "memberships": [],
+          "professionalHistory": [
+            "Police Officer"
+          ],
+          "hitType": "direct",
+          "score": 1,
+          "sourceUrls": [
+            "http://www.newyorkparalegalblog.com/2012/08/raymond-w.html"
+          ],
+          "stakeholders": []
         }
       ]
     },
@@ -23069,17 +23085,101 @@
         {
           "id": "ea785eb6-b545-4fe2-8b6e-5e70c16dc0f5",
           "name": "Dave David Howard Johnson",
-          "url": null
+          "url": "https://www.wikidata.org/entity/Q67225021",
+          "aliases": [
+            "David Howard Johnson",
+            "David H. Johnson",
+            "David Johnson"
+          ],
+          "birthName": null,
+          "birthPlace": "Hennepin County",
+          "citizenship": "United States of America",
+          "dob": "1963-08-21",
+          "employers": [],
+          "memberships": [
+            "Minnesota Democratic–Farmer–Labor Party"
+          ],
+          "professionalHistory": [
+            "member of the State Senate of Minnesota",
+            "politician"
+          ],
+          "hitType": "direct_alias",
+          "score": 1,
+          "sourceUrls": [
+            "https://www.wikidata.org/entity/Q67225021"
+          ],
+          "stakeholders": []
         },
         {
           "id": "be4ab2b8-a529-4f24-8df0-c291918bc92e",
           "name": "David Johnson",
-          "url": null
+          "url": "https://en.wikipedia.org/wiki/David_Johnson_(Iowa_politician)",
+          "aliases": [],
+          "birthName": null,
+          "birthPlace": "West Branch",
+          "citizenship": "United States of America",
+          "dob": "1950-00-00",
+          "employers": [],
+          "memberships": [
+            "Independent",
+            "Republican Party",
+            "Democratic Party",
+            "Republican Party of Iowa"
+          ],
+          "professionalHistory": [
+            "member of the State Senate of Iowa (2003-2017)",
+            "member of the Iowa House of Representatives (1999-2001)",
+            "Dairy farmer",
+            "member of the Ohio House of Representatives",
+            "politician",
+            "member of the State Senate of Arkansas",
+            "lawyer"
+          ],
+          "hitType": "direct",
+          "score": 1,
+          "sourceUrls": [
+            "https://en.wikipedia.org/wiki/David_Johnson_(Iowa_politician)",
+            "https://www.wikidata.org/entity/Q5235693"
+          ],
+          "stakeholders": []
         },
         {
           "id": "005112d0-b794-4f82-8d4d-d86003598601",
           "name": "Corey Johnson",
-          "url": null
+          "url": "https://en.wikipedia.org/wiki/Corey_Johnson_(politician)",
+          "aliases": [
+            "Corey Johnson",
+            "Corey David Johnson"
+          ],
+          "birthName": "Corey Johnson",
+          "birthPlace": "Beverly",
+          "citizenship": "United States of America",
+          "dob": "1982-04-28",
+          "employers": [
+            "Cojo Strategies"
+          ],
+          "memberships": [
+            "Manhattan Community Board 4",
+            "GFI Development",
+            "Democratic Party"
+          ],
+          "professionalHistory": [
+            "New York City Public Advocate (2019-2019)",
+            "Speaker of the New York City Council (2018-2021)",
+            "member of the New York City Council (2014-2021)",
+            "Elected Representative",
+            "Councilmember, New York City Council",
+            "Politician",
+            "politician"
+          ],
+          "hitType": "association",
+          "score": 1,
+          "sourceUrls": [
+            "https://en.wikipedia.org/wiki/Corey_Johnson_(politician)",
+            "https://littlesis.org/entities/183741-Corey_Johnson",
+            "https://www.wikidata.org/entity/Q16205162"
+          ],
+          "stakeholders": []
         }
       ]
     },

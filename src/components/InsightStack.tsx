@@ -1,5 +1,7 @@
 import { Children, useEffect, useId, useState, type ReactNode } from 'react'
 
+import { ChevronDown } from 'lucide-react'
+
 import { Surface } from '@/core'
 
 import { cn } from '../utils/twUtils'
@@ -38,8 +40,29 @@ export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; 
     if (forced) setOpen(true)
   }, [forced])
   if (rows.length === 0) return null
+  // The button stays where it is; the insights open under it.
   return (
     <>
+      {/* A dropdown row, as the screening card's names are: the label and
+          count, the chevron at the far right. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left text-sm text-text-primary hover:bg-[var(--core-color-list-item-hover-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+      >
+        <span>
+          {open ? 'Hide insights' : 'Show insights'}
+          <span className="ml-1.5 tabular-nums text-text-secondary">{rows.length}</span>
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          size={14}
+          strokeWidth={2}
+          className={cn('shrink-0 text-text-secondary transition-transform', open && 'rotate-180')}
+        />
+      </button>
       <Collapsible open={open} id={id}>
         <div className="border-t border-[var(--core-color-border-divider)]">
           {rows.map((row, i) => (
@@ -49,18 +72,6 @@ export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; 
           ))}
         </div>
       </Collapsible>
-      <div className="border-t border-[var(--core-color-border-divider)] px-4 py-2.5">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={() => setOpen((v) => !v)}
-          className="text-caption font-medium text-[var(--core-color-interactive-default)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          {open ? 'Hide insights' : 'Show insights'}
-          <span className="ml-1.5 tabular-nums text-text-secondary">{rows.length}</span>
-        </button>
-      </div>
     </>
   )
 }
@@ -90,6 +101,7 @@ export const InsightStack = ({
   title,
   trailing,
   intro,
+  body,
   children,
   disclose,
   open,
@@ -104,11 +116,14 @@ export const InsightStack = ({
   title?: ReactNode
   trailing?: ReactNode
   intro?: ReactNode
+  /** The card's finding, drawn: between its sentence and its insights — the
+   *  compliance screens' grid. It rules itself off. */
+  body?: ReactNode
   children?: ReactNode
   className?: string
 }) => {
   const rows = Children.toArray(children).filter(Boolean)
-  if (rows.length === 0 && !intro) return null
+  if (rows.length === 0 && !intro && !body) return null
 
   return (
     <Surface id={id} variant="card" padding="none" className={cn('overflow-hidden', id && 'scroll-mt-6', className)}>
@@ -125,6 +140,7 @@ export const InsightStack = ({
           {intro}
         </div>
       )}
+      {body}
       {disclose ? (
         <InsightsDisclosure rows={rows} open={open} />
       ) : (

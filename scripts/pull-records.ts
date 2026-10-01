@@ -280,10 +280,25 @@ const normalise = (b: Any) => ({
   // screen ran and found nobody.
   pep: b.politically_exposed_person_screening
     ? {
+        // Everything the provider ties to the person: who they are (date of
+        // birth, citizenship, birthplace) is what tells a reviewer whether a
+        // name match is the person on the record.
         results: (b.politically_exposed_person_screening.results ?? []).map((r: Any) => ({
           id: r.id,
           name: r.name ?? r.entity_name ?? null,
-          url: r.url ?? r.source_url ?? null
+          url: r.url ?? r.source_url ?? (r.source_urls ?? [])[0] ?? null,
+          aliases: r.aliases ?? [],
+          birthName: r.birth_name ?? null,
+          birthPlace: r.birth_place ?? null,
+          citizenship: r.citizenship_country ?? null,
+          dob: r.dob ?? null,
+          employers: r.employers ?? [],
+          memberships: r.memberships ?? [],
+          professionalHistory: r.professional_history ?? [],
+          hitType: r.hit_type ?? null,
+          score: typeof r.score === 'number' ? r.score : null,
+          sourceUrls: r.source_urls ?? [],
+          stakeholders: r.stakeholders ?? []
         }))
       }
     : null,

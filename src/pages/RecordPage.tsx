@@ -691,8 +691,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * across the page. At `wide` the column scrolls inside itself and
               * the band sits above the scroller, so `sticky` is inert there.
               */}
-            <PageHeaderBand className="sticky top-0 z-chrome shrink-0 border-b border-solid border-border bg-surface-canvas px-0 py-4">
-              <PageHeader className={cn(MEASURE, 'gap-2')}>
+            <PageHeaderBand className="sticky top-0 z-chrome flex h-[49px] shrink-0 items-center border-b border-solid border-border bg-surface-canvas px-0 py-0">
+              <PageHeader className={cn(MEASURE, 'w-full gap-2')}>
                 {/* A back arrow beside the name, not a breadcrumb: the only
                     place up is the list, and a crumb that named the business
                     over a heading that named it again said it twice. */}
@@ -713,7 +713,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     >
                       <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
                     </IconActionButton>
-                    <PageHeading weight="normal">{selected.name}</PageHeading>
+                    <PageHeading size="md" weight="normal">{selected.name}</PageHeading>
                   </div>
                   <PageHeaderActions className="shrink-0">
                     <AssigneeDropdown businessId={selected.id} />
@@ -915,7 +915,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             if (next !== 'pill') setPanelView('assistant')
           }}
           onPresentationChange={setAssistantPresentation}
-          onCreateSkill={() => setAgentOpen('new')}
           onJumpToGroup={jumpToInsight}
         />
 

@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { CubeIcon } from '@radix-ui/react-icons'
-import { Building2, Plus } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 
 import {
   ActionButton,
   ChatComposer,
   Dialog,
-  type ChatChipData,
-  type ChatSlashGroup,
-  type ChatSlashItem
+  type ChatChipData
 } from '@/core'
 
 import { composeAssessment } from '../../lib/library'
@@ -30,18 +27,16 @@ export type Send = {
 }
 
 const BUSINESS_CHIP = 'business'
-const CREATE = 'create-assessment'
 
 /**
  * Kha's composer, on the kit's `ChatComposer`.
  *
  * The business is the standing chip — the one thing every question is about,
  * so it is in the box before anything is typed and cannot be taken out. The
- * workflow and the assessments attach through the `/` menu as chips beside it,
- * which is what the old dock's token row and Workflow menu did in a shape of
- * their own. Same rules underneath: the customer's workflow starts attached
- * until they remove it; a workflow with nothing typed runs a report; anything
- * typed is a question; a question while a report is open asks where it goes.
+ * customer's workflow sits beside it as a chip, attached until they remove it.
+ * There is no `/` menu: nothing else is attached from here. A workflow with
+ * nothing typed runs a report; anything typed is a question; a question while
+ * a report is open asks where it goes.
  *
  * File attachments are not carried: the kit's composer has no slot for them.
  * The endpoint still accepts them for when it does.
@@ -54,14 +49,13 @@ export const AssistantComposer = ({
   report,
   busy,
   inputRef,
-  onSend,
-  onCreateSkill
+  onSend
 }: {
   businessId: string
   businessName: string
   /** The customer's own skills — the workflow and the assessments under it. */
   custom: CustomerSkill[]
-  /** Assessment ids switched off, which are not offered. */
+  /** Assessment ids switched off, which the workflow leaves out. */
   disabled: string[]
   /** The report being read, if any — what a question can be added to. */
   report: { id: string; label: string } | null
@@ -69,11 +63,9 @@ export const AssistantComposer = ({
   busy: boolean
   inputRef?: RefObject<HTMLTextAreaElement | null>
   onSend: (send: Send) => void
-  onCreateSkill: () => void
 }) => {
   const [value, setValue] = useState('')
   const [workflow, setWorkflow] = useState<string | null>(null)
-  const [contexts, setContexts] = useState<string[]>([])
   /** A question waiting on where it should go. */
   const [ask, setAsk] = useState<Omit<Send, 'kind' | 'target'> | null>(null)
 
@@ -87,7 +79,6 @@ export const AssistantComposer = ({
   }, [touched, theirWorkflow])
 
   const chosenWorkflow = custom.find((x) => x.id === workflow && x.kind === 'workflow') ?? null
-  const chosenContexts = custom.filter((c) => c.kind !== 'workflow' && contexts.includes(c.id))
 
   const chips = useMemo<ChatChipData[]>(
     () => [
@@ -98,77 +89,10 @@ export const AssistantComposer = ({
       },
       ...(chosenWorkflow
         ? [{ id: chosenWorkflow.id, label: chosenWorkflow.name, icon: <MiddeskMark className="h-[6px] w-2.5" /> }]
-        : []),
-      ...chosenContexts.map((c) => ({
-        id: c.id,
-        label: c.name,
-        icon: <CubeIcon aria-hidden="true" className="size-3" />
-      }))
+        : [])
     ],
-    [businessId, businessName, chosenWorkflow, chosenContexts]
+    [businessId, businessName, chosenWorkflow]
   )
-
-  /**
-   * The `/` menu: what can be attached.
-   *
-   * One flat idea in three groups — the workflow that runs on its own, the
-   * assessments that scope a question, and the way to write another. Names
-   * only: a menu is a list of things already named.
-   */
-  const slashGroups = useMemo<ChatSlashGroup[]>(() => {
-    const workflows = custom.filter((c) => c.kind === 'workflow')
-    const assessments = custom.filter((c) => c.kind !== 'workflow' && !disabled.includes(c.id))
-    return [
-      ...(workflows.length > 0
-        ? [
-            {
-              label: 'Workflows',
-              items: workflows.map<ChatSlashItem>((w) => ({
-                id: w.id,
-                label: w.name,
-                icon: <MiddeskMark className="h-[6px] w-2.5" />,
-                hint: workflow === w.id ? 'Attached' : undefined
-              }))
-            }
-          ]
-        : []),
-      ...(assessments.length > 0
-        ? [
-            {
-              label: 'Assessments',
-              items: assessments.map<ChatSlashItem>((a) => ({
-                id: a.id,
-                label: a.name,
-                icon: <CubeIcon aria-hidden="true" className="size-3" />,
-                hint: contexts.includes(a.id) ? 'Attached' : undefined
-              }))
-            }
-          ]
-        : []),
-      {
-        label: 'More',
-        items: [
-          {
-            id: CREATE,
-            label: 'Create assessment',
-            icon: <Plus aria-hidden="true" size={12} strokeWidth={1.75} />
-          }
-        ]
-      }
-    ]
-  }, [custom, disabled, workflow, contexts])
-
-  const onSlashSelect = (item: ChatSlashItem) => {
-    if (item.id === CREATE) return onCreateSkill()
-    const skill = custom.find((c) => c.id === item.id)
-    if (!skill) return
-    if (skill.kind === 'workflow') {
-      setTouched(true)
-      setWorkflow((prev) => (prev === skill.id ? null : skill.id))
-      return
-    }
-    setContexts((prev) => (prev.includes(skill.id) ? prev.filter((x) => x !== skill.id) : [...prev, skill.id]))
-  }
 
   const onRemoveChip = (id: string) => {
     // The business is what the conversation is about; it is not removable.
@@ -176,9 +100,7 @@ export const AssistantComposer = ({
     if (id === workflow) {
       setTouched(true)
       setWorkflow(null)
-      return
     }
-    setContexts((prev) => prev.filter((x) => x !== id))
   }
 
   // A workflow is the question, so it sends with nothing typed — which is the
@@ -195,11 +117,10 @@ export const AssistantComposer = ({
     // time, and each one has to be nameable for that.
     const composed = chosenWorkflow ? composeAssessment(chosenWorkflow, custom, disabled) : null
     const parts = [
-      ...chosenContexts.map((c) => c.instructions),
       ...(composed ? [composed.prompt] : []),
       ...(typed ? [typed] : [])
     ]
-    const names = [...(chosenWorkflow ? [chosenWorkflow.name] : []), ...chosenContexts.map((c) => c.name)]
+    const names = chosenWorkflow ? [chosenWorkflow.name] : []
 
     // A workflow with nothing typed is a report; anything typed is a question
     // about this business, whatever else is in the box with it.
@@ -241,11 +162,9 @@ export const AssistantComposer = ({
         label="Ask Assistant about this business"
         placeholder="Ask about this business…"
         sendDisabled={!ready}
-        slashGroups={slashGroups}
         value={value}
         onChange={setValue}
         onRemoveChip={onRemoveChip}
-        onSlashSelect={onSlashSelect}
         onSubmit={submit}
       />
 

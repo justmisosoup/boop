@@ -62,7 +62,6 @@ export const AssistantPanel = ({
   canDock,
   onStateChange,
   onPresentationChange,
-  onCreateSkill,
   onJumpToGroup,
   className
 }: {
@@ -80,7 +79,6 @@ export const AssistantPanel = ({
   canDock: boolean
   onStateChange: (state: FloatingPanelState) => void
   onPresentationChange: (presentation: FloatingPanelPresentation) => void
-  onCreateSkill: () => void
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
   className?: string
 }) => {
@@ -164,7 +162,9 @@ export const AssistantPanel = ({
         state={state}
         onStateChange={onStateChange}
       >
-        <FloatingPanelHeader>
+        {/* Docked, the header is a cell of the page's one bar: 49px like the
+            page header and the rail beside it, so the rule runs flat. */}
+        <FloatingPanelHeader className={docked ? 'h-[49px]' : undefined}>
           {view === 'thread' ? (
             <>
               <span
@@ -348,7 +348,6 @@ export const AssistantPanel = ({
                 busy={false}
                 inputRef={composerInputRef}
                 onSend={send}
-                onCreateSkill={onCreateSkill}
               />
             </div>
           )}

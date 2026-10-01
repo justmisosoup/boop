@@ -17,6 +17,7 @@ import type {
 } from '../types'
 import { cn } from '../utils/twUtils'
 import { InsightRow } from './InsightRow'
+import { ScreeningResults } from './Report/ScreeningCard'
 import { InsightStack } from './InsightStack'
 
 /**
@@ -87,12 +88,15 @@ const CiteList = ({
   title,
   trailing,
   intro,
+  body,
   sections,
   anchor,
   revealed,
   onJumpToSource
 }: {
   cited: Derived[]
+  /** The card's finding, drawn, between its sentence and its insights. */
+  body?: React.ReactNode
   /** Rows a citation in the assistant has just led to: open, and marked. */
   revealed?: ReadonlySet<string>
   record?: BusinessRecord
@@ -236,6 +240,7 @@ const CiteList = ({
       title={title}
       trailing={flaggedChip(ordered)}
       intro={intro}
+      body={body}
       disclose
       open={ordered.some((r) => revealed?.has(r.insightId))}
     >
@@ -511,7 +516,9 @@ export const SectionBody = ({
      rows carried the argument alone (`analysis/README.md`); the report reads
      as a document again. What the area asks, in the summary's words, stands
      in only when the assessment wrote nothing; then any gap it left. */
-  const prose = section.body.filter((b) => b.text.trim())
+  // The screening card states its outcome from the screens themselves
+  // (`screeningOf`), not the report's paragraph: the table under it is the detail.
+  const prose = section.id === 'skill-kyb-3' && summary ? [] : section.body.filter((b) => b.text.trim())
   const lead =
     prose.length > 0 ? (
       <ProseLead paragraphs={prose.map((b) => b.text)} results={results} record={record} />
@@ -538,6 +545,8 @@ export const SectionBody = ({
            reviewer reading this business needs beside the area's name. */
         intro={intro}
         sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
+        // The compliance screens: the hits, then what was dismissed.
+        body={section.id === 'skill-kyb-3' && record ? <ScreeningResults record={record} /> : undefined}
         anchor={section.id}
         revealed={revealed}
         onJumpToSource={onJumpToSource}
