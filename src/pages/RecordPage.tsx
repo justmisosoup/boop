@@ -123,11 +123,14 @@ const writeStored = (key: string, value: string) => {
   }
 }
 
-/** Open on first visit — the assistant is half of what this page is for. */
-const readAssistantState = (): FloatingPanelState => {
-  const saved = readStored(ASSISTANT_STATE_KEY)
-  return saved === 'pill' || saved === 'window' || saved === 'expanded' ? saved : 'window'
-}
+/**
+ * Open, always, when a record opens — the assistant is half of what this page
+ * is for, and its first message is the report summarised. A size the reader
+ * chose (expanded) is kept; minimised is not: the pill is for putting it away
+ * during a visit, not a state a record should open in.
+ */
+const readAssistantState = (): FloatingPanelState =>
+  readStored(ASSISTANT_STATE_KEY) === 'expanded' ? 'expanded' : 'window'
 const readAssistantPresentation = (): FloatingPanelPresentation =>
   readStored(ASSISTANT_PRESENTATION_KEY) === 'floating' ? 'floating' : 'docked'
 
