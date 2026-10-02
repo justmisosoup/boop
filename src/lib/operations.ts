@@ -38,6 +38,24 @@ export type LicenceStanding =
   | { required: true; profession: string; registry: 'FMCSA'; found: FmcsaRegistration[] }
   | { required: true; profession: string; registry: 'none'; found: [] }
 
+/**
+ * A state licence the professional-licence search found for the business —
+ * a contractor's board licence, say — apart from the NPI and FMCSA registers
+ * the industry rule reads. The record holds it only as a source reference on
+ * the values it is cited for, so it is gathered from them: the names, the
+ * addresses and the people that licence states.
+ */
+export type StateLicence = {
+  id: string
+  state?: string
+  status?: string
+  type?: string
+  number?: string
+  names: string[]
+  addresses: string[]
+  people: string[]
+}
+
 export type OfficeVerdict = 'active' | 'inactive' | 'not_registered' | 'unknown'
 
 export type Operations = {
@@ -57,6 +75,40 @@ export type Operations = {
   /** Whether the business is registered in the state of its office. */
   office?: { state: string; verdict: OfficeVerdict }
   licence: LicenceStanding
+  /** The state licences on the record, whatever the industry requires. */
+  stateLicences: StateLicence[]
+}
+
+const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+
+/** Every professional-licence reference on the record, one licence per id. */
+export const stateLicencesOf = (record: BusinessRecord): StateLicence[] => {
+  const byId = new Map<string, StateLicence>()
+  const take = (
+    refs: ReadonlyArray<{ id?: string | null; type?: string | null; metadata?: Record<string, unknown> | null }> | undefined,
+    add: (l: StateLicence) => void
+  ) => {
+    for (const r of refs ?? []) {
+      if (r.type !== 'professional_license' || !r.id) continue
+      const m = r.metadata ?? {}
+      const l = byId.get(r.id) ?? {
+        id: r.id,
+        state: text(m.state),
+        status: text(m.status),
+        type: text(m.license_type),
+        number: text(m.license_number),
+        names: [],
+        addresses: [],
+        people: []
+      }
+      add(l)
+      byId.set(r.id, l)
+    }
+  }
+  for (const n of record.names ?? []) take(n.sourceRefs, (l) => l.names.push(n.name))
+  for (const a of record.addresses) take(a.sourceRefs, (l) => l.addresses.push(a.fullAddress))
+  for (const p of record.people) take(p.sourceRefs, (l) => l.people.push(p.name))
+  return [...byId.values()]
 }
 
 const isAgent = (a: BusinessRecord['addresses'][number]) => Boolean(a.isRegisteredAgent) || a.labels.includes('registered_agent')
@@ -159,7 +211,8 @@ export const operationsOf = (record: BusinessRecord): Operations => {
     industry: { lead: insufficient ? undefined : lead, prohibited, flagged, insufficient, table },
     locations,
     office: officeOf(record),
-    licence: licenceOf(record, lead?.code)
+    licence: licenceOf(record, lead?.code),
+    stateLicences: stateLicencesOf(record)
   }
 }
 

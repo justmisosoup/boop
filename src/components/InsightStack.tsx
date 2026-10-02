@@ -24,14 +24,15 @@ export const ROW_HAIRLINE = cn(
 )
 
 /**
- * A report card's insight rows, behind "Show insights".
+ * A report card's insight rows, behind "Insights", under the card's data.
  *
- * The card's finding — its prose, its grid — is the answer; the rows are the
+ * The card's data — its grid, its strips — is always out; the rows are the
  * working, one click away rather than always open. Closed by default. `open`
  * forces it open when a citation or the attention list leads to one of its
  * rows, so the row it names is there to land on; the reader can close it
- * again after. The Insights tab does not use this: it is the list of every
- * row, and hiding them there hides the tab.
+ * again after. Collapsed rather than unmounted: a citation finds its row by
+ * `insight-{id}` (`RecordPage`'s `jumpToInsight`). The Insights tab does not
+ * use this: it is the list of every row, and hiding them there hides the tab.
  */
 export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; open?: boolean }) => {
   const [open, setOpen] = useState(false)
@@ -94,6 +95,10 @@ export const InsightsDisclosure = ({ rows, open: forced }: { rows: ReactNode[]; 
  * intro the header does. The first row never draws a line of its own; only
  * rows after the first do.
  *
+ * With `disclose` — the report's cards — the card is its name and its data,
+ * always out, with the rows behind "Insights" at its foot
+ * (`InsightsDisclosure`).
+ *
  * Renders nothing when there is nothing under the header: a frame around a
  * name is a frame.
  */
@@ -108,9 +113,9 @@ export const InsightStack = ({
   open,
   className
 }: {
-  /** The rows behind "Show insights" (`InsightsDisclosure`) — the report's cards. */
+  /** The report's cards: the data always out, the rows behind "Insights". */
   disclose?: boolean
-  /** With `disclose`: open it, because something led to one of its rows. */
+  /** With `disclose`: open the insights, because something led to one of its rows. */
   open?: boolean
   /** An anchor, for a jump from the Needs review card. */
   id?: string
@@ -126,6 +131,21 @@ export const InsightStack = ({
   const rows = Children.toArray(children).filter(Boolean)
   if (rows.length === 0 && !intro && !body) return null
 
+  if (disclose) {
+    return (
+      <Surface id={id} variant="card" padding="none" className={cn('overflow-hidden', id && 'scroll-mt-6', className)}>
+        {/* No rule under the header: the data under it rules itself off. */}
+        {title && <CardHeader title={title} trailing={trailing} className={cn('border-b-0', intro && 'pb-1')} />}
+        {intro && <div className={cn('px-4 pb-3', title ? 'pt-0' : 'pt-3')}>{intro}</div>}
+        {/* The data, always out. It rules itself off at the top and the
+            bottom; its bottom rule meets the Insights row's, or tucks under
+            the card's frame. */}
+        {body && <div className="-mb-px">{body}</div>}
+        <InsightsDisclosure rows={rows} open={open} />
+      </Surface>
+    )
+  }
+
   return (
     <Surface id={id} variant="card" padding="none" className={cn('overflow-hidden', id && 'scroll-mt-6', className)}>
       {/* The summary reads as the header's own sentence, so no rule between them. */}
@@ -135,22 +155,18 @@ export const InsightStack = ({
           className={cn(
             'px-4 pb-3',
             title ? 'pt-0' : 'pt-3',
-            rows.length > 0 && !disclose && 'border-b border-[var(--core-color-border-divider)]'
+            rows.length > 0 && 'border-b border-[var(--core-color-border-divider)]'
           )}
         >
           {intro}
         </div>
       )}
       {body}
-      {disclose ? (
-        <InsightsDisclosure rows={rows} open={open} />
-      ) : (
-        rows.map((row, i) => (
-          <div key={(row as { key?: string | null }).key ?? i} className={cn(i > 0 && ROW_HAIRLINE)}>
-            {row}
-          </div>
-        ))
-      )}
+      {rows.map((row, i) => (
+        <div key={(row as { key?: string | null }).key ?? i} className={cn(i > 0 && ROW_HAIRLINE)}>
+          {row}
+        </div>
+      ))}
     </Surface>
   )
 }

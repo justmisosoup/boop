@@ -1049,16 +1049,22 @@ const RISK_GRADE = /\b(low|moderate|high) risk\b/i
  * - "1 of 21 filings have no status provided" says nothing the domestic row
  *   does not when the one filing without a status IS the domestic filing — its
  *   evidence was that filing. It shows only when some other filing lacks one.
+ * - The website's business-name check stands only when there is a website: one
+ *   found, or one the customer submitted. With neither, "Unable to identify a
+ *   Business Name" reads as a finding about a site nobody has, and a match
+ *   off a social profile is not the website stating the name.
  */
 export const presented = (record: BusinessRecord, results: Derived[]): Derived[] => {
   const domestic = domesticOf(record)
   const noStatus = record.registrations.filter((r) => (r.status || 'unknown').toLowerCase() === 'unknown')
   const onlyDomesticUnknown =
     Boolean(domestic) && noStatus.length > 0 && noStatus.every((r) => r === domestic)
+  const noWebsite = !record.website?.url && !record.website?.submitted
 
   return results
     .filter((d) => !RETIRED.has(d.insightId.split(':')[0]))
     .filter((d) => !(d.insightId === 'sos_unknown' && onlyDomesticUnknown))
+    .filter((d) => !(d.insightId === 'web_business_name_verification' && noWebsite))
     .map((d) => {
       if (d.insightId !== 'adverse_media') return d
       const found = (record.adverseMedia?.results ?? []).length > 0

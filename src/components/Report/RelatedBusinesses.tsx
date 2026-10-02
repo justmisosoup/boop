@@ -11,36 +11,40 @@ import { Strip } from './Strip'
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
 
 /**
- * The businesses related to this one, as a strip of tiles — one per business,
- * strongest first — each opening to what it shares: the people, with the
+ * The businesses connected to this one, as a strip of tiles by how they are
+ * connected — people and an address, people, addresses — each opening to the
+ * businesses connected that way and what they share: the people, with the
  * titles the filing gives, a business named on the other's filing, the
- * addresses. Neighbours (one shared commercial address) are not here.
+ * addresses. A connection on one shared commercial address is a neighbour,
+ * not a related business; it is shown last, under its own tile, so the data
+ * is there without being counted as related.
  */
-/** How a business is related: by people, by address, or both. */
-type Kind = 'people' | 'address' | 'both'
-const kindOf = (c: ReturnType<typeof relatedBusinessesOf>[number]): Kind => {
-  const people = (c.people ?? []).length + (c.businesses ?? []).length > 0
-  const address = (c.addresses ?? []).length > 0
-  return people && address ? 'both' : people ? 'people' : 'address'
-}
+type Kind = 'people' | 'address' | 'both' | 'neighbour'
+type Connection = NonNullable<BusinessRecord['connections']>[number]
 const KINDS: Array<{ id: Kind; label: string }> = [
   { id: 'both', label: 'People + Address' },
   { id: 'people', label: 'People' },
-  { id: 'address', label: 'Address' }
+  { id: 'address', label: 'Address' },
+  { id: 'neighbour', label: 'Shared address only' }
 ]
 
 export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
-  const related = relatedBusinessesOf(record)
-  if (related.length === 0) return null
-  // A tile per way of being related — shared people and address, people
-  // alone, address alone — counted, opening to the businesses related that way.
-  const kinds = KINDS.filter((k) => related.some((c) => kindOf(c) === k.id))
+  const connections = record.connections ?? []
+  if (connections.length === 0) return null
+  const related = new Set(relatedBusinessesOf(record))
+  const kindOf = (c: Connection): Kind => {
+    if (!related.has(c)) return 'neighbour'
+    const people = (c.people ?? []).length + (c.businesses ?? []).length > 0
+    const address = (c.addresses ?? []).length > 0
+    return people && address ? 'both' : people ? 'people' : 'address'
+  }
+  const kinds = KINDS.filter((k) => connections.some((c) => kindOf(c) === k.id))
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
       <Strip
         label="Related businesses"
         tiles={kinds.map((k) => {
-          const n = related.filter((c) => kindOf(c) === k.id).length
+          const n = connections.filter((c) => kindOf(c) === k.id).length
           return {
             key: k.id,
             chip: (
@@ -54,7 +58,7 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
         })}
         detail={(key) => (
           <>
-            {related
+            {connections
               .map((c, i) => [c, i] as const)
               .filter(([c]) => kindOf(c) === key)
               .map(([c, i]) => (

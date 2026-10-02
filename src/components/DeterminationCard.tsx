@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { Heading, MutedText, Surface, Text } from '@/core'
+import { ActionButton, Heading, MutedText, Surface, Text } from '@/core'
 
 import type { BandId, IdentityScore, ScoreBand } from '../lib/identityScore'
 import { formatStamp as stamp } from '../lib/reportLabels'
@@ -169,6 +169,7 @@ export const DeterminationCard = ({
   determinedAt,
   attention,
   change,
+  onShowMe,
   stacked = false,
   className
 }: {
@@ -190,6 +191,9 @@ export const DeterminationCard = ({
   attention?: React.ReactNode
   /** A reviewer's change, when the status no longer matches the determination. */
   change?: DeterminationChange
+  /** "Show me": opens the Assistant, whose first message is the report
+   *  summarised — the call, then each card. */
+  onShowMe?: () => void
   /** A narrow column: the ring over the words rather than beside them. */
   stacked?: boolean
   className?: string
@@ -221,6 +225,15 @@ export const DeterminationCard = ({
     <>
       {reason && <Text>{reason}</Text>}
       {byline}
+      {/* The same button the cards under it carry, and the same word: here
+          what it shows is the report summarised, in the Assistant. */}
+      {onShowMe && (
+        <div className="mt-3">
+          <ActionButton variant="secondary" size="compact" onClick={onShowMe}>
+            Show me
+          </ActionButton>
+        </div>
+      )}
     </>
   )
 
@@ -236,14 +249,12 @@ export const DeterminationCard = ({
     </div>
   ) : null
 
-  /* The card's name and the decision on one line, as every card on the
-     report names itself: the header row, with the status control — or the
-     band's word, or "Assessing" — as the identifying tag at its edge. */
-  const trailing =
-    score && status ? (
-      <div className="flex shrink-0 items-center gap-3">{status}</div>
-    ) : score ? (
-      <Heading level={3}>{score.band.label}</Heading>
+  /* The card's name, and at its edge the status control when one is handed
+     in. The page passes none: the status sits in the page header beside the
+     assignee, and the ring's colour carries the band here. Before a score,
+     "Assessing" or "Not assessed" says why the ring is empty. */
+  const trailing = score ? (
+      status ? <div className="flex shrink-0 items-center gap-3">{status}</div> : undefined
     ) : (
       <Heading level={3} className={cn('text-muted-foreground', running && 'shimmer-text')}>
         {running ? 'Assessing' : 'Not assessed'}
@@ -257,10 +268,11 @@ export const DeterminationCard = ({
         <CardHeader title="Determination" trailing={trailing} className="border-b-0 pb-0" />
         {/* The score and the reason as cells of the same grid the rest of the
             report is drawn on — the dashed rules of the Formation and entity
-            cards — rather than a layout of their own. The ring is one cell,
-            the reason the other; stacked, they are one column. */}
-        <div className={cn('grid [&>div]:attribute-cell', layout ? 'grid-cols-1' : 'grid-cols-[auto_1fr]')}>
-          <div className={cn('flex items-center justify-center p-4', !layout && 'pr-5')}>
+            cards — rather than a layout of their own. The reason is one cell,
+            the ring the other, at the far edge as the status control above it
+            is; stacked, they are one column with the ring on top. */}
+        <div className={cn('grid [&>div]:attribute-cell', layout ? 'grid-cols-1' : 'grid-cols-[1fr_auto]')}>
+          <div className={cn('flex items-center justify-center p-4', !layout && 'order-last pl-5')}>
             <ScoreRing score={score} size="lg" />
           </div>
           {/* Centred on the ring beside it, where the two share a row. */}

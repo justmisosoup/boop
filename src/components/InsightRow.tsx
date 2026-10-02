@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type MouseEvent } from 'react'
 import { ChevronDown } from 'lucide-react'
 
-import { ActionButton, MetaChip, MutedText, Text, TruncatedText } from '@/core'
+import { ActionButton, MetaChip, MutedText, TruncatedText } from '@/core'
 
 import { attributesFor, isPlaceholder, type AttributeRow } from '../lib/attributes'
 import { PROTOTYPE_INSIGHTS, type BusinessRecord } from '../lib/deriveResults'
@@ -48,7 +48,6 @@ export const InsightRow = ({
   result,
   record,
   onJumpToSource,
-  negative,
   reveal,
   attributes: attributesOverride,
   onEdit,
@@ -101,15 +100,13 @@ export const InsightRow = ({
   }, [reveal])
   const adverse = result.reason === 'should_exist_not_found'
   const isResult = result.state === 'result'
-  /**
-   * Flagged: the record came back adverse, or the score read it against the
-   * identity. The mark takes the danger colour; the statement stays in the
-   * row's weight — bold read a flag as a heading — and the row is not
-   * tinted. It used to be: a red wash over the whole row, which made three
-   * findings in a stack of twenty read as three alarms rather than three
-   * sentences to read first.
+  /*
+   * Flagged — the record came back adverse, or the score read it against the
+   * identity — is not coloured. It used to be: a red wash over the whole row,
+   * then a red mark, and both passed judgement on a fact the reader is here to
+   * weigh. A flagged row is marked by its place instead: `CiteList` puts the
+   * flagged rows first. `negative` stays on the props, unread here.
    */
-  const flagged = adverse || Boolean(negative)
   /*
    * Deduplicated. Two people-checks reaching the same registered agent from
    * the same filings produced the same evidence row twice, one under the
@@ -208,14 +205,9 @@ export const InsightRow = ({
       {/* On a result the value already carries the outcome; repeating the
           source's message under it says the same thing twice. The message
           earns its place only where the state needs explaining. */}
-      {showBecause &&
-        (adverse ? (
-          <Text size="sm" tone="danger" className="mt-0.5">
-            {because}
-          </Text>
-        ) : (
-          <MutedText className="mt-0.5 block text-caption">{because}</MutedText>
-        ))}
+      {/* Neutral on an adverse row too: it shows collapsed there because it
+          is the finding, not because it is an alarm. */}
+      {showBecause && <MutedText className="mt-0.5 block text-caption">{because}</MutedText>}
     </span>
   )
 
@@ -250,14 +242,8 @@ export const InsightRow = ({
       <span
         className={cn(
           'flex h-5 w-4 items-center justify-center',
-          // The status token in its arbitrary form: this config maps no `danger`
-          // colour key, so `text-danger` (which this used to be) was a no-op
-          // and a flagged mark drew in the text colour.
-          flagged
-            ? 'text-[var(--core-color-status-danger-fg)]'
-            : isResult
-              ? 'text-foreground'
-              : 'text-muted-foreground'
+          // The state's own weight, flagged or not: shape before colour.
+          isResult ? 'text-foreground' : 'text-muted-foreground'
         )}
       >
         <StateMark state={result.state} />

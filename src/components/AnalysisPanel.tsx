@@ -6,6 +6,21 @@ import type { AnalysisDraft } from '../types'
 import { ReportBody } from './ReportBody'
 
 /**
+ * A stored report's areas in the assessment's current order — the agent's,
+ * which `tiers` is keyed in — not the order the report happened to run them
+ * in. Areas the agent no longer lists keep their place at the end. The report
+ * is laid out in this order, and the Assistant's opening message reads it.
+ */
+export const orderByTiers = <T extends { id: string }>(policy: ReadonlyArray<T>, tiers?: ReadonlyMap<string, unknown>): T[] => {
+  const order = [...(tiers?.keys() ?? [])]
+  const at = (id: string) => {
+    const i = order.indexOf(id)
+    return i < 0 ? 99 : i
+  }
+  return [...policy].sort((a, b) => at(a.id) - at(b.id))
+}
+
+/**
  * The report, as a document.
  *
  * It used to be a chat message — an assistant bubble with a sources roll-up in
@@ -68,12 +83,7 @@ export const AnalysisPanel = ({
              `tiers` is keyed in — not the order a stored report happened to
              run its areas in. Areas the agent no longer lists keep their
              place at the end. */
-          policy={[...(version.policy ?? [])].sort((a, b) => {
-            const order = [...(tiers?.keys() ?? [])]
-            const ia = order.indexOf(a.id)
-            const ib = order.indexOf(b.id)
-            return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
-          })}
+          policy={orderByTiers(version.policy ?? [], tiers)}
           negatives={negatives}
           summaries={summaries}
           revealed={revealed}

@@ -26,16 +26,14 @@ import type { Kind } from '../lib/timeline/types'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
-import { DeterminationCard } from '../components/DeterminationCard'
 
 import { FORMATION_CARD_ID } from '../lib/needsReview'
 import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
 import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
-import { scoreLine } from '../lib/scoreReasons'
 import { changedInsights } from '../lib/diff'
-import { reportDate, reportLabel, reportStamp } from '../lib/reportLabels'
+import { reportLabel, reportStamp } from '../lib/reportLabels'
 import { FormationCard } from '../components/FormationCard'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
@@ -51,6 +49,7 @@ import { AssessmentEditor } from '../components/AssessmentEditor'
 import { composeAssessment } from '../lib/library'
 import { cn } from '../utils/twUtils'
 import { useAgent } from '../lib/useAgent'
+import { reportBrief } from '../lib/reportBrief'
 
 /**
  * The reference panel's width, in px. Fixed.
@@ -375,6 +374,26 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
 
+  /** The open report as the Assistant's first message: the determination and
+   *  each card's title and sentence, from the functions the page draws with. */
+  const brief = useMemo(
+    () =>
+      reportBrief({
+        version: analysis.selected,
+        record,
+        results,
+        groupFor,
+        score,
+        scoreAreas,
+        summaries,
+        policy,
+        tiers,
+        // What the card's status control says, so the two read the same.
+        status: review.status
+      }),
+    [analysis.selected, record, results, groupFor, score, scoreAreas, summaries, policy, tiers, review.status]
+  )
+
   /**
    * Run the standing workflow, from where the report would be.
    *
@@ -450,26 +469,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         identity since this report
       </MutedText>
     ) : null
-
-  /** The decision card: wide at the head of the report; it stacks itself when narrow. */
-  const decisionCard = (stacked: boolean) => (
-              <DeterminationCard
-                stacked={stacked}
-                score={score}
-                running={running}
-                /* The dashboard's own status control as the determination's
-                   word. Before anyone sets it, it reads what the assessment
-                   determined — Approve as Approved, Reject as Rejected. */
-                status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
-                reason={score ? scoreLine(score, scoreAreas, { record, results }) : undefined}
-                determinedAt={analysis.selected ? reportDate(analysis.selected) : undefined}
-                /* No "what needs your attention" list: the report's cards say
-                   what they found, and their insights open where they sit. */
-                /* Only a change away from the determination is a change worth
-                   citing; a status that matches it is the determination. */
-                change={review.change && review.status !== determined ? review.change : undefined}
-              />
-  )
 
   const [revealed, setRevealed] = useState<string[]>([])
   /**
@@ -696,8 +695,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     over a heading that named it again said it twice. */}
                 {/* The arrow hangs in the left margin — 32px button plus the
                     8px gap — so the name starts where the tabs start. At the
-                    far right, who owns this review; where it stands is on the
-                    determination itself. */}
+                    far right, who owns this review and where it stands: the
+                    assignee, then the status — the dashboard's own control,
+                    reading what the assessment determined until someone sets
+                    it (Approve as Approved, Reject as Rejected). */}
                 <div className="-ml-10 flex min-w-0 items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-2">
                     {/* A button that navigates, not `asChild` over a Link: the
@@ -715,6 +716,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                   </div>
                   <PageHeaderActions className="shrink-0">
                     <AssigneeDropdown businessId={selected.id} />
+                    {/* Only once there is a determination for it to read. */}
+                    {view && <StatusDropdown businessId={selected.id} defaultStatus={determined} />}
                   </PageHeaderActions>
                 </div>
               </PageHeader>
@@ -760,16 +763,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     <div>
               <TabsContent value="assessment" className="mt-0">
             {/*
-              * The call opens the report, at every width.
-              *
-              * The name and the paragraph about the business used to open it —
-              * the name is on the fixed bar above, and the paragraph described
-              * a business the report is about to assess. What a reader opens
-              * the record for is the decision, so the decision is first.
+              * No determination card at the head of the report. The call is
+              * the status control in the page header and the first thing the
+              * Assistant says (its opening message carries the ring, the word
+              * and the reason), so the report opens on the record's facts.
               */}
-            {(view || running) && decisionCard(false)}
-            {/* What the state holds, under the call and before the argument.
-                With or without a report: these are the record's facts. */}
+            {/* What the state holds, before the argument. With or without a
+                report: these are the record's facts. */}
             <FormationCard
               record={record}
               results={results}
@@ -777,8 +777,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               revealed={revealedSet}
               onJumpToSource={jumpToSource}
               onJumpToTimeline={jumpToTimeline}
-              // Spaced from the determination above it.
-              className={view || running ? 'mt-4' : undefined}
             />
             {/* What the record holds about the business, before the report
                 starts reading it. Attributes only — the filing facts an account
@@ -914,6 +912,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           }}
           onPresentationChange={setAssistantPresentation}
           onJumpToGroup={jumpToInsight}
+          brief={brief}
+          // A brief card's title: the report scrolls to that card.
+          onJumpToCard={(anchor) =>
+            panelRef.current
+              ?.querySelector<HTMLElement>(`[id="${anchor}"]`)
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
         />
 
         {/* The panel. White, and the report beyond it is the canvas grey: the

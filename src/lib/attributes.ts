@@ -1036,6 +1036,10 @@ export const nameKey = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '')
  */
 export const websiteStatesName = (record: BusinessRecord, value: string | null | undefined): boolean =>
   Boolean(value) &&
+  // A website has to exist for it to state anything. Middesk's name check can
+  // come back Verified with no site at all — Sara Stubbs's matched Instagram
+  // profiles — and that put a Website chip on a name no website carries.
+  Boolean(record.website?.url) &&
   nameKey(record.name) === nameKey(value ?? '') &&
   /^verified$/i.test(record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? '')
 

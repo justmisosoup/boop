@@ -4,9 +4,18 @@ import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
 import { ChatSourceChip, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
-import { filingsListing } from '../../lib/attributes'
+import { filingsListing, provenanceList } from '../../lib/attributes'
+import { sameName } from '../../lib/registrationStatus'
 import { namedCard } from '../../lib/sourceCards'
-import { licencesAt, locationBand, operationsOf, type Location, type Operations } from '../../lib/operations'
+import {
+  licencesAt,
+  locationBand,
+  operationsOf,
+  type FmcsaRegistration,
+  type Location,
+  type Operations,
+  type StateLicence
+} from '../../lib/operations'
 import { cn } from '../../utils/twUtils'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { IndustryTable } from '../IndustryTable'
@@ -93,6 +102,84 @@ const RegistryChip = ({ id, label, title, url, annotation, onSelect }: { id: str
 )
 
 /** The licence the industry requires, and what the register holds. */
+/** A source label that is the FMCSA's own, or the registry chip's. */
+const NOT_CORROBORATING = /^(state registration|registration|submitted by the customer|submitted|fmcsa registration|fmcsa)$/i
+const streetZip = (a: string) =>
+  `${(a.split(',')[0] ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()}|${(a.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] ?? ''}`
+
+/**
+ * What else on the record states a value the FMCSA states — the submitted
+ * name or address, the filings that carry it, any other record — as the
+ * chips the Formation grid puts beside a field: Submitted (verified when a
+ * source agrees), then the sources.
+ */
+const corroboration = (
+  held: Array<{ submitted?: boolean; sources?: string[]; sourceRefs?: BusinessRecord['addresses'][number]['sourceRefs'] }>,
+  filings: BusinessRecord['registrations'],
+  record: BusinessRecord,
+  onJumpToSource?: (cardId: string) => void
+): ReactNode => {
+  const submitted = held.some((h) => h.submitted)
+  const others = [...new Set(held.flatMap((h) => provenanceList(h)))].filter((n) => !NOT_CORROBORATING.test(n))
+  const refs = held.flatMap((h) => h.sourceRefs ?? []).filter((r) => r.type !== 'registration' && !/fmcsa/i.test(r.type))
+  if (!submitted && filings.length === 0 && others.length === 0) return undefined
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {submitted && <SubmittedChip verified={filings.length > 0 || others.length > 0} onJumpToSource={onJumpToSource} />}
+      {(filings.length > 0 || others.length > 0) && (
+        <AttributeSources sources={others} registrations={filings} domesticState={record.formation?.state} refs={refs} onJumpToSource={onJumpToSource} />
+      )}
+    </span>
+  )
+}
+
+/**
+ * An FMCSA registration in the grid, field for field as the Sources card
+ * reads it — business name, DBA, USDOT number, each address. The FMCSA chip
+ * sits on the USDOT number, the FMCSA's own fact, and follows to that card,
+ * where the record link is. The name and each address carry what else on the
+ * record states them: the submission, the filings, any other record.
+ */
+const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => {
+  const names = (record.names ?? []).filter((n) => sameName(n.name, f.legalName))
+  const nameFilings = record.registrations.filter((g) => sameName(g.name, f.legalName))
+  return [
+    {
+      key: `${f.id}-name`,
+      label: 'Business name',
+      badge: f.legalName ? corroboration(names, nameFilings, record, onJumpToSource) : undefined,
+      values: [{ value: f.legalName ?? absent('Not provided') }]
+    },
+    ...(f.dbaName ? [{ key: `${f.id}-dba`, label: 'DBA name', values: [{ value: f.dbaName }] }] : []),
+    {
+      key: `${f.id}-dot`,
+      label: 'USDOT number',
+      badge: (
+        <RegistryChip
+          id={f.id}
+          label="FMCSA"
+          title={`USDOT ${f.dotNumber ?? ''}`}
+          url={f.sourceUrl}
+          annotation="Company snapshot"
+          onSelect={onJumpToSource ? () => onJumpToSource(namedCard('FMCSA registration')) : undefined}
+        />
+      ),
+      values: [{ value: f.dotNumber ?? absent('Not provided') }]
+    },
+    ...f.addresses.map((addr, i) => {
+      const held = record.addresses.filter((x) => streetZip(x.fullAddress) === streetZip(addr))
+      const filings = [...new Set(held.flatMap((x) => filingsListing(record, x.fullAddress, 'addresses')))]
+      return {
+        key: `${f.id}-addr-${i}`,
+        label: 'Address',
+        span: 'full' as const,
+        badge: corroboration(held, filings, record, onJumpToSource),
+        values: [{ value: addr }]
+      }
+    })
+  ]
+}
+
 const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void): AttributeCell | undefined => {
   const l = ops.licence
   if (!l.required) return undefined
@@ -169,6 +256,55 @@ const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void)
   }
 }
 
+/** The app's licence-type text: `general_contractor` as General Contractor. */
+const licenceTypeText = (t?: string) => (t ?? '').split('_').filter(Boolean).map(titleCase).join(' ')
+
+/** Whether a source's status reads active. */
+const isActive = (s?: string) => /active/i.test(s ?? '') && !/inactive/i.test(s ?? '')
+
+/**
+ * A state licence, field for field as the app's licence card reads it
+ * (`BusinessHome/Sources/ProfessionalLicenseCard.tsx`) — business name,
+ * licence number, then each address — with the status the record states. The
+ * licence chip sits on the number, the licence's own fact, and follows to its
+ * card in Sources; the name and an address carry Submitted when they are the
+ * customer's.
+ */
+const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => [
+  ...l.names.map((n, i) => ({
+    key: `${l.id}-name-${i}`,
+    label: 'Business name',
+    badge: record.names?.some((x) => x.submitted && sameName(x.name, n)) ? (
+      <SubmittedChip verified onJumpToSource={onJumpToSource} />
+    ) : undefined,
+    values: [{ value: n }]
+  })),
+  {
+    key: `${l.id}-number`,
+    label: 'Licence number',
+    badge: (
+      <RegistryChip
+        id={l.id}
+        label="Professional license"
+        title={[l.state, 'licence', l.number].filter(Boolean).join(' ')}
+        annotation={`${licenceTypeText(l.type)} licence`.trim()}
+        onSelect={onJumpToSource ? () => onJumpToSource(namedCard('Professional license')) : undefined}
+      />
+    ),
+    values: [{ value: l.number ?? absent('Not provided') }]
+  },
+  ...(l.status ? [{ key: `${l.id}-status`, label: 'Status', values: [{ value: titleCase(l.status) }] }] : []),
+  ...l.addresses.map((a, i) => ({
+    key: `${l.id}-addr-${i}`,
+    label: 'Address',
+    span: 'full' as const,
+    badge: record.addresses.some((x) => x.submitted && x.fullAddress === a) ? (
+      <SubmittedChip verified onJumpToSource={onJumpToSource} />
+    ) : undefined,
+    values: [{ value: a }]
+  }))
+]
+
 /** A source label the registry chip already names. */
 const REGISTRY_LABELS = new Set(['State registration', 'registration'])
 
@@ -238,8 +374,8 @@ const locationCell = (
  *
  * The headline names the classification and the sentence says what the
  * Prohibited scheme made of it, so the body draws what they rest on: every
- * location the record ties to the business, then every classification as the
- * dashboard's table, then the licence the industry requires.
+ * classification as the dashboard's table, with the licences the business
+ * practises under beside it, then every location the record ties to it.
  */
 export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
   const ops = useMemo(() => operationsOf(record), [record])
@@ -252,82 +388,107 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
   const officePlace = places.find((p) => at(p).some((a) => a.submitted))
   const lic = ops.licence
 
+  const showIndustry = industry.table.length > 0 && industry.prohibited !== 'unknown'
+  /* The licence the industry requires — what the register holds as a tile,
+     opening the record; an absence as a statement — then each state licence
+     on the record, opening its fields. */
+  const required: Array<{ key: string; chip: ReactNode; static?: boolean }> =
+    !lic.required || !licence
+      ? []
+      : lic.registry === 'none'
+        ? [{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">Required · no public register checked</MetaChip> }]
+        : lic.found.length === 0
+          ? [
+              {
+                key: 'missing',
+                static: true,
+                chip: (
+                  <MetaChip tone="danger" size="compact">
+                    <X {...icon} />
+                    {lic.registry === 'NPI' ? 'None found in the NPI Registry' : 'No FMCSA registration'}
+                  </MetaChip>
+                )
+              }
+            ]
+          : lic.registry === 'FMCSA'
+            ? lic.found.map((f) => ({
+                key: f.id,
+                chip: (
+                  <MetaChip tone="success" size="compact">
+                    <Check {...icon} />
+                    USDOT {f.dotNumber}
+                  </MetaChip>
+                )
+              }))
+            : lic.found.map((x) => ({
+                key: x.id,
+                chip: (
+                  <MetaChip tone="success" size="compact">
+                    <Check {...icon} />
+                    {[titleCase(x.holder), x.credential].filter(Boolean).join(', ')}
+                  </MetaChip>
+                )
+              }))
+  const licenceTiles = [
+    ...required,
+    ...ops.stateLicences.map((l) => ({
+      key: `state-licence:${l.id}`,
+      chip: (
+        <MetaChip tone={isActive(l.status) ? 'success' : 'neutral'} size="compact">
+          {isActive(l.status) && <Check {...icon} />}
+          {[l.state, licenceTypeText(l.type), 'licence'].filter(Boolean).join(' ')}
+        </MetaChip>
+      )
+    }))
+  ]
+
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
-      {/* One tile: what the Prohibited scheme made of it, opening every
-          classification — NAICS, MCC, SIC — as the dashboard's table. */}
-      {industry.table.length > 0 && industry.prohibited !== 'unknown' && (
+      {/* The industry, and the licence its practice is held under, in one
+          strip: what the Prohibited scheme made of it — one tile, opening
+          every classification (NAICS, MCC, SIC) as the dashboard's table —
+          then a row of licences: the one the industry requires, as the
+          register holds it, and every state licence on the record. A licence
+          is part of what the business does, so it is not a strip of its own. */}
+      {(showIndustry || licenceTiles.length > 0) && (
         <Strip
           label="Industry"
           // The lead classification, in words, beside the verdict.
-          aside={industry.lead?.name}
-          tiles={[
-            industry.prohibited === 'flagged'
-              ? {
-                  key: 'all',
-                  chip: (
-                    <MetaChip tone="danger" size="compact">
-                      <TriangleAlert {...icon} />
-                      Prohibited
-                      {industry.flagged.length > 1 && <span className="tabular-nums">{industry.flagged.length}</span>}
-                    </MetaChip>
-                  )
-                }
-              : {
-                  key: 'all',
-                  chip: (
-                    <MetaChip tone="success" size="compact">
-                      <Check {...icon} />
-                      Non-prohibited
-                    </MetaChip>
-                  )
-                }
-          ]}
-          detail={() => <IndustryTable rows={industry.table} />}
-        />
-      )}
-      {/* The licence the industry requires: what the register holds as a
-          tile, opening the record; an absence as a statement. */}
-      {lic.required && licence && (
-        <Strip
-          label="Professional licence"
+          aside={showIndustry ? industry.lead?.name : undefined}
           tiles={
-            lic.registry === 'none'
-              ? [{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">Required · no public register checked</MetaChip> }]
-              : lic.found.length === 0
-                ? [
-                    {
-                      key: 'missing',
-                      static: true,
-                      chip: (
-                        <MetaChip tone="danger" size="compact">
-                          <X {...icon} />
-                          {lic.registry === 'NPI' ? 'None found in the NPI Registry' : 'No FMCSA registration'}
-                        </MetaChip>
-                      )
-                    }
-                  ]
-                : lic.registry === 'FMCSA'
-                  ? lic.found.map((f) => ({
-                      key: f.id,
-                      chip: (
-                        <MetaChip tone="success" size="compact">
-                          <Check {...icon} />
-                          USDOT {f.dotNumber}
-                        </MetaChip>
-                      )
-                    }))
-                  : lic.found.map((x) => ({
-                      key: x.id,
-                      chip: (
-                        <MetaChip tone="success" size="compact">
-                          <Check {...icon} />
-                          {[titleCase(x.holder), x.credential].filter(Boolean).join(', ')}
-                        </MetaChip>
-                      )
-                    }))
+            !showIndustry
+              ? []
+              : [
+                  industry.prohibited === 'flagged'
+                    ? {
+                        key: 'all',
+                        chip: (
+                          <MetaChip tone="danger" size="compact">
+                            <TriangleAlert {...icon} />
+                            Prohibited
+                            {industry.flagged.length > 1 && <span className="tabular-nums">{industry.flagged.length}</span>}
+                          </MetaChip>
+                        )
+                      }
+                    : {
+                        key: 'all',
+                        chip: (
+                          <MetaChip tone="success" size="compact">
+                            <Check {...icon} />
+                            Non-prohibited
+                          </MetaChip>
+                        )
+                      }
+                ]
           }
-          detail={() => <AttributeCells items={[licence]} className="-mb-px" />}
+          more={licenceTiles.length > 0 ? { label: 'Professional licence', tiles: licenceTiles } : undefined}
+          detail={(key) => {
+            if (key === 'all') return <IndustryTable rows={industry.table} />
+            const state = ops.stateLicences.find((l) => `state-licence:${l.id}` === key)
+            if (state) return <AttributeCells items={stateLicenceCells(state, record, onJumpToSource)} className="-mb-px" />
+            const f = lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
+            return <AttributeCells items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []} className="-mb-px" />
+          }}
         />
       )}
       {/* Every place the record puts the business — the submitted office

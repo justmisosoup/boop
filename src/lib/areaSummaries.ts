@@ -2,6 +2,7 @@ import { entityTypeCode, money } from './attributes'
 import type { BusinessRecord } from './deriveResults'
 import { industrySectorOf } from './naics'
 import { operationsOf } from './operations'
+import { relatedBusinessesOf } from './relatedBusinesses'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
@@ -103,11 +104,64 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
           }.`
   // A sole proprietorship's owner is the person it is registered to; a
   // professional entity's needs a licence. Everything else is the count.
-  const ownership = sole
-    ? `${sole.city} registers it to ${sole.person}.`
-    : professional
-      ? `${submittedLine} ${licencePointer}`
-      : submittedLine
+  /* Officers the record names that the customer did not submit — a president
+     on a Virginia SOS document, a manager on the filing — each with where the
+     record holds them. A registered agent is the filing's contact, not an
+     owner, and is left out. */
+  const AGENT_TITLE = /registered agent|service of process|organizer/i
+  const whereFound = (p: BusinessRecord['people'][number]) => {
+    const refs = p.sourceRefs ?? []
+    const filing = refs.find((r) => r.type === 'registration')
+    const doc = refs.find((r) => r.type === 'parsed_sos_document')
+    const m = ((filing ?? doc)?.metadata ?? {}) as { state?: string; filing_date?: string }
+    const st = m.state ? stateName(m.state) : undefined
+    if (filing) return `the ${st ? `${st} ` : ''}filing`
+    if (doc) {
+      const on = m.filing_date ? new Date(`${m.filing_date}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : undefined
+      return `${st ? `a ${st} ` : 'a '}SOS document${on ? ` filed ${on}` : ''}`
+    }
+    return undefined
+  }
+  // A filing's own words parsed as a name ("WITHDRAWN", "VACANT") are not people.
+  const NOT_A_NAME = /^(withdrawn|dissolved|vacant|none|resigned|deceased|unknown|not yet elected)$/i
+  // "CEO" stays capitals; "OTHER" says nothing and reads as officer.
+  const titleWord = (t: string) => (/^(ceo|cfo|coo|cto|cmo)$/i.test(t.trim()) ? t.trim().toUpperCase() : /^other$/i.test(t.trim()) ? 'officer' : t.trim().toLowerCase())
+  const foundOfficers = record.people
+    .filter((p) => !p.submitted && p.name && !ENTITY.test(p.name) && !NOT_A_NAME.test(p.name.trim()) && p.titles.some((t) => !AGENT_TITLE.test(t)) && whereFound(p))
+    .map((p) => ({ name: p.name.replace(/\s+/g, ' ').trim(), title: titleWord(p.titles.find((t) => !AGENT_TITLE.test(t)) ?? ''), where: whereFound(p)! }))
+  /* One named with where it is held; two or three named with their titles;
+     more than that counted — a board of fourteen directors is a number, not
+     a sentence. */
+  const foundLine =
+    foundOfficers.length === 0
+      ? ''
+      : foundOfficers.length === 1
+        ? `${foundOfficers[0].name} is named as ${foundOfficers[0].title} on ${foundOfficers[0].where} but was not submitted.`
+        : foundOfficers.length <= 3
+          ? `${list(foundOfficers.map((o) => `${o.name} (${o.title})`))} are named on the record but were not submitted.`
+          : `${foundOfficers.length} officers named on the record were not submitted.`
+
+  /* The businesses related to this one — people or more than an address in
+     common — and, when there are none, the connections that were only
+     neighbours, so "No related businesses" does not read against the
+     provider's "3 connections found" below it. */
+  const related = relatedBusinessesOf(record).length
+  const neighbours = (record.connections ?? []).length - related
+  const relatedLine = !record.connections
+    ? ''
+    : related > 0
+      ? `${related === 1 ? 'One related business' : `${related} related businesses`} found.`
+      : neighbours > 0
+        ? `No related businesses; ${neighbours === 1 ? 'the one connection shares' : `the ${neighbours} connections share`} only an address.`
+        : 'No related businesses found.'
+
+  const ownership = [
+    sole ? `${sole.city} registers it to ${sole.person}.` : professional ? `${submittedLine} ${licencePointer}` : submittedLine,
+    foundLine,
+    relatedLine
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   /* What the business does, where it does it, and whether it needs a licence
      to — the card's own reading (`operationsOf`), counted and named in the
@@ -122,8 +176,22 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         ? 'Not a prohibited industry.'
         : 'Prohibited status not assessed.'
   const office = ops.office ? stateName(ops.office.state) : undefined
+  /* A state licence is part of what the business does, and it places the
+     business too: JC Swimming has no state registration, but its active
+     California construction licence is at the submitted office. */
+  const atOffice = (l: (typeof ops.stateLicences)[number]) =>
+    l.addresses.some((a) => record.addresses.some((x) => x.submitted && x.fullAddress === a))
+  const licensed = ops.stateLicences.map(
+    (l) =>
+      `${l.status ? `${article(l.status)} ${l.status.toLowerCase()}` : 'a'} ${[l.state && stateName(l.state), l.type, 'licence']
+        .filter(Boolean)
+        .join(' ')}${atOffice(l) ? ' at its office' : ''}`
+  )
+  const stateLicensed = licensed.length > 0 ? `Holds ${list(licensed)}.` : ''
   const where = !record.registrations.length
-    ? 'No state registration shows where it operates.'
+    ? stateLicensed
+      ? ''
+      : 'No state registration shows where it operates.'
     : !office
       ? 'No office address submitted.'
       : ops.office?.verdict === 'active'
@@ -142,7 +210,19 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
       ? `Requires ${article(lic.profession)} ${lic.profession} licence; no public register checked.`
       : lic.registry === 'FMCSA'
         ? lic.found.length > 0
-          ? `Requires motor carrier authority; USDOT ${lic.found.map((f) => f.dotNumber).filter(Boolean).join(', ')} on record.`
+          ? (() => {
+              // Whether the FMCSA registration lists the address the customer
+              // submitted — street line and ZIP, so a floor or a ZIP+4 still matches.
+              const key = (a: string) => `${(a.split(',')[0] ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()}|${(a.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] ?? ''}`
+              const submitted = new Set(record.addresses.filter((a) => a.submitted).map((a) => key(a.fullAddress)))
+              const at = lic.found.some((f) => f.addresses.some((a) => submitted.has(key(a))))
+              const dots = lic.found.map((f) => f.dotNumber).filter(Boolean).join(', ')
+              return submitted.size === 0
+                ? `Requires motor carrier authority; USDOT ${dots} on record.`
+                : at
+                  ? `Requires motor carrier authority; USDOT ${dots} on record, listing the submitted address.`
+                  : `Requires motor carrier authority; USDOT ${dots} on record, at an address other than the submitted one.`
+            })()
           : 'Requires motor carrier authority; no FMCSA registration on record.'
         : lic.found.length > 0
           ? `Requires ${article(lic.profession)} ${lic.profession} licence; ${lic.found
@@ -241,7 +321,7 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
           : /^insufficient data$/i.test(industry)
             ? 'Industry classification returned insufficient data'
             : `Industry classified as ${industry}`,
-        summary: [what, where, elsewhere, permission].filter(Boolean).join(' ')
+        summary: [what, stateLicensed, where, elsewhere, permission].filter(Boolean).join(' ')
       }
     ],
     [
@@ -253,7 +333,9 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
             ? 'Owned by licensed practitioners'
             : upper === 'LLC' && members.length > 0
               ? `${members.length === 1 ? 'Member' : 'Members'} named on the state filing`
-              : 'Owners come from the customer certification',
+              : foundOfficers.length > 0
+                ? `${foundOfficers.length === 1 ? 'One officer' : `${foundOfficers.length} officers`} found, not submitted`
+                : 'Owners come from the customer certification',
         summary: ownership
       }
     ],

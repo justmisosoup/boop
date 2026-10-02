@@ -28,10 +28,12 @@ const META: Record<Kind, { icon: LucideIcon; word: string; glyph: string }> = {
     word: 'Positive',
     glyph: 'text-[var(--core-color-status-success-fg)]'
   },
+  // Grey, as Neutral is: the cross says negative, and red on it passed a
+  // judgement the count does not make.
   negative: {
     icon: CircleX,
     word: 'Negative',
-    glyph: 'text-[var(--core-color-status-danger-fg)]'
+    glyph: 'text-text-secondary'
   },
   // Neutral is a reading that counts neither way, so its glyph is the
   // secondary text grey rather than a status colour — a fourth status tone

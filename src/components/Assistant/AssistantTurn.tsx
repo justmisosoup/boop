@@ -1,14 +1,17 @@
 import { memo, type ReactNode } from 'react'
 import { Copy, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
 
-import { Avatar, ChatMessage, ChatMessageActions, ChatThinking, Text } from '@/core'
+import { Avatar, ChatMessage, ChatMessageActions, ChatThinking, Surface, Text } from '@/core'
 
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
+import type { ReportBrief } from '../../lib/reportBrief'
 import { formatTime } from '../../lib/reportLabels'
 import type { AnalysisVersion } from '../../lib/useAnalysis'
 import { CURRENT_USER } from '../../lib/user'
+import { ScoreRing } from '../DeterminationCard'
 import { MiddeskMark } from '../MiddeskMark'
+import { Para } from '../ReportBody'
 import { AnswerSources, AssistantAnswer } from './AssistantAnswer'
 import { formatDuration, stepsFor } from './steps'
 
@@ -160,6 +163,97 @@ export const AnswerTurn = memo(function AnswerTurn({
           groupFor={groupFor}
           onJumpToGroup={onJumpToGroup}
         />
+      </div>
+    </ChatMessage>
+  )
+})
+
+/**
+ * The report, as the conversation's first message.
+ *
+ * Not an answer: nothing was asked and nothing was generated. It is what the
+ * page already says — the determination, then each card's title and sentence,
+ * in the report's order — so it carries no thinking steps, no ratings and no
+ * retry. Each title follows to its card on the report, the way a citation
+ * chip follows to its evidence.
+ */
+export const BriefTurn = memo(function BriefTurn({
+  brief,
+  at,
+  results,
+  record,
+  onJumpToCard
+}: {
+  brief: ReportBrief
+  /** When the report was written. */
+  at: string
+  results: Derived[]
+  record: BusinessRecord
+  onJumpToCard?: (anchor: string) => void
+}) {
+  const d = brief.determination
+  const text = [
+    d ? `${d.label} · ${d.value}${d.reason ? `\n${d.reason}` : ''}` : '',
+    ...brief.cards.map((c) => [c.title, c.sentence].filter(Boolean).join('\n'))
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+
+  return (
+    <ChatMessage
+      role="assistant"
+      header={<Meta align="start" at={at} who={<AssistantWho />} />}
+      footer={
+        <ChatMessageActions
+          actions={[
+            {
+              id: 'copy',
+              icon: <Copy size={12} strokeWidth={1.75} />,
+              label: 'Copy summary',
+              onClick: () => void navigator.clipboard?.writeText(text)
+            }
+          ]}
+        />
+      }
+    >
+      <div className="flex flex-col gap-3">
+        {/* The determination card's own ring and word: the score in its
+            band's colour, the status the card's control reads, and why. */}
+        {d && (
+          // In a small card of its own — the determination card, in little —
+          // with the ring at the far edge, as that card sets it.
+          <Surface variant="card" padding="none" className="flex items-center gap-3 px-3 py-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-sm font-medium leading-5 text-foreground">{d.label}</span>
+              {d.reason && (
+                <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
+                  {d.reason}
+                </Para>
+              )}
+            </div>
+            <ScoreRing score={d.score} size="sm" />
+          </Surface>
+        )}
+        {brief.cards.map((c) => (
+          <div key={c.anchor} className="flex flex-col gap-0.5">
+            {onJumpToCard ? (
+              <button
+                type="button"
+                onClick={() => onJumpToCard(c.anchor)}
+                className="w-fit text-left text-sm font-medium leading-5 text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {c.title}
+              </button>
+            ) : (
+              <span className="text-sm font-medium leading-5 text-foreground">{c.title}</span>
+            )}
+            {c.sentence && (
+              <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
+                {c.sentence}
+              </Para>
+            )}
+          </div>
+        ))}
       </div>
     </ChatMessage>
   )

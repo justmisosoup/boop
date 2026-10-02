@@ -197,11 +197,17 @@ const isForeign = (r: Registration) => /foreign/i.test(r.jurisdiction ?? '')
 // Spelled-out suffixes first: "Limited Liability Company" is LLC, not "Limited Liability" plus "Company".
 const SUFFIX =
   /\s+(limited liability company|limited liability partnership|limited partnership|professional corporation|llc|inc|incorporated|corp|corporation|co|company|ltd|limited|lp|llp|lllp|pc|pllc|pbc)$/
-/** Whether two names are the same business name, suffixes and punctuation aside. */
-export const sameName = (a: string | null | undefined, b: string | null | undefined) => baseName(a) === baseName(b)
+/**
+ * Whether two names are the same business name, suffixes, punctuation and
+ * spacing aside. Spacing too: "PT.XD SAKTI" is filed as "PT. XD SAKTI" and
+ * "USCONNECT" as "U.S. CONNECT" — the same name, typed differently.
+ */
+export const sameName = (a: string | null | undefined, b: string | null | undefined) =>
+  baseName(a).replace(/\s+/g, '') === baseName(b).replace(/\s+/g, '')
 
 const baseName = (s: string | null | undefined) => {
-  let n = (s ?? '').toLowerCase().replace(/[.,'’]/g, '').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ').trim()
+  // A backtick is an apostrophe typed on the wrong key: OLVERA`S, OLVERA'S.
+  let n = (s ?? '').toLowerCase().replace(/[.,'’`]/g, '').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ').trim()
   for (let prev = ''; prev !== n; ) [prev, n] = [n, n.replace(SUFFIX, '').trim()]
   return n
 }

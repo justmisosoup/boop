@@ -8,6 +8,8 @@ import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
 import { FORMATION_CARD_INSIGHTS, IDENTITY_SECTIONS, OPERATIONS_CARD_INSIGHTS, type IdentitySection } from '../lib/identitySections'
 import { partAnchor } from '../lib/needsReview'
+import { operationsOf } from '../lib/operations'
+import { screenedOf } from '../lib/screening'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type {
   AnalysisDraft,
@@ -45,6 +47,22 @@ import { InsightStack } from './InsightStack'
  */
 const sectionsOf = (policy: Array<{ id: string; name: string }>) =>
   policy.filter(({ id }) => !HIDDEN_SECTIONS.has(id)).map(({ id, name }) => ({ id, heading: name }))
+
+/**
+ * The cards a report shows, in the order it shows them: the policy's areas,
+ * less the hidden ones, that the report has a section for. The report lays
+ * itself out from this, and so does the Assistant's opening message.
+ */
+export const reportSections = (
+  policy: Array<{ id: string; name: string }>,
+  result: Pick<AnalysisResult | AnalysisDraft, 'sections'>
+) => {
+  const byId = new Map(result.sections.map((s) => [s.id, s]))
+  return sectionsOf(policy).flatMap(({ id, heading }) => {
+    const section = byId.get(id)
+    return section ? [{ id, heading, section }] : []
+  })
+}
 
 /**
  * Assessments written and scored but not shown. Financial Standing (liens,
@@ -455,6 +473,38 @@ const firstSentence = (text: string): { lead: string; tail: string } => {
  *  voice — rather than the report's own paragraph. */
 const COMPUTED = new Set(['skill-kyb-3', 'skill-kyb-activity', 'skill-financial-standing', 'skill-1789767328449'])
 
+/** The paragraphs a card leads from: none where its sentence is computed. */
+const leadProse = (section: AssessmentSection, summary?: string) =>
+  COMPUTED.has(section.id) && summary ? [] : section.body.filter((b) => b.text.trim())
+
+/**
+ * A card's sentence as text: what `SectionBody` leads with — the first
+ * sentence of the assessment's prose, or the computed summary where it has
+ * none. For the Assistant's opening message, which says it word for word.
+ */
+export const cardSentence = (section: AssessmentSection, summary?: string): string | undefined => {
+  const prose = leadProse(section, summary)
+  return prose.length > 0 ? firstSentence(prose[0].text).lead : summary
+}
+
+/** Whether a screen ran — `ScreeningResults` draws nothing otherwise. */
+const screensRan = (record: BusinessRecord) => {
+  const s = screenedOf(record)
+  return s.watchlist.ran || s.pep.ran || s.media.ran
+}
+
+/** Whether `OperationsBody` has a strip to draw: the industry's verdict, a
+ *  licence — the one the industry requires, or a state licence — or a place. */
+const operationsDrawn = (record: BusinessRecord) => {
+  const { industry, licence, stateLicences, locations } = operationsOf(record)
+  return (
+    (industry.table.length > 0 && industry.prohibited !== 'unknown') ||
+    licence.required ||
+    stateLicences.length > 0 ||
+    locations.length > 0
+  )
+}
+
 export const SectionBody = ({
   section,
   heading,
@@ -548,7 +598,7 @@ export const SectionBody = ({
      rows carried the argument alone (`analysis/README.md`); the report reads
      as a document again. What the area asks, in the summary's words, stands
      in only when the assessment wrote nothing; then any gap it left. */
-  const prose = COMPUTED.has(section.id) && summary ? [] : section.body.filter((b) => b.text.trim())
+  const prose = leadProse(section, summary)
   const lead =
     prose.length > 0 ? (
       <ProseLead paragraphs={prose.map((b) => b.text)} results={results} record={record} />
@@ -573,16 +623,21 @@ export const SectionBody = ({
         /* No weight on the header. An area's weight is how the policy counts
            it — background for whoever reads the policy, not something a
            reviewer reading this business needs beside the area's name. */
-        intro={intro}
+        /* A report card has no sentence under its name: the sentence is the
+           Assistant's opening message now (`cardSentence`), and the card leads
+           with what it rests on. A question's answer, which has no name,
+           keeps its prose. */
+        intro={heading ? undefined : intro}
         sections={section.id === 'skill-kyb-identification' ? IDENTITY_SECTIONS : undefined}
-        // The compliance screens: the hits, then what was dismissed.
+        // The compliance screens: the hits, then what was dismissed. Each body
+        // only when it has something to draw — "Show me" stands on it.
         body={
-          section.id === 'skill-kyb-3' && record ? (
+          section.id === 'skill-kyb-3' && record && screensRan(record) ? (
             <ScreeningResults record={record} onJumpToSource={onJumpToSource} />
-          ) : section.id === 'skill-kyb-activity' && record ? (
+          ) : section.id === 'skill-kyb-activity' && record && operationsDrawn(record) ? (
             // What it does, where, and the licence its industry needs.
             <OperationsBody record={record} onJumpToSource={onJumpToSource} />
-          ) : section.id === 'skill-1789767328449' && record ? (
+          ) : section.id === 'skill-1789767328449' && record && (record.connections ?? []).length > 0 ? (
             // The businesses related to this one.
             <RelatedBusinesses record={record} />
           ) : section.id === 'skill-financial-standing' && record ? (
@@ -651,10 +706,7 @@ export const ReportBody = ({
           the standing headings would be filing, not answering. */}
       {answer && <SectionBody section={answer} {...pass} />}
 
-      {sectionsOf(policy)
-        .filter(({ id }) => byId.has(id))
-        .map(({ id, heading }) => {
-        const section = byId.get(id)
+      {reportSections(policy, result).map(({ id, heading, section }) => {
         /*
          * Not here yet, but on its way, and the report should say so.
          *

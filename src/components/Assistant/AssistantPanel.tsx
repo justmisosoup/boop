@@ -24,6 +24,7 @@ import {
 
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
+import type { ReportBrief } from '../../lib/reportBrief'
 import { reportDate, reportLabel } from '../../lib/reportLabels'
 import type { CustomerSkill } from '../../lib/useAgent'
 import type { useAnalysis } from '../../lib/useAnalysis'
@@ -31,9 +32,9 @@ import { cn } from '../../utils/twUtils'
 import { MiddeskMark } from '../MiddeskMark'
 import { AssistantComposer, type Send } from './AssistantComposer'
 import { AssistantEmpty } from './AssistantEmpty'
-import { AnswerTurn, ErrorTurn, PendingTurn, UserTurn } from './AssistantTurn'
+import { AnswerTurn, BriefTurn, ErrorTurn, PendingTurn, UserTurn } from './AssistantTurn'
 import { Conversations } from './Conversations'
-import { suggestionsFor } from './starters'
+import { STARTERS, suggestionsFor } from './starters'
 
 /**
  * Kha's Assistant, on the kit's `FloatingPanel`.
@@ -63,6 +64,8 @@ export const AssistantPanel = ({
   onStateChange,
   onPresentationChange,
   onJumpToGroup,
+  brief,
+  onJumpToCard,
   className
 }: {
   record: BusinessRecord
@@ -80,6 +83,11 @@ export const AssistantPanel = ({
   onStateChange: (state: FloatingPanelState) => void
   onPresentationChange: (presentation: FloatingPanelPresentation) => void
   onJumpToGroup: (groupId: string, insightIds: string[]) => void
+  /** The open report as the conversation's first message (`reportBrief`):
+   *  there before anything is asked, and kept at the top after. */
+  brief?: ReportBrief
+  /** A brief card's title scrolls the report to that card. */
+  onJumpToCard?: (anchor: string) => void
   className?: string
 }) => {
   const [view, setView] = useState<'thread' | 'conversations'>('thread')
@@ -103,10 +111,12 @@ export const AssistantPanel = ({
   const last = turns[turns.length - 1]
   const asked = useMemo(() => turns.map((t) => t.typed ?? ''), [turns])
   const suggestions = useMemo(
-    () => (last ? suggestionsFor(last.result.suggestions, asked) : []),
-    [last, asked]
+    // Under the brief, before anything is asked: the starters.
+    () => (last ? suggestionsFor(last.result.suggestions, asked) : brief ? [...STARTERS] : []),
+    [last, asked, brief]
   )
-  const empty = turns.length === 0 && !waiting && !analysis.error
+  // A conversation with a brief has already started: the report opened it.
+  const empty = turns.length === 0 && !waiting && !analysis.error && !brief
 
   const report = analysis.selected
     ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
@@ -272,8 +282,18 @@ export const AssistantPanel = ({
                 </ChatMarker>
               )}
 
+              {brief && analysis.selected && (
+                <BriefTurn
+                  brief={brief}
+                  at={analysis.selected.at}
+                  results={results}
+                  record={record}
+                  onJumpToCard={onJumpToCard}
+                />
+              )}
+
               {turns.map((v, i) => (
-                <div key={v.id} className={cn('flex flex-col gap-4', i > 0 && 'mt-2')}>
+                <div key={v.id} className={cn('flex flex-col gap-4', (i > 0 || brief) && 'mt-2')}>
                   <UserTurn typed={v.typed ?? ''} skills={v.skills ?? []} at={v.at} />
                   <AnswerTurn
                     version={v}

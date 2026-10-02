@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
-import { ArrowUpRight, Building2, ChevronDown, TriangleAlert, User } from 'lucide-react'
+import { ArrowUpRight, Building2, ChevronDown, Circle, CircleMinus, CirclePlus, TriangleAlert, User } from 'lucide-react'
 
 import { ChatSourceChip, MetaChip, type ChatSourceData } from '@/core'
 
@@ -81,34 +81,45 @@ const ScreenRow = ({ label, hits, coverage, ran, children }: { label: string; hi
   )
 }
 
+/** References that point at a filing: the registration itself, and a parsed
+ *  SOS document, which carries the state and file number of the filing it was
+ *  read from. */
+const FILING_REFS = new Set(['registration', 'parsed_sos_document'])
+
 /** The record's own source names that are not the filing chip's or the submission's. */
-const OTHER_SOURCES = (who: ScreenedName) =>
-  provenanceList({ sources: who.sources }).filter((n) => !/^(state registration|registration|submitted by the customer|submitted)$/i.test(n))
+const OTHER_SOURCES = (who: ScreenedName, documentsMatched: boolean) =>
+  provenanceList({ sources: who.sources }).filter(
+    (n) =>
+      !/^(state registration|registration|submitted by the customer|submitted)$/i.test(n) &&
+      !(documentsMatched && /^(sos document|parsed sos document)$/i.test(n))
+  )
 
 /**
  * Where the record holds the name, as a source chip beside it: the filings
- * that name it ("SOS · VA"), then any other record ("SOS document", "Form
- * 5500"). The same chip every other cell carries; nothing when the name is
- * only the customer's.
+ * that name it ("SOS · VA") — a parsed SOS document as the very filing it was
+ * read from — then any other record ("Form 5500"). The same chip every other
+ * cell carries; nothing when the name is only the customer's.
  */
 const Seen = ({ who, record, onJumpToSource }: { who: ScreenedName; record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
-  const byRef = (who.refs ?? [])
-    .filter((r) => r.type === 'registration')
-    .map((r) => {
-      const m = (r.metadata ?? {}) as { state?: string; file_number?: string }
-      return record.registrations.find((g) => g.state === m.state && (!m.file_number || g.fileNumber === m.file_number))
-    })
-    .filter((g): g is BusinessRecord['registrations'][number] => Boolean(g))
+  const filingOf = (r: { metadata?: Record<string, unknown> }) => {
+    const m = (r.metadata ?? {}) as { state?: string; file_number?: string }
+    return record.registrations.find((g) => g.state === m.state && (!m.file_number || g.fileNumber === m.file_number))
+  }
+  const refs = who.refs ?? []
+  const byRef = refs.filter((r) => FILING_REFS.has(r.type)).map(filingOf)
+  const documentsMatched = refs.some((r) => r.type === 'parsed_sos_document' && filingOf(r))
   const byName = who.kind === 'person' ? filingsListing(record, who.name, 'officers') : []
-  const filings = [...new Set([...byRef, ...byName])]
-  const others = OTHER_SOURCES(who)
+  const filings = [...new Set([...byRef, ...byName].filter((g): g is BusinessRecord['registrations'][number] => Boolean(g)))]
+  const others = OTHER_SOURCES(who, documentsMatched)
   if (filings.length === 0 && others.length === 0) return null
   return (
     <AttributeSources
       sources={others}
       registrations={filings}
       domesticState={record.formation?.state}
-      refs={(who.refs ?? []).filter((r) => r.type !== 'registration').map((r) => ({ ...r, metadata: r.metadata ?? {} }))}
+      refs={refs
+        .filter((r) => r.type !== 'registration' && !(r.type === 'parsed_sos_document' && filingOf(r)))
+        .map((r) => ({ ...r, metadata: r.metadata ?? {} }))}
       onJumpToSource={onJumpToSource}
     />
   )
@@ -229,6 +240,20 @@ const PepBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: PepHit; ctx: Bloc
   )
 }
 
+/**
+ * An article's sentiment as a mark, not a word: negative a minus in a red
+ * circle, positive a plus in a green one, neutral an empty grey circle. The
+ * word stays as its accessible name.
+ */
+const Sentiment = ({ value }: { value?: string | null }) => {
+  const v = (value ?? 'neutral').toLowerCase()
+  const label = words(v)
+  const props = { size: 16, strokeWidth: 2, role: 'img', 'aria-label': label } as const
+  if (v === 'negative') return <CircleMinus {...props} className="text-[var(--core-color-text-danger)]"><title>{label}</title></CircleMinus>
+  if (v === 'positive') return <CirclePlus {...props} className="text-[var(--core-color-text-success)]"><title>{label}</title></CirclePlus>
+  return <Circle {...props} className="text-text-secondary"><title>{label}</title></Circle>
+}
+
 const SHOW = 5
 const HEAD = 'px-4 pb-2 pt-3 text-caption leading-snug text-text-secondary'
 const CELL = 'px-4 py-3 text-sm leading-snug'
@@ -251,7 +276,7 @@ const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: 
         <div role="row" className="contents">
           <span role="columnheader" className={HEAD}>Article</span>
           <span role="columnheader" className={HEAD}>Risks</span>
-          <span role="columnheader" className={HEAD}>Sentiment</span>
+          <span role="columnheader" className={HEAD}>Level</span>
         </div>
         {items.map((it, i) => (
           <div role="row" key={`${it.url ?? it.title}-${i}`} className="contents">
@@ -267,17 +292,29 @@ const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: 
               )}
               {it.sourceName && it.title && <span className="text-caption text-text-secondary">{it.sourceName}</span>}
             </span>
-            <span role="cell" className={cn(CELL, 'flex flex-col gap-0.5 text-text-secondary')}>
-              {it.risks && it.risks.length > 0
-                ? it.risks.map((r, j) => (
-                    <span key={j}>
-                      {words(r.name)}
-                      {r.confidence && <span className="text-caption"> · {r.confidence}</span>}
+            {/* The sentiment heads the risks: its mark, then each risk the article raises. */}
+            {/* Each risk the article raises on its own line, its sentiment mark
+                at the head of every line and its level in a column of its own,
+                level and risk on one row of a subgrid so a wrapped risk keeps
+                its level beside it. A neutral article — no sentiment, no
+                risks — says so in words and carries no mark. */}
+            <span role="cell" className="col-span-2 grid grid-cols-subgrid content-start gap-y-1 py-3">
+              {(it.risks && it.risks.length > 0 ? it.risks.map((r) => ({ key: r.name, text: words(r.name), level: r.confidence })) : [{ key: 'none', text: 'None listed', level: null }]).map(
+                (line) => (
+                  <span key={line.key} className="contents">
+                    <span className="flex items-start gap-2 px-4 text-sm leading-snug text-text-secondary">
+                      {/^(negative|positive)$/i.test(it.sentiment ?? '') && line.key !== 'none' && (
+                        <span className="mt-px shrink-0">
+                          <Sentiment value={it.sentiment} />
+                        </span>
+                      )}
+                      <span>{line.text}</span>
                     </span>
-                  ))
-                : '—'}
+                    <span className="whitespace-nowrap px-4 text-sm leading-snug text-text-secondary">{line.level ? words(line.level) : ''}</span>
+                  </span>
+                )
+              )}
             </span>
-            <span role="cell" className={cn(CELL, 'text-text-secondary')}>{it.sentiment ? words(it.sentiment) : 'Neutral'}</span>
           </div>
         ))}
       </div>

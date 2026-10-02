@@ -1,10 +1,11 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip'
-import { Building2, Clock, FileText, History } from 'lucide-react'
+import { ArrowUpRight, Building2, Clock, FileText, History } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { Surface, Text } from '@/core'
+import { ChatSourceChip, Surface, Text } from '@/core'
 
 import { currentDomesticRows, formationIdentityRows, maskTin, websiteStatesName, type AttributeRow } from '../lib/attributes'
+import { dbaRequirementNote, dbaRequirementOf, dbaRequirementValue } from '../lib/dbaRequirement'
 import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { FORMATION_CARD_ID } from '../lib/needsReview'
 import { negativesFor } from '../lib/identityScore'
@@ -105,7 +106,8 @@ const submittedFoundNote = (record: BusinessRecord): string => {
   const verified = (key: string) =>
     /^verified$/i.test(record.reviewTasks.find((t) => t.key === key)?.subLabel ?? '')
   const found = [
-    verified('web_business_name_verification') ? 'the website shows the business name' : undefined,
+    // Only a website states a name: a match off a social profile is not one.
+    record.website?.url && verified('web_business_name_verification') ? 'the website shows the business name' : undefined,
     verified('web_person_verification') ? 'the website names the submitted person' : undefined,
     verified('web_address_verification') ? 'the website shows the submitted office address' : undefined,
     verified('address_verification') ? 'a source of record lists the submitted office address' : undefined
@@ -117,13 +119,87 @@ const submittedFoundNote = (record: BusinessRecord): string => {
 }
 
 /**
- * The formation filing's standing, for the note — except where the state
- * publishes none. Delaware and New Jersey never do; that is how those
- * registries work, not something to say about the business.
+ * The formation filing's standing, for the note. Where the state publishes
+ * none — Delaware and New Jersey never do — the note says where and when it
+ * was formed, and that the state publishes no status: how those registries
+ * work, not something wrong with the business.
  */
 const formationNote = (record: BusinessRecord): string | undefined => {
   const f = formationFilingOf(record)
-  return f && registrationState(f).silent ? undefined : formationStandingNote(record)
+  if (f && registrationState(f).silent) {
+    const state = stateName(f.state)
+    const year = /^\d{4}/.test(f.registrationDate ?? '') ? ` in ${f.registrationDate!.slice(0, 4)}` : ''
+    return `Formed in ${state}${year}. ${state} does not publish filing status.`
+  }
+  return formationStandingNote(record)
+}
+
+/**
+ * No filing anywhere, and the record classes the business a sole
+ * proprietorship — from the IRS record or the name alone, never from a filing.
+ * Kami Agbeti, Sara Stubbs: the entity type is all the formation holds.
+ */
+const classifiedSole = (record: BusinessRecord) =>
+  record.registrations.length === 0 &&
+  !record.formation?.state &&
+  /sole/i.test(record.formation?.entityType ?? '')
+
+/**
+ * What the card says for a classified sole proprietorship: that no filing was
+ * found, why none is expected, and what the IRS made of the TIN — the one
+ * record that stands for the business here.
+ */
+const classifiedSoleNote = (record: BusinessRecord): string => {
+  const tin = record.reviewTasks.find((t) => t.key === 'tin')?.subLabel ?? ''
+  const irs = /^found$/i.test(tin)
+    ? ' The IRS has a record of the TIN under the business name.'
+    : /^not found$/i.test(tin)
+      ? ' The IRS has no record of the TIN under the business name.'
+      : ''
+  const dba = dbaRequirementNote(record)
+  return `No formation filing was found; a sole proprietorship does not file one with the state.${irs}${dba ? ` ${dba}` : ''}`
+}
+
+/**
+ * The state's DBA rule as a cell in the grid: the requirement as the value,
+ * who it is filed with and under what statute as its caption, and the page
+ * the rule was confirmed against as its chip.
+ */
+const dbaRuleCell = (record: BusinessRecord): AttributeCell | undefined => {
+  const d = dbaRequirementOf(record)
+  if (!d) return undefined
+  const r = d.rule
+  const host = r.source ? new URL(r.source).hostname.replace(/^www\./, '') : undefined
+  const caption = [r.office && `${r.office.replace(/^the /, '').replace(/^\w/, (c) => c.toUpperCase())}`, r.statute]
+    .filter(Boolean)
+    .join(' · ')
+  return {
+    key: 'dba-rule',
+    label: `DBA requirement · ${stateName(d.state)}`,
+    span: 'full',
+    badge:
+      r.source && host ? (
+        <ChatSourceChip
+          sources={[
+            {
+              id: `dba-rule-${d.state}`,
+              label: host,
+              domain: host,
+              title: r.statute ?? `${stateName(d.state)} DBA rule`,
+              url: r.source,
+              annotation: 'Where the rule was confirmed',
+              badge: <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
+            }
+          ]}
+        />
+      ) : undefined,
+    values: [
+      {
+        value: dbaRequirementValue(r),
+        note: caption ? <span className="text-caption text-text-secondary">{caption}</span> : undefined
+      }
+    ]
+  }
 }
 
 /**
@@ -174,9 +250,82 @@ export const formationCardTitle = (
       ? others > 0
         ? `Formation found and registered in ${others} other state${others === 1 ? '' : 's'}`
         : 'Formation found for this business'
-      : sole
+      : sole || (tier === 'formation' && classifiedSole(record))
         ? 'Likely sole proprietorship'
         : TITLE[tier]
+}
+
+/**
+ * Not issued: the IRS holds no record of the number yet. For a business
+ * formed in the last few months that is the IRS's processing delay, not a
+ * finding, and the note says so — with how recently it was formed.
+ */
+const tinNoteOf = (record: BusinessRecord): string | undefined => {
+  const tinRec = record.tin as { tin?: string; issued?: boolean } | null
+  if (!tinRec?.tin || tinRec.issued !== false) return undefined
+  const formedDays = record.formation?.date
+    ? Math.floor((Date.now() - new Date(`${record.formation.date}T00:00:00`).getTime()) / 86_400_000)
+    : undefined
+  return formedDays !== undefined && formedDays <= 120
+    ? `The IRS has not issued the TIN yet. The business was formed ${formedDays === 0 ? 'today' : `${formedDays} day${formedDays === 1 ? '' : 's'} ago`}, and new businesses often take a few weeks to appear in the IRS database.`
+    : 'The TIN has not been issued by the IRS.'
+}
+
+/**
+ * The card's sentence, as it reads under the title — for the card and for
+ * the Assistant's opening message, which says it word for word.
+ *
+ * A formation on another record is not this business's formation until
+ * someone confirms it; the note says what it is. A formation that is — a
+ * domestic filing in the formation state, under the business's own name —
+ * says whether it is still the filing the business stands on. With no filing,
+ * what was found instead.
+ */
+export const formationCardSummary = (
+  record: BusinessRecord,
+  results: Derived[],
+  groupFor: (insightId: string) => GroupId
+): string | undefined => {
+  const linked = domesticFilingOf(record)?.linked
+  const converted = !linked ? convertedFormationOf(record) : undefined
+  const domestic = formationCardFilingOf(record)
+  const rows = allRows(record, results, groupFor)
+  const tier: Tier =
+    record.formation || domestic
+      ? 'formation'
+      : rows.some((r) => (r.sources ?? []).includes(CITY))
+        ? 'city'
+        : 'submitted'
+  const strong = !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
+  // No state filing at all, and a city registration in the submitted person's own name.
+  const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
+  const tinNote = tinNoteOf(record)
+  const note = linked
+    ? linkedFormationNote(record, linked, stateName)
+    : strong
+      ? converted
+        ? convertedFormationNote(converted)
+        : [formationNote(record), registrationsNote(record, domestic?.state)].filter(Boolean).join(' ') || undefined
+      : sole
+        ? /* What was not found, what was, and what it suggests — generic: the
+             grid under it names the owner, the DBA and the city. */
+          // Not "city" or "state": a DBA is a city registration in San
+          // Francisco and a fictitious name filed with the state in Florida.
+          `No formation filing was found. A DBA registration ${
+            nameStandingOf(record).category === 'DBA_OF_PERSON'
+              ? 'lists the owner doing business as the DBA name'
+              : "is in the owner's own name"
+          } at the submitted office address, suggesting it is likely a sole proprietorship.${(() => {
+            const dba = dbaRequirementNote(record)
+            return dba ? ` ${dba}` : ''
+          })()}`
+        : tier === 'submitted'
+          ? submittedFoundNote(record)
+          : tier === 'formation' && classifiedSole(record)
+            ? classifiedSoleNote(record)
+            : undefined
+  // Beside the IRS note the filing reads as plain fact: "is active", not "is still active".
+  return [tinNote ? note?.replace(/ is still active/, ' is active') : note, tinNote].filter(Boolean).join(' ') || undefined
 }
 
 /** The tooltip the state filing tiles use, over a quiet icon button. */
@@ -311,11 +460,6 @@ export const FormationCard = ({
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
   className?: string
 }) => {
-  // The card's insights sit behind "Show insights" (`InsightsDisclosure`); a
-  // citation that leads to one of them opens the list.
-  const revealsHere = [...(revealed ?? [])].some((id) =>
-    (FORMATION_CARD_INSIGHTS as ReadonlyArray<string>).includes(id.split(':')[0])
-  )
   /* No formation of its own, but one on another record that looks linked —
      Sprig's Delaware filing sits on the Mixboard Inc. record. The card shows
      that filing, and the note says it was not found for this business and
@@ -380,6 +524,10 @@ export const FormationCard = ({
         r.insightId.split(':')[0] === id && r.state !== 'unknown' && !alreadyShown(id) && !(strip && COUNTED.has(id))
     )
   )
+  /* A citation that leads to one of the card's rows opens its insights. One
+     that leads to a check the grid states as a field — the status, the sub
+     status, the entity type — has no row, and the grid is always out. */
+  const revealsHere = cardRows.some((r) => revealed?.has(r.insightId))
 
   /* The header names the card's filing once. A value other sources state too —
      the name 21 filings are under, the form they all declare — shows every source that states it, this filing included, so it
@@ -520,18 +668,13 @@ export const FormationCard = ({
      submitted by the customer and checked against the IRS — the check's own
      row is the card's (`tin` in FORMATION_CARD_INSIGHTS). */
   const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean; issued?: boolean } | null
-  /* Not issued: the IRS holds no record of the number yet. For a business
-     formed in the last few months that is the IRS's processing delay, not a
-     finding, and the cell says so — with how recently it was formed. */
-  const formedDays = record.formation?.date
-    ? Math.floor((Date.now() - new Date(`${record.formation.date}T00:00:00`).getTime()) / 86_400_000)
-    : undefined
-  const tinNote =
-    tinRec?.tin && tinRec.issued === false
-      ? formedDays !== undefined && formedDays <= 120
-        ? `The IRS has not issued the TIN yet. The business was formed ${formedDays === 0 ? 'today' : `${formedDays} day${formedDays === 1 ? '' : 's'} ago`}, and new businesses often take a few weeks to appear in the IRS database.`
-        : 'The TIN has not been issued by the IRS.'
-      : undefined
+  /* Whom the IRS matched the number to: the business (`verified_by:
+     "business"`), a person, or — unverified — nobody. */
+  const verifiedBy = (record.tin as { verified_by?: string | null } | null)?.verified_by ?? null
+  const tinName = (record.tin as { name?: string } | null)?.name
+  const tinMatch = verifiedBy
+    ? { title: tinName ?? undefined, note: /business/i.test(verifiedBy) ? 'Business name' : 'Individual' }
+    : { title: 'No match on the IRS record', note: 'IRS TIN record' }
   const tinCell: AttributeCell | undefined = tinRec?.tin
     ? {
         key: 'tin',
@@ -539,7 +682,16 @@ export const FormationCard = ({
         badge: (
           <span className="flex flex-wrap items-center gap-1">
             <SubmittedChip verified={Boolean(tinRec.verified) && !tinRec.mismatch} onJumpToSource={onJumpToSource} />
-            <AttributeSources sources={['IRS TIN record']} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
+            <AttributeSources
+              sources={['IRS TIN record']}
+              // The chip stays "IRS TIN record"; its preview names whom the IRS
+              // matched the number to — a business name or an individual —
+              // and says so when it matched nobody.
+              title={tinMatch.title}
+              note={tinMatch.note}
+              domesticState={record.formation?.state}
+              onJumpToSource={onJumpToSource}
+            />
           </span>
         ),
         values: [
@@ -603,7 +755,9 @@ export const FormationCard = ({
           }
         : c
     ),
-    ...(tinCell ? [tinCell] : [])
+    ...(tinCell ? [tinCell] : []),
+    // A sole proprietor with no filing: what the state of its office asks of a trade name.
+    ...(tier === 'formation' && classifiedSole(record) ? [dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c)) : [])
   ]
 
   const chip =
@@ -631,27 +785,6 @@ export const FormationCard = ({
   // No state filing at all, and a city registration in the submitted person's own name.
   const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
   const title = formationCardTitle(record, results, groupFor)
-  const note = linked
-    ? linkedFormationNote(record, linked, stateName)
-    : strong
-      ? converted
-        ? convertedFormationNote(converted)
-        : [formationNote(record), registrationsNote(record, domestic?.state)].filter(Boolean).join(' ') || undefined
-      : sole
-        ? /* What was not found, what was, and what it suggests — generic: the
-             grid under it names the owner, the DBA and the city. */
-          // Not "city" or "state": a DBA is a city registration in San
-          // Francisco and a fictitious name filed with the state in Florida.
-          `No formation filing was found. A DBA registration ${
-            nameStandingOf(record).category === 'DBA_OF_PERSON'
-              ? 'lists the owner doing business as the DBA name'
-              : "is in the owner's own name"
-          } at the submitted office address, suggesting it is likely a sole proprietorship.`
-        : tier === 'submitted'
-          ? submittedFoundNote(record)
-          : undefined
-  // Beside the IRS note the filing reads as plain fact: "is active", not "is still active".
-  const summary = [tinNote ? note?.replace(/ is still active/, ' is active') : note, tinNote].filter(Boolean).join(' ') || undefined
 
   /*
    * A sole proprietorship, split the way the Formation card is.
@@ -728,7 +861,8 @@ export const FormationCard = ({
                 }
               ]
             : []),
-          ...(tinCell ? [tinCell] : [])
+          ...(tinCell ? [tinCell] : []),
+          ...[dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c))
         ]
       : null
 
@@ -743,17 +877,10 @@ export const FormationCard = ({
     >
       {/* No source chip in a formation card's header: each field names its own
           — the name and form their corroborating filings, the date the
-          domestic filing — and the filing view names every other. */}
-      <CardHeader
-        title={title}
-        trailing={tier === 'formation' || tier === 'submitted' || soleItems ? undefined : chip}
-        className={summary ? 'border-b-0 pb-1' : undefined}
-      />
-      {summary && (
-        <div className="border-b border-[var(--core-color-border-divider)] px-4 pb-3">
-          <span className="block text-sm leading-5 text-text-secondary">{summary}</span>
-        </div>
-      )}
+          domestic filing — and the filing view names every other. No sentence
+          under it: that is the Assistant's opening message now
+          (`formationCardSummary`), and the card leads with its grid. */}
+      <CardHeader title={title} trailing={tier === 'formation' || tier === 'submitted' || soleItems ? undefined : chip} />
       <AttributeCells items={soleItems ?? items} columns={3} className="-mb-px" />
       {strip && <FilingStrip record={stripRecord} lead={converted?.now ?? domestic ?? undefined} legalName={legalName} />}
       {/* The city registrations, as the state filings are shown. */}
