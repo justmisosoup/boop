@@ -1,19 +1,26 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
-import { Building2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Building2, ClipboardCheck, Crosshair, Paperclip, Plus, X } from 'lucide-react'
 
 import {
-  ActionButton,
   ChatComposer,
-  Dialog,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
+  MenuTrigger,
   type ChatChipData
 } from '@/core'
 
 import { composeAssessment } from '../../lib/library'
+import type { Attachment } from '../../lib/useAnalysis'
 import type { CustomerSkill } from '../../lib/useAgent'
+import { cn } from '../../utils/twUtils'
 import { MiddeskMark } from '../MiddeskMark'
+import { readFile } from './files'
 
-/** What one send carries. The same shape the old dock sent, minus attachments. */
+/** What one send carries. */
 export type Send = {
   prompt: string
   /** The assessments in the box, each on its own — the manifest. Empty for a
@@ -24,22 +31,30 @@ export type Send = {
   kind: 'report' | 'question'
   /** Which report a question is filed against. Absent starts a new one. */
   target?: string
+  /** Documents the reviewer added, read against the recommendation. */
+  attachments?: Attachment[]
 }
 
-const BUSINESS_CHIP = 'business'
 
 /**
  * Kha's composer, on the kit's `ChatComposer`.
  *
- * The business is the standing chip — the one thing every question is about,
- * so it is in the box before anything is typed and cannot be taken out. The
- * customer's workflow sits beside it as a chip, attached until they remove it.
+ * The business — the report's context — is its own card just above the
+ * box, as Linear names what a question is about. A customer workflow, if
+ * one is attached, is a chip in the box until removed.
  * There is no `/` menu: nothing else is attached from here. A workflow with
- * nothing typed runs a report; anything typed is a question; a question while
- * a report is open asks where it goes.
+ * nothing typed runs a report; anything typed is a question. While a report
+ * is open it is in context — the business card above the box — and a
+ * question is answered inside it; dismissed (the card's X), a question starts
+ * a new report. The crosshairs beside + puts it back.
  *
- * File attachments are not carried: the kit's composer has no slot for them.
- * The endpoint still accepts them for when it does.
+ * The + at the far left adds to the box: files ("Add files") — the kit's
+ * composer has no file picker of its own — or the customer's assessment
+ * ("Assessments"), as a chip. Each
+ * one is a chip in the box, removable until sent. A document is read against
+ * the report on screen and its recommendation, so it skips the "where should
+ * this go" question: it goes to the report, and the recommendation reloads
+ * with what comes back.
  */
 export const AssistantComposer = ({
   businessId,
@@ -66,50 +81,76 @@ export const AssistantComposer = ({
 }) => {
   const [value, setValue] = useState('')
   const [workflow, setWorkflow] = useState<string | null>(null)
-  /** A question waiting on where it should go. */
-  const [ask, setAsk] = useState<Omit<Send, 'kind' | 'target'> | null>(null)
+  /** The report on screen is in context: a question is answered inside it.
+   *  Dismissed, a question starts a new report. Back on for each report. */
+  const [withReport, setWithReport] = useState(true)
+  useEffect(() => setWithReport(true), [report?.id])
+  /** Documents in the box, waiting to be sent. */
+  const [files, setFiles] = useState<Attachment[]>([])
+  const fileRef = useRef<HTMLInputElement>(null)
+  const addFiles = async (list: FileList | null) => {
+    if (!list || list.length === 0) return
+    const read = await Promise.all([...list].map(readFile))
+    setFiles((prev) => [...prev, ...read])
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
-  // The customer's workflow, attached as soon as it is known — the report on
-  // screen was produced by it, and an empty box made the one thing that ran
-  // the least visible thing in the room. Only until they take it out.
-  const [touched, setTouched] = useState(false)
-  const theirWorkflow = custom.find((c) => c.kind === 'workflow')
-  useEffect(() => {
-    if (!touched && theirWorkflow) setWorkflow(theirWorkflow.id)
-  }, [touched, theirWorkflow])
-
+  /* The customer's assessment is attached only when picked from the +
+     ("Assessments"): a chip in the box that, sent with nothing typed, runs a
+     new report. */
   const chosenWorkflow = custom.find((x) => x.id === workflow && x.kind === 'workflow') ?? null
+  const workflows = custom.filter((x) => x.kind === 'workflow')
 
   const chips = useMemo<ChatChipData[]>(
     () => [
-      {
-        id: BUSINESS_CHIP,
-        label: businessName,
-        icon: <Building2 aria-hidden="true" size={12} strokeWidth={1.75} />
-      },
       ...(chosenWorkflow
         ? [{ id: chosenWorkflow.id, label: chosenWorkflow.name, icon: <MiddeskMark className="h-[6px] w-2.5" /> }]
-        : [])
+        : []),
+      ...files.map((f, i) => ({
+        id: `file:${i}`,
+        label: f.name,
+        icon: <Paperclip aria-hidden="true" size={12} strokeWidth={1.75} />
+      }))
     ],
-    [businessId, businessName, chosenWorkflow]
+    [chosenWorkflow, files]
   )
 
   const onRemoveChip = (id: string) => {
-    // The business is what the conversation is about; it is not removable.
-    if (id === BUSINESS_CHIP) return
-    if (id === workflow) {
-      setTouched(true)
-      setWorkflow(null)
+    if (id === workflow) setWorkflow(null)
+    if (id.startsWith('file:')) {
+      const at = Number(id.slice(5))
+      setFiles((prev) => prev.filter((_, i) => i !== at))
     }
   }
 
   // A workflow is the question, so it sends with nothing typed — which is the
   // difference between running one and asking something with a context.
   const typed = value.trim()
-  const ready = Boolean(typed) || Boolean(chosenWorkflow)
+  const ready = Boolean(typed) || Boolean(chosenWorkflow) || files.length > 0
 
   const submit = () => {
     if (!ready) return
+
+    /* Documents are asked of the report on screen, against its
+       recommendation — no "where should this go". With nothing typed, the
+       question is the one a document always asks. */
+    if (files.length > 0) {
+      const asked =
+        typed ||
+        (files.length === 1
+          ? `Does ${files[0].name} change the recommendation?`
+          : 'Do these documents change the recommendation?')
+      dispatch({
+        prompt: asked,
+        skills: [],
+        typed: asked,
+        assessments: [],
+        kind: 'question',
+        target: report?.id,
+        attachments: files
+      })
+      return
+    }
 
     // A workflow sends everything it is built from — its own brief, the parts
     // under it, and the context it is read against. The parts travel as a
@@ -127,10 +168,10 @@ export const AssistantComposer = ({
     const kind: Send['kind'] = chosenWorkflow && !typed ? 'report' : 'question'
     const payload = { prompt: parts.join('\n\n'), skills: names, typed, assessments: composed?.assessments ?? [] }
 
-    // A question against a report is asked of THAT report — or the reader
-    // wants a fresh reading, which is a new report. Only they know which.
+    // A question with the report in context is asked of THAT report; with it
+    // dismissed, it is a fresh reading — a new report.
     if (kind === 'question' && report) {
-      setAsk(payload)
+      dispatch(withReport ? { ...payload, kind: 'question', target: report.id } : { ...payload, kind: 'report' })
       return
     }
     dispatch({ ...payload, kind })
@@ -144,18 +185,40 @@ export const AssistantComposer = ({
       // fan out across the workflow's assessments.
       assessments: send.kind === 'report' ? send.assessments : []
     })
-    setAsk(null)
     setValue('')
+    setFiles([])
   }
 
   return (
     <>
+      {/* The context: the business, as the report on screen reads it — its
+          own card hovering just above the box, Linear's way. Its X takes the
+          report out of context, card and all; the crosshairs puts it back.
+          With no report there is nothing to take out. */}
+      {(!report || withReport) && (
+        <div className="mb-1.5 flex min-w-0 items-center gap-1.5 rounded-card border border-solid border-border bg-[var(--core-color-surface-subtle)] px-2.5 py-1 text-caption leading-4 text-foreground">
+          <Building2 aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0 text-text-secondary" />
+          <span className="min-w-0 flex-1 truncate">{businessName}</span>
+          {report && (
+            <button
+              type="button"
+              aria-label="Take the report out of context"
+              title="Take the report out of context"
+              onClick={() => setWithReport(false)}
+              className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-control text-text-secondary hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X aria-hidden="true" size={12} strokeWidth={1.75} />
+            </button>
+          )}
+        </div>
+      )}
       <ChatComposer
-        // Reaches into the kit's markup to take the remove button off the
-        // FIRST chip, the business: the composer gives every chip one and has
-        // no per-chip switch. Same trade as `chipStyles.ts` — one selector here
-        // rather than a fork of the vendored composer.
-        className="[&>div:last-of-type>div:first-child>span:first-child>button]:hidden"
+        // The action row's left slot, stretched across the row so the + sits
+        // at the far left and the crosshairs at the far end, beside send. The
+        // kit has no slot by send, so this reaches into its markup, as
+        // `chipStyles.ts` does: one selector rather than a fork of the vendored
+        // composer.
+        className="[&_div.pb-2.justify-between>div:first-child]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:overflow-visible"
         chips={chips}
         inputRef={inputRef}
         isStreaming={busy}
@@ -166,45 +229,71 @@ export const AssistantComposer = ({
         onChange={setValue}
         onRemoveChip={onRemoveChip}
         onSubmit={submit}
+        hint={
+          <span className="flex w-full items-center justify-between gap-1">
+          <Menu>
+            <MenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Add to the conversation"
+                title="Add"
+                className="flex size-6 items-center justify-center rounded-control border border-solid border-border text-text-secondary hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Plus aria-hidden="true" size={14} strokeWidth={2} />
+              </button>
+            </MenuTrigger>
+            <MenuContent align="start" className="z-popover w-52">
+              <MenuItem onSelect={() => fileRef.current?.click()} className="gap-2">
+                <Paperclip aria-hidden="true" size={14} strokeWidth={1.75} className="shrink-0" />
+                Add files
+              </MenuItem>
+              {/* The customer's assessment, attached as a chip: sent with
+                  nothing typed, it runs a new report. */}
+              <MenuSub>
+                <MenuSubTrigger disabled={workflows.length === 0} className="gap-2">
+                  <ClipboardCheck aria-hidden="true" size={14} strokeWidth={1.75} className="shrink-0" />
+                  Assessments
+                </MenuSubTrigger>
+                <MenuSubContent className="z-popover w-60">
+                  {workflows.map((w) => (
+                    <MenuItem key={w.id} onSelect={() => setWorkflow(w.id)}>
+                      <span className="truncate">{w.name}</span>
+                    </MenuItem>
+                  ))}
+                </MenuSubContent>
+              </MenuSub>
+            </MenuContent>
+          </Menu>
+          {/* The report on screen, back into context. */}
+          {report && (
+            <button
+              type="button"
+              aria-pressed={withReport}
+              aria-label={withReport ? 'The report is in context' : 'Put the report in context'}
+              title={withReport ? 'The report is in context' : 'Put the report in context'}
+              onClick={() => setWithReport((v) => !v)}
+              className={cn(
+                'flex size-6 items-center justify-center rounded-control border border-solid border-border hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                withReport ? 'text-foreground' : 'text-text-secondary'
+              )}
+            >
+              <Crosshair aria-hidden="true" size={14} strokeWidth={1.75} />
+            </button>
+          )}
+          </span>
+        }
       />
 
-      {/* Where the answer goes.
-          Both choices run the same question; they differ in what it is read
-          against. Added, it is answered against the report already on screen
-          and files under it. New, the business is read again from scratch and
-          the answer opens its own report. Two affirmatives, so neither is the
-          `ConfirmDialog` shape of "do it / do not". */}
-      {createPortal(
-        <Dialog
-          isOpen={ask !== null}
-          onClose={() => setAsk(null)}
-          size="sm"
-          title="Where should this answer go?"
-          description={
-            report
-              ? `Add it to ${report.label}, which reads what that report read — or start a new report, read against the business as it is now.`
-              : undefined
-          }
-          footer={
-            <div className="flex justify-end gap-2">
-              <ActionButton
-                variant="secondary"
-                onClick={() => ask && dispatch({ ...ask, kind: 'report', target: undefined })}
-              >
-                Start a new report
-              </ActionButton>
-              <ActionButton onClick={() => ask && dispatch({ ...ask, kind: 'question', target: report?.id })}>
-                Add to this report
-              </ActionButton>
-            </div>
-          }
-        >
-          <span className="sr-only">
-            Choose whether this question is answered inside the report you are reading or as a new one.
-          </span>
-        </Dialog>,
-        document.body
-      )}
+      <input
+        ref={fileRef}
+        type="file"
+        multiple
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={(e) => void addFiles(e.target.files)}
+      />
+
     </>
   )
 }

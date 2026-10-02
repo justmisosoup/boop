@@ -1261,43 +1261,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
    * registered agent is its own row whatever else the person is. With no title
    * the label is "Officer".
    */
-  const peopleRow = (people: typeof record.people, _context: string): AttributeRow[] =>
-    people.flatMap((p) => {
-      const base = {
-        group: 'people' as const,
-        source: p.submitted ? '' : provenance(p),
-        sources: provenanceList(p),
-        submitted: p.submitted,
-        refs: p.sourceRefs,
-        matchOn: 'officer' as const,
-        matchValue: p.name,
-        value: p.name
-      }
-      const agent = p.titles.some((t) => AGENT.test(t))
-      // The filing names this exact name only as its agent; its officers are
-      // listed under their own names (`officersOnFilings`). Maverick Games'
-      // filing names "Christopher S Lochte" as agent and "CHRISTOPHER LOCHTE"
-      // as Member — the Member title does not belong to the agent's spelling.
-      const onlyAgentOnFilings =
-        agent &&
-        record.registrations.some((r) => norm(r.registeredAgent ?? '') === norm(p.name)) &&
-        !record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
-      const others = onlyAgentOnFilings ? [] : p.titles.filter((t) => !AGENT.test(t))
-      // One row per title, as each filing states it — never several titles run
-      // together under "Officer". No title at all reads as "Officer" where a
-      // filing names the person; a person only the customer submitted holds
-      // no office anyone recorded, and is a "Person" — the same row the
-      // person check states, not a second one beside it.
-      const onFilings = record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
-      return [
-        ...(agent ? [{ ...base, label: 'Registered agent' }] : []),
-        ...(others.length > 0
-          ? others.map((t) => ({ ...base, label: roleLabel(t) }))
-          : agent
-            ? []
-            : [{ ...base, label: p.submitted && !onFilings ? 'Person' : 'Officer' }])
-      ]
-    })
+  const peopleRow = (people: typeof record.people, _context: string): AttributeRow[] => peopleRows(record, people)
 
   // --- Names ---------------------------------------------------------------
   // No registration rows here, or under addresses, DBAs or people. The
@@ -2685,6 +2649,54 @@ export const withSourceNames = (record: BusinessRecord) => (row: AttributeRow): 
   if (record.website?.url) names.Website = readableUrl(record.website.url)
   return Object.keys(names).length ? { ...row, sourceNames: names } : row
 }
+
+/**
+ * Every person on the record, one row per role, labelled BY the role: "Member",
+ * "Director" — the title is the label, not a suffix on the name ("Christopher S
+ * Lochte — MEMBER"). A registered agent is its own row whatever else the person
+ * is. With no title the label is "Officer"; a person only the customer
+ * submitted holds no office anyone recorded, and is a "Person". Each row
+ * names the filings that list the person (`nameTheFiling`).
+ *
+ * The People card draws every person from this; the checks draw the
+ * submitted ones through `attributesFor`, the same rows.
+ */
+export const peopleRows = (record: BusinessRecord, people: BusinessRecord['people'] = record.people): AttributeRow[] =>
+  people
+    .flatMap((p) => {
+      const base = {
+        group: 'people' as const,
+        source: p.submitted ? '' : provenance(p),
+        sources: provenanceList(p),
+        submitted: p.submitted,
+        refs: p.sourceRefs,
+        matchOn: 'officer' as const,
+        matchValue: p.name,
+        value: p.name
+      }
+      const agent = p.titles.some((t) => AGENT.test(t))
+      // The filing names this exact name only as its agent; its officers are
+      // listed under their own names (`officersOnFilings`). Maverick Games'
+      // filing names "Christopher S Lochte" as agent and "CHRISTOPHER LOCHTE"
+      // as Member — the Member title does not belong to the agent's spelling.
+      const onlyAgentOnFilings =
+        agent &&
+        record.registrations.some((r) => norm(r.registeredAgent ?? '') === norm(p.name)) &&
+        !record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
+      const others = onlyAgentOnFilings ? [] : p.titles.filter((t) => !AGENT.test(t))
+      // One row per title, as each filing states it — never several titles run
+      // together under "Officer".
+      const onFilings = record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
+      return [
+        ...(agent ? [{ ...base, label: 'Registered agent' }] : []),
+        ...(others.length > 0
+          ? others.map((t) => ({ ...base, label: roleLabel(t) }))
+          : agent
+            ? []
+            : [{ ...base, label: p.submitted && !onFilings ? 'Person' : 'Officer' }])
+      ]
+    })
+    .map(nameTheFiling(record))
 
 export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] => {
   const rows = attributesForKey(rawKey, record).map(nameTheFiling(record)).map(withSourceNames(record))

@@ -137,6 +137,26 @@ Attachments, when present, are listed in `attachments[]` with a `path` — read 
 off disk. They are evidence, not insights: say when something comes from a document
 rather than from the record.
 
+**A question that carries attachments revises the recommendation.** The prompt
+names the recommendation — its call, its reason and its numbered steps. Read the
+documents against it and add `revisedRecommendation` to the answer file:
+
+```json
+"revisedRecommendation": {
+  "kind": "request",
+  "reason": "The Certificate of Existence shows the Indiana filing back in good standing; ownership is still uncertified.",
+  "resolved": [1],
+  "source": "certificate-of-existence.pdf"
+}
+```
+
+`kind` is the call the documents now support — `approve`, `reject` or `request`,
+never "needs review". `resolved` lists the steps they settle, by their number in the
+prompt; an empty list is a fine answer when nothing settles. `source` names the
+file(s). The Assistant's recommendation card reloads with it: the call and reason
+replaced, the resolved steps struck. The answer's own paragraphs still say what the
+document showed, in the usual way.
+
 ## The shapes
 
 One assessment — `result-<id>.assessments/<assessmentId>.json`:
@@ -398,3 +418,45 @@ To regenerate them, for a new business or after the report changes:
    and cite rather than shipping a chip that opens on nothing.
 
 `analysis/questions/` is the session's working folder and is not tracked; the store is.
+
+## List questions
+
+The businesses list has its own Assistant: questions about **every business at
+once** — "Which approvals have open liens?", "Who is waiting on information?".
+Not a run. There is no record, no assessments, and nothing is kept as a report.
+
+`pending.json` reads `"kind": "portfolio"`, with the question in `typed` and the
+brief in `prompt`. The businesses are in `snapshot-<id>.json`, one entry each
+(`PortfolioBusiness` in `src/types.ts`), built on the page by
+`portfolioSnapshot` (`src/lib/portfolio.ts`) from what the list reads:
+
+| Field | What it is |
+|---|---|
+| `id`, `name`, `state` | The business, and where it was formed |
+| `recommendation`, `score`, `assessedAt` | The newest report's call — Approve, Request information, Reject, Not assessed — its score, and when it ran |
+| `headline` | The report's one-sentence answer |
+| `flagged` | What the score read against the identity, one statement each |
+| `records` | Liens and court cases, open of total; bankruptcy petitions |
+| `screening` | Hits per screen — `watchlist`, `pep`, `media`; absent where the screen did not run |
+| `review` | Where the review stands in that browser: status, assignee, what was asked of the applicant |
+
+Answer from the snapshot alone, and write **one file**,
+`analysis/result-<id>.json`:
+
+```json
+{
+  "paragraphs": [
+    { "text": "11 of the 35 businesses recommended for approval have an open lien or an open court case.", "cites": [] },
+    { "text": "5 have both. Wilk Auslander has the most: 5 open liens and 7 open cases.", "cites": ["<id>", "<id>"] }
+  ],
+  "suggestions": ["Which of these liens are tax liens?"]
+}
+```
+
+- Each paragraph's `cites` are the **business ids** it rests on; the endpoint
+  refuses an id the snapshot did not carry. They are drawn as chips that open
+  the business, so cite every business a paragraph counts.
+- Lead with the count and say how it was counted: which field, which values.
+- The status words, as the page uses them: Approve, Reject, Request
+  information, Not assessed. No risk grades.
+- `suggestions` are optional: what to ask next.

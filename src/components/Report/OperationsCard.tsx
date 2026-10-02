@@ -369,29 +369,66 @@ const locationCell = (
   }
 }
 
+/** Whether each strip has anything to draw, so a card can be left out rather than empty. */
+export const industryDrawn = (ops: Operations) => ops.industry.table.length > 0 && ops.industry.prohibited !== 'unknown'
+export const licencesDrawn = (ops: Operations) => ops.licence.required || ops.stateLicences.length > 0
+export const locationsDrawn = (ops: Operations) => ops.locations.length > 0
+
 /**
- * What the business does, where, and whether it is allowed to.
- *
- * The headline names the classification and the sentence says what the
- * Prohibited scheme made of it, so the body draws what they rest on: every
- * classification as the dashboard's table, with the licences the business
- * practises under beside it, then every location the record ties to it.
+ * What the business does: what the Prohibited scheme made of it — one tile,
+ * opening every classification (NAICS, MCC, SIC) as the dashboard's table —
+ * with the lead classification, in words, beside the verdict.
  */
-export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
-  const ops = useMemo(() => operationsOf(record), [record])
-  const { industry, locations } = ops
-  const licence = licenceCell(ops, onJumpToSource)
+export const IndustryStrip = ({ ops }: { ops: Operations }) => {
+  const { industry } = ops
+  if (!industryDrawn(ops)) return null
+  return (
+    <Strip
+      label="Industry"
+      aside={industry.lead?.name}
+      tiles={[
+        industry.prohibited === 'flagged'
+          ? {
+              key: 'all',
+              chip: (
+                <MetaChip tone="danger" size="compact">
+                  <TriangleAlert {...icon} />
+                  Prohibited
+                  {industry.flagged.length > 1 && <span className="tabular-nums">{industry.flagged.length}</span>}
+                </MetaChip>
+              )
+            }
+          : {
+              key: 'all',
+              chip: (
+                <MetaChip tone="success" size="compact">
+                  <Check {...icon} />
+                  Non-prohibited
+                </MetaChip>
+              )
+            }
+      ]}
+      detail={() => <IndustryTable rows={industry.table} />}
+    />
+  )
+}
 
-  // One tile per place, the submitted office's marked and first; closed until picked.
-  const places = [...new Set(locations.map(placeOf))]
-  const at = (p: string) => locations.filter((a) => placeOf(a) === p)
-  const officePlace = places.find((p) => at(p).some((a) => a.submitted))
+/**
+ * The licences the business practises under: the one its industry requires,
+ * as the register holds it — a tile opening the record, or an absence as a
+ * statement — then each state licence on the record, opening its fields.
+ */
+export const LicenceStrip = ({
+  ops,
+  record,
+  onJumpToSource
+}: {
+  ops: Operations
+  record: BusinessRecord
+  onJumpToSource?: (cardId: string) => void
+}) => {
   const lic = ops.licence
-
-  const showIndustry = industry.table.length > 0 && industry.prohibited !== 'unknown'
-  /* The licence the industry requires — what the register holds as a tile,
-     opening the record; an absence as a statement — then each state licence
-     on the record, opening its fields. */
+  const licence = licenceCell(ops, onJumpToSource)
   const required: Array<{ key: string; chip: ReactNode; static?: boolean }> =
     !lic.required || !licence
       ? []
@@ -429,7 +466,7 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
                   </MetaChip>
                 )
               }))
-  const licenceTiles = [
+  const tiles = [
     ...required,
     ...ops.stateLicences.map((l) => ({
       key: `state-licence:${l.id}`,
@@ -441,90 +478,86 @@ export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRec
       )
     }))
   ]
+  if (tiles.length === 0) return null
+  return (
+    <Strip
+      label="Professional licence"
+      tiles={tiles}
+      detail={(key) => {
+        const state = ops.stateLicences.find((l) => `state-licence:${l.id}` === key)
+        if (state) return <AttributeCells items={stateLicenceCells(state, record, onJumpToSource)} className="-mb-px" />
+        const f = lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
+        return <AttributeCells items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []} className="-mb-px" />
+      }}
+    />
+  )
+}
 
+/**
+ * Every place the record puts the business — the submitted office first,
+ * with its mark — each opening its addresses as the Formation grid states a
+ * fact: Submitted, the filings that list it, the licence practised from it,
+ * then the address.
+ */
+export const LocationsStrip = ({
+  ops,
+  record,
+  onJumpToSource
+}: {
+  ops: Operations
+  record: BusinessRecord
+  onJumpToSource?: (cardId: string) => void
+}) => {
+  const { locations } = ops
+  // One tile per place, the submitted office's marked and first; closed until picked.
+  const places = [...new Set(locations.map(placeOf))]
+  const at = (p: string) => locations.filter((a) => placeOf(a) === p)
+  const officePlace = places.find((p) => at(p).some((a) => a.submitted))
+  if (places.length === 0) return null
+  return (
+    <Strip
+      label="Locations"
+      tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
+        const here = at(p)
+        const submitted = here.some((a) => a.submitted)
+        const undeliverable = here.some((a) => a.deliverable === false)
+        // The mark is the post's: a check where it delivers, an X where
+        // it cannot. The colour is the office's — green for the submitted
+        // one, grey for the rest, red wherever the post cannot reach.
+        const deliverable = here.some((a) => a.deliverable === true)
+        return {
+          key: p,
+          chip: (
+            <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
+              {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
+              {p}
+              {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
+            </MetaChip>
+          )
+        }
+      })}
+      detail={(p) => (
+        <AttributeCells
+          className="-mb-px"
+          items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, a.submitted ? 'Office' : 'Address', ops, record, onJumpToSource))}
+        />
+      )}
+    />
+  )
+}
+
+/**
+ * What the business does, where, and whether it is allowed to — the three
+ * strips together, for anything that still wants them as one body. The
+ * grouped report draws each on its own card.
+ */
+export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
+  const ops = useMemo(() => operationsOf(record), [record])
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
-      {/* The industry, and the licence its practice is held under, in one
-          strip: what the Prohibited scheme made of it — one tile, opening
-          every classification (NAICS, MCC, SIC) as the dashboard's table —
-          then a row of licences: the one the industry requires, as the
-          register holds it, and every state licence on the record. A licence
-          is part of what the business does, so it is not a strip of its own. */}
-      {(showIndustry || licenceTiles.length > 0) && (
-        <Strip
-          label="Industry"
-          // The lead classification, in words, beside the verdict.
-          aside={showIndustry ? industry.lead?.name : undefined}
-          tiles={
-            !showIndustry
-              ? []
-              : [
-                  industry.prohibited === 'flagged'
-                    ? {
-                        key: 'all',
-                        chip: (
-                          <MetaChip tone="danger" size="compact">
-                            <TriangleAlert {...icon} />
-                            Prohibited
-                            {industry.flagged.length > 1 && <span className="tabular-nums">{industry.flagged.length}</span>}
-                          </MetaChip>
-                        )
-                      }
-                    : {
-                        key: 'all',
-                        chip: (
-                          <MetaChip tone="success" size="compact">
-                            <Check {...icon} />
-                            Non-prohibited
-                          </MetaChip>
-                        )
-                      }
-                ]
-          }
-          more={licenceTiles.length > 0 ? { label: 'Professional licence', tiles: licenceTiles } : undefined}
-          detail={(key) => {
-            if (key === 'all') return <IndustryTable rows={industry.table} />
-            const state = ops.stateLicences.find((l) => `state-licence:${l.id}` === key)
-            if (state) return <AttributeCells items={stateLicenceCells(state, record, onJumpToSource)} className="-mb-px" />
-            const f = lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
-            return <AttributeCells items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []} className="-mb-px" />
-          }}
-        />
-      )}
-      {/* Every place the record puts the business — the submitted office
-          first, with its mark — each opening its addresses as the grid up
-          top states a fact: Submitted, the filings that list it, the licence
-          practised from it, then the address. */}
-      {places.length > 0 && (
-        <Strip
-          label="Locations"
-          tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
-            const here = at(p)
-            const submitted = here.some((a) => a.submitted)
-            const undeliverable = here.some((a) => a.deliverable === false)
-            // The mark is the post's: a check where it delivers, an X where
-            // it cannot. The colour is the office's — green for the submitted
-            // one, grey for the rest, red wherever the post cannot reach.
-            const deliverable = here.some((a) => a.deliverable === true)
-            return {
-              key: p,
-              chip: (
-                <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
-                  {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
-                  {p}
-                  {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
-                </MetaChip>
-              )
-            }
-          })}
-          detail={(p) => (
-            <AttributeCells
-              className="-mb-px"
-              items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, a.submitted ? 'Office' : 'Address', ops, record, onJumpToSource))}
-            />
-          )}
-        />
-      )}
+      <IndustryStrip ops={ops} />
+      <LicenceStrip ops={ops} record={record} onJumpToSource={onJumpToSource} />
+      <LocationsStrip ops={ops} record={record} onJumpToSource={onJumpToSource} />
     </div>
   )
 }

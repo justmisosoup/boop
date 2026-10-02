@@ -71,7 +71,6 @@ export const reportSections = (
  * the id here to bring the card back.
  */
 export const HIDDEN_SECTIONS: ReadonlySet<string> = new Set([
-  'skill-financial-standing',
   // Identity's leftover rows rendered as an "Other" card under the Formation
   // card, which already carries the filings, the name and the TIN.
   'skill-kyb-identification'
@@ -505,6 +504,34 @@ const operationsDrawn = (record: BusinessRecord) => {
   )
 }
 
+/**
+ * The insights a section's card carries: every one its prose and its open
+ * gaps cite, deduplicated — and, on the industry-and-locations card, the rows
+ * it carries from the record whatever the report cited (the office, the
+ * office-state check, the licence), as the Formation card does. The card
+ * draws these; the Assistant's opening message cites them, so the two point
+ * at the same rows.
+ */
+export const cardRows = (section: AssessmentSection, results: Derived[]): Derived[] => {
+  const cited = useCited(
+    [
+      ...section.body.flatMap((b) => b.cites ?? []),
+      ...(section.gaps ?? []).filter((g) => !g.noAction).flatMap((g) => g.cites ?? [])
+    ],
+    results
+  )
+  const carried =
+    section.id === 'skill-kyb-activity'
+      ? results.filter(
+          (r) =>
+            !r.notReported &&
+            (OPERATIONS_CARD_INSIGHTS as ReadonlyArray<string>).includes(r.insightId.split(':')[0]) &&
+            !cited.some((c) => c.insightId === r.insightId)
+        )
+      : []
+  return [...cited, ...carried]
+}
+
 export const SectionBody = ({
   section,
   heading,
@@ -541,25 +568,7 @@ export const SectionBody = ({
    * card of data at the head of it — both over the same cited set. The gaps'
    * citations go in too: a gap is part of what the assessment found.
    */
-  const cited = useCited(
-    [
-      ...section.body.flatMap((b) => b.cites ?? []),
-      ...(section.gaps ?? []).filter((g) => !g.noAction).flatMap((g) => g.cites ?? [])
-    ],
-    results
-  )
-  /* The industry-and-locations card carries its own rows from the record, as
-     the Formation card does — the office, the office-state check, the
-     licence — whatever the report happened to cite. The cited rows stay. */
-  const carried =
-    section.id === 'skill-kyb-activity'
-      ? results.filter(
-          (r) =>
-            !r.notReported &&
-            (OPERATIONS_CARD_INSIGHTS as ReadonlyArray<string>).includes(r.insightId.split(':')[0]) &&
-            !cited.some((c) => c.insightId === r.insightId)
-        )
-      : []
+  const rows = cardRows(section, results)
 
   /* Only the gaps nobody has written a step for. A `noAction` gap is one
      nobody is going to act on, and a closed one is already an instruction on
@@ -616,7 +625,7 @@ export const SectionBody = ({
   return (
     <>
       <CiteList
-        cited={[...cited, ...carried]}
+        cited={rows}
         record={record}
         negatives={negatives}
         title={heading}

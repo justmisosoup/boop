@@ -16,8 +16,6 @@ import {
   type FloatingPanelState
 } from '@/core'
 
-const HIDDEN_GROUPS: ReadonlySet<string> = new Set(['liens', 'litigation', 'bankruptcy'])
-import { AnalysisPanel } from '../components/AnalysisPanel'
 import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
 import { ColumnResizer } from '../components/ColumnResizer'
@@ -27,14 +25,15 @@ import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPan
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 
-import { FORMATION_CARD_ID } from '../lib/needsReview'
-import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
 import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
 import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
 import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
-import { FormationCard } from '../components/FormationCard'
+import { GroupedReport } from '../components/Report/GroupedReport'
+import { ReportHero } from '../components/Report/ReportHero'
+import { cardAnchor } from '../lib/reportCards'
+import type { BriefCard, ReportFocus } from '../lib/reportBrief'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
 import { SUBMITTED_CARD } from '../lib/sourceCards'
@@ -394,6 +393,21 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       }),
     [analysis.selected, record, results, groupFor, score, scoreAreas, summaries, policy, tiers]
   )
+  /** A report on screen, so its hero heads the page. */
+  const hero = Boolean(view && brief)
+  /**
+   * What the newest document did to the recommendation: the latest answer on
+   * this report, in any conversation, that wrote `revisedRecommendation`.
+   * The hero reloads with it; the Assistant reads a further document against it.
+   */
+  const revision = useMemo(() => {
+    const latest = analysis.threads
+      .flatMap((t) => t.questions)
+      .filter((q) => q.result.revisedRecommendation)
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .at(-1)
+    return latest ? { ...latest.result.revisedRecommendation!, at: latest.at } : undefined
+  }, [analysis.threads])
 
   /**
    * Run the standing workflow, from where the report would be.
@@ -432,9 +446,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const scopeGroupFor = useMemo(() => makeGroupFor(categoriesOf(scopeRecord)), [scopeRecord])
   const scopeGrouped = useMemo(
     () =>
-      // Liens, litigation and bankruptcy are stashed with the Financial
-      // Standing card (`HIDDEN_SECTIONS`): derived and scored, not shown.
-      GROUPS.filter((g) => !HIDDEN_GROUPS.has(g.id)).map((g) => ({
+      GROUPS.map((g) => ({
         ...g,
         rows: scopeResults.filter((r) => !r.notReported && scopeGroupFor(r.insightId) === g.id)
       })).filter((g) => g.rows.length > 0),
@@ -505,34 +517,40 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   }
   const jumpToGroup = (groupId: string, insightIds: string[]) => reveal(insightIds, groupId)
 
-  /**
-   * An assistant chip leads to the insight IN THE REPORT.
-   *
-   * The report is where the assessment argues from the row, so that is where
-   * a citation should land: the cited rows open where they sit on their cards,
-   * and the report scrolls to the first of them. A cite whose row is on no card
-   * — the assessment did not cite it — falls back to the Insights view, which
-   * has every row.
-   */
   const revealedSet = useMemo(() => new Set(revealed), [revealed])
-  const jumpToInsight = (groupId: string, insightIds: string[]) => {
-    const scroller = panelRef.current
-    const target =
-      insightIds
-        .map((id) => scroller?.querySelector<HTMLElement>(`[id="insight-${id}"]`) ?? null)
-        .find((el): el is HTMLElement => el !== null) ??
-      // The domestic filing's checks are the Formation card's, and the card
-      // states most of them as fields of its grid rather than as rows — the
-      // status, the sub status, the entity type. No row to open, but the card
-      // is where the answer is, so the card is where the chip lands.
-      (insightIds.some((id) => (FORMATION_CARD_INSIGHTS as ReadonlyArray<string>).includes(id.split(':')[0]))
-        ? scroller?.querySelector<HTMLElement>(`[id="${FORMATION_CARD_ID}"]`) ?? null
-        : null)
-    if (!target) return reveal(insightIds, groupId)
-    setRevealed(insightIds)
-    window.setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
-    window.setTimeout(() => setRevealed([]), 2400)
+
+  /**
+   * The report narrowed to one assessment: its cards and nothing else, under
+   * its summary. Set from the Assistant — a block's title or its "All cards"
+   * chip — and cleared from the report's banner, or by the same block again.
+   */
+  const [focus, setFocus] = useState<ReportFocus | null>(null)
+  const focusAssessment = (c: BriefCard) =>
+    setFocus((cur) => (cur?.id === c.id ? null : { id: c.id, title: c.title, sentence: c.sentence, cards: c.cards }))
+  /**
+   * An assistant chip leads to its card IN THE REPORT, and only there: the
+   * report scrolls to the card's top. Nothing opens — not the card's
+   * Insights, not the Insights view. Named by group (an answer's chip), the
+   * group's first card. Narrowed to an assessment the card isn't part of, the
+   * report widens back to the whole first, so there is a card to land on.
+   */
+  const landOn = (cardId: string) =>
+    panelRef.current
+      ?.querySelector<HTMLElement>(`[id^="${cardAnchor(cardId)}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const pendingCard = useRef<string | null>(null)
+  const jumpToCard = (cardId: string) => {
+    if (!focus || focus.cards.includes(cardId) || focus.cards.some((c) => c.startsWith(`${cardId}-`))) return landOn(cardId)
+    pendingCard.current = cardId
+    setFocus(null)
   }
+  // Widened for a chip: land once the whole report has drawn.
+  useEffect(() => {
+    const cardId = pendingCard.current
+    if (focus || !cardId) return
+    pendingCard.current = null
+    landOn(cardId)
+  }, [focus])
 
   /**
    * An attribute's source chip names a record, and the record is in Sources
@@ -695,11 +713,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     place up is the list, and a crumb that named the business
                     over a heading that named it again said it twice. */}
                 {/* The arrow hangs in the left margin — 32px button plus the
-                    8px gap — so the name starts where the tabs start. At the
-                    far right, who owns this review and where it stands: the
-                    assignee, then the status — the dashboard's own control,
-                    reading what the assessment determined until someone sets
-                    it (Approve as Approved, Reject as Rejected). */}
+                    8px gap — so the name starts where the tabs start. The
+                    assignee and the status sit in the report's hero; with no
+                    report, the assignee stays here. */}
                 <div className="-ml-10 flex min-w-0 items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-2">
                     {/* A button that navigates, not `asChild` over a Link: the
@@ -715,11 +731,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     </IconActionButton>
                     <PageHeading size="md" weight="normal">{selected.name}</PageHeading>
                   </div>
-                  <PageHeaderActions className="shrink-0">
-                    <AssigneeDropdown businessId={selected.id} />
-                    {/* Only once there is a determination for it to read. */}
-                    {view && <StatusDropdown businessId={selected.id} defaultStatus={determined} />}
-                  </PageHeaderActions>
+                  {/* With a report, the report's hero carries these. */}
+                  {!hero && (
+                    <PageHeaderActions className="shrink-0">
+                      <AssigneeDropdown businessId={selected.id} />
+                    </PageHeaderActions>
+                  )}
                 </div>
               </PageHeader>
             </PageHeaderBand>
@@ -769,19 +786,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               * Assistant says (its opening message carries the ring, the word
               * and the reason), so the report opens on the record's facts.
               */}
-            {/* What the state holds, before the argument. With or without a
-                report: these are the record's facts. */}
-            <FormationCard
-              record={record}
-              results={results}
-              groupFor={groupFor}
-              revealed={revealedSet}
-              onJumpToSource={jumpToSource}
-              onJumpToTimeline={jumpToTimeline}
-            />
-            {/* What the record holds about the business, before the report
-                starts reading it. Attributes only — the filing facts an account
-                is opened against. */}
             {/*
               * No report, where the report goes.
               *
@@ -800,23 +804,43 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 onAction={standing ? runStanding : undefined}
               />
             )}
-            <AnalysisPanel
-              version={analysis.reportVersion}
-              record={record}
-              results={results}
-              // Only a report puts this column to work. A typed question is
-              // answered in the chat and leaves the report where it is.
-              waiting={running}
-              // The run's own manifest while one is in flight; the store's
-              // otherwise, so the panel is laid out before anything is sent.
-              policy={running ? analysis.waitingPolicy : policy}
-              draft={analysis.draft}
-              onJumpToSource={jumpToSource}
-              negatives={negatives}
-              revealed={revealedSet}
-              tiers={tiers}
-              summaries={summaries}
-            />
+            {/* The report's head: the business, the assessment it was run under,
+                the call and the score. The one place the recommendation is
+                acted on. */}
+            {hero && analysis.selected && brief && (
+              <div className="mb-8">
+                <ReportHero
+                  record={record}
+                  report={analysis.selected}
+                  brief={brief}
+                  revision={revision}
+                  results={results}
+                  controls={
+                    <>
+                      <AssigneeDropdown businessId={selected.id} />
+                      <StatusDropdown businessId={selected.id} defaultStatus={determined} />
+                    </>
+                  }
+                />
+              </div>
+            )}
+            {/* The record, by group — the Insights tab's grouping, each with
+                its data view and its review tasks. With or without a report:
+                these are the record's facts; what the assessment made of
+                them is the Assistant's, whose citations land here. */}
+            <div className={!view && !running ? 'mt-6' : undefined}>
+              <GroupedReport
+                record={record}
+                results={results}
+                groupFor={groupFor}
+                negatives={negatives}
+                revealed={revealedSet}
+                only={focus ? new Set(focus.cards) : undefined}
+                focus={focus ? { title: focus.title, sentence: focus.sentence, onClear: () => setFocus(null) } : undefined}
+                onJumpToSource={jumpToSource}
+                onJumpToTimeline={jumpToTimeline}
+              />
+            </div>
 
               </TabsContent>
 
@@ -912,8 +936,11 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             if (next !== 'pill') setPanelView('assistant')
           }}
           onPresentationChange={setAssistantPresentation}
-          onJumpToGroup={jumpToInsight}
+          onJumpToGroup={jumpToCard}
           brief={brief}
+          focus={focus}
+          onFocusAssessment={focusAssessment}
+          revision={revision}
           // A brief card's title: the report scrolls to that card.
           onJumpToCard={(anchor) =>
             panelRef.current

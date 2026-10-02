@@ -16,6 +16,7 @@ import type { ChatSourceData } from '@/core'
 
 import type { Derived } from '../../lib/deriveResults'
 import { THEME, type GroupId } from '../../lib/groups'
+import { cardById, cardFor, cardIndex } from '../../lib/reportCards'
 
 /**
  * How much weight a source carries, most authoritative first.
@@ -136,5 +137,45 @@ export const evidenceFor = (
   const sources = [...groups.entries()]
     .sort(([a], [b]) => AUTHORITY[a] - AUTHORITY[b])
     .map(([id, group]) => toSource(id, group, onSelect))
+  return { sources, missing: (cites?.length ?? 0) - found.length }
+}
+
+/**
+ * Cited insights, as sources by REPORT CARD, in the report's order.
+ *
+ * The chips under an assessment in the Assistant name the cards the report
+ * draws — three for Screening, where `evidenceFor` would say one — so a chip
+ * and a card are the same thing, and the chip's order is the report's.
+ */
+export const evidenceByCard = (
+  cites: ReadonlyArray<string> | undefined,
+  results: Derived[],
+  groupFor: (insightId: string) => GroupId,
+  onSelect?: (cardId: string, insightIds: string[]) => void
+): { sources: ChatSourceData[]; missing: number } => {
+  const byId = new Map(results.map((r) => [r.insightId, r]))
+  const found = (cites ?? [])
+    .map((id) => byId.get(id))
+    .filter((r): r is Derived => Boolean(r) && !r!.notReported)
+  const groups = new Map<string, Derived[]>()
+  for (const r of found) {
+    const id = cardFor(r.insightId, groupFor)
+    groups.set(id, [...(groups.get(id) ?? []), r])
+  }
+  const sources = [...groups.entries()]
+    .sort(([a], [b]) => cardIndex(a) - cardIndex(b))
+    .map(([id, group]): ChatSourceData => {
+      const card = cardById(id)
+      const label = card?.label ?? id
+      return {
+        id,
+        label,
+        title: label,
+        annotation: `${group.length} insight${group.length === 1 ? '' : 's'}`,
+        snippet: group.map((r) => r.statement).join(' · '),
+        icon: (card && GLYPHS[card.group]) ?? glyph(FileText),
+        onSelect: onSelect ? () => onSelect(id, group.map((r) => r.insightId)) : undefined
+      }
+    })
   return { sources, missing: (cites?.length ?? 0) - found.length }
 }

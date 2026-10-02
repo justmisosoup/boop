@@ -324,7 +324,8 @@ export type AnalysisVerdict = {
   /**
    * One sentence answering the question asked.
    *
-   * Not rendered. On a standing report the follow-ups under `Recommendations`
+   * The lede of the Assistant's opening message (`reportBrief`), and nowhere
+   * on the report page. On a standing report the follow-ups under `Recommendations`
    * are what a reviewer acts on, and a sentence saying "onboard subject to
    * conditions" above them only named what the list already is. On a typed
    * question the assistant prints the paragraphs, whose first answers
@@ -379,9 +380,81 @@ export type AnalysisVerdict = {
   suggestions?: string[]
 }
 
+/**
+ * What a document the reviewer added did to the recommendation — written by
+ * the session on a question that carried attachments, and read by the
+ * Assistant's recommendation card, which reloads with it.
+ */
+export type RevisedRecommendation = {
+  /** The call the documents now support. */
+  kind: 'approve' | 'reject' | 'request'
+  /** Why, in one sentence. */
+  reason: string
+  /** The recommendation's steps the documents settle, 1-based as numbered. */
+  resolved: number[]
+  /** The file name(s) it was read from. */
+  source: string
+}
+
 /** The two stages merged by the endpoint. What the UI renders. */
 export type AnalysisResult = AnalysisDraft &
   Omit<AnalysisVerdict, 'recommendation'> & {
     /** Rendered in canonical order, not the order written. */
     sections: AssessmentSection[]
+    /** On a question that carried documents: what they did to the recommendation. */
+    revisedRecommendation?: RevisedRecommendation
   }
+
+/**
+ * One business as a question about the whole list reads it: who, the newest
+ * report's call and score and why, what the score read against the identity,
+ * and where the review stands. Built on the page from what the list already
+ * shows; the session reads these and nothing else.
+ */
+export type PortfolioBusiness = {
+  id: string
+  name: string
+  state?: string | null
+  /** The newest report's call, in the status's words; "Not assessed" without one. */
+  recommendation: 'Approve' | 'Request information' | 'Reject' | 'Not assessed'
+  score?: number
+  /** When the newest report ran. */
+  assessedAt?: string
+  /** The report's one-sentence answer. */
+  headline?: string
+  /** What the score read against the identity, one statement each. */
+  flagged: string[]
+  /** The public record, counted: liens and cases open of all, petitions. */
+  records: { liens: { open: number; total: number }; litigations: { open: number; total: number }; bankruptcies: number }
+  /** What the screens returned: hits per screen; absent where it did not run. */
+  screening: { watchlist?: number; pep?: number; media?: number }
+  /** Where the review stands, in this browser. */
+  review: {
+    status: 'approved' | 'in_review' | 'rejected'
+    assignee?: string
+    /** What was asked of the applicant, if anything. */
+    requested?: string[]
+  }
+}
+
+/** A question about the whole list, as the session reads it in `pending.json`.
+ *  The businesses are in `snapshot-<id>.json`. */
+export type PortfolioRequest = {
+  id: string
+  requestedAt: string
+  kind: 'portfolio'
+  /** The question, with the brief it is answered under. */
+  prompt: string
+  /** What the user typed. */
+  typed: string
+  /** How many businesses the snapshot holds. */
+  count: number
+}
+
+/** The session's answer to a list question, in `result-<id>.json`: paragraphs,
+ *  each citing the businesses it rests on by id. */
+export type PortfolioAnswer = {
+  paragraphs: Array<{ text: string; cites?: string[] }>
+  /** What to ask next. */
+  suggestions?: string[]
+}

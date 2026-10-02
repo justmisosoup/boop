@@ -19,6 +19,7 @@ import {
 import type { BusinessRecord } from '@/lib/deriveResults'
 import { ALL, assessmentOf, type Assessed } from '@/lib/records'
 
+import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
 import { InsightCounts } from '../components/InsightCounts'
 
@@ -249,6 +250,9 @@ export const BusinessesPage = () => {
         stickyHeader
         stickyHeaderTop='var(--bus-thead-top, 74px)'
       />
+
+      {/* Questions about every business at once, in the corner. */}
+      <PortfolioAssistant />
     </PageContainer>
   )
 }

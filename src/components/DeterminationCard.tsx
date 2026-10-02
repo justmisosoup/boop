@@ -50,16 +50,21 @@ const RING = 263.894
 export const ScoreRing = ({
   score,
   size = 'sm',
+  label,
   className
 }: {
   score: { value: number; band: ScoreBand; weighted?: number } | null
-  /** `xs` (36px) on a row, `sm` (64px) in a rail, `lg` (96px) at the head of
-   *  the report. */
-  size?: 'xs' | 'sm' | 'lg'
+  /** What the ring's name calls the score, where the band's own word is not
+   *  the call — the Assistant's recommendation says "Request information",
+   *  never "Needs review". */
+  label?: string
+  /** `xs` (36px) on a row, `sm` (64px) in a rail, `lg` (96px) on a card,
+   *  `xl` (128px) in the report's hero. */
+  size?: 'xs' | 'sm' | 'lg' | 'xl'
   className?: string
 }) => {
   const name = score
-    ? `Identity score ${score.value} out of 100 — ${score.band.label}${
+    ? `Identity score ${score.value} out of 100 — ${label ?? score.band.label}${
         score.weighted !== undefined && score.weighted > score.value ? `, capped from ${score.weighted}` : ''
       }`
     : 'Identity score not yet computed'
@@ -68,7 +73,7 @@ export const ScoreRing = ({
     <div
       className={cn(
         'relative shrink-0',
-        size === 'lg' ? 'size-24' : size === 'sm' ? 'size-16' : 'size-9',
+        size === 'xl' ? 'size-32' : size === 'lg' ? 'size-24' : size === 'sm' ? 'size-16' : 'size-9',
         className
       )}
     >
@@ -118,7 +123,7 @@ export const ScoreRing = ({
           aria-hidden="true"
           className={cn(
             'pointer-events-none absolute inset-0 flex items-center justify-center font-semibold leading-none tabular-nums text-text-primary',
-            size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-lg' : 'text-xs'
+            size === 'xl' ? 'text-3xl' : size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-lg' : 'text-xs'
           )}
         >
           {score.value}

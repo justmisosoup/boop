@@ -2,13 +2,10 @@ import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { ArrowUpRight, Building2, Clock, FileText, History } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { ChatSourceChip, Surface, Text } from '@/core'
+import { ChatSourceChip, Text } from '@/core'
 
 import { currentDomesticRows, formationIdentityRows, maskTin, websiteStatesName, type AttributeRow } from '../lib/attributes'
 import { dbaRequirementNote, dbaRequirementOf, dbaRequirementValue } from '../lib/dbaRequirement'
-import { FORMATION_CARD_INSIGHTS } from '../lib/identitySections'
-import { FORMATION_CARD_ID } from '../lib/needsReview'
-import { negativesFor } from '../lib/identityScore'
 import { domesticFilingOf, formationCardFilingOf, linkedFormationNote } from '../lib/linkedFormation'
 import {
   convertedFormationNote,
@@ -18,7 +15,8 @@ import {
   formationStandingNote,
   NOT_PROVIDED,
   registrationState,
-  sameName
+  sameName,
+  type Registration
 } from '../lib/registrationStatus'
 import { dbasOf, nameStandingOf } from '../lib/businessNames'
 import { priorNamesOf } from '../lib/nameHistory'
@@ -28,15 +26,10 @@ import { stateName } from '../lib/states'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
 import type { Kind } from '../lib/timeline/types'
 import { GROUPS, type GroupId } from '../lib/groups'
-import { cn } from '../utils/twUtils'
-import { AttributeCells, type AttributeCell } from './AttributeGrid'
+import type { AttributeCell } from './AttributeGrid'
 import { attributeRowsByGroup } from './AttributesTab'
 import { cellsFromRows } from './attributeCells'
-import { CardHeader } from './CardHeader'
-import { InsightRow } from './InsightRow'
-import { InsightsDisclosure } from './InsightStack'
 import { AttributeSources, SubmittedChip } from './Provenance'
-import { CityStrip } from './Report/CityStrip'
 import { FilingStrip, otherStateStandings } from './Report/FilingStrip'
 
 /**
@@ -438,35 +431,50 @@ const ListedAsDba = ({ owners }: { owners: string[] }) => (
   </HoverTip>
 )
 
-export const FormationCard = ({
-  record,
-  results,
-  groupFor,
-  revealed,
-  onJumpToSource,
-  onJumpToTimeline,
-  className
-}: {
-  record: BusinessRecord
-  /** The report's insights, which is where the record's attributes are read from. */
-  results: Derived[]
-  groupFor: (insightId: string) => GroupId
-  /** Insight ids an assistant citation has just led to: their rows open. */
-  revealed?: ReadonlySet<string>
-  /** The header chip opens the source's card in Sources. */
-  onJumpToSource?: (cardId: string) => void
-  /** The name history icon opens the timeline on that change, filtered to
-   *  the change types given. */
+/** What the grouped report draws from the formation record, dealt out by group. */
+export type FormationParts = {
+  /** Names: the legal name, with its history, and the DBAs — or a sole
+   *  proprietor's DBA name and owner. */
+  names: AttributeCell[]
+  /** Formation: the entity type, the formation date, the domestic filing's
+   *  state and standing, and a sole proprietor's DBA rule. */
+  formation: AttributeCell[]
+  /** The Formation card's tag: the domestic filing, or Submitted. */
+  formationChip?: ReactNode
+  /** Tax ID: the TIN, when the record holds one. */
+  tin?: AttributeCell
+  /** Registrations: the state filings strip, led by the filing the business stands on. */
+  strip?: { record: BusinessRecord; lead?: Registration; legalName: string }
+  /** A sole proprietor's city registrations, as the state filings are shown. */
+  city?: NonNullable<BusinessRecord['cityRegistrations']>
+}
+
+const NO_PARTS: FormationParts = { names: [], formation: [] }
+
+/**
+ * The formation record, read once and dealt out by group for the grouped
+ * report: the Names, Formation, Tax ID and Registrations cards each take
+ * their part. One reading, so the four cards cannot disagree about which
+ * filing the business stands on.
+ *
+ * Which record there is, strongest first: the domestic Secretary of State
+ * filing, a city registration, and — when the record holds nothing found —
+ * what the customer submitted.
+ */
+export const formationParts = (
+  record: BusinessRecord,
+  results: Derived[],
+  groupFor: (insightId: string) => GroupId,
+  onJumpToSource?: (cardId: string) => void,
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
-  className?: string
-}) => {
+): FormationParts => {
   /* No formation of its own, but one on another record that looks linked —
-     Sprig's Delaware filing sits on the Mixboard Inc. record. The card shows
-     that filing, and the note says it was not found for this business and
-     how it was linked. */
+     Sprig's Delaware filing sits on the Mixboard Inc. record. The cards show
+     that filing, and the Assistant's sentence says it was not found for this
+     business and how it was linked. */
   const found = domesticFilingOf(record)
   const linked = found?.linked
-  // Converted out of the state it was formed in: the card leads with the
+  // Converted out of the state it was formed in: the cards lead with the
   // domestic filing it stands on now (Andytown's Delaware one).
   const converted = !linked ? convertedFormationOf(record) : undefined
   const domestic = formationCardFilingOf(record)
@@ -485,25 +493,8 @@ export const FormationCard = ({
         : formationIdentityRows(linked?.record ?? record)
       : dedupe(tier === 'city' ? cityRows : rows.filter((r) => r.submitted))
 
-  /* Which filing `sos_domestic` and its sub-status speak to: the formation
-     filing. Where that is the grid's own filing, or the former filing the
-     converted-out row shows, the row repeats what is on the card. */
-  const formationFiling = formationFilingOf(record)
-  const alreadyShown = (id: string) =>
-    (id === 'entity_type' && tierRows.some((r) => r.label === 'Entity type')) ||
-    (id === 'linked_domestic' && Boolean(linked)) ||
-    (id === 'sos_domestic' &&
-      Boolean(formationFiling) &&
-      (formationFiling === domestic || formationFiling === converted?.formed)) ||
-    // The grid states the sub status as a field, published or not.
-    (id === 'sos_domestic_sub_status' && tier === 'formation')
-  const negatives = negativesFor(record, results)
-  /* The filings strip carries what the count rows said — how many filings
-     are active, inactive, or silent — so those rows give way to it. The
-     insights stay in the data and in the Insights panel; only this card's
-     way of showing them changes. */
   /* A linked formation leads the strip too: Sprig's Delaware filing is on the
-     Mixboard Inc. record, and it is the filing the card stands on, so it
+     Mixboard Inc. record, and it is the filing the business stands on, so it
      sits first, before Sprig's own California registration. */
   const stripRecord: BusinessRecord = linked
     ? {
@@ -517,32 +508,22 @@ export const FormationCard = ({
       }
     : record
   const strip = tier === 'formation' && stripRecord.registrations.length > 0
-  const COUNTED = new Set(['sos_active', 'sos_inactive', 'sos_unknown', 'sos_status', 'sos_not_found'])
-  const cardRows = FORMATION_CARD_INSIGHTS.flatMap((id) =>
-    results.filter(
-      (r) =>
-        r.insightId.split(':')[0] === id && r.state !== 'unknown' && !alreadyShown(id) && !(strip && COUNTED.has(id))
-    )
-  )
-  /* A citation that leads to one of the card's rows opens its insights. One
-     that leads to a check the grid states as a field — the status, the sub
-     status, the entity type — has no row, and the grid is always out. */
-  const revealsHere = cardRows.some((r) => revealed?.has(r.insightId))
 
-  /* The header names the card's filing once. A value other sources state too —
-     the name 21 filings are under, the form they all declare — shows every source that states it, this filing included, so it
-     reads as what the record agrees on rather than one filing's word. Everything
-     else is the filing's alone, and the header already cites it. */
+  /* The Formation card's tag names its filing once. A value other sources
+     state too — the name 21 filings are under, the form they all declare —
+     shows every source that states it, this filing included, so it reads as
+     what the record agrees on rather than one filing's word. Everything else
+     is the filing's alone, and the tag already cites it. */
   const isCardFiling = (f: BusinessRecord['registrations'][number]) =>
     Boolean(domestic) && f.state === domestic?.state && f.fileNumber === domestic?.fileNumber
   // A chip only where something beyond the card's own filing states the value
-  // — and then only that: the header already names the card's filing, so the
+  // — and then only that: the tag already names the card's filing, so the
   // chip lists the OTHER sources that agree, not the one on screen again.
   const corroboratedBeyondCard = (r: AttributeRow) =>
     (r.registrations ?? []).some((f) => !isCardFiling(f)) || (r.sources ?? []).length > 0
-  /* With the strip, no header names the formation filing, so the legal name
-     and the entity type cite it themselves — first, as the formation date
-     does — and then the other filings that agree: "SOS · DE +58". */
+  /* With the strip, the legal name and the entity type cite the formation
+     filing themselves — first, as the formation date does — and then the
+     other filings that agree: "SOS · DE +58". */
   const withFormation = (r: AttributeRow): AttributeRow => ({
     ...r,
     registrations: [
@@ -582,21 +563,18 @@ export const FormationCard = ({
   const cells = cellsFromRows(identityRows, {
     domesticState,
     onJumpToSource,
-    // The source is named once, in the header; only corroboration beyond it shows.
+    // The source is named once, on the card's tag; only corroboration beyond it shows.
     provenance: tier === 'formation',
     // The standing row's "order a certificate" line is a reading of the
     // absence, which is what the note slot is for.
     evidence: true
   })
-  if (cells.length === 0) return null
+  if (cells.length === 0) return NO_PARTS
 
-  /* With the strip, the grid is who the entity is — name, form, when it was
-     formed — and the strip, which leads with the formation filing, is where
-     every filing stands. The state, status and sub status here said again
-     what the strip's view says for the formation filing. */
-  const FILING_FIELDS = new Set(['Formation state', 'Status', 'Sub status', 'Status details'])
-  const shownCells = strip ? cells.filter((c) => !FILING_FIELDS.has(c.label ?? '')) : cells
-  const [lead, ...rest] = shownCells
+  /* No field is held back for the strip: the Formation card states the
+     domestic filing's state and standing as fields, and the strip, on the
+     Registrations card, states where every filing stands. */
+  const [lead, ...rest] = cells
   // Every name change on the business's filings, beside its legal name.
   const priorNames = tier === 'formation' && lead?.label === 'Legal name' ? priorNamesOf(record) : []
   /* The names the business trades under, beside its legal name: Andytown LLC
@@ -666,7 +644,7 @@ export const FormationCard = ({
       : undefined
   /* The TIN, when the record holds one: the number obscured to its last four,
      submitted by the customer and checked against the IRS — the check's own
-     row is the card's (`tin` in FORMATION_CARD_INSIGHTS). */
+     row is the Tax ID card's. */
   const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean; issued?: boolean } | null
   /* Whom the IRS matched the number to: the business (`verified_by:
      "business"`), a person, or — unverified — nobody. */
@@ -679,6 +657,8 @@ export const FormationCard = ({
     ? {
         key: 'tin',
         label: 'TIN',
+        // Its own card, so the cell takes the width.
+        span: 'full',
         badge: (
           <span className="flex flex-wrap items-center gap-1">
             <SubmittedChip verified={Boolean(tinRec.verified) && !tinRec.mismatch} onJumpToSource={onJumpToSource} />
@@ -702,36 +682,35 @@ export const FormationCard = ({
       }
     : undefined
 
-  const items = [
-    {
-      ...lead,
-      // No filing to cite, but the website states the name: Miette
-      // Patisserie's site shows MIETTE PATISSERIE & CONFISERIE.
-      ...(tier === 'submitted' && lead.label === 'Business name' && websiteStatesName(record, record.name)
-        ? {
-            badge: (
-              <AttributeSources
-                sources={['Website']}
-                domesticState={record.formation?.state}
-                onJumpToSource={onJumpToSource}
-              />
-            )
-          }
-        : {}),
-      ...(dbaCell ? {} : { span: 'full' as const }),
-      values: lead.values.map((v, i) => ({
-        ...v,
-        value: (
-          <>
-            <span>{v.value}</span>
-            {i === 0 && priorNames.length > 0 && <NameHistory names={priorNames} onOpen={onJumpToTimeline && ((id) => onJumpToTimeline(id, ['name']))} />}
-          </>
-        )
-      }))
-    },
-    ...(dbaCell ? [dbaCell] : []),
-    // The formation date is the domestic filing's, and says so: with no
-    // chip in the card's header, the date carries its own source.
+  const leadCell: AttributeCell = {
+    ...lead,
+    // No filing to cite, but the website states the name: Miette
+    // Patisserie's site shows MIETTE PATISSERIE & CONFISERIE.
+    ...(tier === 'submitted' && lead.label === 'Business name' && websiteStatesName(record, record.name)
+      ? {
+          badge: (
+            <AttributeSources
+              sources={['Website']}
+              domesticState={record.formation?.state}
+              onJumpToSource={onJumpToSource}
+            />
+          )
+        }
+      : {}),
+    ...(dbaCell ? {} : { span: 'full' as const }),
+    values: lead.values.map((v, i) => ({
+      ...v,
+      value: (
+        <>
+          <span>{v.value}</span>
+          {i === 0 && priorNames.length > 0 && <NameHistory names={priorNames} onOpen={onJumpToTimeline && ((id) => onJumpToTimeline(id, ['name']))} />}
+        </>
+      )
+    }))
+  }
+  const formationCells: AttributeCell[] = [
+    // The formation date is the domestic filing's, and says so: the date
+    // carries its own source.
     ...rest.map((c) =>
       c.values.some((v) => v.value === NOT_PROVIDED)
         ? {
@@ -755,12 +734,14 @@ export const FormationCard = ({
           }
         : c
     ),
-    ...(tinCell ? [tinCell] : []),
     // A sole proprietor with no filing: what the state of its office asks of a trade name.
     ...(tier === 'formation' && classifiedSole(record) ? [dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c)) : [])
   ]
 
-  const chip =
+  /* The Formation card's tag: its filing, cited once; or Submitted, verified
+     where the website states the name. A city registration cites itself on
+     every cell. */
+  const formationChip =
     tier === 'formation' ? (
       domestic && (
         <AttributeSources
@@ -772,27 +753,18 @@ export const FormationCard = ({
       )
     ) : tier === 'submitted' ? (
       <SubmittedChip verified={websiteStatesName(record, record.name)} onJumpToSource={onJumpToSource} />
-    ) : (
-      <AttributeSources sources={[CITY]} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
-    )
+    ) : undefined
 
-  /* A formation on another record is not this business's formation until
-     someone confirms it; the title says what it is. A formation that is — a
-     domestic filing in the formation state, under the business's own name —
-     says so, and the subtext says whether it is still the filing the business
-     stands on. */
-  const strong = !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
   // No state filing at all, and a city registration in the submitted person's own name.
   const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
-  const title = formationCardTitle(record, results, groupFor)
 
   /*
-   * A sole proprietorship, split the way the Formation card is.
+   * A sole proprietorship, dealt out the same way.
    *
    * There is no entity apart from its owner, so what stays true is the
    * business as the owner runs it — its DBA, the owner, the form we read it
    * as, when the city first registered it — each citing its own source. What
-   * repeats is the city registration and its location, below, as the one
+   * repeats is the city registration and its location, as the one
    * registration view. Firebird Yarns is the case: Kathryn Bernard, doing
    * business as Firebird Yarns, San Francisco account 1089962.
    */
@@ -812,98 +784,68 @@ export const FormationCard = ({
     const y = Math.floor((Date.now() - new Date(`${iso}T00:00:00`).getTime()) / (365.25 * 86_400_000))
     return `${y} year${y === 1 ? '' : 's'}`
   }
-  const soleItems: AttributeCell[] | null =
-    sole && cityReg
-      ? [
-          {
-            key: 'dba',
-            label: 'DBA name',
-            badge: (
-              <AttributeSources
-                sources={websiteStatesName(record, cityReg.dba ?? record.name) ? [CITY, 'Website'] : [CITY]}
-                domesticState={record.formation?.state}
-                onJumpToSource={onJumpToSource}
-              />
-            ),
-            values: [
+  if (sole && cityReg)
+    return {
+      names: [
+        {
+          key: 'dba',
+          label: 'DBA name',
+          badge: (
+            <AttributeSources
+              sources={websiteStatesName(record, cityReg.dba ?? record.name) ? [CITY, 'Website'] : [CITY]}
+              domesticState={record.formation?.state}
+              onJumpToSource={onJumpToSource}
+            />
+          ),
+          values: [
+            {
+              value: <span className="font-semibold">{cityReg.dba ?? record.name}</span>
+            }
+          ]
+        },
+        {
+          key: 'owner',
+          label: 'Owner',
+          badge: cityChip,
+          submitted: record.people.some((p) => p.submitted && sameName(p.name, sole.person)),
+          verified: true,
+          values: [{ value: cityReg.owner ?? sole.person }]
+        }
+      ],
+      formation: [
+        // Our reading, not a filed fact — so no source chip; the Assistant's
+        // sentence says what it rests on.
+        {
+          key: 'form',
+          label: 'Entity type',
+          values: [{ value: 'Likely sole proprietorship' }]
+        },
+        ...(cityReg.businessStart
+          ? [
               {
-                value: <span className="font-semibold">{cityReg.dba ?? record.name}</span>
+                key: 'since',
+                label: 'City registration date',
+                badge: cityChip,
+                values: [
+                  {
+                    value: longDate(cityReg.businessStart),
+                    qualifier: `${yearsSince(cityReg.businessStart)} old`
+                  }
+                ]
               }
             ]
-          },
-          {
-            key: 'owner',
-            label: 'Owner',
-            badge: cityChip,
-            submitted: record.people.some((p) => p.submitted && sameName(p.name, sole.person)),
-            verified: true,
-            values: [{ value: cityReg.owner ?? sole.person }]
-          },
-          // Our reading, not a filed fact — so no source chip; the note above
-          // says what it rests on.
-          {
-            key: 'form',
-            label: 'Entity type',
-            values: [{ value: 'Likely sole proprietorship' }]
-          },
-          ...(cityReg.businessStart
-            ? [
-                {
-                  key: 'since',
-                  label: 'City registration date',
-                  badge: cityChip,
-                  values: [
-                    {
-                      value: longDate(cityReg.businessStart),
-                      qualifier: `${yearsSince(cityReg.businessStart)} old`
-                    }
-                  ]
-                }
-              ]
-            : []),
-          ...(tinCell ? [tinCell] : []),
-          ...[dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c))
-        ]
-      : null
+          : []),
+        ...[dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c))
+      ],
+      tin: tinCell,
+      city: record.cityRegistrations ?? []
+    }
 
-  return (
-    <Surface
-      id={FORMATION_CARD_ID}
-      variant="card"
-      padding="none"
-      className={cn('scroll-mt-6 overflow-hidden', className)}
-      aria-label={title}
-      role="region"
-    >
-      {/* No source chip in a formation card's header: each field names its own
-          — the name and form their corroborating filings, the date the
-          domestic filing — and the filing view names every other. No sentence
-          under it: that is the Assistant's opening message now
-          (`formationCardSummary`), and the card leads with its grid. */}
-      <CardHeader title={title} trailing={tier === 'formation' || tier === 'submitted' || soleItems ? undefined : chip} />
-      <AttributeCells items={soleItems ?? items} columns={3} className="-mb-px" />
-      {strip && <FilingStrip record={stripRecord} lead={converted?.now ?? domestic ?? undefined} legalName={legalName} />}
-      {/* The city registrations, as the state filings are shown. */}
-      {soleItems && cityReg && <CityStrip regs={record.cityRegistrations ?? []} />}
-      {/* The record's own insights about its filings, under the filing they
-          are about: the lead filing's standing, a former domestic filing, the
-          other filings and their statuses, whether it is registered where its
-          office is, what it operates as. A row the card already shows — the
-          entity type in the grid, a linked filing its note describes — is not
-          repeated. */}
-      <InsightsDisclosure
-        open={revealsHere}
-        rows={cardRows.map((r) => (
-          <InsightRow
-            key={r.insightId}
-            result={r}
-            record={record}
-            negative={negatives.has(r.insightId)}
-            reveal={revealed?.has(r.insightId)}
-            onJumpToSource={onJumpToSource}
-          />
-        ))}
-      />
-    </Surface>
-  )
+  return {
+    names: [leadCell, ...(dbaCell ? [dbaCell] : [])],
+    formation: formationCells,
+    formationChip,
+    tin: tinCell,
+    strip: strip ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName } : undefined
+  }
 }

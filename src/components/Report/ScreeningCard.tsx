@@ -338,38 +338,70 @@ const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: 
  * every result in that screen's own shape. Nothing is dismissed here; the
  * analyst dispositions.
  */
-export const ScreeningResults = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+type ScreenProps = { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }
+
+/** Sanctions and watchlists: the names screened, the lists, every hit. */
+export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
   const s = useMemo(() => screenedOf(record), [record])
   const ctx: BlockContext = { record, onJumpToSource }
-  const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  if (!s.watchlist.ran) return null
+  return (
+    <ScreenRow
+      label="Sanctions & watchlists"
+      hits={s.watchlist.hits.length}
+      ran={s.watchlist.ran}
+      coverage={[count(s.watchlist.names.length, 'name', 'names'), s.watchlist.lists > 0 && count(s.watchlist.lists, 'list', 'lists')].filter(Boolean).join(' · ')}
+    >
+      {s.watchlist.hits.map((h, i) => (
+        <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
+      ))}
+    </ScreenRow>
+  )
+}
+
+/** Politically exposed persons: the people screened, every hit. */
+export const PepScreen = ({ record, onJumpToSource }: ScreenProps) => {
+  const s = useMemo(() => screenedOf(record), [record])
+  const ctx: BlockContext = { record, onJumpToSource }
+  if (!s.pep.ran) return null
+  return (
+    <ScreenRow
+      label="Politically exposed persons"
+      hits={s.pep.hits.length}
+      ran={s.pep.ran}
+      coverage={s.pep.names.length > 0 ? count(s.pep.names.length, 'person', 'people') : 'No people submitted'}
+    >
+      {s.pep.hits.map((h, i) => (
+        <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
+      ))}
+    </ScreenRow>
+  )
+}
+
+/** Adverse media: the names screened, every article matched. */
+export const MediaScreen = ({ record, onJumpToSource }: ScreenProps) => {
+  const s = useMemo(() => screenedOf(record), [record])
+  const ctx: BlockContext = { record, onJumpToSource }
+  if (!s.media.ran) return null
+  return (
+    <ScreenRow label="Adverse media" hits={s.media.hits.length} ran={s.media.ran} coverage={count(s.media.names.length, 'name', 'names')}>
+      {s.media.hits.map((h, i) => (
+        <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
+      ))}
+    </ScreenRow>
+  )
+}
+
+/** The three screens as one body, for anything that still wants them together. */
+export const ScreeningResults = ({ record, onJumpToSource }: ScreenProps) => {
+  const s = useMemo(() => screenedOf(record), [record])
   if (!s.watchlist.ran && !s.pep.ran && !s.media.ran) return null
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
-      <ScreenRow
-        label="Sanctions & watchlists"
-        hits={s.watchlist.hits.length}
-        ran={s.watchlist.ran}
-        coverage={[count(s.watchlist.names.length, 'name', 'names'), s.watchlist.lists > 0 && count(s.watchlist.lists, 'list', 'lists')].filter(Boolean).join(' · ')}
-      >
-        {s.watchlist.hits.map((h, i) => (
-          <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-        ))}
-      </ScreenRow>
-      <ScreenRow
-        label="Politically exposed persons"
-        hits={s.pep.hits.length}
-        ran={s.pep.ran}
-        coverage={s.pep.names.length > 0 ? count(s.pep.names.length, 'person', 'people') : 'No people submitted'}
-      >
-        {s.pep.hits.map((h, i) => (
-          <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-        ))}
-      </ScreenRow>
-      <ScreenRow label="Adverse media" hits={s.media.hits.length} ran={s.media.ran} coverage={count(s.media.names.length, 'name', 'names')}>
-        {s.media.hits.map((h, i) => (
-          <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-        ))}
-      </ScreenRow>
+      <WatchlistScreen record={record} onJumpToSource={onJumpToSource} />
+      <PepScreen record={record} onJumpToSource={onJumpToSource} />
+      <MediaScreen record={record} onJumpToSource={onJumpToSource} />
     </div>
   )
 }

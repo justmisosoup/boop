@@ -39,7 +39,7 @@ const StatusChip = ({ status }: { status: string | null | undefined }) => {
  * counted, opening to every record of that kind beneath, each a cell with its
  * status chip beside the label and the row's own detail and source chip.
  */
-const KindStrip = ({
+export const KindStrip = ({
   label,
   rows,
   statusOf,

@@ -23,6 +23,10 @@ import type {
   AnalysisVerdict,
   AssessmentFile,
   AssessmentSection,
+  PortfolioAnswer,
+  PortfolioBusiness,
+  PortfolioRequest,
+  RevisedRecommendation,
   StoredReport
 } from '../src/types'
 
@@ -312,6 +316,22 @@ type QuestionAnswer = {
   recommendation?: AssessmentSection
   followUps?: AnalysisVerdict['followUps']
   suggestions?: string[]
+  /** On a question that carried documents: what they did to the recommendation. */
+  revisedRecommendation?: RevisedRecommendation
+}
+
+/** A revised recommendation is optional, but when written it has to be whole. */
+const problemWithRevision = (r: unknown): string | null => {
+  if (r === undefined) return null
+  if (!r || typeof r !== 'object') return '`revisedRecommendation` is not an object.'
+  const v = r as Partial<RevisedRecommendation>
+  if (v.kind !== 'approve' && v.kind !== 'reject' && v.kind !== 'request')
+    return `\`revisedRecommendation.kind\` is ${JSON.stringify(v.kind)}; it must be "approve", "reject" or "request".`
+  if (typeof v.reason !== 'string' || !v.reason.trim()) return '`revisedRecommendation.reason` is missing.'
+  if (!Array.isArray(v.resolved) || v.resolved.some((n) => typeof n !== 'number'))
+    return '`revisedRecommendation.resolved` must be an array of step numbers.'
+  if (typeof v.source !== 'string' || !v.source.trim()) return '`revisedRecommendation.source` is missing.'
+  return null
 }
 
 const problemWithAnswer = (value: unknown, asked: AnalysisRequest): string | null => {
@@ -324,6 +344,46 @@ const problemWithAnswer = (value: unknown, asked: AnalysisRequest): string | nul
   const reaching = [...citesOf([section])].filter((id) => !known.has(id))
   if (reaching.length > 0)
     return `The answer cites ${reaching.join(', ')}, which is not on this record. An answer may only cite the insights it was given.`
+  return problemWithRevision(v.revisedRecommendation)
+}
+
+/**
+ * A question about every business at once.
+ *
+ * Not a run: no record, no assessments, no report to keep. The page sends the
+ * list as it reads it — each business's call, score, headline, flags and
+ * review — and the session answers in paragraphs that cite businesses by id.
+ */
+const queuePortfolio = (body: { prompt: string; typed: string; businesses: PortfolioBusiness[] }) => {
+  const id = `${Date.now()}`
+  writeFileSync(snapshotPath(id), JSON.stringify(body.businesses, null, 2))
+  const request: PortfolioRequest = {
+    id,
+    requestedAt: new Date().toISOString(),
+    kind: 'portfolio',
+    prompt: body.prompt,
+    typed: body.typed,
+    count: body.businesses.length
+  }
+  writeFileSync(join(DIR, 'pending.json'), JSON.stringify(request, null, 2))
+  writeFileSync(join(DIR, `request-${id}.json`), JSON.stringify(request, null, 2))
+  return request
+}
+
+/** What is wrong with a list answer, if anything: its shape, and citations of
+ *  businesses the snapshot did not carry. */
+const problemWithPortfolioAnswer = (v: unknown, ids: Set<string>): string | null => {
+  const answer = v as Partial<PortfolioAnswer> | null
+  if (!answer || !Array.isArray(answer.paragraphs) || answer.paragraphs.length === 0)
+    return 'A list answer needs `paragraphs`: at least one `{ text, cites }`.'
+  for (const p of answer.paragraphs) {
+    if (typeof p?.text !== 'string' || !p.text.trim()) return 'Every paragraph needs `text`.'
+    if (p.cites !== undefined && !Array.isArray(p.cites)) return '`cites` is a list of business ids.'
+    const unknown = (p.cites ?? []).filter((id) => !ids.has(id))
+    if (unknown.length > 0)
+      return `The answer cites ${unknown.join(', ')}, which is not a business in the snapshot. Cite businesses by their \`id\`.`
+  }
+  if (answer.suggestions !== undefined && !Array.isArray(answer.suggestions)) return '`suggestions` is a list of strings.'
   return null
 }
 
@@ -341,6 +401,23 @@ export const analysePlugin = (): Plugin => ({
       if (req.method === 'POST') {
         const body = JSON.parse(await readBody(req)) as Omit<AnalysisRequest, 'id' | 'requestedAt'> & {
           attachments?: Array<{ name: string; type: string; size: number; dataBase64: string }>
+        }
+
+        // A question about the whole list: its own queue entry, no record.
+        if ((body as { kind: string }).kind === 'portfolio') {
+          const request = queuePortfolio(body as unknown as Parameters<typeof queuePortfolio>[0])
+          server.config.logger.info(
+            [
+              '',
+              `  ▶ list question — ${request.count} businesses`,
+              `    "${request.typed}"`,
+              `    read  prototype/analysis/pending.json and prototype/analysis/snapshot-${request.id}.json`,
+              `    write prototype/analysis/result-${request.id}.json  (analysis/README.md, "List questions")`,
+              ''
+            ].join('\n')
+          )
+          res.end(JSON.stringify({ id: request.id }))
+          return
         }
         /**
          * Every send runs.
@@ -473,6 +550,27 @@ export const analysePlugin = (): Plugin => ({
           res.end(JSON.stringify({ pending: true }))
           return
         }
+
+        // A list question: one answer file, checked against the snapshot.
+        if ((asked as unknown as PortfolioRequest).kind === 'portfolio') {
+          const verdictPath = join(DIR, `result-${id}.json`)
+          let raw: unknown
+          try {
+            raw = existsSync(verdictPath) ? JSON.parse(readFileSync(verdictPath, 'utf8')) : undefined
+          } catch {
+            raw = undefined // mid-write
+          }
+          if (raw === undefined) {
+            res.end(JSON.stringify({ pending: true }))
+            return
+          }
+          const businesses = JSON.parse(readFileSync(snapshotPath(id), 'utf8')) as PortfolioBusiness[]
+          const problem = problemWithPortfolioAnswer(raw, new Set(businesses.map((b) => b.id)))
+          if (problem) return fail(`${problem} (analysis/result-${id}.json)`)
+          res.end(JSON.stringify({ portfolio: raw as PortfolioAnswer }))
+          return
+        }
+
         const manifest = asked.assessments ?? []
 
         /**
@@ -567,7 +665,8 @@ export const analysePlugin = (): Plugin => ({
             headline: answer.headline,
             sections: [section],
             followUps: answer.followUps ?? [],
-            ...(Array.isArray(answer.suggestions) ? { suggestions: answer.suggestions } : {})
+            ...(Array.isArray(answer.suggestions) ? { suggestions: answer.suggestions } : {}),
+            ...(answer.revisedRecommendation ? { revisedRecommendation: answer.revisedRecommendation } : {})
           }
           keepReport(asked, merged)
           res.end(JSON.stringify(merged))

@@ -34,11 +34,14 @@ export const splitFlags = (record: BusinessRecord, results: Derived[]) => {
 
 const clause = (s: string) => s.replace(/\.$/, '')
 
-/** The one sentence the card says under the band. */
+/** The one sentence the card says under the band. Following the report's
+ *  lede (`followsLede`), which already says what to get before onboarding,
+ *  the flags read as the rest of that paragraph rather than a second ask. */
 export const scoreLine = (
   score: IdentityScore,
   areas: ScoreArea[] = [],
-  evidence?: { record: BusinessRecord; results: Derived[] }
+  evidence?: { record: BusinessRecord; results: Derived[] },
+  { followsLede = false }: { followsLede?: boolean } = {}
 ): string => {
   const cap = score.ceilings[0]
   if (cap)
@@ -52,6 +55,8 @@ export const scoreLine = (
     if (relevant.length > 0) {
       const named = relevant.slice(0, 2).map((r) => clause(r.statement))
       const more = relevant.length > 2 ? `, and ${relevant.length - 2} more` : ''
+      if (followsLede)
+        return `${named.join('; ')}${more}, but ${relevant.length === 1 ? 'that doesn’t' : 'none of it'} rule${relevant.length === 1 ? '' : 's'} the business out.`
       return `${named.join('; ')}${more}. Confirm before approving; none of it rules the business out.`
     }
     if (registry.length > 0)

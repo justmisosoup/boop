@@ -272,3 +272,19 @@ body,
 .core-theme table > tbody > tr:last-child > td.border-b {
   border-bottom-width: 0;
 }
+
+/* The Assistant's launcher pill, in midnight with its mark and label reversed.
+
+   The kit's `FloatingPanel` sets the pill's surface on the button itself and
+   takes no class for it, and `src/core` is read-only — so its one instance is
+   addressed here by its accessible name, as the table rules above restate
+   what the clone cannot. Midnight is the primary button's colour,
+   `interactive-default`; the mark is `currentColor`, so it follows the label. */
+.core-theme button[data-corner][aria-label='Open the Assistant'] {
+  border-color: transparent;
+  background-color: var(--core-color-interactive-default);
+  color: var(--core-color-text-inverse);
+}
+.core-theme button[data-corner][aria-label='Open the Assistant']:hover {
+  background-color: var(--core-color-interactive-hover);
+}
