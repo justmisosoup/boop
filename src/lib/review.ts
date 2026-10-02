@@ -39,8 +39,9 @@ export type StatusChange = {
   note?: string
 }
 
-/** What is kept: a status only once someone has set one, with the change that set it. */
-type Stored = { assigneeId?: string; status?: ReviewStatus; change?: StatusChange }
+/** What is kept: a status only once someone has set one, with the change that set it.
+ *  `prior` is what an accepted recommendation replaced, so Undo can put it back. */
+type Stored = { assigneeId?: string; status?: ReviewStatus; change?: StatusChange; prior?: Omit<Stored, 'prior'> }
 
 export type Review = { assigneeId?: string; status: ReviewStatus; change?: StatusChange }
 
@@ -69,3 +70,39 @@ export const setReviewStatus = (businessId: string, status: ReviewStatus, from: 
     status,
     change: { from, to: status, by: CURRENT_USER, at: new Date().toISOString(), note: note?.trim() || undefined }
   })
+
+/** The note an accepted recommendation is recorded with. */
+const ACCEPTED_NOTE = 'Accepted the recommendation'
+
+/**
+ * The reviewer takes the assessment's recommendation as their decision.
+ *
+ * Recorded the way any status change is — who, when, from what — with what it
+ * replaced kept beside it, so it can be undone exactly.
+ */
+export const acceptRecommendation = (businessId: string, status: ReviewStatus, from: ReviewStatus) => {
+  const current = store.get(businessId) ?? {}
+  const { prior: _drop, ...prior } = current
+  void _drop
+  store.set(businessId, {
+    ...prior,
+    status,
+    change: { from, to: status, by: CURRENT_USER, at: new Date().toISOString(), note: ACCEPTED_NOTE },
+    prior
+  })
+}
+
+/** Put back what accepting the recommendation replaced. The assignee stays as it is now. */
+export const undoAcceptance = (businessId: string) => {
+  const current = store.get(businessId)
+  if (!current?.prior) return
+  const { assigneeId } = current
+  const restored: Stored = { ...current.prior, ...(assigneeId ? { assigneeId } : {}) }
+  // Nothing set before it: no entry, as there was none.
+  if (Object.values(restored).every((v) => v === undefined)) store.remove(businessId)
+  else store.set(businessId, restored)
+}
+
+/** Whether the status on a review is an accepted recommendation of this status. */
+export const acceptedRecommendation = (review: Review, status: ReviewStatus) =>
+  review.status === status && review.change?.note === ACCEPTED_NOTE && review.change.to === status

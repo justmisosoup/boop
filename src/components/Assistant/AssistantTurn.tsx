@@ -1,11 +1,13 @@
 import { memo, type ReactNode } from 'react'
 import { Copy, RotateCcw, ThumbsDown, ThumbsUp } from 'lucide-react'
 
-import { Avatar, ChatMessage, ChatMessageActions, ChatThinking, Surface, Text } from '@/core'
+import { ActionButton, Avatar, ChatMessage, ChatMessageActions, ChatThinking, Surface, Text } from '@/core'
 
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
+import { createLocalStore } from '../../lib/localStore'
 import type { ReportBrief } from '../../lib/reportBrief'
+import { acceptRecommendation, acceptedRecommendation, undoAcceptance, useReview } from '../../lib/review'
 import { formatTime } from '../../lib/reportLabels'
 import type { AnalysisVersion } from '../../lib/useAnalysis'
 import { CURRENT_USER } from '../../lib/user'
@@ -168,12 +170,97 @@ export const AnswerTurn = memo(function AnswerTurn({
   )
 })
 
+/** Reports whose recommendation the reader has put away, in this browser. */
+const dismissed = createLocalStore<boolean>('prototype.recommendation.dismissed.v1')
+
+/**
+ * The recommendation — the determination card, in little — floating over the
+ * chat bar.
+ *
+ * The assessment's call, why, and the score in its band's colour at the far
+ * edge, as the determination card set it. It sits on the composer rather than
+ * in the conversation, so the call stays in view however far the conversation
+ * has scrolled. Raised, because it floats.
+ *
+ * The reviewer answers it: Accept records the call as their decision, the way
+ * the header's status control records any change, and the card shrinks to
+ * the line that says so, with Undo. Dismiss puts it away — a pill to bring it
+ * back, remembered for this report — and changes nothing.
+ */
+export const RecommendationCard = ({
+  determination: d,
+  businessId,
+  reportId,
+  results,
+  record
+}: {
+  determination: NonNullable<ReportBrief['determination']>
+  businessId: string
+  reportId: string
+  results: Derived[]
+  record: BusinessRecord
+}) => {
+  const review = useReview(businessId, d.status)
+  const hidden = Boolean(dismissed.useAll()[reportId])
+  const accepted = acceptedRecommendation(review, d.status)
+
+  if (hidden)
+    return (
+      <ActionButton variant="secondary" size="compact" onClick={() => dismissed.remove(reportId)}>
+        Show recommendation
+      </ActionButton>
+    )
+
+  if (accepted)
+    return (
+      <Surface variant="raised" padding="none" className="flex items-center gap-3 px-3 py-2" aria-label="Recommendation">
+        <ScoreRing score={d.score} size="xs" />
+        <span className="min-w-0 flex-1 text-sm leading-5 text-foreground">
+          {d.label}
+          <span className="text-text-secondary">
+            {' · accepted by '}
+            {review.change?.by === CURRENT_USER ? 'you' : review.change?.by}
+          </span>
+        </span>
+        <ActionButton variant="quiet" size="compact" onClick={() => undoAcceptance(businessId)}>
+          Undo
+        </ActionButton>
+      </Surface>
+    )
+
+  return (
+    <Surface variant="raised" padding="none" className="flex items-center gap-3 px-3 py-3" aria-label="Recommendation">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-sm font-medium leading-5 text-foreground">{d.label}</span>
+        {d.reason && (
+          <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
+            {d.reason}
+          </Para>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <ActionButton
+            variant="primary"
+            size="compact"
+            onClick={() => acceptRecommendation(businessId, d.status, review.status)}
+          >
+            Accept
+          </ActionButton>
+          <ActionButton variant="quiet" size="compact" onClick={() => dismissed.set(reportId, true)}>
+            Dismiss
+          </ActionButton>
+        </div>
+      </div>
+      <ScoreRing score={d.score} size="sm" />
+    </Surface>
+  )
+}
+
 /**
  * The report, as the conversation's first message.
  *
  * Not an answer: nothing was asked and nothing was generated. It is what the
- * page already says — the determination, then each card's title and sentence,
- * in the report's order — so it carries no thinking steps, no ratings and no
+ * page already says — each card's title and sentence, in the report's order;
+ * the determination floats over the chat bar (`RecommendationCard`) — so it carries no thinking steps, no ratings and no
  * retry. Each title follows to its card on the report, the way a citation
  * chip follows to its evidence.
  */
@@ -217,23 +304,6 @@ export const BriefTurn = memo(function BriefTurn({
       }
     >
       <div className="flex flex-col gap-3">
-        {/* The determination card's own ring and word: the score in its
-            band's colour, the status the card's control reads, and why. */}
-        {d && (
-          // In a small card of its own — the determination card, in little —
-          // with the ring at the far edge, as that card sets it.
-          <Surface variant="card" padding="none" className="flex items-center gap-3 px-3 py-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-sm font-medium leading-5 text-foreground">{d.label}</span>
-              {d.reason && (
-                <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
-                  {d.reason}
-                </Para>
-              )}
-            </div>
-            <ScoreRing score={d.score} size="sm" />
-          </Surface>
-        )}
         {brief.cards.map((c) => (
           <div key={c.anchor} className="flex flex-col gap-0.5">
             {onJumpToCard ? (

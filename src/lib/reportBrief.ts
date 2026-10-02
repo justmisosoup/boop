@@ -20,8 +20,9 @@ import type { Report } from './useAnalysis'
  * the two cannot say different things.
  */
 export type ReportBrief = {
-  /** The word, the number and why — and the score itself, for the ring. */
-  determination?: { label: string; value: number; reason?: string; score: IdentityScore }
+  /** The recommendation: the status the score implies, its word, the number
+   *  and why — and the score itself, for the ring. */
+  determination?: { status: ReviewStatus; label: string; value: number; reason?: string; score: IdentityScore }
   /** In the report's order. `anchor` is the card's element id on the page. */
   cards: Array<{ anchor: string; title: string; sentence?: string }>
 }
@@ -42,8 +43,7 @@ export const reportBrief = ({
   scoreAreas,
   summaries,
   policy,
-  tiers,
-  status
+  tiers
 }: {
   version: Pick<Report, 'at' | 'policy' | 'result'> | null | undefined
   record: BusinessRecord
@@ -55,16 +55,16 @@ export const reportBrief = ({
   /** The standing assessments, for a report kept without its own manifest. */
   policy: Array<{ id: string; name: string }>
   tiers?: ReadonlyMap<string, unknown>
-  /** What the card's status control says now — the determination, or a
-   *  reviewer's change of it. Without one, the determination. */
-  status?: ReviewStatus
 }): ReportBrief | undefined => {
   if (!version) return undefined
   const sections = reportSections(orderByTiers(version.policy ?? policy, tiers), version.result)
   return {
     determination: score
       ? {
-          label: STATUS_WORD[status ?? statusForBand(score.band.id)],
+          // The assessment's own call, which the reviewer accepts or not; the
+          // page header's control says where the review stands.
+          status: statusForBand(score.band.id),
+          label: STATUS_WORD[statusForBand(score.band.id)],
           value: score.value,
           reason: scoreLine(score, scoreAreas, { record, results }),
           score

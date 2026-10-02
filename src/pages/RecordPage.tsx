@@ -387,11 +387,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
         scoreAreas,
         summaries,
         policy,
-        tiers,
-        // What the card's status control says, so the two read the same.
-        status: review.status
+        tiers
       }),
-    [analysis.selected, record, results, groupFor, score, scoreAreas, summaries, policy, tiers, review.status]
+    [analysis.selected, record, results, groupFor, score, scoreAreas, summaries, policy, tiers]
   )
 
   /**

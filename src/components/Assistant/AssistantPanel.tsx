@@ -32,7 +32,7 @@ import { cn } from '../../utils/twUtils'
 import { MiddeskMark } from '../MiddeskMark'
 import { AssistantComposer, type Send } from './AssistantComposer'
 import { AssistantEmpty } from './AssistantEmpty'
-import { AnswerTurn, BriefTurn, ErrorTurn, PendingTurn, UserTurn } from './AssistantTurn'
+import { AnswerTurn, BriefTurn, ErrorTurn, PendingTurn, RecommendationCard, UserTurn } from './AssistantTurn'
 import { Conversations } from './Conversations'
 import { STARTERS, suggestionsFor } from './starters'
 
@@ -359,6 +359,19 @@ export const AssistantPanel = ({
 
           {view === 'thread' && (
             <div className="shrink-0 px-3 pb-3 pt-2">
+              {/* The recommendation, floating on the chat bar: in view however
+                  far the conversation has scrolled. */}
+              {brief?.determination && analysis.selected && (
+                <div className="mb-2">
+                  <RecommendationCard
+                    determination={brief.determination}
+                    businessId={record.id}
+                    reportId={analysis.selected.id}
+                    results={results}
+                    record={record}
+                  />
+                </div>
+              )}
               <AssistantComposer
                 businessId={record.id}
                 businessName={record.name}
