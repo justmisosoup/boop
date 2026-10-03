@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react'
 import { BadgeCheck } from 'lucide-react'
 
-import { Text } from '@/core'
+import { HoverCard, HoverCardContent, HoverCardTrigger, Text } from '@/core'
 
-import { corroborated, type AttributeRow } from '../lib/attributes'
+import { corroborated, verifiedBy, type AttributeRow } from '../lib/attributes'
 import type { AttributeCell, AttributeValue } from './AttributeGrid'
 import { RowProvenance, SubmittedChip } from './Provenance'
 import { ProfileIcon } from './ProfileIcon'
 
 export type CellContext = {
+  /** A person's titles stated in full, rather than the first and a count —
+   *  where the cell is opened on its own, from the People card's chips. */
+  allTitles?: boolean
   domesticState?: string | null
   onJumpToSource?: (cardId: string) => void
   /** The role a value played for THIS source, where that is not its own label —
@@ -68,7 +71,7 @@ const badgeFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
         onJumpToSource={ctx.onJumpToSource}
       />
       {row.submitted && (
-        <SubmittedChip verified={corroborated(row)} onJumpToSource={ctx.onJumpToSource} />
+        <SubmittedChip verified={corroborated(row)} by={verifiedBy(row)} onJumpToSource={ctx.onJumpToSource} />
       )}
     </span>
   )
@@ -82,10 +85,40 @@ const noteFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
   // One field per line, labelled — never run together into one string.
   const fields = [...(row.fields ?? []), ...(ctx.evidence ? (row.evidenceFields ?? []) : [])]
   const meta = row.meta?.length ? row.meta.join(' · ') : undefined
-  if (!trailing && !evidenceNote && fields.length === 0 && !meta) return undefined
+  const titles = row.titles ?? []
+  if (!trailing && !evidenceNote && fields.length === 0 && !meta && titles.length === 0) return undefined
 
   return (
     <span className="flex flex-col gap-y-0.5">
+      {/* A person's titles: the first, and the rest as a count that lists
+          them on hover. */}
+      {titles.length > 0 && ctx.allTitles && <span>{titles.join(' · ')}</span>}
+      {titles.length > 0 && !ctx.allTitles && (
+        <span className="flex flex-wrap items-center gap-1">
+          <span>{titles[0]}</span>
+          {titles.length > 1 && (
+            <HoverCard openDelay={150}>
+              <HoverCardTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`${titles.length} titles: ${titles.join(', ')}`}
+                  className="rounded-control px-0.5 underline decoration-dotted underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  +{titles.length - 1} title{titles.length - 1 === 1 ? '' : 's'}
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" className="w-60 p-3">
+                <span className="mb-1 block text-caption text-text-secondary">{titles.length} titles</span>
+                <ul className="flex flex-col gap-0.5 text-sm text-foreground">
+                  {titles.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </HoverCardContent>
+            </HoverCard>
+          )}
+        </span>
+      )}
       {/* A record's status, ID and date, as the line a list of records is scanned by. */}
       {meta && <span className="block">{meta}</span>}
       {(trailing || evidenceNote) && (

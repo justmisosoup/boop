@@ -47,6 +47,18 @@ export const money = (cents: number) =>
  * Structural rather than typed to `AttributeRow`, because the identity card
  * asks the same question of an address off the record.
  */
+/** The sources that verify a value — the filings and records that state it,
+ *  not the ones that only show it — for the Submitted chip to name. */
+export const verifiedBy = (a: {
+  sources?: string[]
+  source?: string
+  registrations?: Array<{ state?: string | null }> | null
+}): string[] => {
+  const named = [...(a.sources ?? []), ...(a.source ? [a.source] : [])].filter((x) => x && x !== 'Submitted' && !NOT_CORROBORATING.has(x))
+  const filings = (a.registrations ?? []).map((r) => (r.state ? `SOS · ${r.state}` : 'SOS'))
+  return [...new Set([...named, ...filings])]
+}
+
 export const corroborated = (a: {
   sources?: string[]
   source?: string
@@ -129,6 +141,9 @@ export type AttributeRow = {
    * so it is plain which record they belong to.
    */
   fields?: Array<{ label?: string; value: string; icon?: 'verified' }>
+  /** A person's titles, under their name: the first, then "+N" with every
+   *  title on hover. */
+  titles?: string[]
   /**
    * A record's metadata, as one muted line under its title: its status, its ID
    * with the kind of ID, and when it was filed — "Open · Case 2003TW000393 ·
@@ -2242,10 +2257,22 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
     // restate the URL above them rather than adding to it.
     if (key === 'website_status') return [url, ...site('Title', w.title)]
 
-    // Who owns the domain. The registrar, the WHOIS dates and the registry's
-    // own domain id are plumbing — they say who sold the name and when the
-    // record was minted, which is not a fact about this business.
-    if (key === 'website_url_domain_ownership') return [...site('Domain', w.domain)]
+    // Who owns the domain, and how long it has been held: the domain with its
+    // age, as a formation date carries one, then when it was registered and
+    // with which registrar, each on its own line where the record has it. A
+    // domain registered last month is a different claim about a business than
+    // one held since 1998. The registry's own domain id stays out: plumbing.
+    if (key === 'website_url_domain_ownership')
+      // Lowercase: the registry stores it in capitals, and a domain is not
+      // case-sensitive. WHOIS dates carry a time; the day is what is meant.
+      return site('Domain', w.domain?.toLowerCase()).map((r) => ({
+        ...r,
+        qualifier: filingAge(w.domainCreated),
+        fields: [
+          ...(w.domainCreated ? [{ label: 'Registered', value: longDate(w.domainCreated.slice(0, 10)) ?? w.domainCreated }] : []),
+          ...(w.registrar ? [{ label: 'Registrar', value: w.registrar }] : [])
+        ]
+      }))
 
     // Where the URL came from.
     if (key === 'website_url_discovery') return [url]
@@ -2697,6 +2724,73 @@ export const peopleRows = (record: BusinessRecord, people: BusinessRecord['peopl
       ]
     })
     .map(nameTheFiling(record))
+
+/** "Cfo" and "Chief financial officer" are one role. */
+const ROLE_SAME: Record<string, string> = {
+  ceo: 'Chief executive officer',
+  cfo: 'Chief financial officer',
+  coo: 'Chief operating officer',
+  cto: 'Chief technology officer'
+}
+
+/** A title as a title is written: "Chief Financial Officer", "Vice
+ *  President" — each word capitalised but the small ones inside it. */
+const SMALL_WORDS = new Set(['of', 'and', 'the', 'for', 'to', 'in', 'at'])
+const titleCase = (title: string) =>
+  title
+    .split(/\s+/)
+    .map((w, i) => (i > 0 && SMALL_WORDS.has(w.toLowerCase()) ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ')
+
+/** What someone is to the business rather than a title they hold. */
+const NOT_TITLES = /^(registered agent|person|officer|tax preparer)$/i
+
+/** A name with its spacing, case and punctuation set aside: "REED STEINER"
+ *  and "REEDSTEINER" are one person. */
+const personKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+/**
+ * The people rows, one per person: an officer labelled Officer with their
+ * titles under the name, an agent or submitted person labelled as that — under
+ * one spelling of their name — the one written in words, where
+ * the filings disagree on spacing — with every source that names them.
+ */
+export const peopleByPerson = (rows: AttributeRow[]): AttributeRow[] => {
+  const groups = new Map<string, AttributeRow[]>()
+  for (const r of rows) {
+    const k = personKey(r.value)
+    groups.set(k, [...(groups.get(k) ?? []), r])
+  }
+  return [...groups.values()].map((same) => {
+    const name = [...same].sort((a, b) => b.value.trim().split(/\s+/).length - a.value.trim().split(/\s+/).length)[0].value
+    const listed = [...new Set(same.map((r) => ROLE_SAME[r.label.toLowerCase()] ?? r.label))]
+    // A title some filing ran together from roles already listed — "President
+    // ceo chief executive officer" beside President and CEO — says nothing new.
+    const words = (role: string) =>
+      new Set(role.toLowerCase().split(/\s+/).flatMap((w) => (ROLE_SAME[w] ?? w).toLowerCase().split(/\s+/)))
+    const roles = listed.filter((role) => {
+      const mine = words(role)
+      const inside = listed.filter((o) => o !== role && [...words(o)].every((w) => mine.has(w)))
+      const covered = [...mine].every((w) => inside.some((o) => words(o).has(w)))
+      return !(inside.length >= 2 && covered)
+    })
+    const base = [...same].sort((a, b) => (b.sources?.length ?? 0) - (a.sources?.length ?? 0))[0]
+    // An officer's titles go under the name, and the label says what they are
+    // to the business; an agent or a submitted person keeps that as the label.
+    const titles = roles.filter((r) => !NOT_TITLES.test(r)).map(titleCase)
+    const kinds = roles.filter((r) => NOT_TITLES.test(r) && !/^officer$/i.test(r))
+    return {
+      ...base,
+      label: kinds.length > 0 ? kinds.join(' · ') : 'Officer',
+      titles: titles.length > 0 ? titles : undefined,
+      value: name,
+      matchValue: name,
+      submitted: same.some((r) => r.submitted),
+      sources: [...new Set(same.flatMap((r) => r.sources ?? []))],
+      refs: same.flatMap((r) => r.refs ?? [])
+    }
+  })
+}
 
 export const attributesFor = (rawKey: string, record: BusinessRecord): AttributeRow[] => {
   const rows = attributesForKey(rawKey, record).map(nameTheFiling(record)).map(withSourceNames(record))

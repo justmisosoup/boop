@@ -30,6 +30,14 @@ import { readFile } from './files'
 
 type Recommendation = NonNullable<ReportBrief['determination']>
 
+/**
+ * The card's outline: midnight — the dark teal the primary button is set in —
+ * through the selected-state border token, so it themes with the rest; 2px,
+ * so the card holds its own floating over the report.
+ * Important, because the card surface sets its own border colour.
+ */
+const EDGE = '!border-2 !border-[var(--core-color-state-selected-border)]'
+
 /** Reports whose recommendation the reader has removed outright, in this
  *  browser — no card and no score — by whom and when, so the conversation can
  *  say so, with Undo. (`true`: removed before who and when were kept.) */
@@ -66,7 +74,9 @@ export const standingCall = (original: Recommendation, revision?: RevisedRecomme
         kind: revision.kind,
         label: KIND_WORD[revision.kind],
         reason: revision.reason,
-        status: revision.kind === 'approve' ? 'approved' : revision.kind === 'reject' ? 'rejected' : 'in_review'
+        status: revision.kind === 'approve' ? 'approved' : revision.kind === 'reject' ? 'rejected' : 'in_review',
+        // An Approve has no steps, whatever the call it replaced asked for.
+        steps: revision.kind === 'approve' ? [] : original.steps
       }
     : original
 
@@ -228,7 +238,7 @@ export const RecommendationCard = ({
   if (accepted || requested)
     return (
       <>
-        <Surface variant="card" padding="none" className="flex items-center gap-3 px-3 py-2" aria-label="Recommendation">
+        <Surface variant="card" padding="none" className={cn(EDGE, 'flex items-center gap-3 px-3 py-2')} aria-label="Recommendation">
           <ScoreRing score={d.score} size="xs" label={d.label} />
           <span className="min-w-0 flex-1 text-sm leading-5 text-foreground">
             {requested ? (
@@ -347,7 +357,7 @@ export const RecommendationCard = ({
 
   return (
     <>
-      <Surface variant="card" padding="none" className="flex flex-col gap-2 px-3 py-3" aria-label="Recommendation">
+      <Surface variant="card" padding="none" className={cn(EDGE, 'flex flex-col gap-2 px-3 py-3')} aria-label="Recommendation">
         {/* The call, and beside the X the pager through the report's steps —
             on every call, so what would be requested can be seen before
             answering. */}

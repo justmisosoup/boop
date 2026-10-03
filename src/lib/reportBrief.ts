@@ -24,9 +24,6 @@ export type ReportBrief = {
   /** The report's lede: its one-sentence answer (`headline`), which the
    *  report page does not print. The opening message leads with it. */
   lede?: string
-  /** The lede and why the score is what it is, as one paragraph: the
-   *  report's hero. */
-  overview?: string
   /**
    * The recommendation — always a call the customer can act on, never
    * "Needs Review": approve, reject, or request what the record is short of
@@ -130,10 +127,6 @@ export const reportBrief = ({
   const headline = 'headline' in version.result ? (version.result as { headline?: string }).headline?.trim() : undefined
   return {
     lede: headline || undefined,
-    overview:
-      [headline, score ? scoreLine(score, scoreAreas, { record, results }, { followsLede: Boolean(headline) }) : undefined]
-        .filter(Boolean)
-        .join(' ') || undefined,
     determination: score
       ? {
           // The assessment's own call, which the reviewer accepts or not; the
@@ -144,8 +137,14 @@ export const reportBrief = ({
           value: score.value,
           reason: scoreLine(score, scoreAreas, { record, results }),
           score,
-          // Each follow-up is the instruction, then the facts behind it.
-          steps: ('followUps' in version.result ? (version.result as { followUps?: Array<{ text: string; cites?: string[] }> }).followUps ?? [] : [])
+          // Each follow-up is the instruction, then the facts behind it. An
+          // Approve has none: a call with something still to get is not an
+          // approval, so whatever follow-ups the report wrote are not its steps.
+          steps: (KIND_OF_BAND[score.band.id] === 'approve'
+            ? []
+            : 'followUps' in version.result
+              ? ((version.result as { followUps?: Array<{ text: string; cites?: string[] }> }).followUps ?? [])
+              : [])
             .map((f) => {
               const [instruction, ...why] = f.text.split('\n')
               return { instruction: instruction.trim(), why: why.join(' ').trim() || undefined, cites: f.cites }

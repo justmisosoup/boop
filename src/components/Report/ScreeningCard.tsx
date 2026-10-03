@@ -1,25 +1,18 @@
-import { useId, useMemo, useState, type ReactNode } from 'react'
-import { ArrowUpRight, Building2, ChevronDown, Circle, CircleMinus, CirclePlus, TriangleAlert, User } from 'lucide-react'
+import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { ArrowUpRight, Building2, Check, Circle, CircleMinus, CirclePlus, TriangleAlert, User } from 'lucide-react'
 
 import { ChatSourceChip, MetaChip, type ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
-import { screenedOf, type MediaHit, type PepHit, type ScreenedName, type WatchlistHit } from '../../lib/screening'
+import { screenedOf, screeningOf, type MediaHit, type PepHit, type Screen, type ScreenedName, type WatchlistHit } from '../../lib/screening'
+import { Strip } from './Strip'
 import { AttributeSources } from '../Provenance'
 import { cn } from '../../utils/twUtils'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
-import { Collapsible } from '../Collapsible'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
 const out = <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
-
-const HitChip = ({ count }: { count: number }) => (
-  <MetaChip tone="danger" size="compact">
-    <TriangleAlert {...icon} />
-    {count} {count === 1 ? 'hit' : 'hits'}
-  </MetaChip>
-)
 
 /** "1963-08-21" as Aug 21 1963; "1950-00-00" as 1950. */
 const born = (dob: string) => {
@@ -37,48 +30,6 @@ const host = (u: string) => {
   } catch {
     return 'Source'
   }
-}
-
-/**
- * One screen as a row: the screen's name, its count, and on the right what
- * was screened — then, open, its results in the platform's own shape.
- * A screen with hits opens from the start; a clean one is its one line.
- */
-const ScreenRow = ({ label, hits, coverage, ran, children }: { label: string; hits: number; coverage: string; ran: boolean; children?: ReactNode }) => {
-  const [open, setOpen] = useState(hits > 0)
-  const id = useId()
-  const openable = hits > 0
-  return (
-    <div className="border-t border-[var(--core-color-border-divider)]">
-      <button
-        type="button"
-        aria-expanded={openable ? open : undefined}
-        aria-controls={openable ? id : undefined}
-        onClick={() => openable && setOpen((v) => !v)}
-        disabled={!openable}
-        className={cn(
-          'flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
-          openable && 'hover:bg-[var(--core-color-list-item-hover-bg)]'
-        )}
-      >
-        <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <span>{label}</span>
-          {hits > 0 ? <HitChip count={hits} /> : <span className="text-text-secondary">{ran ? 'No hits' : 'Not screened'}</span>}
-        </span>
-        <span className="flex shrink-0 items-center gap-3">
-          <span className="text-caption text-text-secondary">{coverage}</span>
-          {openable && (
-            <ChevronDown aria-hidden="true" size={14} strokeWidth={2} className={cn('shrink-0 text-text-secondary transition-transform', open && 'rotate-180')} />
-          )}
-        </span>
-      </button>
-      {openable && (
-        <Collapsible open={open} id={id}>
-          <div className="border-t border-[var(--core-color-border-divider)]">{children}</div>
-        </Collapsible>
-      )}
-    </div>
-  )
 }
 
 /** References that point at a filing: the registration itself, and a parsed
@@ -338,8 +289,95 @@ const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: 
  * every result in that screen's own shape. Nothing is dismissed here; the
  * analyst dispositions.
  */
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 type ScreenProps = { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }
+
+/** A name as the screens compare it. */
+const nameKey = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim()
+
+/**
+ * One screen as chips, as the Addresses card draws its places: the results
+ * still standing (Hits), the ones an analyst excluded on the platform
+ * (Dismissed — the result's own status, never our judgement), and the names
+ * that came back with nothing (No results) — each only where there is one,
+ * each opening to its results. Hits open from the start. The counts are the
+ * card's only numbers: a separate tally of names screened read against them.
+ */
+const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: string | null } }>({
+  screen,
+  hits,
+  record,
+  block
+}: {
+  screen: Screen
+  hits: H[]
+  record: BusinessRecord
+  block: (h: H, i: number) => ReactNode
+}) => {
+  const review = useMemo(() => screeningOf(record), [record])
+  const excluded = (h: H) => /^excluded$/i.test(h.hit.status ?? '')
+  const counted = hits.filter((h) => !excluded(h))
+  const dismissed = hits.filter(excluded)
+  const clean = review.clean.filter((c) => c.screens.includes(screen))
+  const tiles = [
+    counted.length > 0 && {
+      key: 'hits',
+      chip: (
+        <MetaChip tone="danger" size="compact">
+          <TriangleAlert {...icon} />
+          Hits
+          <span className="tabular-nums">{counted.length}</span>
+        </MetaChip>
+      )
+    },
+    dismissed.length > 0 && {
+      key: 'dismissed',
+      chip: (
+        <MetaChip tone="neutral" size="compact">
+          <CircleMinus {...icon} />
+          Dismissed
+          <span className="tabular-nums text-text-secondary">{dismissed.length}</span>
+        </MetaChip>
+      )
+    },
+    clean.length > 0 && {
+      key: 'clean',
+      chip: (
+        <MetaChip tone="neutral" size="compact">
+          <Check {...icon} />
+          No results
+          <span className="tabular-nums text-text-secondary">{clean.length}</span>
+        </MetaChip>
+      )
+    }
+  ].filter((t): t is { key: string; chip: ReactElement } => Boolean(t))
+  if (tiles.length === 0) return null
+  return (
+    <div className="border-t border-[var(--core-color-border-divider)]">
+      <Strip
+        label="Results"
+        tiles={tiles}
+        open={counted.length > 0 ? 'hits' : undefined}
+        detail={(key) =>
+          key === 'hits' ? (
+            <>{counted.map(block)}</>
+          ) : key === 'dismissed' ? (
+            <>{dismissed.map(block)}</>
+          ) : (
+            <AttributeCells
+              className="-mb-px"
+              columns={3}
+              items={clean.map((c, i) => ({
+                key: `${c.name}-${i}`,
+                label: c.kind === 'person' ? 'Person' : 'Business name',
+                values: [{ value: c.name }]
+              }))}
+            />
+          )
+        }
+      />
+    </div>
+  )
+}
 
 /** Sanctions and watchlists: the names screened, the lists, every hit. */
 export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
@@ -347,16 +385,12 @@ export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.watchlist.ran) return null
   return (
-    <ScreenRow
-      label="Sanctions & watchlists"
-      hits={s.watchlist.hits.length}
-      ran={s.watchlist.ran}
-      coverage={[count(s.watchlist.names.length, 'name', 'names'), s.watchlist.lists > 0 && count(s.watchlist.lists, 'list', 'lists')].filter(Boolean).join(' · ')}
-    >
-      {s.watchlist.hits.map((h, i) => (
-        <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-      ))}
-    </ScreenRow>
+    <ScreenStrip
+      screen="watchlist"
+      record={record}
+      hits={s.watchlist.hits}
+      block={(h, i) => <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+    />
   )
 }
 
@@ -366,16 +400,12 @@ export const PepScreen = ({ record, onJumpToSource }: ScreenProps) => {
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.pep.ran) return null
   return (
-    <ScreenRow
-      label="Politically exposed persons"
-      hits={s.pep.hits.length}
-      ran={s.pep.ran}
-      coverage={s.pep.names.length > 0 ? count(s.pep.names.length, 'person', 'people') : 'No people submitted'}
-    >
-      {s.pep.hits.map((h, i) => (
-        <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-      ))}
-    </ScreenRow>
+    <ScreenStrip
+      screen="pep"
+      record={record}
+      hits={s.pep.hits}
+      block={(h, i) => <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+    />
   )
 }
 
@@ -385,11 +415,12 @@ export const MediaScreen = ({ record, onJumpToSource }: ScreenProps) => {
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.media.ran) return null
   return (
-    <ScreenRow label="Adverse media" hits={s.media.hits.length} ran={s.media.ran} coverage={count(s.media.names.length, 'name', 'names')}>
-      {s.media.hits.map((h, i) => (
-        <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />
-      ))}
-    </ScreenRow>
+    <ScreenStrip
+      screen="media"
+      record={record}
+      hits={s.media.hits}
+      block={(h, i) => <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+    />
   )
 }
 

@@ -70,6 +70,8 @@ export type AttributeCell = {
   verified?: boolean
   /** The cell takes the whole row: a URL, a statement, a run of values. */
   span?: 'full'
+  /** At the cell's far right corner: the Website row's capture, as a thumbnail. */
+  aside?: ReactNode
   /**
    * Makes the cell a button. Without it the cell is a plain block.
    *
@@ -231,8 +233,17 @@ export const AttributeCells = ({
             <CellBody item={item} />
           </button>
         ) : (
-          <div key={key} className={cls}>
-            <CellBody item={item} />
+          <div key={key} className={cn(cls, item.aside && 'flex items-start gap-3')}>
+            {item.aside ? (
+              <>
+                <div className="min-w-0 flex-1">
+                  <CellBody item={item} />
+                </div>
+                {item.aside}
+              </>
+            ) : (
+              <CellBody item={item} />
+            )}
           </div>
         )
       })}

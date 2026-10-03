@@ -164,7 +164,7 @@ const groupOf = (state: string, all: Registration[]): StateGroup => {
  * dropped. The status details stay text: they are the registry's own words.
  */
 const chipIcon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
-const StatusChip = ({ reg }: { reg: Registration }) => {
+export const StatusChip = ({ reg }: { reg: Registration }) => {
   const kind = kindOf(reg)
   const st = registrationState(reg)
   return (
@@ -180,7 +180,7 @@ const StatusChip = ({ reg }: { reg: Registration }) => {
     </MetaChip>
   )
 }
-const SubStatusChip = ({ reg }: { reg: Registration }) => {
+export const SubStatusChip = ({ reg }: { reg: Registration }) => {
   const sub = registrationState(reg).subStatus
   const good = Boolean(sub && /good standing/i.test(sub) && !/not/i.test(sub))
   const tone: MetaChipTone = !sub ? 'neutral' : good ? 'success' : /pending/i.test(sub) ? 'warning' : 'danger'

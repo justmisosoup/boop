@@ -1,13 +1,15 @@
 import { useMemo, type ReactNode } from 'react'
+import { Globe, Users } from 'lucide-react'
 
-import { ActionButton, Surface } from '@/core'
+import { ActionButton, MetaChip, Surface } from '@/core'
 
-import { attributesFor, peopleRows } from '../../lib/attributes'
+import { attributesFor, peopleByPerson, peopleRows } from '../../lib/attributes'
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { operationsOf } from '../../lib/operations'
 import { REPORT_CARDS, cardFor } from '../../lib/reportCards'
 import { screenedOf } from '../../lib/screening'
+import { screenshotFor } from '../../lib/sourceScreenshots'
 import type { Kind } from '../../lib/timeline/types'
 import { AttributeCells } from '../AttributeGrid'
 import { attributeRowsByGroup } from '../AttributesTab'
@@ -15,13 +17,56 @@ import { cellsFromRows } from '../attributeCells'
 import { CardHeader } from '../CardHeader'
 import { formationParts } from '../FormationCard'
 import { Para } from '../ReportBody'
+import { useScreenshotViewer } from '../ScreenshotViewer'
 import { CityStrip } from './CityStrip'
 import { KindStrip } from './ClaimsStrips'
 import { FilingStrip } from './FilingStrip'
 import { GroupCard } from './GroupCard'
 import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
+import { PeopleStrips } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
+import { Strip } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
+
+/** The order packages a public-record search ran under, by card. */
+const SEARCHES: Record<'liens' | 'litigation' | 'bankruptcy', { packages: Record<string, string>; people: RegExp }> = {
+  liens: { packages: { tax_liens: 'tax liens', ucc_liens: 'UCC liens', liens: 'liens' }, people: /^people_liens|^individual_liens/ },
+  litigation: { packages: { litigations: 'litigations' }, people: /^people_litigations|^individual_litigations/ },
+  bankruptcy: { packages: { bankruptcies: 'bankruptcies' }, people: /^people_bankruptcies|^individual_bankruptcies/ }
+}
+
+/** What a public-record search ran on, as the order placed it: the business
+ *  name, and the submitted people where the order searched people too. */
+const searchedOn = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
+  const orders = (record as BusinessRecord & { orders?: Array<{ package: string }> }).orders ?? []
+  const { packages, people } = SEARCHES[kind]
+  const ran = [...new Set(orders.map((o) => packages[o.package]).filter(Boolean))]
+  const onPeople = orders.some((o) => people.test(o.package))
+  const names = onPeople ? record.people.filter((p) => p.submitted && p.name).map((p) => p.name) : []
+  return { ran, names }
+}
+
+/** A public record with nothing on file: the strip's label over a plain chip
+ *  saying so — "No liens" — that opens nothing, and what the search ran on,
+ *  per the order: the business name, and the people where they were searched. */
+const NoneOnFile = ({ label, text, record, kind }: { label: string; text: string; record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
+  const { ran, names } = searchedOn(record, kind)
+  return (
+    <div className="border-t border-[var(--core-color-border-divider)]">
+      <Strip
+        label={label}
+        tiles={[{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">{text}</MetaChip> }]}
+        aside={
+          <span className="text-caption text-text-secondary">
+            Searched the business name{names.length > 0 ? ` and ${names.length === 1 ? names[0] : `${names.length} people`}` : ''}
+            {ran.length > 1 ? ` · ${ran.join(' and ')}` : ''}
+          </span>
+        }
+        detail={() => null}
+      />
+    </div>
+  )
+}
 
 /** A grid rules itself off at the top, as a strip does. */
 const Grid = ({ children }: { children: ReactNode }) => (
@@ -83,6 +128,7 @@ export const GroupedReport = ({
   const ops = useMemo(() => operationsOf(record), [record])
   const byGroup = useMemo(() => attributeRowsByGroup(record, results, groupFor), [record, results, groupFor])
   const screens = useMemo(() => screenedOf(record), [record])
+  const { open: openScreenshot } = useScreenshotViewer()
 
   /* The card's rows, as the Insights tab files them: flagged first — the
      record came back adverse, or the score read it against the identity —
@@ -94,14 +140,9 @@ export const GroupedReport = ({
       .sort((a, b) => Number(isFlagged(b)) - Number(isFlagged(a)) || (STATE_RANK[a.state] ?? 3) - (STATE_RANK[b.state] ?? 3))
 
   /* Every person on the record — officers and agents the filings name,
-     licence holders, the people submitted — one row per role, roles kept
-     together so a role with several names is one cell. */
-  const people = useMemo(() => {
-    const rows = peopleRows(record)
-    const order = [...new Set(rows.map((r) => r.label))]
-    return [...rows].sort((x, y) => order.indexOf(x.label) - order.indexOf(y.label))
-  }, [record])
-  const peopleCells = cellsFromRows(people, { domesticState: record.formation?.state, onJumpToSource })
+     licence holders, the people submitted — one cell each: their roles
+     combined, under one spelling of their name. */
+  const people = useMemo(() => peopleByPerson(peopleRows(record)), [record])
 
   const grid = (group: GroupId) => {
     const cells = cellsOf(byGroup, group, record, onJumpToSource)
@@ -112,59 +153,125 @@ export const GroupedReport = ({
     ) : undefined
   }
 
+  const siteShot = screenshotFor(record.website?.url ?? undefined, 'Website')
+  const websiteCells = cellsOf(byGroup, 'website', record, onJumpToSource).map((c) =>
+    siteShot && c.label === 'Website'
+      ? {
+          ...c,
+          aside: (
+            <button
+              type="button"
+              onClick={() => openScreenshot(siteShot)}
+              aria-label={`View screenshot: ${siteShot.alt}`}
+              title="View screenshot"
+              className="block h-20 w-32 shrink-0 overflow-hidden rounded-control border border-solid border-border transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <img src={siteShot.src} alt="" className="size-full object-cover object-top" />
+            </button>
+          )
+        }
+      : c
+  )
+
+  const profileCells = cellsOf(byGroup, 'profiles', record, onJumpToSource)
+  const profilesGrid = profileCells.length > 0 ? <AttributeCells items={profileCells} columns={3} className="-mb-px" /> : undefined
+  const siteHost = (() => {
+    try {
+      return record.website?.url ? new URL(record.website.url).host.replace(/^www\./, '') : undefined
+    } catch {
+      return record.website?.url ?? undefined
+    }
+  })()
+
   const liens = record.liens ?? []
   const cases = record.litigations ?? []
   const petitions = record.bankruptcies ?? []
 
   /** Each card's data view, where the record holds something to draw. */
   const visual: Partial<Record<string, ReactNode>> = {
-    name:
-      parts.names.length > 0 ? (
-        <Grid>
-          <AttributeCells items={parts.names} columns={3} className="-mb-px" />
-        </Grid>
-      ) : undefined,
+    // The formation and its registrations, one card: the formation grid, then
+    // the state filings strip.
+    // The names, the formation and its registrations, one card: Legal name,
+    // Doing business as and Former names leading the formation grid, then the
+    // state filings strip.
     formation:
-      parts.formation.length > 0 || parts.city ? (
+      parts.names.length > 0 || parts.formation.length > 0 || parts.city || parts.strip ? (
         <>
-          {parts.formation.length > 0 && (
+          {parts.names.length + parts.formation.length > 0 && (
             <Grid>
-              <AttributeCells items={parts.formation} columns={3} className="-mb-px" />
+              <AttributeCells items={[...parts.names, ...parts.formation]} columns={3} className="-mb-px" />
             </Grid>
           )}
           {/* A sole proprietor's city registrations, as the state filings are shown. */}
           {parts.city && <CityStrip regs={parts.city} />}
+          {parts.strip && <FilingStrip record={parts.strip.record} lead={parts.strip.lead} legalName={parts.strip.legalName} />}
         </>
       ) : undefined,
-    registration: parts.strip ? (
-      <FilingStrip record={parts.strip.record} lead={parts.strip.lead} legalName={parts.strip.legalName} />
-    ) : undefined,
     tin: parts.tin ? (
       <Grid>
         <AttributeCells items={[parts.tin]} columns={3} className="-mb-px" />
       </Grid>
     ) : undefined,
+    // As the Addresses card draws its places: a strip per kind, a chip per
+    // person, their cell under the strip when picked.
     people:
-      peopleCells.length > 0 ? (
-        <Grid>
-          <AttributeCells items={peopleCells} columns={3} className="-mb-px" />
-        </Grid>
+      people.length > 0 ? (
+        <PeopleStrips people={people} ctx={{ domesticState: record.formation?.state, onJumpToSource }} />
       ) : undefined,
     address: locationsDrawn(ops) ? <LocationsStrip ops={ops} record={record} onJumpToSource={onJumpToSource} /> : undefined,
     connections: (record.connections ?? []).length > 0 ? <RelatedBusinesses record={record} /> : undefined,
-    // No website on the record is itself the fact the card states.
-    website:
-      grid('website') ??
-      (!record.website?.url ? (
-        <Grid>
-          <AttributeCells
-            items={[{ key: 'website', label: 'Website', span: 'full', values: [{ value: <span className="text-text-secondary">No website submitted</span> }] }]}
-            columns={3}
-            className="-mb-px"
-          />
-        </Grid>
-      ) : undefined),
-    profiles: grid('profiles'),
+    // No website on the record is itself the fact the card states. With a
+    // capture of the site, the Website row carries it as a thumbnail in its
+    // far corner; clicking it shows the whole page.
+    // Web presence: the site and the business's third-party profiles, as the
+    // Addresses card draws its places — a chip for the site, by its address,
+    // and one rolling up the profiles; each opens its cells. No website is
+    // itself a fact, stated as a chip that opens nothing.
+    website: (
+      <div className="border-t border-[var(--core-color-border-divider)]">
+        <Strip
+          label="Online"
+          tiles={[
+            siteHost
+              ? {
+                  key: 'site',
+                  chip: (
+                    <MetaChip tone={record.website?.submitted ? 'success' : 'neutral'} size="compact">
+                      <Globe aria-hidden="true" size={12} strokeWidth={2} />
+                      {siteHost}
+                    </MetaChip>
+                  )
+                }
+              : {
+                  key: 'site',
+                  static: true,
+                  chip: (
+                    <MetaChip tone="neutral" size="compact">
+                      No website submitted
+                    </MetaChip>
+                  )
+                },
+            ...(profileCells.length > 0
+              ? [
+                  {
+                    key: 'profiles',
+                    chip: (
+                      <MetaChip tone="neutral" size="compact">
+                        <Users aria-hidden="true" size={12} strokeWidth={2} />
+                        Third-party profiles
+                        <span className="tabular-nums text-text-secondary">{profileCells.length}</span>
+                      </MetaChip>
+                    )
+                  }
+                ]
+              : [])
+          ]}
+          detail={(key) =>
+            key === 'site' ? <AttributeCells items={websiteCells} columns={3} className="-mb-px" /> : profilesGrid
+          }
+        />
+      </div>
+    ),
     industry: industryDrawn(ops) ? <IndustryStrip ops={ops} /> : undefined,
     licenses: licencesDrawn(ops) ? <LicenceStrip ops={ops} record={record} onJumpToSource={onJumpToSource} /> : undefined,
     // Each screen its own card, as the financial records are: a search that
@@ -172,22 +279,73 @@ export const GroupedReport = ({
     'screening-watchlist': screens.watchlist.ran ? <WatchlistScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
     'screening-pep': screens.pep.ran ? <PepScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
     'screening-media': screens.media.ran ? <MediaScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
+    // None on file is itself the fact, said in the strip's place.
     liens:
       liens.length > 0 ? (
         <KindStrip label="Liens" rows={attributesFor('liens', record)} statusOf={(i) => liens[i]?.status} onJumpToSource={onJumpToSource} />
-      ) : undefined,
+      ) : (
+        <NoneOnFile label="Liens" text="No liens" record={record} kind="liens" />
+      ),
     litigation:
       cases.length > 0 ? (
         <KindStrip label="Litigations" rows={attributesFor('litigations', record)} statusOf={(i) => cases[i]?.caseStatus} onJumpToSource={onJumpToSource} />
-      ) : undefined,
+      ) : (
+        <NoneOnFile label="Litigations" text="No litigations" record={record} kind="litigation" />
+      ),
     bankruptcy:
       petitions.length > 0 ? (
         <KindStrip label="Bankruptcies" rows={attributesFor('bankruptcies', record)} statusOf={(i) => petitions[i]?.status} onJumpToSource={onJumpToSource} />
-      ) : undefined
+      ) : (
+        <NoneOnFile label="Bankruptcies" text="No bankruptcies" record={record} kind="bankruptcy" />
+      )
   }
 
-  // The cards the record draws at all, and of those, the ones in view.
-  const drawn = REPORT_CARDS.map((c) => ({ card: c, rows: rowsOf(c.id) })).filter(({ card, rows }) => visual[card.id] || rows.length > 0)
+  /* A card the record came back empty for: nothing to draw — no liens, no
+     related businesses — or a screen that ran and returned no hits, or no
+     website at all. It still says so, at the end of the report: what was found
+     reads first. */
+  // A screen counts the results still standing — every one but those an
+  // analyst excluded on the platform, as its chips say.
+  const counts = (screen: 'watchlist' | 'pep' | 'media') =>
+    (screens[screen].hits as Array<{ hit: { status?: string | null } }>).some((h) => !/^excluded$/i.test(h.hit.status ?? ''))
+  const noResults = (id: string) =>
+    id === 'screening-watchlist'
+      ? !counts('watchlist')
+      : id === 'screening-pep'
+        ? !counts('pep')
+        : id === 'screening-media'
+          ? !counts('media')
+          : id === 'website'
+            ? !record.website?.url && !profilesGrid
+            : id === 'liens'
+              ? liens.length === 0
+              : id === 'litigation'
+                ? cases.length === 0
+                : id === 'bankruptcy'
+                  ? petitions.length === 0
+            : !visual[id]
+
+  // The cards the record draws at all, what was found first and the empty ones
+  // after, each in the report's order; of those, the ones in view.
+  const all = REPORT_CARDS.map((c) => ({ card: c, rows: rowsOf(c.id) })).filter(({ card, rows }) => visual[card.id] || rows.length > 0)
+  const byResults = [...all.filter(({ card }) => !noResults(card.id)), ...all.filter(({ card }) => noResults(card.id))]
+  /* The three screens read as one block, where the first of them falls, the
+     ones with hits first; and litigation, where it found anything, straight
+     after them — after PEP — before the rest of the public record. */
+  const isScreen = (id: string) => id.startsWith('screening-')
+  const screenCards = byResults.filter(({ card }) => isScreen(card.id))
+  const at = byResults.findIndex(({ card }) => isScreen(card.id))
+  const others = byResults.filter(({ card }) => !isScreen(card.id))
+  const grouped = at < 0 ? byResults : [...others.slice(0, at), ...screenCards, ...others.slice(at)]
+  const litigation = grouped.find(({ card }) => card.id === 'litigation')
+  const drawn =
+    litigation && screenCards.length > 0 && !noResults('litigation')
+      ? (() => {
+          const rest = grouped.filter((x) => x !== litigation)
+          const last = rest.map(({ card }) => isScreen(card.id)).lastIndexOf(true)
+          return [...rest.slice(0, last + 1), litigation, ...rest.slice(last + 1)]
+        })()
+      : grouped
   const shown = only ? drawn.filter(({ card }) => only.has(card.id)) : drawn
 
   return (
@@ -218,7 +376,6 @@ export const GroupedReport = ({
           key={card.id}
           id={card.id}
           title={card.label}
-          trailing={card.id === 'formation' ? parts.formationChip : undefined}
           visual={visual[card.id]}
           rows={rows}
           record={record}

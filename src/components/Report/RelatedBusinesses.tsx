@@ -1,6 +1,6 @@
 import { Building2 } from 'lucide-react'
 
-import { MetaChip } from '@/core'
+import { HoverCard, HoverCardContent, HoverCardTrigger, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { relatedBusinessesOf } from '../../lib/relatedBusinesses'
@@ -28,6 +28,21 @@ const KINDS: Array<{ id: Kind; label: string }> = [
   { id: 'neighbour', label: 'Shared address only' }
 ]
 
+/** How many businesses a tile's hover names before "+ N more". */
+const SHOWN = 4
+
+/** What a connected business shares with this one, in a few words. */
+const shared = (c: Connection) => {
+  const people = [...(c.people ?? []), ...(c.businesses ?? [])].map((p) => p.name)
+  const addresses = (c.addresses ?? []).length
+  return [
+    people.length > 0 && (people.length <= 2 ? people.join(', ') : `${people.slice(0, 2).join(', ')} + ${people.length - 2}`),
+    addresses > 0 && `${addresses} address${addresses === 1 ? '' : 'es'}`
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
   const connections = record.connections ?? []
   if (connections.length === 0) return null
@@ -42,17 +57,40 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">
       <Strip
-        label="Related businesses"
+        label="Connections"
         tiles={kinds.map((k) => {
-          const n = connections.filter((c) => kindOf(c) === k.id).length
+          const these = connections.filter((c) => kindOf(c) === k.id)
+          const n = these.length
           return {
             key: k.id,
+            // Pointed at, the chip names the businesses connected that way and
+            // what each shares — the people, an address.
             chip: (
-              <MetaChip tone="neutral" size="compact">
-                <Building2 {...icon} />
-                {k.label}
-                <span className="tabular-nums text-text-secondary">{n}</span>
-              </MetaChip>
+              <HoverCard openDelay={300}>
+                <HoverCardTrigger asChild>
+                  <span className="flex">
+                    <MetaChip tone="neutral" size="compact">
+                      <Building2 {...icon} />
+                      {k.label}
+                      <span className="tabular-nums text-text-secondary">{n}</span>
+                    </MetaChip>
+                  </span>
+                </HoverCardTrigger>
+                <HoverCardContent side="top" className="w-72 p-3">
+                  <span className="block text-sm font-medium text-foreground">
+                    {n} business{n === 1 ? '' : 'es'} · {k.label}
+                  </span>
+                  <ul className="mt-1.5 flex flex-col gap-1 text-caption">
+                    {these.slice(0, SHOWN).map((c, i) => (
+                      <li key={c.id ?? i} className="flex flex-col">
+                        <span className="truncate text-foreground">{c.name}</span>
+                        <span className="truncate text-text-secondary">{shared(c)}</span>
+                      </li>
+                    ))}
+                    {n > SHOWN && <li className="text-text-secondary">+ {n - SHOWN} more</li>}
+                  </ul>
+                </HoverCardContent>
+              </HoverCard>
             )
           }
         })}

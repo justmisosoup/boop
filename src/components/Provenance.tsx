@@ -9,7 +9,7 @@ import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/so
 import { WEBSITE_METADATA, faviconFor, readableUrl, sourceLabel } from '../lib/sourceLabels'
 import { screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { CHIP_CLAIM, CHIP_NO_GLYPH } from './chipStyles'
+import { CHIP_CLAIM, CHIP_NO_GLYPH, CHIP_UNVERIFIED } from './chipStyles'
 import { useScreenshotViewer } from './ScreenshotViewer'
 import { registrationSources } from './SourceChip'
 
@@ -35,26 +35,44 @@ import { registrationSources } from './SourceChip'
  * only one that is not independent. The hover says which of the two happened,
  * where the tooltip on the old mark used to.
  */
+/** Sources named once per kind: "SOS: AR, AZ, CA · IRS", not "SOS · AR · SOS ·
+ *  AZ · …" thirteen times. */
+const sourceList = (sources: string[]) => {
+  const kinds = new Map<string, string[]>()
+  for (const x of sources) {
+    const [kind, where] = x.split(' · ')
+    kinds.set(kind, [...(kinds.get(kind) ?? []), ...(where ? [where] : [])])
+  }
+  return [...kinds.entries()].map(([kind, where]) => (where.length > 0 ? `${kind}: ${where.join(', ')}` : kind)).join(' · ')
+}
+
 export const SubmittedChip = ({
   verified,
+  by,
   onJumpToSource
 }: {
   verified?: boolean
+  /** The sources that verify it, named in the preview: how it is verified,
+   *  rather than that it is. */
+  by?: string[]
   onJumpToSource?: (cardId: string) => void
 }) => (
   <ChatSourceChip
-    className={CHIP_CLAIM}
+    // Not verified: the warning tone, with the exclamation mark below.
+    className={verified ? CHIP_CLAIM : CHIP_UNVERIFIED}
     sources={[
       {
         id: 'submitted',
         label: 'Submitted',
         domain: 'Submitted',
-        title: verified ? 'Submitted, verified' : 'Submitted, not verified',
+        title: verified
+          ? by && by.length > 0
+            ? `Verified by ${by.length} source${by.length === 1 ? '' : 's'}`
+            : 'Verified'
+          : 'No source verifies it',
+        // Which ones: the filings and records that state the value.
+        snippet: verified && by && by.length > 0 ? sourceList(by) : undefined,
         onSelect: onJumpToSource ? () => onJumpToSource(SUBMITTED_CARD) : undefined,
-        // One word, on the byline beside "Submitted": the preview cuts anything
-        // longer mid-word, and the chips to the right of this one are the
-        // sources that did the verifying.
-        annotation: verified ? 'Verified' : 'Not verified',
         // No colour on either glyph. Green and amber would rank this cell
         // against the ones beside it, and the report does not grade values —
         // the shape says which of the two things happened.

@@ -63,3 +63,61 @@ export const registrationSources = (
     }
   })
 }
+
+/**
+ * A city business registration as a chip's preview, as a filing's is: the
+ * city leading with its standing as a tag, over the register it is from, and
+ * on hover the name it is registered under, the owner and the account. One
+ * per city and account; from the record's city registrations, or — where the
+ * record carries only the source references — from those.
+ */
+export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[] => {
+  const regs = record.cityRegistrations ?? []
+  if (regs.length > 0) {
+    const seen = new Set<string>()
+    return regs.flatMap((r, i) => {
+      const k = `${r.city}|${r.state}|${r.accountNumber ?? i}`
+      if (seen.has(k)) return []
+      seen.add(k)
+      const same = regs.filter((x) => x.city === r.city && x.state === r.state && x.accountNumber === r.accountNumber)
+      const open = same.some((x) => !x.locationEnd && !x.businessEnd)
+      return [
+        {
+          id: `city-${k}`,
+          label: 'City registration',
+          title: `${r.city}, ${r.state}`,
+          badge: <StatusTag label={open ? 'Active' : 'Closed'} tone={toneOfStatus(open ? 'active' : 'inactive', null)} />,
+          snippet: [
+            r.dba && `DBA: ${r.dba}`,
+            r.owner && `Owner: ${r.owner}`,
+            r.accountNumber && `Account: ${r.accountNumber}`,
+            r.businessStart && `Since ${r.businessStart}`
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          annotation: 'City business registration'
+        }
+      ]
+    })
+  }
+  const refs = (record.names ?? []).flatMap((n) =>
+    (n.sourceRefs ?? []).filter((x) => x.type === 'city_registration').map((x) => ({ name: n.name, ref: x }))
+  )
+  const seen = new Set<string>()
+  return refs.flatMap(({ name, ref }) => {
+    const m = (ref.metadata ?? {}) as { city?: string; state?: string; status?: string }
+    const k = `${m.city}|${m.state}`
+    if (!m.city || seen.has(k)) return []
+    seen.add(k)
+    return [
+      {
+        id: `city-${k}`,
+        label: 'City registration',
+        title: [m.city, m.state].filter(Boolean).join(', '),
+        badge: m.status ? <StatusTag label={m.status} tone={toneOfStatus(m.status.toLowerCase(), null)} /> : undefined,
+        snippet: [`Registered to ${name}`, m.status && `Status: ${m.status}`].filter(Boolean).join(' · '),
+        annotation: 'City business registration'
+      }
+    ]
+  })
+}

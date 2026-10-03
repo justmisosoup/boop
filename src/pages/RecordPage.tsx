@@ -812,9 +812,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 <ReportHero
                   record={record}
                   report={analysis.selected}
-                  brief={brief}
-                  revision={revision}
-                  results={results}
                   controls={
                     <>
                       <AssigneeDropdown businessId={selected.id} />

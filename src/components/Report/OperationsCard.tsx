@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
 
-import { ChatSourceChip, MetaChip } from '@/core'
+import { ChatSourceChip, HoverCard, HoverCardContent, HoverCardTrigger, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
@@ -125,7 +125,13 @@ const corroboration = (
   if (!submitted && filings.length === 0 && others.length === 0) return undefined
   return (
     <span className="flex flex-wrap items-center gap-1">
-      {submitted && <SubmittedChip verified={filings.length > 0 || others.length > 0} onJumpToSource={onJumpToSource} />}
+      {submitted && (
+        <SubmittedChip
+          verified={filings.length > 0 || others.length > 0}
+          by={[...new Set([...filings.map((f) => `SOS · ${f.state}`), ...others])]}
+          onJumpToSource={onJumpToSource}
+        />
+      )}
       {(filings.length > 0 || others.length > 0) && (
         <AttributeSources sources={others} registrations={filings} domesticState={record.formation?.state} refs={refs} onJumpToSource={onJumpToSource} />
       )}
@@ -337,7 +343,13 @@ const locationCell = (
     span: 'full',
     badge: (
       <span className="flex flex-wrap items-center gap-1">
-        {a.submitted && <SubmittedChip verified={filings.length > 0 || others.length > 0} onJumpToSource={onJumpToSource} />}
+        {a.submitted && (
+          <SubmittedChip
+            verified={filings.length > 0 || others.length > 0}
+            by={[...new Set([...filings.map((f) => `SOS · ${f.state}`), ...others])]}
+            onJumpToSource={onJumpToSource}
+          />
+        )}
         {(filings.length > 0 || others.length > 0 || licences.length > 0) && (
           <AttributeSources
             sources={others}
@@ -499,6 +511,9 @@ export const LicenceStrip = ({
  * fact: Submitted, the filings that list it, the licence practised from it,
  * then the address.
  */
+/** How many street lines a place's hover lists before "+ N more". */
+const SHOWN_ADDRESSES = 4
+
 export const LocationsStrip = ({
   ops,
   record,
@@ -520,19 +535,57 @@ export const LocationsStrip = ({
       tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
         const here = at(p)
         const submitted = here.some((a) => a.submitted)
-        const undeliverable = here.some((a) => a.deliverable === false)
         // The mark is the post's: a check where it delivers, an X where
         // it cannot. The colour is the office's — green for the submitted
-        // one, grey for the rest, red wherever the post cannot reach.
+        // one, grey for the rest — and red only where the post reaches none
+        // of the addresses at the place: one bad suite among a city's
+        // offices is that address's problem, shown on its row, not the
+        // city's.
+        const undeliverable = here.length > 0 && here.every((a) => a.deliverable === false)
         const deliverable = here.some((a) => a.deliverable === true)
+        const delivers = here.filter((a) => a.deliverable === true).length
+        const cannot = here.filter((a) => a.deliverable === false).length
         return {
           key: p,
+          // Pointed at, the chip says what is there: how many addresses, the
+          // submitted office among them, what the post says of them, and the
+          // first few street lines.
           chip: (
-            <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
-              {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
-              {p}
-              {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
-            </MetaChip>
+            <HoverCard openDelay={300}>
+              <HoverCardTrigger asChild>
+                <span className="flex">
+                  <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
+                    {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
+                    {p}
+                    {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
+                  </MetaChip>
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" className="w-72 p-3">
+                <span className="block text-sm font-medium text-foreground">{p}</span>
+                <span className="mt-0.5 block text-caption text-text-secondary">
+                  {[
+                    `${here.length} address${here.length === 1 ? '' : 'es'}`,
+                    submitted && 'the submitted office',
+                    delivers > 0 && `${delivers} deliverable`,
+                    cannot > 0 && `${cannot} undeliverable`
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+                <ul className="mt-1.5 flex flex-col gap-0.5 text-caption text-foreground">
+                  {here.slice(0, SHOWN_ADDRESSES).map((a, i) => (
+                    <li key={`${a.fullAddress}-${i}`} className="truncate">
+                      {a.fullAddress.split(',')[0]}
+                      {a.submitted && <span className="text-text-secondary"> · Office</span>}
+                    </li>
+                  ))}
+                  {here.length > SHOWN_ADDRESSES && (
+                    <li className="text-text-secondary">+ {here.length - SHOWN_ADDRESSES} more</li>
+                  )}
+                </ul>
+              </HoverCardContent>
+            </HoverCard>
           )
         }
       })}

@@ -27,3 +27,8 @@ export const ROLLUP_NO_GLYPH = '[&_.-space-x-1]:hidden'
  */
 export const CHIP_CLAIM =
   'bg-[var(--chip-claim-bg)] text-[var(--chip-claim-fg)] hover:bg-[var(--chip-claim-hover-bg)] hover:text-[var(--chip-claim-fg)] data-[state=open]:bg-[var(--chip-claim-hover-bg)] data-[state=open]:text-[var(--chip-claim-fg)]'
+
+/** A submitted value nothing verifies: the warning tone, so it is not read as
+ *  one of the claimed-and-checked values beside it. */
+export const CHIP_UNVERIFIED =
+  'bg-[var(--core-color-status-warning-bg)] text-[var(--core-color-status-warning-fg)] ring-1 ring-inset ring-[var(--core-color-status-warning-border)] hover:bg-[var(--core-color-status-warning-bg)] hover:text-[var(--core-color-status-warning-fg)] data-[state=open]:bg-[var(--core-color-status-warning-bg)] data-[state=open]:text-[var(--core-color-status-warning-fg)]'
