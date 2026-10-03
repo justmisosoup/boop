@@ -1,11 +1,11 @@
-import { Briefcase, PackageOpen } from 'lucide-react'
+import { Briefcase, Check, PackageOpen } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { MetaChip } from '@/core'
 
 import { attributesFor, type AttributeRow } from '../../lib/attributes'
 import type { BusinessRecord } from '../../lib/deriveResults'
-import { AttributeCells } from '../AttributeGrid'
+import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { cellsFromRows } from '../attributeCells'
 import { Strip } from './Strip'
 
@@ -43,11 +43,15 @@ export const KindStrip = ({
   label,
   rows,
   statusOf,
+  empty = [],
   onJumpToSource
 }: {
   label: string
   rows: AttributeRow[]
   statusOf: (i: number) => string | null | undefined
+  /** What was searched and came back with nothing — the tax lien search where
+   *  only UCC liens were found — as a "No results" tile, as a screen's is. */
+  empty?: AttributeCell[]
   onJumpToSource?: (cardId: string) => void
 }) => {
   if (rows.length === 0) return null
@@ -82,7 +86,7 @@ export const KindStrip = ({
   return (
     <Strip
       label={label}
-      tiles={kinds.map((k) => {
+      tiles={[...kinds.map((k) => {
         const [kind, st] = k.split('|')
         const n = rows.filter((r, i) => keyOf(r, i) === k).length
         const open = st === 'Open'
@@ -97,8 +101,22 @@ export const KindStrip = ({
             </MetaChip>
           )
         }
-      })}
-      detail={(k) => (
+      }),
+        ...(empty.length > 0
+          ? [
+              {
+                key: 'none',
+                chip: (
+                  <MetaChip tone="neutral" size="compact">
+                    <Check {...icon} />
+                    No results
+                    <span className="tabular-nums text-text-secondary">{empty.length}</span>
+                  </MetaChip>
+                )
+              }
+            ]
+          : [])]}
+      detail={(k) => k === 'none' ? <AttributeCells className="-mb-px" columns={3} items={empty} /> : (
         <>
           {rows
             .map((row, i) => [row, i] as const)

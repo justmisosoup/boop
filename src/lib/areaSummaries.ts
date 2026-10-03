@@ -317,14 +317,21 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
   const stated = [...lienAmounts, ...judgments].reduce((a, b) => a + b, 0)
   const live = liveLiens.length + bankrupt + judgments.length
   const unstated = liveLiens.length > lienAmounts.length || bankrupt > 0
-  const plural = (n: number, one: string, many: string) => `${n === 1 ? 'one' : n} ${n === 1 ? one : many}`
+  // Small counts as words, so a sentence never mixes "One" and "2".
+  const WORDS = [
+    'no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'
+  ]
+  const word = (n: number) => WORDS[n] ?? String(n)
+  const Word = (n: number) => word(n).charAt(0).toUpperCase() + word(n).slice(1)
+  const plural = (n: number, one: string, many: string) => `${word(n)} ${n === 1 ? one : many}`
   const standingHeadline =
     live > 0
       ? stated > 0
-        ? `${money(stated)} stated owed, across ${plural(live, 'open claim', 'open claims')}`
-        : `${plural(live, 'open claim', 'open claims')} on file, no amount stated`
+        ? `${money(stated)} stated as owed across ${plural(live, 'open claim', 'open claims')}`
+        : `${Word(live)} open ${live === 1 ? 'claim' : 'claims'} on file, with no amount stated`
       : cases > 0
-        ? `${cases} litigation ${cases === 1 ? 'record' : 'records'} on file, no open liens or bankruptcies`
+        ? `${Word(cases)} litigation ${cases === 1 ? 'record' : 'records'} on file, with no open liens or bankruptcies`
         : claims > 0
           ? 'Liens on file, all closed'
           : 'No liens, judgments or bankruptcies'
@@ -332,27 +339,34 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
      closed, whether any of it states an amount. The cards under it name the
      filings. */
   const closedLiens = liens.length - liveLiens.length
-  const taxLiens = liveLiens.filter((l) => /tax/i.test(l.type ?? '')).length
+  // State and federal liens are the tax liens the order's tax lien search
+  // returns; a UCC lien secures a loan.
+  const taxLiens = liveLiens.filter((l) => /^(state|federal)$|tax/i.test(l.type ?? '')).length
+  const lienTotal = money(lienAmounts.reduce((a, b) => a + b, 0))
+  const openLiens =
+    liveLiens.length === 1
+      ? lienAmounts.length === 0
+        ? `The open lien states no amount${taxLiens === 0 ? " and isn't a tax lien" : ''}.`
+        : `The open lien states ${lienTotal}${taxLiens === 0 ? " and isn't a tax lien" : ''}.`
+      : lienAmounts.length === 0
+        ? `None of the open liens states an amount${taxLiens === 0 ? ' or is a tax lien' : ''}.`
+        : `The open liens state ${lienTotal} in total${taxLiens === 0 ? ', and none is a tax lien' : ''}.`
   const standingSummary = [
     liens.length === 0
       ? ''
       : liveLiens.length === 0
-        ? `${liens.length === 1 ? 'One lien, closed' : `${liens.length} liens, all closed`}.`
-        : `${liveLiens.length === 1 ? 'One open lien' : `${liveLiens.length} open liens`}${
-            closedLiens > 0 ? ` and ${closedLiens} closed` : ''
-          }; ${
-            lienAmounts.length === 0
-              ? liveLiens.length === 1
-                ? 'it states no amount'
-                : 'none states an amount'
-              : `${money(lienAmounts.reduce((a, b) => a + b, 0))} stated`
-          }${taxLiens === 0 ? (liveLiens.length === 1 ? ", and it isn't a tax lien" : ', and none is a tax lien') : ''}.`,
+        ? liens.length === 1
+          ? 'One lien is on file, and it is closed.'
+          : `${Word(liens.length)} liens are on file, all closed.`
+        : `${Word(liveLiens.length)} ${liveLiens.length === 1 ? 'lien is' : 'liens are'} open${
+            closedLiens > 0 ? ` and ${word(closedLiens)} ${closedLiens === 1 ? 'is' : 'are'} closed` : ''
+          }. ${openLiens}`,
     cases > 0
-      ? `${cases === 1 ? 'One litigation case' : `${cases} litigation cases`}${
-          judgments.length > 0 ? `, with ${money(judgments.reduce((a, b) => a + b, 0))} in judgments against it` : ', no money judgment'
+      ? `${Word(cases)} litigation ${cases === 1 ? 'case is' : 'cases are'} on file, with ${
+          judgments.length > 0 ? `${money(judgments.reduce((a, b) => a + b, 0))} in judgments against the business` : 'no money judgment'
         }.`
       : '',
-    bankrupt > 0 ? `${bankrupt === 1 ? 'One bankruptcy' : `${bankrupt} bankruptcies`} on file.` : ''
+    bankrupt > 0 ? `${Word(bankrupt)} ${bankrupt === 1 ? 'bankruptcy is' : 'bankruptcies are'} on file.` : ''
   ]
     .filter(Boolean)
     .join(' ')

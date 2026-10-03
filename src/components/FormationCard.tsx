@@ -907,6 +907,8 @@ export const formationParts = (
     formationChip,
     tin: tinCell,
     strip: strip ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName } : undefined,
+    // Its city registrations, under the state filings as Other filings.
+    city: record.cityRegistrations ?? [],
     dbaRule
   }
 }

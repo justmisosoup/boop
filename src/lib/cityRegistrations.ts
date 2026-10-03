@@ -45,9 +45,10 @@ const namesIt = (record: BusinessRecord, r: CityRegistration) =>
     ))
 
 export const withCityRegistrations = (record: BusinessRecord): BusinessRecord => {
-  // A report's snapshot can already carry the whole account from before this
-  // filter; it is filtered the same way.
-  const found = (record.cityRegistrations ?? BY_NAME[nameKey(record.name)])?.filter((r) => namesIt(record, r))
+  // The register as last pulled, ahead of whatever a report's snapshot
+  // carried: a snapshot from before a city was added (Zendesk's Seattle
+  // licence) would hide it. Either is filtered the same way.
+  const found = (BY_NAME[nameKey(record.name)] ?? record.cityRegistrations)?.filter((r) => namesIt(record, r))
   return found ? { ...record, cityRegistrations: found } : record
 }
 

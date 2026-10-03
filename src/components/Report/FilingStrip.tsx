@@ -74,7 +74,7 @@ const toneOf = (reg: Registration): MetaChipTone => (troubled(reg) ? 'warning' :
  *  card's colour as the text, so the one open reads at a glance among twenty
  *  tinted ones. A ring around a chip in a grid of chips read as a focus
  *  outline, not a choice. */
-const selectedStyle = (tone: MetaChipTone) =>
+export const selectedStyle = (tone: MetaChipTone) =>
   ({
     '--core-badge-bg': `var(--core-color-status-${tone}-fg)`,
     '--core-badge-border': `var(--core-color-status-${tone}-fg)`,

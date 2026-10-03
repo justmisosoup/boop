@@ -1187,7 +1187,12 @@ export const SourcesSummary = ({
     ['SEC EDGAR Filings', tags('sec_filing', () => ['SEC'])],
     [
       'City Registrations',
-      tags('city_registration', (s) => unique(metas(s).filter((m) => m.city).map((m) => `${m.city}, ${m.state?.toUpperCase()}`)))
+      tags(
+        'city_registration',
+        (s) => unique(metas(s).filter((m) => m.city).map((m) => `${m.city}, ${m.state?.toUpperCase()}`)),
+        // Active green, closed grey: a closed city registration is history.
+        (s) => (metas(s).some((m) => /^active$/i.test(m.status ?? '')) ? 'success' : 'subtle')
+      )
     ],
     ['SAM Entity Registration', tags('sam_entity_extract', () => ['SAM Registration'], () => 'subtle')],
     ['Small Business Administration records', tags('sba_entity_v2', () => ['SBA Profile'])],

@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
-import { Globe, Users } from 'lucide-react'
+import { Check, Globe, Users } from 'lucide-react'
 
 import { ActionButton, MetaChip, Surface } from '@/core'
 
@@ -10,8 +10,9 @@ import { operationsOf } from '../../lib/operations'
 import { REPORT_CARDS, cardFor } from '../../lib/reportCards'
 import { dismissalOf, screenedOf } from '../../lib/screening'
 import { screenshotFor } from '../../lib/sourceScreenshots'
+import { sameName } from '../../lib/registrationStatus'
 import type { Kind } from '../../lib/timeline/types'
-import { AttributeCells } from '../AttributeGrid'
+import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { attributeRowsByGroup } from '../AttributesTab'
 import { cellsFromRows } from '../attributeCells'
 import { CardHeader } from '../CardHeader'
@@ -46,23 +47,54 @@ const searchedOn = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
   return { ran, names }
 }
 
-/** A public record with nothing on file: the strip's label over a plain chip
- *  saying so — "No liens" — that opens nothing, and what the search ran on,
- *  per the order: the business name, and the people where they were searched. */
-const NoneOnFile = ({ label, text, record, kind }: { label: string; text: string; record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
+/**
+ * The searches on a card that has records which came back with nothing: each
+ * search the order ran that found none of its kind — tax liens, where only UCC
+ * liens were found — and each person searched that no record names. The
+ * business name found the records, so it is never one of them.
+ */
+const emptySearches = (
+  record: BusinessRecord,
+  kind: keyof typeof SEARCHES,
+  found: (search: string) => boolean,
+  named: (name: string) => boolean
+): AttributeCell[] => {
   const { ran, names } = searchedOn(record, kind)
+  const sentence = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
+  return [
+    ...ran.filter((r) => !found(r)).map((r, i) => ({ key: `run-${i}`, label: 'Search', values: [{ value: sentence(r) }] })),
+    ...names.filter((n) => !named(n)).map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] }))
+  ]
+}
+
+/** A public record with nothing on file, as a screen that came back clean is
+ *  drawn: "No results", counting the names searched, opening to them — the
+ *  business name, and the people where the order searched people too. */
+const NoneOnFile = ({ record, kind }: { record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
+  const { ran, names } = searchedOn(record, kind)
+  const searched = [
+    { key: 'business', label: 'Business name', values: [{ value: record.name }] },
+    ...names.map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] })),
+    // Which searches, where the order ran more than one: tax liens and UCC liens.
+    ...(ran.length > 1 ? [{ key: 'ran', label: 'Searched', span: 'full' as const, values: [{ value: ran.join(' and ') }] }] : [])
+  ]
   return (
     <div>
       <Strip
-        label={label}
-        tiles={[{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">{text}</MetaChip> }]}
-        aside={
-          <span className="text-caption text-text-secondary">
-            Searched the business name{names.length > 0 ? ` and ${names.length === 1 ? names[0] : `${names.length} people`}` : ''}
-            {ran.length > 1 ? ` · ${ran.join(' and ')}` : ''}
-          </span>
-        }
-        detail={() => null}
+        label="Results"
+        tiles={[
+          {
+            key: 'none',
+            chip: (
+              <MetaChip tone="neutral" size="compact">
+                <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+                No results
+                <span className="tabular-nums text-text-secondary">{1 + names.length}</span>
+              </MetaChip>
+            )
+          }
+        ]}
+        detail={() => <AttributeCells items={searched} columns={3} className="-mb-px" />}
       />
     </div>
   )
@@ -302,21 +334,49 @@ export const GroupedReport = ({
     // None on file is itself the fact, said in the strip's place.
     liens:
       liens.length > 0 ? (
-        <KindStrip label="Liens" rows={attributesFor('liens', record)} statusOf={(i) => liens[i]?.status} onJumpToSource={onJumpToSource} />
+        <KindStrip
+          label="Results"
+          rows={attributesFor('liens', record)}
+          statusOf={(i) => liens[i]?.status}
+          empty={emptySearches(
+            record,
+            'liens',
+            (search) =>
+              // State and federal liens are what the tax lien search returns.
+              /tax/i.test(search)
+                ? liens.some((l) => /^(state|federal)$|tax/i.test(l.type ?? ''))
+                : /ucc/i.test(search)
+                  ? liens.some((l) => /ucc/i.test(l.type ?? ''))
+                  : true,
+            (name) => liens.some((l) => (l.debtors ?? []).some((d) => sameName(d.name, name)))
+          )}
+          onJumpToSource={onJumpToSource}
+        />
       ) : (
-        <NoneOnFile label="Liens" text="No liens" record={record} kind="liens" />
+        <NoneOnFile record={record} kind="liens" />
       ),
     litigation:
       cases.length > 0 ? (
-        <KindStrip label="Litigations" rows={attributesFor('litigations', record)} statusOf={(i) => cases[i]?.caseStatus} onJumpToSource={onJumpToSource} />
+        <KindStrip
+          label="Results"
+          rows={attributesFor('litigations', record)}
+          statusOf={(i) => cases[i]?.caseStatus}
+          empty={emptySearches(
+            record,
+            'litigation',
+            () => true,
+            (name) => cases.some((c) => (c.parties ?? []).some((x) => sameName(x.name, name)))
+          )}
+          onJumpToSource={onJumpToSource}
+        />
       ) : (
-        <NoneOnFile label="Litigations" text="No litigations" record={record} kind="litigation" />
+        <NoneOnFile record={record} kind="litigation" />
       ),
     bankruptcy:
       petitions.length > 0 ? (
-        <KindStrip label="Bankruptcies" rows={attributesFor('bankruptcies', record)} statusOf={(i) => petitions[i]?.status} onJumpToSource={onJumpToSource} />
+        <KindStrip label="Results" rows={attributesFor('bankruptcies', record)} statusOf={(i) => petitions[i]?.status} onJumpToSource={onJumpToSource} />
       ) : (
-        <NoneOnFile label="Bankruptcies" text="No bankruptcies" record={record} kind="bankruptcy" />
+        <NoneOnFile record={record} kind="bankruptcy" />
       )
   }
 
