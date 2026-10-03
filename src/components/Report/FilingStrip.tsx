@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import { useContext, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import {
   Building2,
@@ -37,6 +37,7 @@ import {
 } from '../../lib/registrationStatus'
 import { stateName } from '../../lib/states'
 import { cn } from '../../utils/twUtils'
+import { StripExpand } from './Strip'
 import { canonicalRole, nameKey } from '../../lib/attributes'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { Collapsible } from '../Collapsible'
@@ -419,7 +420,8 @@ export const FilingStrip = ({
   const [picked, setSelected] = useState<string | undefined>(undefined)
   // Closed until a state is picked: the tiles are the summary, a state's
   // details are on demand. Clicking the open state again closes them.
-  const [collapsed, setCollapsed] = useState(true)
+  // Led here from the Assistant, the lead filing is open from the start.
+  const [collapsed, setCollapsed] = useState(!useContext(StripExpand))
   const selected = picked ?? lead?.state ?? groups[0]?.state
   // Which of a state's filings is open, where it holds more than one. None
   // picked is its current filing.
@@ -632,7 +634,8 @@ export const FilingStrip = ({
   })
 
   return (
-    <div className={cn('border-t border-[var(--core-color-border-divider)]', className)}>
+    // Over the grid's last dashed rule above it: the line between is solid.
+    <div className={cn('relative -mt-px border-t border-[var(--core-color-border-divider)] bg-card', className)}>
       <div className="px-4 pt-3">
         {/* A label, as the grid's cells are labelled: the section is named,
             not headed. */}

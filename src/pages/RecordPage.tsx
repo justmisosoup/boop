@@ -539,7 +539,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       ?.querySelector<HTMLElement>(`[id^="${cardAnchor(cardId)}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const pendingCard = useRef<string | null>(null)
+  /** The card a chip just led to: its data opens. */
+  const [expandCard, setExpandCard] = useState<{ card: string; n: number }>()
   const jumpToCard = (cardId: string) => {
+    setExpandCard((cur) => ({ card: cardId, n: (cur?.n ?? 0) + 1 }))
     if (!focus || focus.cards.includes(cardId) || focus.cards.some((c) => c.startsWith(`${cardId}-`))) return landOn(cardId)
     pendingCard.current = cardId
     setFocus(null)
@@ -834,6 +837,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 revealed={revealedSet}
                 only={focus ? new Set(focus.cards) : undefined}
                 focus={focus ? { title: focus.title, sentence: focus.sentence, onClear: () => setFocus(null) } : undefined}
+                expand={expandCard}
                 onJumpToSource={jumpToSource}
                 onJumpToTimeline={jumpToTimeline}
               />

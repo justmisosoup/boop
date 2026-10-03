@@ -74,30 +74,41 @@ export const registrationSources = (
 export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[] => {
   const regs = record.cityRegistrations ?? []
   if (regs.length > 0) {
-    const seen = new Set<string>()
-    return regs.flatMap((r, i) => {
-      const k = `${r.city}|${r.state}|${r.accountNumber ?? i}`
-      if (seen.has(k)) return []
-      seen.add(k)
-      const same = regs.filter((x) => x.city === r.city && x.state === r.state && x.accountNumber === r.accountNumber)
+    // One per city: Washington DC licensed Expert Fence six times over — a
+    // business and a salesperson licence under each of three names — and that
+    // is one city's registration, not six rows of "Washington, DC".
+    const cities = [...new Map(regs.map((r) => [`${r.city}|${r.state}`, r] as const)).keys()]
+    return cities.map((k) => {
+      const same = regs.filter((x) => `${x.city}|${x.state}` === k)
+      const r = same[0]
       const open = same.some((x) => !x.locationEnd && !x.businessEnd)
-      return [
-        {
-          id: `city-${k}`,
-          label: 'City registration',
-          title: `${r.city}, ${r.state}`,
-          badge: <StatusTag label={open ? 'Active' : 'Closed'} tone={toneOfStatus(open ? 'active' : 'inactive', null)} />,
-          snippet: [
-            r.dba && `DBA: ${r.dba}`,
-            r.owner && `Owner: ${r.owner}`,
-            r.accountNumber && `Account: ${r.accountNumber}`,
-            r.businessStart && `Since ${r.businessStart}`
-          ]
-            .filter(Boolean)
-            .join(' · '),
-          annotation: 'City business registration'
-        }
-      ]
+      const name = r.state === 'DC' ? `${r.city}, DC` : r.city
+      const distinct = (xs: Array<string | null | undefined>) => [...new Set(xs.filter((x): x is string => Boolean(x)))]
+      const dbas = distinct(same.map((x) => x.dba))
+      const owners = distinct(same.map((x) => x.owner))
+      const accounts = distinct(same.map((x) => x.accountNumber))
+      const since = same.map((x) => x.businessStart ?? x.locationStart).filter(Boolean).sort()[0]
+      const licences = same.some((x) => x.licenseType)
+      return {
+        id: `city-${k}`,
+        // The chip is the city of the registration, as a filing's is its state.
+        label: name,
+        title: name,
+        badge: <StatusTag label={open ? 'Active' : 'Closed'} tone={toneOfStatus(open ? 'active' : 'inactive', null)} />,
+        snippet: [
+          dbas.length > 0 && `DBA: ${dbas.join(', ')}`,
+          owners.length > 0 && `Owner: ${owners.join(', ')}`,
+          licences
+            ? `${same.length} licence${same.length === 1 ? '' : 's'}, ${same.filter((x) => !x.locationEnd && !x.businessEnd).length} active`
+            : accounts.length === 1
+              ? `Account: ${accounts[0]}`
+              : accounts.length > 1 && `${accounts.length} accounts`,
+          since && `Since ${since}`
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        annotation: 'City Registration'
+      }
     })
   }
   const refs = (record.names ?? []).flatMap((n) =>
@@ -112,11 +123,11 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
     return [
       {
         id: `city-${k}`,
-        label: 'City registration',
-        title: [m.city, m.state].filter(Boolean).join(', '),
+        label: m.state === 'DC' ? `${m.city}, DC` : m.city,
+        title: m.state === 'DC' ? `${m.city}, DC` : m.city,
         badge: m.status ? <StatusTag label={m.status} tone={toneOfStatus(m.status.toLowerCase(), null)} /> : undefined,
         snippet: [`Registered to ${name}`, m.status && `Status: ${m.status}`].filter(Boolean).join(' · '),
-        annotation: 'City business registration'
+        annotation: 'City Registration'
       }
     ]
   })

@@ -123,19 +123,17 @@ const corroboration = (
   const others = [...new Set(held.flatMap((h) => provenanceList(h)))].filter((n) => !NOT_CORROBORATING.test(n))
   const refs = held.flatMap((h) => h.sourceRefs ?? []).filter((r) => r.type !== 'registration' && !/fmcsa/i.test(r.type))
   if (!submitted && filings.length === 0 && others.length === 0) return undefined
+  // One chip: the customer's claim, where it is theirs, with the filings and
+  // records that verify it under it.
   return (
-    <span className="flex flex-wrap items-center gap-1">
-      {submitted && (
-        <SubmittedChip
-          verified={filings.length > 0 || others.length > 0}
-          by={[...new Set([...filings.map((f) => `SOS · ${f.state}`), ...others])]}
-          onJumpToSource={onJumpToSource}
-        />
-      )}
-      {(filings.length > 0 || others.length > 0) && (
-        <AttributeSources sources={others} registrations={filings} domesticState={record.formation?.state} refs={refs} onJumpToSource={onJumpToSource} />
-      )}
-    </span>
+    <AttributeSources
+      sources={others}
+      registrations={filings}
+      domesticState={record.formation?.state}
+      refs={refs}
+      submitted={submitted ? { verified: filings.length > 0 || others.length > 0 } : undefined}
+      onJumpToSource={onJumpToSource}
+    />
   )
 }
 
@@ -276,12 +274,22 @@ const isActive = (s?: string) => /active/i.test(s ?? '') && !/inactive/i.test(s 
  * card in Sources; the name and an address carry Submitted when they are the
  * customer's.
  */
+/** The licence as a source entry, for the claim chip it verifies. */
+const licenceSource = (l: StateLicence, onJumpToSource?: (cardId: string) => void) => ({
+  id: `${l.id}-licence`,
+  label: 'Professional license',
+  domain: 'Professional license',
+  title: [l.state, 'licence', l.number].filter(Boolean).join(' '),
+  annotation: `${licenceTypeText(l.type)} licence`.trim(),
+  onSelect: onJumpToSource ? () => onJumpToSource(namedCard('Professional license')) : undefined
+})
+
 const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => [
   ...l.names.map((n, i) => ({
     key: `${l.id}-name-${i}`,
     label: 'Business name',
     badge: record.names?.some((x) => x.submitted && sameName(x.name, n)) ? (
-      <SubmittedChip verified onJumpToSource={onJumpToSource} />
+      <SubmittedChip verified sources={[licenceSource(l, onJumpToSource)]} onJumpToSource={onJumpToSource} />
     ) : undefined,
     values: [{ value: n }]
   })),
@@ -305,7 +313,7 @@ const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSour
     label: 'Address',
     span: 'full' as const,
     badge: record.addresses.some((x) => x.submitted && x.fullAddress === a) ? (
-      <SubmittedChip verified onJumpToSource={onJumpToSource} />
+      <SubmittedChip verified sources={[licenceSource(l, onJumpToSource)]} onJumpToSource={onJumpToSource} />
     ) : undefined,
     values: [{ value: a }]
   }))
@@ -343,15 +351,9 @@ const locationCell = (
     span: 'full',
     badge: (
       <span className="flex flex-wrap items-center gap-1">
-        {a.submitted && (
-          <SubmittedChip
-            verified={filings.length > 0 || others.length > 0}
-            by={[...new Set([...filings.map((f) => `SOS · ${f.state}`), ...others])]}
-            onJumpToSource={onJumpToSource}
-          />
-        )}
-        {(filings.length > 0 || others.length > 0 || licences.length > 0) && (
+        {(a.submitted || filings.length > 0 || others.length > 0 || licences.length > 0) && (
           <AttributeSources
+            submitted={a.submitted ? { verified: filings.length > 0 || others.length > 0 } : undefined}
             sources={others}
             registrations={filings}
             domesticState={record.formation?.state}

@@ -6,7 +6,7 @@ import { relatedBusinessesOf } from './relatedBusinesses'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
-import { screenedOf, type Screened } from './screening'
+import { dismissalOf, screenedOf, type Screened } from './screening'
 
 /**
  * What each area checks, for this business.
@@ -21,7 +21,39 @@ const NAMES_NO_MEMBERS: ReadonlySet<string> = new Set(['NY'])
 /** One area's finding: the clause on the card, and the sentences under it. */
 export type AreaSummary = { headline: string; summary: string }
 
-/** What the screens returned, as the platform counts them: every hit a hit. */
+/** A screen's results, split by `dismissalOf`: the ones still standing and
+ *  the ones dismissed. */
+const standing = (s: Screened) => ({
+  watchlist: s.watchlist.hits.filter((h) => !dismissalOf('watchlist', h)),
+  pep: s.pep.hits.filter((h) => !dismissalOf('pep', h)),
+  media: s.media.hits.filter((h) => !dismissalOf('media', h))
+})
+const dismissedOf = (s: Screened) => ({
+  watchlist: s.watchlist.hits.filter((h) => dismissalOf('watchlist', h)),
+  pep: s.pep.hits.filter((h) => dismissalOf('pep', h)),
+  media: s.media.hits.filter((h) => dismissalOf('media', h))
+})
+
+/** The screening card's heading: what is left to review, or that what came
+ *  back was dismissed. */
+const screeningHeadline = (s: Screened): string => {
+  const live = standing(s)
+  const n = live.watchlist.length + live.pep.length + live.media.length
+  if (n > 0) return `${n} screening ${n === 1 ? 'result' : 'results'} to review`
+  const gone = dismissedOf(s)
+  const d = gone.watchlist.length + gone.pep.length + gone.media.length
+  if (d === 0) return 'No compliance screening hits'
+  const only = (k: number, one: string, many: string) => (k === d ? (d === 1 ? one : many) : undefined)
+  return (
+    only(gone.watchlist.length, 'Watchlist result dismissed', `${d} watchlist results dismissed`) ??
+    only(gone.pep.length, 'PEP result dismissed', `${d} PEP results dismissed`) ??
+    only(gone.media.length, 'Adverse media result dismissed', `${d} adverse media results dismissed`) ??
+    `${d} screening results dismissed`
+  )
+}
+
+/** What the screens returned: the results still standing, then each one
+ *  dismissed and why. */
 const screeningSummary = (s: Screened): string => {
   const list = (xs: string[]) => (xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`)
   // Up to three names; beyond that the count, so Zendesk's eleven media
@@ -30,19 +62,51 @@ const screeningSummary = (s: Screened): string => {
     const all = [...new Set(hits.map((h) => h.name))]
     return all.length > 3 ? [`${all.length} names`] : all
   }
+  const live = standing(s)
+  const gone = dismissedOf(s)
+  /* A result names someone on a list; the name it was screened against is
+     ours. So the entry is named, with the list. */
+  const watchlistPart = (() => {
+    const hits = live.watchlist
+    if (hits.length === 0) return ''
+    const entries = [...new Set(hits.map((h) => h.hit.entityName ?? 'an unnamed entry'))]
+    const lists = [...new Set(hits.map((h) => h.hit.list.title ?? h.hit.list.abbr).filter((x): x is string => Boolean(x)))]
+    return `${hits.length === 1 ? 'One watchlist result' : `${hits.length} watchlist results`}: ${list(entries.length > 3 ? [`${entries.length} entries`] : entries)}${
+      lists.length === 1 ? `, on the ${lists[0]} list` : ''
+    }, screened against ${list(names(hits))}`
+  })()
   const parts = [
-    s.watchlist.hits.length > 0
-      ? `${s.watchlist.hits.length === 1 ? 'One watchlist hit' : `${s.watchlist.hits.length} watchlist hits`} on ${list(names(s.watchlist.hits))}`
-      : '',
-    s.pep.hits.length > 0 ? `${s.pep.hits.length === 1 ? 'one PEP match' : `${s.pep.hits.length} PEP matches`} on ${list(names(s.pep.hits))}` : '',
-    s.media.hits.length > 0 ? `adverse media on ${list(names(s.media.hits))}` : ''
+    watchlistPart,
+    live.pep.length > 0 ? `${live.pep.length === 1 ? 'one PEP result' : `${live.pep.length} PEP results`} on ${list(names(live.pep))}` : '',
+    live.media.length > 0 ? `adverse media on ${list(names(live.media))}` : ''
   ].filter(Boolean)
-  if (parts.length === 0) {
+  // Each dismissal, in a reviewer's words: which list's result, and why.
+  const dismissals = [
+    ...gone.watchlist.map((h) => {
+      const list = h.hit.list.title ?? h.hit.list.abbr
+      return /^excluded$/i.test(h.hit.status ?? '')
+        ? `Dismissed ${list ? `${list} list ` : ''}result ${h.hit.entityName ?? ''}, excluded on the platform`.replace(/\s+,/, ',')
+        : `Dismissed ${list ? `${list} list ` : ''}result ${h.hit.entityName ?? 'an unnamed entry'} as it does not match ${h.name}`
+    }),
+    ...gone.pep.map((h) =>
+      /^excluded$/i.test((h.hit as { status?: string | null }).status ?? '')
+        ? `Dismissed PEP result ${h.hit.name ?? ''}, excluded on the platform`
+        : `Dismissed PEP result ${h.hit.name ?? 'an unnamed person'} as it does not match ${h.name}`
+    ),
+    ...gone.media.map((h) =>
+      /^excluded$/i.test((h.hit as { status?: string | null }).status ?? '')
+        ? `Dismissed adverse media on ${h.name}, excluded on the platform`
+        : `Dismissed adverse media on ${h.name} as it is ${dismissalOf('media', h)}`
+    )
+  ]
+  const shownDismissals =
+    dismissals.length > 2 ? [...dismissals.slice(0, 2), `${dismissals.length - 2} more dismissed`] : dismissals
+  if (parts.length === 0 && dismissals.length === 0) {
     const people = s.pep.names.length
     return `Nothing on the business or the ${people === 0 ? 'names' : people === 1 ? 'person' : `${people} people`} submitted with it.`
   }
   const sentence = parts.join('; ')
-  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
+  return [sentence && `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`, ...shownDismissals.map((d) => `${d}.`)].filter(Boolean).join(' ')
 }
 
 export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<string, AreaSummary> => {
@@ -302,11 +366,8 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
     [
       'skill-kyb-3',
       {
-        // Counted as the platform counts: every result a screen returned.
-        headline: (() => {
-          const n = screened.watchlist.hits.length + screened.pep.hits.length + screened.media.hits.length
-          return n > 0 ? `${n} screening ${n === 1 ? 'hit' : 'hits'} to review` : 'No compliance screening hits'
-        })(),
+        // What is left to review, or that what came back was dismissed.
+        headline: screeningHeadline(screened),
         summary: screeningSummary(screened)
       }
     ],

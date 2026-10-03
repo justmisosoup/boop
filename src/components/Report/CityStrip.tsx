@@ -18,28 +18,33 @@ const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink
 const absent = <span className="text-text-secondary">{NOT_PROVIDED}</span>
 
 /** Open while any location under it is: no location or business end date. */
-const isOpen = (r: CityRegistration) => !r.locationEnd && !r.businessEnd
+export const isOpen = (r: CityRegistration) => !r.locationEnd && !r.businessEnd
 
 /**
- * A business's city registrations, as its state filings are shown: a tile per
- * city — San Francisco — its status as the tile's mark, and under it, opened
- * from the tile, the registration in the report's cells. Closed until a city
- * is picked; picking the open one again closes it.
+ * One city's registration in the report's cells: what it trades as and whose
+ * it is, side by side and first, then its standing, what it does, and each
+ * location under it — where, then when the registration began beside the first
+ * location's start and end, then its numbers.
  */
-export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; className?: string }) => {
-  const cities = [...new Set(regs.map((r) => r.city))]
-  const [selected, setSelected] = useState(cities[0])
-  const [collapsed, setCollapsed] = useState(true)
-  const detailId = useId()
-  if (cities.length === 0) return null
-
-  const here = regs.filter((r) => r.city === selected)
+export const cityRegistrationCells = (regs: CityRegistration[], city: string): AttributeCell[] => {
+  const here = regs.filter((r) => r.city === city)
   const first = here[0]
   const open = here.some(isOpen)
-
-  /* The registration once — its status, owner, trade name, account — then
-     each location under it: where, its id, when it opened and closed. */
-  const cells: AttributeCell[] = [
+  // One account can trade under several names over time; each is its own value.
+  const dbas = [...new Set(here.map((r) => r.dba).filter((d): d is string => Boolean(d)))]
+  const owners = [...new Set(here.map((r) => r.owner).filter((o): o is string => Boolean(o)))]
+  const licensed = here.some((r) => r.licenseType)
+  return [
+    {
+      key: 'dba',
+      label: 'Doing business as (DBA)',
+      values: dbas.length > 0 ? dbas.map((value) => ({ value })) : [{ value: absent }]
+    },
+    {
+      key: 'owner',
+      label: 'Owner',
+      values: owners.length > 0 ? owners.map((value) => ({ value })) : [{ value: absent }]
+    },
     {
       key: 'status',
       label: 'Status',
@@ -54,27 +59,29 @@ export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; class
         }
       ]
     },
-    { key: 'registered', label: 'Registered', values: [{ value: first.businessStart ? formatDate(first.businessStart) : absent }] },
-    { key: 'dba', label: 'Doing business as (DBA)', values: [{ value: first.dba ?? absent }] },
-    { key: 'owner', label: 'Owner', values: [{ value: first.owner ?? absent }] },
-    {
-      key: 'naics',
-      label: 'NAICS',
-      span: 'full' as const,
-      values: [
-        {
-          value: first.naics ? (
-            <>
-              {first.naics}
-              {naicsTitle(first.naics) && <span className="text-text-secondary"> · {naicsTitle(first.naics)}</span>}
-            </>
-          ) : (
-            absent
-          )
-        }
-      ]
-    },
-    // Each location: where, when it opened and closed, then its numbers.
+    ...(first.naics || !licensed
+      ? [
+          {
+            key: 'naics',
+            label: 'NAICS',
+            span: 'full' as const,
+            values: [
+              {
+                value: first.naics ? (
+                  <>
+                    {first.naics}
+                    {naicsTitle(first.naics) && <span className="text-text-secondary"> · {naicsTitle(first.naics)}</span>}
+                  </>
+                ) : (
+                  absent
+                )
+              }
+            ]
+          }
+        ]
+      : []),
+    // Each location: where, when it opened and closed, then its numbers. A
+    // city that licenses by kind (Washington DC) says what each licence is.
     ...here.flatMap((r, i) => [
       {
         key: `addr-${i}`,
@@ -82,12 +89,33 @@ export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; class
         span: 'full' as const,
         values: [{ value: r.address }]
       },
+      ...(r.licenseType ? [{ key: `type-${i}`, label: 'License type', values: [{ value: r.licenseType }] }] : []),
+      ...(r.activity && !r.naics ? [{ key: `act-${i}`, label: 'Activity', values: [{ value: r.activity }] }] : []),
+      ...(i === 0
+        ? [{ key: 'registered', label: 'Registered', values: [{ value: first.businessStart ? formatDate(first.businessStart) : absent }] }]
+        : []),
       { key: `start-${i}`, label: 'Location start', values: [{ value: r.locationStart ? formatDate(r.locationStart) : absent }] },
       { key: `end-${i}`, label: 'Location end', values: [{ value: r.locationEnd ? formatDate(r.locationEnd) : 'Open' }] },
       { key: `acct-${i}`, label: 'Account number', values: [{ value: r.accountNumber ?? absent }] },
-      { key: `loc-${i}`, label: 'Location ID', values: [{ value: r.locationId ?? absent }] }
+      ...(r.locationId ? [{ key: `loc-${i}`, label: 'Location ID', values: [{ value: r.locationId }] }] : [])
     ])
   ]
+}
+
+/**
+ * A business's city registrations, as its state filings are shown: a tile per
+ * city — San Francisco — its status as the tile's mark, and under it, opened
+ * from the tile, the registration in the report's cells. Closed until a city
+ * is picked; picking the open one again closes it.
+ */
+export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; className?: string }) => {
+  const cities = [...new Set(regs.map((r) => r.city))]
+  const [selected, setSelected] = useState(cities[0])
+  const [collapsed, setCollapsed] = useState(true)
+  const detailId = useId()
+  if (cities.length === 0) return null
+
+  const cells = cityRegistrationCells(regs, selected)
 
   return (
     <div className={cn('border-t border-[var(--core-color-border-divider)]', className)}>

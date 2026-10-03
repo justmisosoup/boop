@@ -21,6 +21,9 @@ import { useScreenshotViewer } from './ScreenshotViewer'
 import { Collapsible } from './Collapsible'
 import { ConnectionSections } from './ConnectionSections'
 import { relatedBusinessesOf } from '../lib/relatedBusinesses'
+import { priorNameRecords } from '../lib/cityRegistrations'
+import { sameName } from '../lib/registrationStatus'
+import { cityRegistrationCells } from './Report/CityStrip'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
@@ -950,18 +953,41 @@ const onePerPerson = (rows: Supplied[]): Supplied[] => {
   })
 }
 
+/**
+ * The registration a city registration card stands for, read out of the city's
+ * own register — the same cells the report shows under Other filings. Its
+ * registrations are the record's, and those under a name it has dropped.
+ */
+const cityRegistrationOf = (s: Source, record?: BusinessRecord) => {
+  if (!record || appTypeOf(s) !== 'city_registration') return []
+  const ids = new Set(s.refs.map((x) => x.id))
+  return [record, ...priorNameRecords(record)]
+    .flatMap((r) => r.cityRegistrations ?? [])
+    .filter((r, i, all) => r.refId && ids.has(r.refId) && all.findIndex((x) => x.locationId === r.locationId && x.refId === r.refId) === i)
+}
+
 /** Any other source, under the app's section names for it. */
-const RecordSections = ({ s }: { s: Source }) => {
+const RecordSections = ({ s, record }: { s: Source; record?: BusinessRecord }) => {
   const groups = sourceGroups(s)
-  const names = s.supplied.get('name') ?? []
+  const regs = cityRegistrationOf(s, record)
+  // The register's own cells already name the business and its owner.
+  const names = regs.length > 0 ? [] : (s.supplied.get('name') ?? [])
   // The Submitted card already holds one entry per person.
-  const people = s.id === SUBMITTED_CARD ? (s.supplied.get('people') ?? []) : onePerPerson(s.supplied.get('people') ?? [])
+  const people = (s.id === SUBMITTED_CARD ? (s.supplied.get('people') ?? []) : onePerPerson(s.supplied.get('people') ?? [])).filter(
+    ({ row }) => !regs.some((r) => sameName(r.owner, row.matchValue ?? row.value))
+  )
   const addresses = s.supplied.get('address') ?? []
   const rest = groups.filter(([g]) => g !== 'name' && g !== 'people' && g !== 'address')
   const details = metaCells(s)
   const type = appTypeOf(s)
   return (
     <>
+      {regs.length > 0 && (
+        <>
+          <CardLabelRow as="h4">Registration details</CardLabelRow>
+          <AttributeCells items={cityRegistrationCells(regs, regs[0].city)} />
+        </>
+      )}
       {(names.length > 0 || details.length > 0) && type !== 'website' && type !== 'profiles' && (
         <>
           <CardLabelRow as="h4">{s.id === SUBMITTED_CARD ? 'Business details' : (DETAILS[type] ?? 'Registration details')}</CardLabelRow>
@@ -1075,7 +1101,7 @@ export const SourceDetail = ({
             <ConnectionSections record={record!} />
           ) : (
             <>
-              <RecordSections s={s} />
+              <RecordSections s={s} record={record} />
               {s.id !== SUBMITTED_CARD && <SourceCaptures items={all} />}
             </>
           )}

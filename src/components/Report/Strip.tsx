@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { createContext, useContext, useId, useState, type ReactNode } from 'react'
 
 import { Text } from '@/core'
 
@@ -13,6 +13,12 @@ export const Label = ({ children }: { children: ReactNode }) => (
     </Text>
   </div>
 )
+
+/**
+ * Strips under it open on their first tile from the start: a card the reader
+ * was just led to from the Assistant, its data shown rather than folded.
+ */
+export const StripExpand = createContext(false)
 
 /**
  * A strip of tiles opening a detail under them — the filing strip's and the
@@ -41,8 +47,10 @@ export const Strip = ({
   open?: string
 }) => {
   const all = [...tiles, ...(more?.tiles ?? [])]
+  // Expanded (`StripExpand`): open on the first tile from the start.
+  const expand = useContext(StripExpand)
   const [selected, setSelected] = useState(open ?? all.find((t) => !t.static)?.key)
-  const [collapsed, setCollapsed] = useState(!open)
+  const [collapsed, setCollapsed] = useState(!open && !(expand && all.some((t) => !t.static)))
   const detailId = useId()
   if (all.length === 0) return null
   const row = (list: Tile[], name: string, after?: ReactNode) => (

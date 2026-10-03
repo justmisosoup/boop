@@ -11,9 +11,10 @@ const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2 } as const
 
 /** Who someone is to the business, as the strip they sit in. */
 const KINDS: Array<{ label: string; holds: (row: AttributeRow) => boolean }> = [
+  { label: 'Owners', holds: (r) => /owner/i.test(r.label) },
   { label: 'Officers', holds: (r) => r.label === 'Officer' },
-  { label: 'Registered agents', holds: (r) => /registered agent/i.test(r.label) },
-  { label: 'People', holds: (r) => r.label !== 'Officer' && !/registered agent/i.test(r.label) }
+  { label: 'Registered agents', holds: (r) => /registered agent/i.test(r.label) && !/owner/i.test(r.label) },
+  { label: 'People', holds: (r) => r.label !== 'Officer' && !/registered agent|owner/i.test(r.label) }
 ]
 
 /**
@@ -25,7 +26,7 @@ const KINDS: Array<{ label: string; holds: (row: AttributeRow) => boolean }> = [
  * strip — the name, their titles, every source that names them.
  */
 export const PeopleStrips = ({ people, ctx }: { people: AttributeRow[]; ctx: CellContext }) => (
-  <div className="border-t border-[var(--core-color-border-divider)]">
+  <div>
     {KINDS.map(({ label, holds }) => {
       const rows = people.filter(holds)
       if (rows.length === 0) return null

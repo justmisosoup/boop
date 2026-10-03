@@ -55,7 +55,7 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
   }
   const kinds = KINDS.filter((k) => connections.some((c) => kindOf(c) === k.id))
   return (
-    <div className="border-b border-[var(--core-color-border-divider)]">
+    <div>
       <Strip
         label="Connections"
         tiles={kinds.map((k) => {

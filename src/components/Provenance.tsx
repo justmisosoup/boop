@@ -46,44 +46,59 @@ const sourceList = (sources: string[]) => {
   return [...kinds.entries()].map(([kind, where]) => (where.length > 0 ? `${kind}: ${where.join(', ')}` : kind)).join(' · ')
 }
 
+/** The customer's claim as a source: the first entry of the chip it sits in.
+ *  `listed` is how many sources follow it in that chip, which are the ways it
+ *  was verified, so they are not named a second time in its own line. */
+const submittedSource = ({
+  verified,
+  by,
+  listed = 0,
+  onJumpToSource
+}: {
+  verified?: boolean
+  by?: string[]
+  listed?: number
+  onJumpToSource?: (cardId: string) => void
+}): ChatSourceData => {
+  return {
+    id: 'submitted',
+    // No domain: the chip reads "Submitted", and the list row is one line.
+    label: 'Submitted',
+    title: verified ? 'Submitted · Verified' : 'Submitted · Not verified',
+    // Which ones, where they are not listed under it: the filings and records
+    // that state the value.
+    snippet: verified && listed === 0 && by && by.length > 0 ? sourceList(by) : undefined,
+    onSelect: onJumpToSource ? () => onJumpToSource(SUBMITTED_CARD) : undefined,
+    // No class on the glyph: it takes the chip's own colour, so the mark and
+    // the word are one object rather than two greys.
+    icon: verified ? <CircleCheck aria-hidden="true" className="size-3" /> : <CircleAlert aria-hidden="true" className="size-3" />
+  }
+}
+
 export const SubmittedChip = ({
   verified,
   by,
+  sources = [],
   onJumpToSource
 }: {
   verified?: boolean
   /** The sources that verify it, named in the preview: how it is verified,
    *  rather than that it is. */
   by?: string[]
+  /** The source chips' own entries for those sources, listed under the claim
+   *  in this one chip — "Submitted +2" — rather than as a second chip beside it. */
+  sources?: ChatSourceData[]
   onJumpToSource?: (cardId: string) => void
 }) => (
   <ChatSourceChip
-    // Not verified: the warning tone, with the exclamation mark below.
+    // Not verified: the warning tone, with the exclamation mark.
     className={verified ? CHIP_CLAIM : CHIP_UNVERIFIED}
+    // Under the claim, each source as the place it is from over what it is —
+    // "San Francisco" over "City Registration", "firebirdyarns.com" over
+    // "Website" — with no host repeated on the second line.
     sources={[
-      {
-        id: 'submitted',
-        label: 'Submitted',
-        domain: 'Submitted',
-        title: verified
-          ? by && by.length > 0
-            ? `Verified by ${by.length} source${by.length === 1 ? '' : 's'}`
-            : 'Verified'
-          : 'No source verifies it',
-        // Which ones: the filings and records that state the value.
-        snippet: verified && by && by.length > 0 ? sourceList(by) : undefined,
-        onSelect: onJumpToSource ? () => onJumpToSource(SUBMITTED_CARD) : undefined,
-        // No colour on either glyph. Green and amber would rank this cell
-        // against the ones beside it, and the report does not grade values —
-        // the shape says which of the two things happened.
-        // No class on the glyph: it takes the chip's own colour, so the mark
-        // and the word are one object rather than two greys.
-        icon: verified ? (
-          <CircleCheck aria-hidden="true" className="size-3" />
-        ) : (
-          <CircleAlert aria-hidden="true" className="size-3" />
-        )
-      }
+      submittedSource({ verified, by, listed: sources.length, onJumpToSource }),
+      ...sources.map((x) => (x.url ? x : { ...x, domain: undefined }))
     ]}
   />
 )
@@ -156,7 +171,12 @@ const APP_CARD: Record<
   string,
   { title: string; subtitle?: (m: { city?: string; state?: string }) => string | undefined; place?: boolean }
 > = {
-  'City registration': { title: 'City Registration', place: true, subtitle: (m) => (m.city && m.state ? `${m.city}, ${stateName(m.state)}` : undefined) },
+  // The city alone, as a reader names it — Washington keeps its DC.
+  'City registration': {
+    title: 'City Registration',
+    place: true,
+    subtitle: (m) => (m.city ? (m.state === 'DC' ? `${m.city}, DC` : m.city) : undefined)
+  },
   Lien: { title: 'Lien Filing', place: true, subtitle: (m) => (m.state ? stateName(m.state) : undefined) },
   'SEC filing': { title: 'SEC EDGAR Filings' },
   'Tax permit': { title: 'Sales Tax Permit', place: true, subtitle: (m) => (m.state ? stateName(m.state) : undefined) },
@@ -209,9 +229,17 @@ export const AttributeSources = ({
   title,
   label,
   extra,
+  submitted,
+  urls,
   onJumpToSource
 }: {
   sources: string[]
+  /** Each source's own page, by source label: its chip links there. */
+  urls?: Record<string, string>
+  /** The customer submitted this value: the chip leads with the claim —
+   *  "Submitted +2" — and lists these sources under it as how it was
+   *  verified. One chip, not a Submitted chip beside a source chip. */
+  submitted?: { verified: boolean; by?: string[] }
   /** Records from registers the row's sources never name — a licence from
    *  the NPI Registry at this address — folded into the same chip, after the
    *  rest: one provenance, not a second citation beside it. */
@@ -241,7 +269,9 @@ export const AttributeSources = ({
   // it. Both the capture and the outbound link hang off this: a capture is of
   // ONE page, and so is a link.
   const isThePage = (name: string) =>
-    PROFILES.has(name) && (href ?? '').toLowerCase().includes(name.toLowerCase())
+    (PROFILES.has(name) && (href ?? '').toLowerCase().includes(name.toLowerCase())) ||
+    // A profile row's one chip: the profile is the page.
+    (name === 'Third-party profiles' && Boolean(href))
 
   // The crawl is the page's source too, on rows that ARE a page: Privacy page,
   // Contact page, and the site itself, which is its home page.
@@ -285,19 +315,46 @@ export const AttributeSources = ({
     url: undefined,
     onSelect: onJumpToSource ? () => onJumpToSource(registrationCard(filings[i])) : undefined
   }))
-  if (sources.length === 0 && origin.length === 0 && !extra?.length) return null
+  if (sources.length === 0 && origin.length === 0 && !extra?.length && !submitted) return null
 
   // A source with a `url` becomes a link chip — the same affordance every other
   // source chip has, rather than an underlined word in the value.
-  const data: ChatSourceData[] = sources.flatMap((name): ChatSourceData | ChatSourceData[] => {
+  const data: ChatSourceData[] = sources
+    .filter((name) => !(submitted && /^submitted$/i.test(sourceLabel(name))))
+    .flatMap((name): ChatSourceData | ChatSourceData[] => {
     // A record — a city registration, a tax permit, a lien, an SEC filing —
     // named as the dashboard's Sources card for it is: the card's title, and
     // its subtitle saying where the record is from.
+    // A source with its own page for this value — the Instagram profile an
+    // email was read off — links to that page, named by it.
+    const own = urls?.[sourceLabel(name)]
+    if (own)
+      return {
+        id: `${name}:${own}`,
+        label: sourceLabel(name),
+        domain: sourceLabel(name),
+        title: readableUrl(own),
+        url: own,
+        icon: (
+          <img
+            src={faviconFor(own)}
+            alt=""
+            className="size-3 rounded-xxs"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.visibility = 'hidden'
+            }}
+          />
+        )
+      }
+
     const cards = appEntries(name, refs ?? [], sourceNames)
     if (cards.length > 0)
       return cards.map((c, i): ChatSourceData => ({
         id: `${name}:${c.subtitle ?? i}`,
-        label: sourceLabel(name),
+        // A city registration's chip is its city — "San Francisco" — as a
+        // filing's is its state.
+        label: sourceLabel(name) === 'City registration' && c.subtitle === 'City Registration' ? c.title : sourceLabel(name),
         title: c.title,
         annotation: c.subtitle,
         onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined
@@ -368,12 +425,10 @@ export const AttributeSources = ({
   // One chip, origin first: the domestic filing the value comes from, then
   // every other record it is attested in. Two chips side by side read as two
   // unrelated citations rather than one provenance.
-  return (
-    <ChatSourceChip
-      className={href ? undefined : CHIP_NO_GLYPH}
-      sources={[...origin, ...data, ...(extra ?? [])]}
-    />
-  )
+  const all = [...origin, ...data, ...(extra ?? [])]
+  if (submitted)
+    return <SubmittedChip verified={submitted.verified} by={submitted.by} sources={all} onJumpToSource={onJumpToSource} />
+  return <ChatSourceChip className={href ? undefined : CHIP_NO_GLYPH} sources={all} />
 }
 
 /**
@@ -388,10 +443,13 @@ export const AttributeSources = ({
 export const RowProvenance = ({
   row,
   domesticState,
+  submitted,
   onJumpToSource
 }: {
   row: AttributeRow
   domesticState?: string | null
+  /** The row is the customer's claim: its sources are listed under it. */
+  submitted?: { verified: boolean; by?: string[] }
   onJumpToSource?: (cardId: string) => void
 }) => {
   // `source` is the single-source form some producers still use; the chip
@@ -412,6 +470,8 @@ export const RowProvenance = ({
         note={row.sourceNote}
         title={row.sourceTitle}
         label={row.label}
+        urls={row.sourceUrls}
+        submitted={submitted}
         onJumpToSource={onJumpToSource}
       />
     </>

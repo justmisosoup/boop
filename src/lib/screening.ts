@@ -400,3 +400,40 @@ export const screenedOf = (record: BusinessRecord): Screened => {
     media: { hits: mediaHits, names: [...businessNames, ...people], ran: Boolean(record.adverseMedia) }
   }
 }
+
+/**
+ * Why a screening result is dismissed, if it is: the platform excluded it, or
+ * the name on the result is not the name it was screened against — a
+ * watchlist entry under another name (U.S. CONNECT, LLC drew CONNECT TELECOM
+ * GENERAL TRADING LLC), a politically exposed person who is someone else.
+ * Adverse media is dismissed where the provider's name match falls under 90%.
+ * One rule, read by the screening cards and the Assistant's summary alike.
+ */
+export const dismissalOf = (
+  screen: Screen,
+  h: ScreenedName & {
+    hit: { status?: string | null; entityName?: string | null; name?: string | null; aliases?: string[] | null; matchScore?: number | null }
+  }
+): string | undefined => {
+  if (/^excluded$/i.test(h.hit.status ?? '')) return 'Excluded on the platform'
+  if (screen === 'watchlist') {
+    const listed = h.hit.entityName ?? ''
+    const names = [listed, ...(h.hit.aliases ?? [])]
+    // The same words in any order: a list writes "RODRIGUEZ, Manuel" for
+    // Manuel Rodriguez.
+    const words = (n: string) => baseName(n).split(' ').filter(Boolean).sort().join(' ')
+    return names.some((n) => n && words(n) === words(h.name)) ? undefined : `${listed || 'The entry'} does not match ${h.name}`
+  }
+  if (screen === 'pep') {
+    const listed = h.hit.name ?? ''
+    return h.kind === 'person' && personMatch(listed, h.name) ? undefined : `${listed || 'The person'} does not match ${h.name}`
+  }
+  // The provider's own confidence that the articles are about the name: under
+  // the line the score's adverse-media cap reads, they are about someone else
+  // — KATHRYN BERNARD's 87% were about the actress Kathryn Bernardo.
+  if (screen === 'media' && typeof h.hit.matchScore === 'number' && h.hit.matchScore < MEDIA_MATCH) {
+    const pct = Math.round(h.hit.matchScore * 100)
+    return `${/^(8|11|18)/.test(String(pct)) ? 'an' : 'a'} ${pct}% name match, not an exact one`
+  }
+  return undefined
+}

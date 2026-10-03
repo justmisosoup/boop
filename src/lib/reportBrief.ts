@@ -7,6 +7,7 @@ import type { BusinessRecord, Derived } from './deriveResults'
 import type { GroupId } from './groups'
 import type { BandId, IdentityScore, ScoreArea } from './identityScore'
 import { REPORT_CARDS, cardAnchor, cardFor } from './reportCards'
+import { webPresenceSummary } from './webPresence'
 import { statusForBand, type ReviewStatus } from './review'
 import { scoreLine } from './scoreReasons'
 import type { Report } from './useAnalysis'
@@ -82,6 +83,9 @@ export const KIND_WORD: Record<RecommendationKind, string> = {
   request: 'Request information from the applicant'
 }
 
+/** The Activity & Permission assessment — industry — which Web presence follows. */
+const INDUSTRY_ASSESSMENT = 'skill-kyb-activity'
+
 export const reportBrief = ({
   version,
   record,
@@ -125,6 +129,19 @@ export const reportBrief = ({
     .map((r) => r.insightId)
   const formationCards = cardsOf(formationCites)
   const headline = 'headline' in version.result ? (version.result as { headline?: string }).headline?.trim() : undefined
+  // The web checks — the website and the third-party profiles — as their own
+  // assessment, under Industry.
+  const webCites = results.filter((r) => !r.notReported && cardFor(r.insightId, groupFor) === 'website').map((r) => r.insightId)
+  const web = webPresenceSummary(record)
+  const webPresenceBlock: BriefCard = {
+    id: 'web-presence',
+    anchor: cardAnchor('website'),
+    title: web.headline,
+    sentence: web.summary || undefined,
+    cites: webCites,
+    cards: webCites.length > 0 ? ['website'] : []
+  }
+
   return {
     lede: headline || undefined,
     determination: score
@@ -162,16 +179,17 @@ export const reportBrief = ({
         cites: formationCites,
         cards: formationCards
       },
-      ...sections.map(({ id, heading, section }) => {
+      ...sections.flatMap(({ id, heading, section }) => {
         // What the assessment carries, less the filing checks — those are the
-        // Formation card's and the Names, Registrations and Tax ID cards'.
+        // Formation card's and the Names, Registrations and Tax ID cards' —
+        // and less the web checks, which are Web presence's.
         const cites = cardRows(section, results)
           .map((r) => r.insightId)
-          .filter((i) => !onFormation.has(i.split(':')[0]))
+          .filter((i) => !onFormation.has(i.split(':')[0]) && cardFor(i, groupFor) !== 'website')
         // The cards its citations reach, in the report's order; the block
         // lands on the first — the data most of the assessment rests on.
         const cards = cardsOf(cites)
-        return {
+        const block: BriefCard = {
           id,
           anchor: cardAnchor(cards[0] ?? 'name'),
           // What the area found, as its name — the block's own header.
@@ -180,7 +198,12 @@ export const reportBrief = ({
           cites,
           cards
         }
-      })
+        // Web presence follows Industry: the site, the third-party profiles
+        // and the business's online reputation, on the Web presence card.
+        return id === INDUSTRY_ASSESSMENT ? [block, webPresenceBlock] : [block]
+      }),
+      // Where the report has no Industry assessment, Web presence still says its piece.
+      ...(sections.some((x) => x.id === INDUSTRY_ASSESSMENT) ? [] : [webPresenceBlock])
     ]
   }
 }

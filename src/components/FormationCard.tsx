@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { ChatSourceChip, HoverCard, HoverCardContent, HoverCardTrigger, Text } from '@/core'
 
 import { currentDomesticRows, formationIdentityRows, maskTin, websiteStatesName, type AttributeRow } from '../lib/attributes'
-import { dbaRequirementNote, dbaRequirementOf, dbaRequirementValue } from '../lib/dbaRequirement'
+import { dbaRequirementNote, dbaRequirementOf } from '../lib/dbaRequirement'
 import { domesticFilingOf, formationCardFilingOf, linkedFormationNote } from '../lib/linkedFormation'
 import {
   convertedFormationNote,
@@ -29,7 +29,8 @@ import { GROUPS, type GroupId } from '../lib/groups'
 import type { AttributeCell } from './AttributeGrid'
 import { attributeRowsByGroup } from './AttributesTab'
 import { cellsFromRows } from './attributeCells'
-import { AttributeSources, SubmittedChip } from './Provenance'
+import { AttributeSources } from './Provenance'
+import { readableUrl } from '../lib/sourceLabels'
 import { cityRegistrationSources } from './SourceChip'
 import { namedCard } from '../lib/sourceCards'
 import { FilingStrip, StatusChip, SubStatusChip, otherStateStandings } from './Report/FilingStrip'
@@ -168,30 +169,50 @@ const dbaRuleCell = (record: BusinessRecord): AttributeCell | undefined => {
   const caption = [r.office && `${r.office.replace(/^the /, '').replace(/^\w/, (c) => c.toUpperCase())}`, r.statute]
     .filter(Boolean)
     .join(' · ')
+  const s = stateName(d.state)
+  /* What the record holds against what the state asks: no DBA on record,
+     however California requires one for a trade name. */
+  const value =
+    r.requirement === 'required'
+      ? d.ownName
+        ? `No DBA needed: the business name is the owner's own name`
+        : d.found
+          ? `DBA filing found; ${s} requires one for a trade name`
+          : `No DBA on record, however ${s} requires a DBA for a trade name`
+      : r.requirement === 'optional'
+        ? `Optional in ${s}`
+        : `No DBA filing in ${s}`
+  // The law, with the page it was confirmed on beside it.
+  const lawChip =
+    r.source && host ? (
+      <ChatSourceChip
+        sources={[
+          {
+            id: `dba-rule-${d.state}`,
+            label: host,
+            domain: host,
+            title: r.statute ?? `${s} DBA rule`,
+            url: r.source,
+            annotation: 'Where the rule was confirmed',
+            badge: <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
+          }
+        ]}
+      />
+    ) : undefined
   return {
     key: 'dba-rule',
-    label: `DBA requirement · ${stateName(d.state)}`,
+    label: `DBA requirement · ${s}`,
     span: 'full',
-    badge:
-      r.source && host ? (
-        <ChatSourceChip
-          sources={[
-            {
-              id: `dba-rule-${d.state}`,
-              label: host,
-              domain: host,
-              title: r.statute ?? `${stateName(d.state)} DBA rule`,
-              url: r.source,
-              annotation: 'Where the rule was confirmed',
-              badge: <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
-            }
-          ]}
-        />
-      ) : undefined,
     values: [
       {
-        value: dbaRequirementValue(r),
-        note: caption ? <span className="text-caption text-text-secondary">{caption}</span> : undefined
+        value,
+        note:
+          caption || lawChip ? (
+            <span className="flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
+              {caption && <span>{caption}</span>}
+              {lawChip}
+            </span>
+          ) : undefined
       }
     ]
   }
@@ -396,6 +417,9 @@ export type FormationParts = {
   strip?: { record: BusinessRecord; lead?: Registration; legalName: string }
   /** A sole proprietor's city registrations, as the state filings are shown. */
   city?: NonNullable<BusinessRecord['cityRegistrations']>
+  /** What the office's state asks of a trade name, for a sole proprietor: an
+   *  "Other filings" chip, beside any city registration. */
+  dbaRule?: AttributeCell
 }
 
 const NO_PARTS: FormationParts = { names: [], formation: [] }
@@ -627,19 +651,17 @@ export const formationParts = (
         // Its own card, so the cell takes the width.
         span: 'full',
         badge: (
-          <span className="flex flex-wrap items-center gap-1">
-            <SubmittedChip verified={Boolean(tinRec.verified) && !tinRec.mismatch} by={['IRS']} onJumpToSource={onJumpToSource} />
-            <AttributeSources
-              sources={['IRS TIN record']}
-              // The chip stays "IRS TIN record"; its preview names whom the IRS
-              // matched the number to — a business name or an individual —
-              // and says so when it matched nobody.
-              title={tinMatch.title}
-              note={tinMatch.note}
-              domesticState={record.formation?.state}
-              onJumpToSource={onJumpToSource}
-            />
-          </span>
+          // The submitted number, and under it the IRS record: its preview
+          // names whom the IRS matched the number to — a business name or an
+          // individual — and says so when it matched nobody.
+          <AttributeSources
+            sources={['IRS TIN record']}
+            submitted={{ verified: Boolean(tinRec.verified) && !tinRec.mismatch }}
+            title={tinMatch.title}
+            note={tinMatch.note}
+            domesticState={record.formation?.state}
+            onJumpToSource={onJumpToSource}
+          />
         ),
         values: [
           {
@@ -651,13 +673,15 @@ export const formationParts = (
 
   const leadCell: AttributeCell = {
     ...lead,
-    // No filing to cite, but the website states the name: Miette
-    // Patisserie's site shows MIETTE PATISSERIE & CONFISERIE.
-    ...(tier === 'submitted' && lead.label === 'Business name' && websiteStatesName(record, record.name)
+    // No filing to cite: the submitted name, verified where the website
+    // states it — Miette Patisserie's site shows MIETTE PATISSERIE &
+    // CONFISERIE.
+    ...(tier === 'submitted' && lead.label === 'Business name'
       ? {
           badge: (
             <AttributeSources
-              sources={['Website']}
+              sources={websiteStatesName(record, record.name) ? ['Website'] : []}
+              submitted={{ verified: websiteStatesName(record, record.name) }}
               domesticState={record.formation?.state}
               onJumpToSource={onJumpToSource}
             />
@@ -747,9 +771,10 @@ export const formationParts = (
           : {})
       }
     }),
-    // A sole proprietor with no filing: what the state of its office asks of a trade name.
-    ...(tier === 'formation' && classifiedSole(record) ? [dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c)) : [])
   ]
+  // A sole proprietor with no filing: what the state of its office asks of a
+  // trade name — under Other filings, not in the grid.
+  const dbaRule = tier === 'formation' && classifiedSole(record) ? dbaRuleCell(record) ?? undefined : undefined
 
   /* The Formation card's tag: its filing, cited once; or Submitted, verified
      where the website states the name. A city registration cites itself on
@@ -765,7 +790,12 @@ export const formationParts = (
         />
       )
     ) : tier === 'submitted' ? (
-      <SubmittedChip verified={websiteStatesName(record, record.name)} onJumpToSource={onJumpToSource} />
+      <AttributeSources
+        sources={websiteStatesName(record, record.name) ? ['Website'] : []}
+        submitted={{ verified: websiteStatesName(record, record.name) }}
+        domesticState={domesticState}
+        onJumpToSource={onJumpToSource}
+      />
     ) : undefined
 
   // No state filing at all, and a city registration in the submitted person's own name.
@@ -784,8 +814,12 @@ export const formationParts = (
   const cityReg = sole
     ? ((record.cityRegistrations ?? []).find((c) => sameName(c.owner, sole.person)) ?? record.cityRegistrations?.[0])
     : undefined
+  // The registration's own reference, so its chip names the city; and the
+  // site by its address.
+  const cityRefs = cityReg?.refId ? [{ id: cityReg.refId, type: 'city_registration', metadata: { city: cityReg.city, state: cityReg.state } }] : []
+  const siteNames = record.website?.url ? { Website: readableUrl(record.website.url) } : undefined
   const cityChip = (
-    <AttributeSources sources={[CITY]} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
+    <AttributeSources sources={[CITY]} refs={cityRefs} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
   )
   const longDate = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', {
@@ -803,9 +837,14 @@ export const formationParts = (
         {
           key: 'dba',
           label: 'Alternative names',
+          // The name the customer submitted, verified where the city
+          // registration carries it.
           badge: (
             <AttributeSources
               sources={websiteStatesName(record, cityReg.dba ?? record.name) ? [CITY, 'Website'] : [CITY]}
+              refs={cityRefs}
+              sourceNames={siteNames}
+              submitted={sameName(cityReg.dba ?? record.name, record.name) ? { verified: true } : undefined}
               domesticState={record.formation?.state}
               onJumpToSource={onJumpToSource}
             />
@@ -819,9 +858,17 @@ export const formationParts = (
         {
           key: 'owner',
           label: 'Owner',
-          badge: cityChip,
-          submitted: record.people.some((p) => p.submitted && sameName(p.name, sole.person)),
-          verified: true,
+          // The person the customer submitted, verified by the city
+          // registration that names them as owner.
+          badge: (
+            <AttributeSources
+              sources={[CITY]}
+              refs={cityRefs}
+              submitted={record.people.some((p) => p.submitted && sameName(p.name, sole.person)) ? { verified: true } : undefined}
+              domesticState={record.formation?.state}
+              onJumpToSource={onJumpToSource}
+            />
+          ),
           values: [{ value: cityReg.owner ?? sole.person }]
         }
       ],
@@ -848,10 +895,10 @@ export const formationParts = (
               }
             ]
           : []),
-        ...[dbaRuleCell(record)].filter((c): c is AttributeCell => Boolean(c))
       ],
       tin: tinCell,
-      city: record.cityRegistrations ?? []
+      city: record.cityRegistrations ?? [],
+      dbaRule: dbaRuleCell(record) ?? undefined
     }
 
   return {
@@ -859,6 +906,7 @@ export const formationParts = (
     formation: formationCells,
     formationChip,
     tin: tinCell,
-    strip: strip ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName } : undefined
+    strip: strip ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName } : undefined,
+    dbaRule
   }
 }

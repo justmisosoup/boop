@@ -8,7 +8,7 @@ import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { operationsOf } from '../../lib/operations'
 import { REPORT_CARDS, cardFor } from '../../lib/reportCards'
-import { screenedOf } from '../../lib/screening'
+import { dismissalOf, screenedOf } from '../../lib/screening'
 import { screenshotFor } from '../../lib/sourceScreenshots'
 import type { Kind } from '../../lib/timeline/types'
 import { AttributeCells } from '../AttributeGrid'
@@ -18,14 +18,14 @@ import { CardHeader } from '../CardHeader'
 import { formationParts } from '../FormationCard'
 import { Para } from '../ReportBody'
 import { useScreenshotViewer } from '../ScreenshotViewer'
-import { CityStrip } from './CityStrip'
+import { OtherFilings } from './OtherFilings'
 import { KindStrip } from './ClaimsStrips'
 import { FilingStrip } from './FilingStrip'
 import { GroupCard } from './GroupCard'
 import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
 import { PeopleStrips } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
-import { Strip } from './Strip'
+import { Strip, StripExpand } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
 
 /** The order packages a public-record search ran under, by card. */
@@ -52,7 +52,7 @@ const searchedOn = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
 const NoneOnFile = ({ label, text, record, kind }: { label: string; text: string; record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
   const { ran, names } = searchedOn(record, kind)
   return (
-    <div className="border-t border-[var(--core-color-border-divider)]">
+    <div>
       <Strip
         label={label}
         tiles={[{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">{text}</MetaChip> }]}
@@ -106,6 +106,7 @@ export const GroupedReport = ({
   revealed,
   only,
   focus,
+  expand,
   onJumpToSource,
   onJumpToTimeline
 }: {
@@ -118,6 +119,8 @@ export const GroupedReport = ({
   only?: ReadonlySet<string>
   /** With `only`: the assessment the report is narrowed to. */
   focus?: ReportFocusBanner
+  /** The card an Assistant chip just led to, opened; `n` counts the jumps. */
+  expand?: { card: string; n: number }
   onJumpToSource?: (cardId: string) => void
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
 }) => {
@@ -174,7 +177,23 @@ export const GroupedReport = ({
   )
 
   const profileCells = cellsOf(byGroup, 'profiles', record, onJumpToSource)
-  const profilesGrid = profileCells.length > 0 ? <AttributeCells items={profileCells} columns={3} className="-mb-px" /> : undefined
+  /* The emails and phone numbers the profiles carry, after the profiles, each
+     with how it was found: one chip listing every page it was read off — the
+     Instagram and Facebook profiles, the website — each linking to it. */
+  const contactCells = cellsFromRows(
+    [...(byGroup.get('website')?.values() ?? [])]
+      .filter((r) => /^(email address|phone number)$/i.test(r.label) && (r.refs ?? []).some((x) => x.type === 'profile'))
+      .filter((r, i, all) => all.findIndex((x) => x.label === r.label && x.value === r.value) === i)
+      .map((r) => ({
+        ...r,
+        sources: [...(r.sources ?? []), ...(r.sourceUrls?.Website && !(r.sources ?? []).includes('Website') ? ['Website'] : [])]
+      })),
+    { domesticState: record.formation?.state, onJumpToSource }
+  )
+  const profilesGrid =
+    profileCells.length > 0 ? (
+      <AttributeCells items={[...profileCells, ...contactCells]} columns={3} className="-mb-px" />
+    ) : undefined
   const siteHost = (() => {
     try {
       return record.website?.url ? new URL(record.website.url).host.replace(/^www\./, '') : undefined
@@ -195,16 +214,17 @@ export const GroupedReport = ({
     // Doing business as and Former names leading the formation grid, then the
     // state filings strip.
     formation:
-      parts.names.length > 0 || parts.formation.length > 0 || parts.city || parts.strip ? (
+      parts.names.length > 0 || parts.formation.length > 0 || parts.city || parts.dbaRule || parts.strip ? (
         <>
           {parts.names.length + parts.formation.length > 0 && (
             <Grid>
               <AttributeCells items={[...parts.names, ...parts.formation]} columns={3} className="-mb-px" />
             </Grid>
           )}
-          {/* A sole proprietor's city registrations, as the state filings are shown. */}
-          {parts.city && <CityStrip regs={parts.city} />}
           {parts.strip && <FilingStrip record={parts.strip.record} lead={parts.strip.lead} legalName={parts.strip.legalName} />}
+          {/* The filings other than the state's, under them: city registrations
+              and a sole proprietor's DBA filing, as chips like the state filings'. */}
+          {((parts.city?.length ?? 0) > 0 || parts.dbaRule) && <OtherFilings city={parts.city} dbaRule={parts.dbaRule} />}
         </>
       ) : undefined,
     tin: parts.tin ? (
@@ -228,7 +248,7 @@ export const GroupedReport = ({
     // and one rolling up the profiles; each opens its cells. No website is
     // itself a fact, stated as a chip that opens nothing.
     website: (
-      <div className="border-t border-[var(--core-color-border-divider)]">
+      <div>
         <Strip
           label="Online"
           tiles={[
@@ -304,10 +324,10 @@ export const GroupedReport = ({
      related businesses — or a screen that ran and returned no hits, or no
      website at all. It still says so, at the end of the report: what was found
      reads first. */
-  // A screen counts the results still standing — every one but those an
-  // analyst excluded on the platform, as its chips say.
+  // A screen counts the results still standing — every one not dismissed,
+  // as its chips say (`dismissalOf`).
   const counts = (screen: 'watchlist' | 'pep' | 'media') =>
-    (screens[screen].hits as Array<{ hit: { status?: string | null } }>).some((h) => !/^excluded$/i.test(h.hit.status ?? ''))
+    (screens[screen].hits as Array<Parameters<typeof dismissalOf>[1]>).some((h) => !dismissalOf(screen, h))
   const noResults = (id: string) =>
     id === 'screening-watchlist'
       ? !counts('watchlist')
@@ -329,23 +349,16 @@ export const GroupedReport = ({
   // after, each in the report's order; of those, the ones in view.
   const all = REPORT_CARDS.map((c) => ({ card: c, rows: rowsOf(c.id) })).filter(({ card, rows }) => visual[card.id] || rows.length > 0)
   const byResults = [...all.filter(({ card }) => !noResults(card.id)), ...all.filter(({ card }) => noResults(card.id))]
-  /* The three screens read as one block, where the first of them falls, the
-     ones with hits first; and litigation, where it found anything, straight
-     after them — after PEP — before the rest of the public record. */
-  const isScreen = (id: string) => id.startsWith('screening-')
-  const screenCards = byResults.filter(({ card }) => isScreen(card.id))
-  const at = byResults.findIndex(({ card }) => isScreen(card.id))
-  const others = byResults.filter(({ card }) => !isScreen(card.id))
-  const grouped = at < 0 ? byResults : [...others.slice(0, at), ...screenCards, ...others.slice(at)]
-  const litigation = grouped.find(({ card }) => card.id === 'litigation')
-  const drawn =
-    litigation && screenCards.length > 0 && !noResults('litigation')
-      ? (() => {
-          const rest = grouped.filter((x) => x !== litigation)
-          const last = rest.map(({ card }) => isScreen(card.id)).lastIndexOf(true)
-          return [...rest.slice(0, last + 1), litigation, ...rest.slice(last + 1)]
-        })()
-      : grouped
+  /* The compliance checks read as one run, in a fixed order: Sanctions, PEP,
+     Adverse media, then Liens, Litigation, Bankruptcy — the screens above the
+     public record. The run sits with what was found where any of it found
+     something, at the end where none did. */
+  const COMPLIANCE = ['screening-watchlist', 'screening-pep', 'screening-media', 'liens', 'litigation', 'bankruptcy']
+  const inRun = ({ card }: (typeof byResults)[number]) => COMPLIANCE.includes(card.id)
+  const run = byResults.filter(inRun).sort((x, y) => COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id))
+  const at = byResults.findIndex(inRun)
+  const rest = byResults.filter((x) => !inRun(x))
+  const drawn = at < 0 ? byResults : [...rest.slice(0, at), ...run, ...rest.slice(at)]
   const shown = only ? drawn.filter(({ card }) => only.has(card.id)) : drawn
 
   return (
@@ -371,19 +384,26 @@ export const GroupedReport = ({
           )}
         </Surface>
       )}
-      {shown.map(({ card, rows }) => (
-        <GroupCard
-          key={card.id}
-          id={card.id}
-          title={card.label}
-          visual={visual[card.id]}
-          rows={rows}
-          record={record}
-          negatives={negatives}
-          revealed={revealed}
-          onJumpToSource={onJumpToSource}
-        />
-      ))}
+      {shown.map(({ card, rows }) => {
+        /* Led here from the Assistant — narrowed to an assessment, or the card
+           a chip landed on — its data opens: each strip on its first tile.
+           Keyed on it, so the card opens afresh each time it is led to. */
+        const open = Boolean(only) || expand?.card === card.id
+        return (
+          <StripExpand.Provider key={`${card.id}:${open ? `open-${focus?.title ?? ''}-${expand?.n ?? ''}` : ''}`} value={open}>
+            <GroupCard
+              id={card.id}
+              title={card.label}
+              visual={visual[card.id]}
+              rows={rows}
+              record={record}
+              negatives={negatives}
+              revealed={revealed}
+              onJumpToSource={onJumpToSource}
+            />
+          </StripExpand.Provider>
+        )
+      })}
     </div>
   )
 }

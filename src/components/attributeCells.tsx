@@ -5,7 +5,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger, Text } from '@/core'
 
 import { corroborated, verifiedBy, type AttributeRow } from '../lib/attributes'
 import type { AttributeCell, AttributeValue } from './AttributeGrid'
-import { RowProvenance, SubmittedChip } from './Provenance'
+import { RowProvenance } from './Provenance'
 import { ProfileIcon } from './ProfileIcon'
 
 export type CellContext = {
@@ -65,14 +65,14 @@ const badgeFor = (row: AttributeRow, ctx: CellContext): ReactNode => {
 
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
+      {/* A submitted value is one chip: the claim, and under it the sources
+          that verify it. */}
       <RowProvenance
         row={row}
         domesticState={ctx.domesticState}
+        submitted={row.submitted ? { verified: corroborated(row), by: verifiedBy(row) } : undefined}
         onJumpToSource={ctx.onJumpToSource}
       />
-      {row.submitted && (
-        <SubmittedChip verified={corroborated(row)} by={verifiedBy(row)} onJumpToSource={ctx.onJumpToSource} />
-      )}
     </span>
   )
 }

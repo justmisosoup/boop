@@ -26,8 +26,23 @@ const nameKey = (name: string) => (name ?? '').toLowerCase().replace(/\s+/g, ' '
  * then Userleap, then Sprig. Sprig's record gets its two Sprig Technologies
  * locations, Userleap's its Userleap one, Mixboard's — the owner — all four.
  */
+// The registers punctuate names their own way: Los Angeles holds Change.org as
+// "CHANGE.ORG.PBC", the record says "CHANGE.ORG, PBC".
+const squash = (n: string | null | undefined) => (n ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+const same = (a: string | null | undefined, b: string | null | undefined) =>
+  sameName(a, b) || (Boolean(squash(a)) && squash(a) === squash(b))
+
 const namesIt = (record: BusinessRecord, r: CityRegistration) =>
-  sameName(r.dba, record.name) || sameName(r.owner, record.name)
+  same(r.dba, record.name) ||
+  same(r.owner, record.name) ||
+  // A licence held under a name Middesk tied to that very registration, with no
+  // trade name of its own: Washington DC's salesperson licences for Expert
+  // Fence were issued to EXERT FENCE INC. A row that trades as another
+  // business's name stays out — Sprig is not Userleap's DBA.
+  (!r.dba &&
+    (record.names ?? []).some(
+      (n) => (n.sourceRefs ?? []).some((x) => x.id === r.refId) && same(n.name, r.owner)
+    ))
 
 export const withCityRegistrations = (record: BusinessRecord): BusinessRecord => {
   // A report's snapshot can already carry the whole account from before this

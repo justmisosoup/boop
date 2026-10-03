@@ -123,8 +123,9 @@ export type BusinessRecord = {
   formation: { date: string; entityType: string; state: string } | null
   /**
    * City registrations, from the city's own register — Middesk supplies only a
-   * reference to one. San Francisco's (DataSF) carries the ownership name, the
-   * DBA, the business account and when it opened. See
+   * reference to one. San Francisco's, Los Angeles', Seattle's and Washington
+   * DC's registers carry the name the account is held under, the DBA, the
+   * account and when it opened. See
    * scripts/pull-city-registrations.ts; merged in by withCityRegistrations.
    */
   cityRegistrations?: Array<{
@@ -143,6 +144,11 @@ export type BusinessRecord = {
     locationStart: string | null
     locationEnd: string | null
     naics: string | null
+    /** The licence category, where the city licenses by kind — Washington DC's
+     *  "Contractor and Construction Services". */
+    licenseType?: string | null
+    /** What the licence or certificate is for, in the register's words. */
+    activity?: string | null
     dataAsOf: string | null
     sourceUrl: string | null
   }>

@@ -197,6 +197,10 @@ export type AttributeRow = {
   sourceTitle?: string
   /** A third-party profile's page, shown as a link on its Sources card. */
   pageUrl?: string
+  /** The page each named source found the value on — Instagram's and
+   *  Facebook's profile pages, the website — so each source's chip links to
+   *  its own page. Keyed by source label. */
+  sourceUrls?: Record<string, string>
   /** A third-party profile's site — `instagram` — for its mark beside the label. */
   profileType?: string
   /** The business name each source on this row carries, by source label —
@@ -865,6 +869,18 @@ const contactSources = (refs: SourceRef[] | undefined, websiteId?: string | null
   return [...new Set(named)]
 }
 
+/** Each source's own page for a contact detail: the profile it was read off,
+ *  by the profile's name, and the website crawled. */
+const contactUrls = (refs: SourceRef[] | undefined, w: { id?: string | null; url?: string | null }): Record<string, string> => {
+  const urls: Record<string, string> = {}
+  for (const r of refs ?? []) {
+    const m = (r.metadata ?? {}) as { type?: string; url?: string }
+    if (r.type === 'profile' && m.type && m.url) urls[profileName(m.type)] ??= m.url
+    else if (r.type === 'website' && (m.url ?? w.url)) urls.Website ??= (m.url ?? w.url) as string
+  }
+  return urls
+}
+
 const profileUrl = (refs: SourceRef[] | undefined) =>
   (refs ?? [])
     .map((r) => (r.type === 'profile' ? (r.metadata as { url?: string })?.url : undefined))
@@ -898,15 +914,41 @@ const profileFields = (p: NonNullable<BusinessRecord['profiles']>[number]): Arra
     flag(type === 'google' && m.status === 'permanently_closed', 'Permanent closure'),
     flag(type === 'yelp' && m.is_claimed === true, 'Business claimed'),
     flag(type === 'yelp' && m.is_closed === true, 'Closed'),
+    // The platform's verified mark on a social account.
+    (type === 'x' || type === 'tiktok') && m.verified === true ? { value: 'Verified account', icon: 'verified' as const } : undefined,
+    flag(type === 'trustpilot' && m.is_claimed === true, 'Profile claimed'),
+    flag(type === 'trustpilot' && m.is_claimed === false, 'Profile not claimed'),
+    flag(type === 'trustpilot' && m.is_closed === true, 'Closed'),
+    // The ratings and scores each platform gives.
     type === 'bbb' && typeof m.bbb_rating === 'string' ? { label: 'BBB rating', value: m.bbb_rating } : undefined,
+    type === 'bbb' && typeof m.is_accredited === 'boolean' ? { value: m.is_accredited ? 'BBB accredited' : 'Not BBB accredited' } : undefined,
+    type === 'trustpilot' && num(m.rating_count) !== undefined && typeof m.trust_score === 'number'
+      ? { label: 'TrustScore', value: String(m.trust_score) }
+      : undefined,
     typeof p.rating === 'number' && (p.ratingCount ?? 0) > 0
       ? { value: `${p.rating} from ${p.ratingCount} review${p.ratingCount === 1 ? '' : 's'}` }
+      : undefined,
+    type === 'trustpilot' && num(m.negative_reviews_count) !== undefined
+      ? { value: `${(m.negative_reviews_count as number).toLocaleString()} negative review${m.negative_reviews_count === 1 ? '' : 's'}` }
+      : undefined,
+    // A review site with nothing on it says so, rather than going quiet.
+    REVIEW_SITES.has(type) && !(typeof p.rating === 'number' && (p.ratingCount ?? 0) > 0) && !(type === 'bbb' && num(m.review_count))
+      ? { value: 'No reviews' }
+      : undefined,
+    type === 'bbb' && typeof m.complaints_total === 'number'
+      ? line(
+          { value: `${m.complaints_total.toLocaleString()} complaint${m.complaints_total === 1 ? '' : 's'}` },
+          typeof m.complaints_closed_past_12_months === 'number' && m.complaints_total > 0
+            ? { value: `${m.complaints_closed_past_12_months} closed in the past 12 months` }
+            : undefined
+        )
       : undefined,
     // Counts that belong together share a line: "107,811 followers · 97
     // following", then "163 posts · Last post: Sep 19, 2026".
     line(count(m.followers ?? p.followers, 'followers'), count(m.following, 'following')),
     typeof m.company_size === 'string' ? { label: 'Company size', value: m.company_size } : undefined,
-    count(m.likes, 'likes'),
+    line(count(m.likes, 'likes'), count(m.were_here, 'check-ins')),
+    line(count(m.statuses_count, 'posts'), count(m.videos, 'videos')),
     price ? { label: 'Price range', value: price } : undefined,
     line(
       count(m.posts_count, 'posts'),
@@ -916,6 +958,9 @@ const profileFields = (p: NonNullable<BusinessRecord['profiles']>[number]): Arra
     )
   ].filter((x): x is { label?: string; value: string; icon?: 'verified' } => Boolean(x))
 }
+
+/** Platforms whose page is its reviews: no reviews is a fact about them. */
+const REVIEW_SITES = new Set(['trustpilot', 'google', 'yelp', 'bbb', 'facebook'])
 
 /** Two short facts on one line, "·" between; either alone when the other is absent. */
 const line = (...parts: Array<{ label?: string; value: string } | undefined>) => {
@@ -2292,6 +2337,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           sources: contactSources(e.sourceRefs, w.id),
           submitted: e.submitted,
           href: profileUrl(e.sourceRefs),
+          sourceUrls: contactUrls(e.sourceRefs, w),
           refs: e.sourceRefs
         }))
       ]
@@ -2307,6 +2353,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           sources: contactSources(n.sourceRefs, w.id),
           submitted: n.submitted,
           href: profileUrl(n.sourceRefs),
+          sourceUrls: contactUrls(n.sourceRefs, w),
           refs: n.sourceRefs
         }))
       ]
@@ -2362,6 +2409,8 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             // the profiles are kept.
             value: p.name ?? record.name,
             pageUrl: p.url ?? undefined,
+            // The chip opens the profile itself.
+            href: p.url ?? undefined,
             profileType: p.type ?? undefined,
             source: '',
             sources: ['Third-party profiles'],
@@ -2691,12 +2740,23 @@ export const withSourceNames = (record: BusinessRecord) => (row: AttributeRow): 
 export const peopleRows = (record: BusinessRecord, people: BusinessRecord['people'] = record.people): AttributeRow[] =>
   people
     .flatMap((p) => {
+      // The owner a city registration names: Firebird Yarns' San Francisco
+      // registration names Kathryn Bernard as its owner — a role, and a
+      // source that stands behind the person.
+      const owned = (record.cityRegistrations ?? []).filter((r) => r.owner && sameName(r.owner, p.name))
+      const cityOwner = owned.length > 0
+      // Cited to the registration itself, so the Sources tab files the person
+      // on that registration's card rather than on a card of its own.
+      const cityRefs = owned
+        .filter((r) => r.refId && !(p.sourceRefs ?? []).some((x) => x.id === r.refId))
+        .map((r) => ({ id: r.refId as string, type: 'city_registration', metadata: { city: r.city, state: r.state } }))
+        .filter((x, i, all) => all.findIndex((y) => y.id === x.id) === i)
       const base = {
         group: 'people' as const,
         source: p.submitted ? '' : provenance(p),
-        sources: provenanceList(p),
+        sources: [...new Set([...provenanceList(p), ...(cityOwner ? ['City registration'] : [])])],
         submitted: p.submitted,
-        refs: p.sourceRefs,
+        refs: [...(p.sourceRefs ?? []), ...cityRefs],
         matchOn: 'officer' as const,
         matchValue: p.name,
         value: p.name
@@ -2716,9 +2776,10 @@ export const peopleRows = (record: BusinessRecord, people: BusinessRecord['peopl
       const onFilings = record.registrations.some((r) => (r.officerRoles ?? []).some((o) => norm(o.name) === norm(p.name)))
       return [
         ...(agent ? [{ ...base, label: 'Registered agent' }] : []),
+        ...(cityOwner ? [{ ...base, label: 'Owner' }] : []),
         ...(others.length > 0
           ? others.map((t) => ({ ...base, label: roleLabel(t) }))
-          : agent
+          : agent || cityOwner
             ? []
             : [{ ...base, label: p.submitted && !onFilings ? 'Person' : 'Officer' }])
       ]
@@ -2743,7 +2804,7 @@ const titleCase = (title: string) =>
     .join(' ')
 
 /** What someone is to the business rather than a title they hold. */
-const NOT_TITLES = /^(registered agent|person|officer|tax preparer)$/i
+const NOT_TITLES = /^(registered agent|person|officer|tax preparer|owner)$/i
 
 /** A name with its spacing, case and punctuation set aside: "REED STEINER"
  *  and "REEDSTEINER" are one person. */

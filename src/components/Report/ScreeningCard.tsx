@@ -5,7 +5,7 @@ import { ChatSourceChip, MetaChip, type ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
-import { screenedOf, screeningOf, type MediaHit, type PepHit, type Screen, type ScreenedName, type WatchlistHit } from '../../lib/screening'
+import { dismissalOf, screenedOf, screeningOf, type MediaHit, type PepHit, type Screen, type ScreenedName, type WatchlistHit } from '../../lib/screening'
 import { Strip } from './Strip'
 import { AttributeSources } from '../Provenance'
 import { cn } from '../../utils/twUtils'
@@ -126,7 +126,6 @@ const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHi
     <div className="border-b border-[var(--core-color-border-divider)] last:border-b-0">
       <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
         {pct(hit.score, 100) && <span>Match score {pct(hit.score, 100)}</span>}
-        {sources.length > 0 && <ChatSourceChip sources={sources} />}
       </NameRow>
       <AttributeCells
         className="-mb-px"
@@ -142,7 +141,11 @@ const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHi
               }
             ]
           },
-          text('list', 'List', [hit.list.title, hit.list.agency].filter(Boolean).join(' · ')),
+          // The list's chip on the List cell: the entry, the list and the
+          // agency, each opening at the source.
+          text('list', 'List', [hit.list.title, hit.list.agency].filter(Boolean).join(' · '), {
+            badge: sources.length > 0 ? <ChatSourceChip sources={sources} /> : undefined
+          }),
           text('address', 'Address', lines(hit.addresses)),
           text('listed', 'Listed', hit.listedAt ? born(hit.listedAt.slice(0, 10)) : undefined),
           hit.status && !/^included$/i.test(hit.status) ? text('status', 'Status', words(hit.status)) : false
@@ -296,13 +299,13 @@ const nameKey = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim()
 
 /**
  * One screen as chips, as the Addresses card draws its places: the results
- * still standing (Hits), the ones an analyst excluded on the platform
- * (Dismissed — the result's own status, never our judgement), and the names
+ * still standing (Hits), the ones dismissed with the reason (`dismissalOf`:
+ * excluded on the platform, or another name than the one screened), and the names
  * that came back with nothing (No results) — each only where there is one,
  * each opening to its results. Hits open from the start. The counts are the
  * card's only numbers: a separate tally of names screened read against them.
  */
-const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: string | null } }>({
+const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: string | null; entityName?: string | null; name?: string | null; aliases?: string[] | null } }>({
   screen,
   hits,
   record,
@@ -314,9 +317,9 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   block: (h: H, i: number) => ReactNode
 }) => {
   const review = useMemo(() => screeningOf(record), [record])
-  const excluded = (h: H) => /^excluded$/i.test(h.hit.status ?? '')
-  const counted = hits.filter((h) => !excluded(h))
-  const dismissed = hits.filter(excluded)
+  const reasonOf = (h: H) => dismissalOf(screen, h)
+  const counted = hits.filter((h) => !reasonOf(h))
+  const dismissed = hits.filter((h) => reasonOf(h))
   const clean = review.clean.filter((c) => c.screens.includes(screen))
   const tiles = [
     counted.length > 0 && {
@@ -352,7 +355,7 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   ].filter((t): t is { key: string; chip: ReactElement } => Boolean(t))
   if (tiles.length === 0) return null
   return (
-    <div className="border-t border-[var(--core-color-border-divider)]">
+    <div>
       <Strip
         label="Results"
         tiles={tiles}
@@ -361,7 +364,17 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
           key === 'hits' ? (
             <>{counted.map(block)}</>
           ) : key === 'dismissed' ? (
-            <>{dismissed.map(block)}</>
+            <>
+              {dismissed.map((h, i) => (
+                <div key={`${h.hit.id}-${i}`}>
+                  {/* Why it was dismissed, over the result itself. */}
+                  <div className="border-b border-[var(--core-color-border-divider)] px-4 py-2 text-caption text-text-secondary">
+                    Dismissed: {reasonOf(h)}
+                  </div>
+                  {block(h, i)}
+                </div>
+              ))}
+            </>
           ) : (
             <AttributeCells
               className="-mb-px"
