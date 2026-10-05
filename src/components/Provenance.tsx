@@ -5,7 +5,7 @@ import { ChatSourceChip, type ChatSourceData } from '@/core'
 import type { AttributeRow } from '../lib/attributes'
 import type { BusinessRecord, SourceRef } from '../lib/deriveResults'
 import { stateName } from '../lib/states'
-import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
+import { PROFILES, SUBMITTED_CARD, docCard, namedCard, registrationCard, sourceChipCards } from '../lib/sourceCards'
 import { WEBSITE_METADATA, faviconFor, readableUrl, sourceLabel } from '../lib/sourceLabels'
 import { screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
@@ -196,25 +196,27 @@ const COURT = 'Court record · '
 const appEntries = (name: string, refs: SourceRef[], sourceNames?: Record<string, string>) => {
   const card = APP_CARD[sourceLabel(name)]
   if (!card) return []
-  const subtitles = new Set<string | undefined>()
-  for (const ref of refs) {
-    if (sourceLabel(ref.type) !== sourceLabel(name)) continue
-    const m = (ref.metadata ?? {}) as { city?: string; state?: string }
-    subtitles.add(card.subtitle?.({ city: m.city, state: m.state?.toUpperCase() }))
-  }
-  if (subtitles.size === 0) subtitles.add(card.subtitle?.({}))
   // A record from a place leads with the place — "San Francisco, California"
   // over "City Registration" — so a list of them reads as where they are. One
   // with no place — an SEC or EPA record — leads with the business name it
   // carries, as the record states it, over what kind of record it is.
   const entity = sourceNames?.[sourceLabel(name)]
-  return [...subtitles].map((subtitle) =>
+  const entry = (subtitle: string | undefined, target: string) =>
     card.place && subtitle
-      ? { title: subtitle, subtitle: card.title }
+      ? { title: subtitle, subtitle: card.title, target }
       : !card.subtitle && entity
-        ? { title: entity, subtitle: card.title }
-        : { title: card.title, subtitle }
-  )
+        ? { title: entity, subtitle: card.title, target }
+        : { title: card.title, subtitle, target }
+  // One entry per record, each following to its own card: two tax permits in
+  // one state are two permits, and the chip lists both.
+  const mine = refs.filter((ref) => sourceLabel(ref.type) === sourceLabel(name))
+  if (mine.length === 0) return [entry(card.subtitle?.({}), sourceChipCards(name)[0] ?? namedCard(sourceLabel(name)))]
+  return mine
+    .filter((ref, i) => mine.findIndex((x) => x.id === ref.id) === i)
+    .map((ref) => {
+      const m = (ref.metadata ?? {}) as { city?: string; state?: string }
+      return entry(card.subtitle?.({ city: m.city, state: m.state?.toUpperCase() }), docCard(ref.id))
+    })
 }
 
 export const AttributeSources = ({
@@ -351,13 +353,13 @@ export const AttributeSources = ({
     const cards = appEntries(name, refs ?? [], sourceNames)
     if (cards.length > 0)
       return cards.map((c, i): ChatSourceData => ({
-        id: `${name}:${c.subtitle ?? i}`,
+        id: `${name}:${c.target}:${i}`,
         // A city registration's chip is its city — "San Francisco" — as a
         // filing's is its state.
         label: sourceLabel(name) === 'City registration' && c.subtitle === 'City Registration' ? c.title : sourceLabel(name),
         title: c.title,
         annotation: c.subtitle,
-        onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined
+        onSelect: onJumpToSource ? () => onJumpToSource(c.target) : undefined
       }))
 
     // A page chip goes to the page. Sent to its card in the Sources tab, the
@@ -377,7 +379,7 @@ export const AttributeSources = ({
         domain: court,
         title: court,
         annotation: 'Court record',
-        onSelect: onJumpToSource ? () => onJumpToSource(namedCard(sourceLabel(name))) : undefined
+        onSelect: onJumpToSource ? () => onJumpToSource(sourceChipCards(name, refs ?? [])[0] ?? namedCard(sourceLabel(name))) : undefined
       }
 
     // A record source with no page of its own is named by what it carries —
@@ -409,7 +411,7 @@ export const AttributeSources = ({
       // page, the destination is its card in the Sources tab.
       onSelect:
         !linksOut && onJumpToSource
-          ? () => onJumpToSource(namedCard(sourceLabel(name)))
+          ? () => onJumpToSource(sourceChipCards(name, refs ?? [])[0] ?? namedCard(sourceLabel(name)))
           : undefined,
         // What the source is, never the bare word "Source".
         annotation: note ?? (isMetadata ? 'Website metadata' : href ? undefined : sourceLabel(name)),

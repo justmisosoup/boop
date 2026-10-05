@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { Check, Globe, Users } from 'lucide-react'
 
-import { ActionButton, MetaChip, Surface } from '@/core'
+import { ActionButton, ActionLink, MetaChip, Surface } from '@/core'
 
 import { attributesFor, peopleByPerson, peopleRows } from '../../lib/attributes'
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
@@ -26,6 +26,7 @@ import { GroupCard } from './GroupCard'
 import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
 import { PeopleStrips } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
+import { relatedBusinessesOf } from '../../lib/relatedBusinesses'
 import { Strip, StripExpand } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
 
@@ -71,12 +72,10 @@ const emptySearches = (
  *  drawn: "No results", counting the names searched, opening to them — the
  *  business name, and the people where the order searched people too. */
 const NoneOnFile = ({ record, kind }: { record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
-  const { ran, names } = searchedOn(record, kind)
+  const { names } = searchedOn(record, kind)
   const searched = [
     { key: 'business', label: 'Business name', values: [{ value: record.name }] },
-    ...names.map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] })),
-    // Which searches, where the order ran more than one: tax liens and UCC liens.
-    ...(ran.length > 1 ? [{ key: 'ran', label: 'Searched', span: 'full' as const, values: [{ value: ran.join(' and ') }] }] : [])
+    ...names.map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] }))
   ]
   return (
     <div>
@@ -85,10 +84,11 @@ const NoneOnFile = ({ record, kind }: { record: BusinessRecord; kind: keyof type
         tiles={[
           {
             key: 'none',
+            empty: true,
             chip: (
               <MetaChip tone="neutral" size="compact">
                 <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
-                No results
+                No results · Screened
                 <span className="tabular-nums text-text-secondary">{1 + names.length}</span>
               </MetaChip>
             )
@@ -116,8 +116,9 @@ const cellsOf = (
 /** A result reads before an unknown, an unknown before a no-result. */
 const STATE_RANK: Record<string, number> = { result: 0, unknown: 1, no_result: 2 }
 
-/** The assessment the report is narrowed to, as the banner says it. */
-export type ReportFocusBanner = { title: string; sentence?: string; onClear: () => void }
+/** The assessment the report is narrowed to, as the banner says it — and,
+ *  where the area is a workflow, the way to the workflow's own page. */
+export type ReportFocusBanner = { title: string; sentence?: string; href?: string; onClear: () => void }
 
 /**
  * The report, by card.
@@ -237,6 +238,24 @@ export const GroupedReport = ({
   const liens = record.liens ?? []
   const cases = record.litigations ?? []
   const petitions = record.bankruptcies ?? []
+
+  /* How many of a card's things the record holds, beside its title: the
+     liens, the cases, the people, the places. Only where the card is a list
+     of like things — a count of the Formation card's facts, or of an
+     industry's codes, would count nothing a reader is looking for. */
+  const returned = (hits: Array<{ hit: { id: string } }>) => new Set(hits.map((h) => h.hit.id)).size
+  const tally: Partial<Record<string, number>> = {
+    people: people.length,
+    address: ops.locations.length,
+    connections: relatedBusinessesOf(record).length,
+    licenses: ops.stateLicences.length + (ops.licence.required ? ops.licence.found.length : 0),
+    'screening-watchlist': returned(screens.watchlist.hits),
+    'screening-pep': returned(screens.pep.hits),
+    'screening-media': returned(screens.media.hits),
+    liens: liens.length,
+    litigation: cases.length,
+    bankruptcy: petitions.length
+  }
 
   /** Each card's data view, where the record holds something to draw. */
   const visual: Partial<Record<string, ReactNode>> = {
@@ -429,9 +448,17 @@ export const GroupedReport = ({
           <CardHeader
             title={focus.title}
             trailing={
-              <ActionButton variant="secondary" size="compact" onClick={focus.onClear}>
-                Full report
-              </ActionButton>
+              <span className="flex items-center gap-2">
+                {/* The workflow this area is: what it does, and where else it has run. */}
+                {focus.href && (
+                  <ActionLink variant="quiet" size="compact" to={focus.href}>
+                    View workflow
+                  </ActionLink>
+                )}
+                <ActionButton variant="secondary" size="compact" onClick={focus.onClear}>
+                  Full report
+                </ActionButton>
+              </span>
             }
             className="border-b-0 pb-1"
           />
@@ -454,6 +481,7 @@ export const GroupedReport = ({
             <GroupCard
               id={card.id}
               title={card.label}
+              count={tally[card.id]}
               visual={visual[card.id]}
               rows={rows}
               record={record}

@@ -27,6 +27,7 @@ export const groupAnchor = (group: GroupId) => cardAnchor(group)
 export const GroupCard = ({
   id,
   title,
+  count,
   trailing,
   visual,
   rows,
@@ -38,6 +39,9 @@ export const GroupCard = ({
   /** The report card's id (`REPORT_CARDS`). */
   id: string
   title: ReactNode
+  /** How many of the card's things the record holds — liens, people, places —
+   *  beside the title. None, or zero, shows nothing. */
+  count?: number
   /** The identifying tag at the header's edge: the Formation card's filing. */
   trailing?: ReactNode
   /** The group's data view. Absent where the record holds nothing to draw. */
@@ -59,9 +63,21 @@ export const GroupCard = ({
       padding="none"
       className="scroll-mt-6 overflow-hidden"
       role="region"
-      aria-label={typeof title === 'string' ? title : undefined}
+      aria-label={typeof title === 'string' ? (count ? `${title}, ${count}` : title) : undefined}
     >
-      <CardHeader title={title} trailing={trailing} className="border-b-0" />
+      <CardHeader
+        title={
+          count ? (
+            <>
+              {title} <span className="tabular-nums text-text-secondary">{count}</span>
+            </>
+          ) : (
+            title
+          )
+        }
+        trailing={trailing}
+        className="border-b-0"
+      />
       {visual}
       <InsightsDisclosure
         open={rows.some((r) => revealed?.has(r.insightId))}

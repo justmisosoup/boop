@@ -421,6 +421,7 @@ export const FilingStrip = ({
   // Closed until a state is picked: the tiles are the summary, a state's
   // details are on demand. Clicking the open state again closes them.
   // Led here from the Assistant, the lead filing is open from the start.
+  // The one strip that does not open on its first result — Sara, 2026-10-05.
   const [collapsed, setCollapsed] = useState(!useContext(StripExpand))
   const selected = picked ?? lead?.state ?? groups[0]?.state
   // Which of a state's filings is open, where it holds more than one. None

@@ -16,7 +16,10 @@ import { cn } from '../utils/twUtils'
  * and the footnote that used to sit under it, are both this row.
  *
  * H4: the report's card-title size, one step under the assessment headings the
- * rail lists, and the element the outline had when the label was an `h4`.
+ * rail lists, and the element the outline had when the label was an `h4`. Set
+ * in the serif middesk.com sets its headers in, at its one weight (Light, see
+ * theme.css), a step up in size so the light face reads: the card's name is
+ * the report's serif voice, and the body under it stays Suisse.
  */
 export const CardHeader = ({
   title,
@@ -34,7 +37,7 @@ export const CardHeader = ({
       className
     )}
   >
-    <Heading level={4} className="min-w-0">
+    <Heading level={4} className="min-w-0 font-arizona text-base font-light">
       {title}
     </Heading>
     {trailing && <span className="flex shrink-0 items-center">{trailing}</span>}

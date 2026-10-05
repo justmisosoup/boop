@@ -30,7 +30,7 @@ const SCREENS: ReadonlyArray<ReportCard> = [
  * third-party profiles are its web presence, as its site is: one card.
  */
 const MERGED_INTO: Partial<Record<GroupId, GroupId>> = { name: 'formation', registration: 'formation', profiles: 'website' }
-const LABELS: Partial<Record<GroupId, string>> = { formation: 'Formation & registrations', website: 'Web presence' }
+const LABELS: Partial<Record<GroupId, string>> = { formation: 'Registrations', website: 'Web presence' }
 
 export const REPORT_CARDS: ReadonlyArray<ReportCard> = GROUPS.flatMap((g) =>
   g.id === 'screening' ? SCREENS : MERGED_INTO[g.id] ? [] : [{ id: g.id, group: g.id, label: LABELS[g.id] ?? g.label }]

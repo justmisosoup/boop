@@ -309,6 +309,22 @@ that owns it.
 question asked about is not covered, that is a `no_insight_covers_it` entry naming the
 check that would answer it — not a guess.
 
+**A sole proprietorship is filed, or it is likely.** Call a business a sole
+proprietorship only where a specific document states it — usually its Secretary of
+State filing's entity type. The submitted entity type is not a document, even where
+`entity_type` marks it verified ("Entity type is a SOLE PROPRIETORSHIP"); nor is the
+shape of the record (no state filing, a DBA held by a person). Everywhere else it is a
+*likely* sole proprietorship, and so is everything said from it: "the likely sole
+proprietor", "if it is a sole proprietorship, her personal judgments are the
+business's". Entity types are written in sentence case, never the API's capitals.
+
+**Where it operates is a source's to say.** The submitted office is the customer's
+word. A filing in that state, a city registration, a permit or a licence listing the
+address places the business there — name which. Where nothing but the submission does,
+say exactly that: "submitted as operating in Michigan; no authoritative source places it
+there." Never write that it operates in, is based in or works from a state on the
+submission alone.
+
 **Read the insights together.** The value is in what they mean in combination for
 *this kind of business*, not restated one by one. A residential address is ordinary
 for a sole proprietor; a registered-agent address is ordinary for a Delaware

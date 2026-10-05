@@ -31,6 +31,7 @@ export const OtherFilings = ({
         // Over the rule above it, so the line between them is the strip's solid one.
         <div className="relative -mt-px bg-card">
           <Strip
+            closed
             label="Other filings"
             tiles={[
               {

@@ -6,6 +6,7 @@ import { relatedBusinessesOf } from './relatedBusinesses'
 import { nameStandingOf } from './businessNames'
 import { soleProprietorOf } from './soleProprietor'
 import { stateName } from './states'
+import { sourceLabel } from './sourceLabels'
 import { dismissalOf, screenedOf, type Screened } from './screening'
 
 /**
@@ -252,19 +253,33 @@ export const areaSummaries = (record: BusinessRecord, _useCase: string): Map<str
         .join(' ')}${atOffice(l) ? ' at its office' : ''}`
   )
   const stateLicensed = licensed.length > 0 ? `Holds ${list(licensed)}.` : ''
-  const where = !record.registrations.length
-    ? stateLicensed
-      ? ''
-      : 'No state registration shows where it operates.'
-    : !office
+  /* Where it operates, as only an authoritative source can say it. The office
+     is the customer's word; a filing in that state, a city registration or a
+     permit listing it is a record saying so. Where nothing but the submission
+     places it there, that is the finding: Wright Way Customs submitted a Flint,
+     Michigan office and no record puts it in Michigan. */
+  const officeAddress = ops.office ? record.addresses.find((a) => a.submitted && a.state === ops.office!.state) : undefined
+  const others = [...new Set((officeAddress?.sources ?? []).filter((x) => x !== 'registration').map((x) => sourceLabel(x).toLowerCase()))]
+  const filedThere = (officeAddress?.sources ?? []).includes('registration')
+  const placedBy = others.length > 0 ? `${list(others.map((x) => `${article(x)} ${x}`))} ${others.length === 1 ? 'places' : 'place'} it there` : undefined
+  const unplaced = (lead: string) => `${lead}; no authoritative source places it there.`
+  const where = !office
+    ? record.registrations.length
       ? 'No office address submitted.'
-      : ops.office?.verdict === 'active'
-        ? `Registered and active in ${office}, the state of its office.`
-        : ops.office?.verdict === 'inactive'
-          ? `Its registration in ${office}, the state of its office, is inactive.`
-          : ops.office?.verdict === 'not_registered'
-            ? `Not registered in ${office}, the state of its office.`
-            : ''
+      : stateLicensed
+        ? ''
+        : 'No state registration shows where it operates.'
+    : ops.office?.verdict === 'active'
+      ? `Registered and active in ${office}, the state of its office.`
+      : ops.office?.verdict === 'inactive'
+        ? `Its registration in ${office}, the state of its office, is inactive.`
+        : stateLicensed || (ops.office?.verdict !== 'not_registered' && record.registrations.length > 0)
+          ? ''
+          : placedBy
+            ? `Not registered in ${office}, the state of its office; ${placedBy}.`
+            : filedThere
+              ? `Not registered in ${office}, the state of its office, though a filing elsewhere lists the office.`
+              : unplaced(`Submitted as operating in ${office}, where it is not registered`)
   const otherPlaces = ops.locations.filter((a) => !a.submitted).length
   const elsewhere = otherPlaces > 0 ? `${otherPlaces === 1 ? 'One other location' : `${otherPlaces} other locations`} on record.` : ''
   const lic = ops.licence

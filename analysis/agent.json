@@ -144,7 +144,9 @@
         "tin_issued",
         "tin_type",
         "web_business_name_verification",
-        "phone"
+        "phone",
+        "address_verification",
+        "sos_match"
       ]
     },
     {

@@ -1,13 +1,29 @@
-import { Check, CircleAlert } from 'lucide-react'
+import { Check, CircleAlert, Landmark } from 'lucide-react'
 
 import { HoverCard, HoverCardContent, HoverCardTrigger, MetaChip } from '@/core'
 
 import { corroborated, filedName, verifiedBy, type AttributeRow } from '../../lib/attributes'
+import { SubmittedChip } from '../Provenance'
+import { sourceLabel } from '../../lib/sourceLabels'
 import { AttributeCells } from '../AttributeGrid'
 import { cellsFromRows, type CellContext } from '../attributeCells'
 import { Strip } from './Strip'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2 } as const
+/** The mark before a record's line, as the filing preview draws its own. */
+const mark = { 'aria-hidden': true, size: 12, strokeWidth: 1.5, className: 'shrink-0' } as const
+
+/** Every record that names the person: each filing by its state, then the
+ *  other registers by name. What `verifiedBy` lists, plus the sources that
+ *  name without attesting — a found officer is named by a Form 5500 or a
+ *  screening result as much as by a filing. */
+const namedBy = (r: AttributeRow): string[] => {
+  const filings = (r.registrations ?? []).map((f) => (f.state ? `SOS · ${f.state}` : 'SOS'))
+  const others = [...(r.sources ?? []), ...(r.source ? [r.source] : [])]
+    .filter((x) => x && x !== 'Submitted' && x !== 'registration')
+    .map(sourceLabel)
+  return [...new Set([...filings, ...others])]
+}
 
 /** Who someone is to the business, as the strip they sit in. */
 const KINDS: Array<{ label: string; holds: (row: AttributeRow) => boolean }> = [
@@ -53,14 +69,31 @@ export const PeopleStrips = ({ people, ctx }: { people: AttributeRow[]; ctx: Cel
                   </span>
                 </HoverCardTrigger>
                 <HoverCardContent side="top" className="w-64 p-3">
+                  {/* As a cell reads: the claim's chip over the value, then the
+                      titles, then every record that names them, one per line —
+                      the filings by state, the registers by name. */}
+                  {r.submitted && (
+                    <span className="mb-1.5 flex">
+                      <SubmittedChip verified={corroborated(r)} by={verifiedBy(r)} onJumpToSource={ctx.onJumpToSource} />
+                    </span>
+                  )}
                   <span className="block text-sm font-medium text-foreground">{filedName(r.value)}</span>
                   <span className="mt-0.5 block text-caption text-text-secondary">
                     {r.titles?.length ? r.titles.join(' · ') : r.label}
                   </span>
-                  {r.submitted && (
-                    <span className="mt-1 block text-caption text-text-secondary">
-                      {corroborated(r) ? `Submitted · verified by ${verifiedBy(r).join(', ')}` : 'Submitted · no source verifies it'}
-                    </span>
+                  {/* As the filing preview lists what a filing is: a hairline,
+                      then one line per record with its mark. */}
+                  {namedBy(r).length > 0 ? (
+                    <ul className="m-0 mt-1.5 flex list-none flex-col gap-0.5 border-t border-[var(--core-color-border-divider)] p-0 pt-1.5 text-caption text-text-secondary">
+                      {namedBy(r).map((source) => (
+                        <li key={source} className="flex items-center gap-1.5">
+                          <Landmark {...mark} />
+                          {source}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    r.submitted && <span className="mt-1.5 block text-caption text-text-secondary">No source names them</span>
                   )}
                 </HoverCardContent>
               </HoverCard>

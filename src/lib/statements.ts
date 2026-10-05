@@ -16,6 +16,7 @@ import catalog from '../data/catalog.json'
 import { relatedBusinessesOf } from './relatedBusinesses'
 import { entityFallback } from './businessNames'
 import { trueEntityType, type BusinessRecord } from './deriveResults'
+import { entityFormLabel, soleProprietorshipFiled } from './normalise'
 import { watchlistVerdicts } from './watchlist'
 
 const OUTCOME = (catalog as { outcomeOf: Record<string, string> }).outcomeOf
@@ -100,6 +101,29 @@ const WEB: Record<string, Record<string, string | ((message?: string | null) => 
  * sentence with its placeholders filled. It is preferred over the catalog's
  * template for exactly that reason.
  */
+/**
+ * The entity type, as the report says it: sentence case, never the API's
+ * capitals ("Entity type is a CORPORATION"), and a sole proprietorship only
+ * where a filing states it — likely everywhere else. Corrected rather than
+ * repeated, like the PLLC case below, and applied to a held report's snapshot
+ * too (`presented`), so an old report reads the same.
+ */
+export const entityTypeStatement = (record: BusinessRecord): string => {
+  const form = trueEntityType(record)
+  // Stated only where a filing says it; the submitted type is not one.
+  if (form && /sole\s*propriet/i.test(form) && !soleProprietorshipFiled(record)) return 'Entity type is likely a sole proprietorship'
+  // No state filing to say it: Firebird Yarns is a DBA of a person with no
+  // filing, so likely a sole proprietorship, not "unknown". That it is a DBA
+  // is `submitted_name`'s to say, not this row's.
+  if (!form && entityFallback(record) === 'Likely sole proprietorship') return 'Entity type is likely a sole proprietorship'
+  // The form in sentence case, as the Entity type cell reads it: the API says
+  // "Entity type is a CORPORATION" and "Entity type is a UNKNOWN".
+  if (!form || /^unknown$/i.test(form)) return 'Entity type is unknown'
+  const label = String(entityFormLabel(form))
+  const noun = /^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1)
+  return `Entity type is ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`
+}
+
 export const statementFor = (
   key: string,
   subLabel: string,
@@ -114,6 +138,7 @@ export const statementFor = (
    * products. They stay as the fallback for a task that arrives without a
    * message.
    */
+  if (key === 'entity_type') return entityTypeStatement(record)
   if (message && message.trim()) return message
   /**
    * The one place the product's own sentence is corrected rather than repeated.
@@ -137,14 +162,6 @@ export const statementFor = (
     if (verdicts.length > 0 && verdicts.every((v) => !v.valid)) return 'No valid watchlist hits'
   }
 
-  if (key === 'entity_type') {
-    const form = trueEntityType(record)
-    if (form && form !== record.formation?.entityType) return `Entity type is a ${form}`
-    // No state filing to say it: Firebird Yarns is a DBA of a person with no
-    // filing, so likely a sole proprietorship, not "unknown". That it is a DBA
-    // is `submitted_name`'s to say, not this row's.
-    if (!form && entityFallback(record) === 'Likely sole proprietorship') return 'Entity type is likely a sole proprietorship'
-  }
 
   /*
    * The industry row states the classification, not the risk label.

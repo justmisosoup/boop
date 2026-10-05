@@ -22,10 +22,15 @@ export const StripExpand = createContext(false)
 
 /**
  * A strip of tiles opening a detail under them — the filing strip's and the
- * city strip's behaviour: closed until a tile is picked, the picked one
- * closes it again.
+ * city strip's behaviour: the picked tile opens its detail, picking it again
+ * closes it.
+ *
+ * Open from the start on the first result: the industry's classifications,
+ * the submitted office, the first lien. A card that found something shows it
+ * rather than a row of chips to click. A "No results" tile (`empty`) is not a
+ * result, so a strip of nothing else stays closed.
  */
-type Tile = { key: string; chip: ReactNode; static?: boolean }
+type Tile = { key: string; chip: ReactNode; static?: boolean; empty?: boolean }
 
 export const Strip = ({
   label,
@@ -33,7 +38,8 @@ export const Strip = ({
   more,
   aside,
   detail,
-  open
+  open,
+  closed
 }: {
   label: string
   tiles: Tile[]
@@ -45,12 +51,16 @@ export const Strip = ({
   detail: (key: string) => ReactNode
   /** The tile open from the start — the submitted office. */
   open?: string
+  /** Closed until a tile is picked, whatever it holds: the filings — state,
+   *  city, DBA — read as a row of chips first. */
+  closed?: boolean
 }) => {
   const all = [...tiles, ...(more?.tiles ?? [])]
   // Expanded (`StripExpand`): open on the first tile from the start.
   const expand = useContext(StripExpand)
-  const [selected, setSelected] = useState(open ?? all.find((t) => !t.static)?.key)
-  const [collapsed, setCollapsed] = useState(!open && !(expand && all.some((t) => !t.static)))
+  const result = closed ? undefined : all.find((t) => !t.static && !t.empty)
+  const [selected, setSelected] = useState(open ?? result?.key ?? all.find((t) => !t.static)?.key)
+  const [collapsed, setCollapsed] = useState(!open && !result && !(expand && all.some((t) => !t.static)))
   const detailId = useId()
   if (all.length === 0) return null
   const row = (list: Tile[], name: string, after?: ReactNode) => (

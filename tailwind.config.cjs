@@ -55,7 +55,9 @@ module.exports = {
         desk: '1504px'
       },
       fontFamily: {
-        suisse: ["'Suisse Intl'", 'sans-serif']
+        suisse: ["'Suisse Intl'", 'sans-serif'],
+        // middesk.com's header face; see theme.css for the one weight held.
+        arizona: ["'ABC Arizona Serif'", 'serif']
       },
       // Motion scale resolving against `--core-*` tokens in theme.css. Prefer
       // `duration-{fast,standard,slow,slower}` + `ease-{standard,emphasized}`

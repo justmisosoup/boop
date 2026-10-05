@@ -15,9 +15,12 @@ import {
   formationStandingNote,
   NOT_PROVIDED,
   registrationState,
+  article,
   sameName,
   type Registration
 } from '../lib/registrationStatus'
+import { entityTypeShown } from '../lib/normalise'
+import { trueEntityType } from '../lib/deriveResults'
 import { dbasOf, nameStandingOf } from '../lib/businessNames'
 import { priorNamesOf } from '../lib/nameHistory'
 import { formatDate } from '../lib/reportLabels'
@@ -32,7 +35,7 @@ import { cellsFromRows } from './attributeCells'
 import { AttributeSources } from './Provenance'
 import { readableUrl } from '../lib/sourceLabels'
 import { cityRegistrationSources } from './SourceChip'
-import { namedCard } from '../lib/sourceCards'
+import { docCard, namedCard } from '../lib/sourceCards'
 import { FilingStrip, StatusChip, SubStatusChip, otherStateStandings } from './Report/FilingStrip'
 
 /**
@@ -120,14 +123,35 @@ const submittedFoundNote = (record: BusinessRecord): string => {
  * was formed, and that the state publishes no status: how those registries
  * work, not something wrong with the business.
  */
+/**
+ * What the formation is, in the order a reviewer checks it: what it was formed
+ * as, where and when; its status; and whether the filed name is the submitted
+ * one. "The formation filing is still active" said only the second of these.
+ */
 const formationNote = (record: BusinessRecord): string | undefined => {
   const f = formationFilingOf(record)
-  if (f && registrationState(f).silent) {
-    const state = stateName(f.state)
-    const year = /^\d{4}/.test(f.registrationDate ?? '') ? ` in ${f.registrationDate!.slice(0, 4)}` : ''
-    return `Formed in ${state}${year}. ${state} does not publish filing status.`
-  }
-  return formationStandingNote(record)
+  if (!f) return formationStandingNote(record)
+  const state = stateName(f.state)
+  const type = String(entityTypeShown(record, trueEntityType(record) ?? f.entityType ?? record.formation?.entityType) ?? '')
+  const noun = !type || /^unknown$/i.test(type) ? '' : /^[A-Z]{2}/.test(type) ? type : type.charAt(0).toLowerCase() + type.slice(1)
+  const iso = f.registrationDate ?? record.formation?.date
+  const when = iso ? formatDate(iso) : undefined
+  const formed = `Formed${noun ? ` as ${article(noun)} ${noun}` : ''} in ${state}${when ? ` on ${when}` : ''}.`
+  const status = registrationState(f).silent
+    ? `${state} does not publish filing status.`
+    : formationStandingNote(record)
+        ?.replace(/^The formation filing is still active/, 'The filing is active')
+        .replace(/^The formation filing is no longer active/, 'The filing is no longer active')
+  return [formed, status, filedNameNote(record, f)].filter(Boolean).join(' ')
+}
+
+/** Whether the filing's name is the one the customer submitted. */
+const filedNameNote = (record: BusinessRecord, f: Registration) => {
+  const submitted = (record.names ?? []).find((n) => n.submitted)?.name ?? record.name
+  if (!f.name) return undefined
+  return sameName(f.name, submitted)
+    ? 'The filed name matches the submitted business name.'
+    : `It is filed as ${f.name}, not the submitted ${submitted}.`
 }
 
 /**
@@ -153,7 +177,7 @@ const classifiedSoleNote = (record: BusinessRecord): string => {
       ? ' The IRS has no record of the TIN under the business name.'
       : ''
   const dba = dbaRequirementNote(record)
-  return `No formation filing was found; a sole proprietorship does not file one with the state.${irs}${dba ? ` ${dba}` : ''}`
+  return `No formation filing was found; as a likely sole proprietorship, it would not file one with the state.${irs}${dba ? ` ${dba}` : ''}`
 }
 
 /**
@@ -320,7 +344,7 @@ export const formationCardSummary = (
     ? linkedFormationNote(record, linked, stateName)
     : strong
       ? converted
-        ? convertedFormationNote(converted)
+        ? [convertedFormationNote(converted), filedNameNote(record, converted.now)].filter(Boolean).join(' ')
         : [formationNote(record), registrationsNote(record, domestic?.state)].filter(Boolean).join(' ') || undefined
       : sole
         ? /* What was not found, what was, and what it suggests — generic: the
@@ -590,9 +614,20 @@ export const formationParts = (
   ]
   // Each follows to the city registration in Sources — a chip with somewhere
   // to go is a chip that previews.
+  // One chip per city; each registration is its own card in Sources, so the
+  // chip follows to that city's open registration, else its newest.
+  const cityCard = (chipId: string) => {
+    const regs = (record.cityRegistrations ?? []).filter((r) => `city-${r.city}|${r.state}` === chipId && r.refId)
+    const open = regs.find((r) => !r.locationEnd && !r.businessEnd) ?? [...regs].sort((a, b) => (b.locationStart ?? '').localeCompare(a.locationStart ?? ''))[0]
+    if (open?.refId) return docCard(open.refId)
+    const ref = (record.names ?? [])
+      .flatMap((n) => n.sourceRefs ?? [])
+      .find((x) => x.type === 'city_registration' && `city-${(x.metadata as { city?: string }).city}|${(x.metadata as { state?: string }).state}` === chipId)
+    return ref ? docCard(ref.id) : namedCard(CITY)
+  }
   const cityChips = cityRegistrationSources(record).map((c) => ({
     ...c,
-    onSelect: onJumpToSource ? () => onJumpToSource(namedCard(CITY)) : undefined
+    onSelect: onJumpToSource ? () => onJumpToSource(cityCard(c.id)) : undefined
   }))
   const dbaSources = [
     ...new Set([
@@ -899,6 +934,49 @@ export const formationParts = (
       tin: tinCell,
       city: record.cityRegistrations ?? [],
       dbaRule: dbaRuleCell(record) ?? undefined
+    }
+
+  /*
+   * Nothing found at all — no state filing, no city registration, no
+   * sole-proprietor reading — dealt out the way the sole proprietorship is.
+   *
+   * The business as the customer submitted it, verified where its website
+   * states the name, and then what the record does not hold: the form it
+   * takes is unknown, and no filing was found. Miette Patisserie is the case.
+   * The person, address and screened-name rows the submission also carries
+   * are the People, Addresses and Screening cards' own, not this one's.
+   */
+  if (tier === 'submitted')
+    return {
+      names: [
+        {
+          ...(cells.find((c) => c.label === 'Business name') ?? lead),
+          badge: (
+            <AttributeSources
+              sources={websiteStatesName(record, record.name) ? ['Website'] : []}
+              submitted={{ verified: websiteStatesName(record, record.name) }}
+              domesticState={record.formation?.state}
+              onJumpToSource={onJumpToSource}
+            />
+          )
+        }
+      ],
+      formation: [
+        // Our reading of an absence, not a filed fact — so no source chip,
+        // and lighter, as an absence is drawn.
+        {
+          key: 'form',
+          label: 'Entity type',
+          values: [{ value: <span className="text-text-secondary">Unknown</span> }]
+        },
+        {
+          key: 'filing',
+          label: 'Formation filing',
+          values: [{ value: <span className="text-text-secondary">None found</span> }]
+        }
+      ],
+      tin: tinCell,
+      city: record.cityRegistrations ?? []
     }
 
   return {

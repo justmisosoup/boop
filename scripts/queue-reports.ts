@@ -20,6 +20,7 @@ import { deriveResults, presented } from '../src/lib/deriveResults'
 import { heldReportFor } from '../src/lib/heldReports'
 import { composeAssessment } from '../src/lib/library'
 import { ALL } from '../src/lib/records'
+import { entityTypeShown } from '../src/lib/normalise'
 
 const DIR = join(import.meta.dir, '..', 'analysis')
 const args = process.argv.slice(2)
@@ -39,7 +40,8 @@ for (const record of targets) {
     businessId: record.id,
     business: {
       name: record.name,
-      entityType: record.formation?.entityType,
+      // As the page sends it: likely, unless a filing says so.
+      entityType: entityTypeShown(record, record.formation?.entityType),
       state: record.formation?.state,
       formed: record.formation?.date
     },

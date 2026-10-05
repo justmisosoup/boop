@@ -109,7 +109,32 @@ export const cityRegistrationCells = (regs: CityRegistration[], city: string): A
       { key: `end-${i}`, label: licensed ? 'License end' : 'Location end', values: [{ value: r.locationEnd ? formatDate(r.locationEnd) : 'Open' }] },
       { key: `acct-${i}`, label: 'Account number', values: [{ value: r.accountNumber ?? absent }] },
       ...(r.locationId ? [{ key: `loc-${i}`, label: 'Location ID', values: [{ value: r.locationId }] }] : [])
-    ])
+    ]),
+    // The register itself: the city's own page, and when we last read it.
+    ...(first.dataAsOf ? [{ key: 'asof', label: 'Register as of', values: [{ value: formatDate(first.dataAsOf) }] }] : []),
+    ...(first.sourceUrl
+      ? [
+          {
+            key: 'record',
+            label: 'Record',
+            span: 'full' as const,
+            values: [
+              {
+                value: (
+                  <a
+                    href={first.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+                  >
+                    {first.registry}
+                  </a>
+                )
+              }
+            ]
+          }
+        ]
+      : [])
   ]
 }
 

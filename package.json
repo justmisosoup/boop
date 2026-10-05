@@ -5,6 +5,7 @@
   "scripts": {
     "data": "bun run scripts/build-data.ts",
     "drift": "bun run scripts/catalog-drift.ts",
+    "audit:sources": "bun run scripts/audit-sources.ts",
     "dev": "bun run pull && bun run data && vite",
     "build": "vite build",
     "build:refresh": "bun run pull && bun run data && vite build",

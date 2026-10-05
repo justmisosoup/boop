@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 
-import { Heading, MutedText } from '@/core'
+import { MutedText, PageHeading } from '@/core'
 
+import { displayName } from '../../lib/businessNames'
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { reportDate } from '../../lib/reportLabels'
 
@@ -23,9 +24,10 @@ export const ReportHero = ({
 }) => (
   <section aria-label="Report" className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
     <div className="flex min-w-0 flex-col gap-1">
-      <Heading level={2} className="text-3xl font-semibold leading-tight tracking-[-0.01em]">
-        {record.name}
-      </Heading>
+      {/* The Workflows page's H1 treatment: the serif at its one weight. */}
+      <PageHeading level={2} size="lg" weight="normal" className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]">
+        {displayName(record.name)}
+      </PageHeading>
       <MutedText className="text-caption">Report generated on {reportDate(report)}</MutedText>
     </div>
     {controls && <div className="flex shrink-0 items-center gap-2">{controls}</div>}

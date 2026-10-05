@@ -12,7 +12,7 @@
  */
 import { nameEntityTypeOf, trueEntityType, type BusinessRecord, type SourceRef } from './deriveResults'
 import type { GroupId } from './groups'
-import { entityFormLabel } from './normalise'
+import { entityFormLabel, entityTypeShown } from './normalise'
 import { dbaOfAnotherOf, dbaOwnerOf, isBusinessName, nameStandingOf, ownDbas, submittedNameOf, type Dba } from './businessNames'
 import { convertedFormationOf, formationConfirmed, formationFilingOf, NOT_PROVIDED, registrationState, sameName, subStatusLabel } from './registrationStatus'
 import { judgeHit } from './watchlist'
@@ -150,6 +150,13 @@ export type AttributeRow = {
    * Nov 17, 2003". The line a reader scans a list of records by.
    */
   meta?: string[]
+  /**
+   * The one document this row is — a lien, a court case, a petition, a
+   * profile. Rows are merged on label and value, and ten cases titled "Dept.
+   * of Revenue vs. C & N TRUCKING LLC" are ten documents, not one value said
+   * ten times.
+   */
+  docId?: string
   /** Readings of ours, one per line, shown only as evidence (see `evidenceNote`). */
   evidenceFields?: Array<{ label?: string; value: string }>
   /**
@@ -672,7 +679,7 @@ const formationRows = (record: BusinessRecord): AttributeRow[] => {
       // A filing that says UNKNOWN has not given one: Zions Bank's Idaho filing.
       /^unknown$/i.test(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType ?? '')
         ? NOT_PROVIDED
-        : entityFormLabel(trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
+        : entityTypeShown(record, trueEntityType(record) ?? domestic?.entityType ?? record.formation.entityType),
       undefined,
       // Every filing declaring the same form, not the domestic one alone.
       corroboration(record, 'entityType', domestic?.entityType)
@@ -778,7 +785,7 @@ export const currentDomesticRows = (
     value ? [{ group: 'formation' as const, label, value, source: '', registrations: [filing], ...extra }] : []
   return [
     ...row('Legal name', filing.name, corroboration(record, 'name', filing.name)),
-    ...row('Entity type', entityFormLabel(trueEntityType(record) ?? filing.entityType ?? record.formation?.entityType), corroboration(record, 'entityType', filing.entityType)),
+    ...row('Entity type', entityTypeShown(record, trueEntityType(record) ?? filing.entityType ?? record.formation?.entityType), corroboration(record, 'entityType', filing.entityType)),
     ...row('Formation state', stateLabel(filing.state)),
     ...row('Formation date', longDate(filing.registrationDate), { qualifier: age }),
     ...row('Status', status),
@@ -1501,7 +1508,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       {
         group: 'formation',
         label: 'Entity type',
-        value: entityFormLabel(trueEntityType(record) ?? filing?.entityType ?? record.formation?.entityType) ?? m.filed,
+        value: entityTypeShown(record, trueEntityType(record) ?? filing?.entityType ?? record.formation?.entityType) ?? m.filed,
         source: '',
         registrations: filing ? [filing] : undefined,
         ...corroboration(record, 'entityType', filing?.entityType),
@@ -2184,7 +2191,21 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           party,
           shortDate(c.filingDate)
         ].filter((x): x is string => Boolean(x)),
-        fields: awarded > 0 ? [{ label: 'Awarded', value: money(awarded) }] : undefined,
+        // Every field the court record carries, one per line: the state where
+        // a court is named, each party under the role it plays, and each
+        // judgment as entered.
+        fields: [
+          ...(c.court && c.courtState ? [{ label: 'Court state', value: c.courtState }] : []),
+          ...c.parties.map((p) => ({ label: p.role ? (sentence(p.role) ?? p.role) : 'Party', value: p.name })),
+          ...c.judgments.flatMap((j) => [
+            ...(j.text ? [{ label: 'Judgment', value: j.text }] : []),
+            ...(j.date ? [{ label: 'Judgment date', value: j.date }] : []),
+            ...(j.amountCents ? [{ label: 'Judgment amount', value: money(j.amountCents) }] : [])
+          ]),
+          ...(awarded > 0 ? [{ label: 'Awarded', value: money(awarded) }] : [])
+        ],
+        docId: c.id,
+        refs: [{ id: c.id, type: 'court_record', metadata: { court } }],
         source,
         sources: [source]
       }
@@ -2216,13 +2237,19 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           l.fileNumber ? `File ${l.fileNumber}` : undefined,
           shortDate(l.filingDate)
         ].filter((x): x is string => Boolean(x)),
-        evidenceFields: [
+        // The filing's own fields, one per line: who the debtors are, what
+        // secures it, the amount and when it lapses. They are the filing's,
+        // not a reading of ours, so they show wherever the lien does.
+        fields: [
+          ...(l.debtors ?? []).map((d) => ({ label: 'Debtor', value: d.name })),
           ...(l.collateral ? [{ label: 'Collateral', value: l.collateral }] : []),
           ...(amount ? [{ label: 'Amount', value: money(amount) }] : []),
           ...(l.lapseDate ? [{ label: 'Lapse date', value: l.lapseDate }] : [])
         ],
         // The filing office's own page for this lien.
         href: l.url ?? undefined,
+        docId: l.id,
+        refs: [{ id: l.id, type: 'lien', metadata: { state: l.state ?? undefined } }],
         source,
         sources: [source]
       }
@@ -2246,6 +2273,9 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         meta: [statusWord(b.status), b.caseNumber ? `Case ${b.caseNumber}` : undefined, shortDate(b.filingDate)].filter(
           (x): x is string => Boolean(x)
         ),
+        fields: b.court && b.courtState ? [{ label: 'Court state', value: b.courtState }] : undefined,
+        docId: b.id,
+        refs: [{ id: b.id, type: 'bankruptcy_court', metadata: { court } }],
         source,
         sources: [source]
       }
@@ -2429,7 +2459,8 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
             // What the page says, as the dashboard's Third-party profiles card
             // reads it (`ThirdPartyProfilesCard`): its flags, its ratings, its
             // page details and its latest activity — each on its own line.
-            fields: profileFields(p)
+            fields: profileFields(p),
+            docId: p.id ?? p.url ?? undefined
           }))
         : [
             {
@@ -2576,6 +2607,44 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
  * it, the registry record is the evidence, carried here so it is readable in
  * both tabs and citable as a source like any other.
  */
+/**
+ * The website as the crawl returned it, whatever the checks asked of it.
+ *
+ * Each web check reads only the fields it rests on, so a record whose checks
+ * never asked about the domain showed no domain anywhere — not on the report's
+ * Website cell, not on the Website's own Sources card. These are the crawl's
+ * own fields, one per row: what the site is, how it answered, and the pages
+ * it walked. Rows the checks also produce (Title, Domain) are the same rows,
+ * keyed alike, so they merge rather than repeat.
+ */
+export const websiteRecordRows = (record: BusinessRecord): AttributeRow[] => {
+  const w = record.website
+  if (!w?.url) return []
+  const row = (label: string, value: string | null | undefined, extra: Partial<AttributeRow> = {}): AttributeRow[] =>
+    value ? [{ group: 'website', label, value, source: 'Website', sources: ['Website'], ...extra }] : []
+  const yesNo = (v: boolean | undefined) => (typeof v === 'boolean' ? (v ? 'Yes' : 'No') : undefined)
+  return [
+    ...row('Title', w.title, { href: w.url }),
+    ...row('Site status', w.status ? sentence(w.status) : undefined),
+    ...row('HTTP status', typeof w.httpStatusCode === 'number' ? String(w.httpStatusCode) : undefined),
+    ...row('Platform', w.platform),
+    ...row('Category', w.category),
+    ...row('Parked', yesNo(w.parked)),
+    ...row('Coming soon', yesNo(w.comingSoon)),
+    ...row('Domain', w.domain?.toLowerCase(), {
+      href: w.url,
+      qualifier: filingAge(w.domainCreated),
+      fields: [
+        ...(w.domainCreated ? [{ label: 'Registered', value: longDate(w.domainCreated.slice(0, 10)) ?? w.domainCreated }] : []),
+        ...(w.domainExpires ? [{ label: 'Expires', value: longDate(w.domainExpires.slice(0, 10)) ?? w.domainExpires }] : []),
+        ...(w.registrar ? [{ label: 'Registrar', value: w.registrar }] : [])
+      ]
+    }),
+    // Every page the crawl walked, under what the crawl took it to be.
+    ...(w.pages ?? []).flatMap((pg) => row(pg.category ? (sentence(pg.category) ?? 'Page') : 'Page', pg.url, { href: pg.url ?? undefined }))
+  ]
+}
+
 export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
   const rows: AttributeRow[] = []
 

@@ -1,12 +1,12 @@
 import { useMemo, type ReactNode } from 'react'
-import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
+import { ArrowUpRight, Check, MapPin, TriangleAlert, X } from 'lucide-react'
 
 import { ChatSourceChip, HoverCard, HoverCardContent, HoverCardTrigger, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
 import { sameName } from '../../lib/registrationStatus'
-import { namedCard } from '../../lib/sourceCards'
+import { docCard } from '../../lib/sourceCards'
 import {
   licencesAt,
   locationBand,
@@ -44,18 +44,23 @@ const absent = (text: string) => <span className="text-text-secondary">{text}</s
  * businesses share it. Our readings, under the value rather than in it, and
  * ungraded — the report does not colour an address.
  */
+/** The role the filing gave the address — mailing, physical, primary — read
+ *  from the registration references that carry it. It is the cell's label:
+ *  "Physical address", or plain "Address" where no filing says. */
+const addressRoles = (a: Location): string[] =>
+  [...new Set((a.sourceRefs ?? []).flatMap((r) => (r.metadata as { labels?: string[] } | undefined)?.labels ?? []))]
+    .filter((x) => x !== 'registered_agent')
+    .map((x) => `${x.replace(/^./, (c) => c.toUpperCase())} address`)
+
+const addressLabel = (a: Location): string => addressRoles(a).join(' · ') || 'Address'
+
 const addressLine = (a: Location): ReactNode => {
   const band = locationBand(a.locationCount)
   // Deliverable · Residential · how many businesses share it. No "USPS ·"
   // prefix: the readings are the line, not their source. An address the
-  // post cannot reach is the one reading drawn red.
-  // The role the filing gave the address — mailing, physical, primary — read
-  // from the registration references that carry it.
-  const roles = [...new Set((a.sourceRefs ?? []).flatMap((r) => (r.metadata as { labels?: string[] } | undefined)?.labels ?? []))]
-    .filter((x) => x !== 'registered_agent')
-    .map((x) => `${x.replace(/^./, (c) => c.toUpperCase())} address`)
+  // post cannot reach is the one reading drawn red. The filing's role for
+  // the address is the cell's label, not repeated here.
   const rest = [
-    ...roles,
     a.propertyType && a.propertyType.toLowerCase().replace(/^./, (c) => c.toUpperCase()),
     a.cmra && 'Commercial mail receiving agency',
     (a.isRegisteredAgent || a.labels.includes('registered_agent')) && 'Registered agent address',
@@ -165,7 +170,7 @@ const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource
           title={`USDOT ${f.dotNumber ?? ''}`}
           url={f.sourceUrl}
           annotation="Company snapshot"
-          onSelect={onJumpToSource ? () => onJumpToSource(namedCard('FMCSA registration')) : undefined}
+          onSelect={onJumpToSource ? () => onJumpToSource(docCard(f.id)) : undefined}
         />
       ),
       values: [{ value: f.dotNumber ?? absent('Not provided') }]
@@ -208,7 +213,7 @@ const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void)
               title={`USDOT ${f.dotNumber ?? ''}`}
               url={f.sourceUrl}
               annotation="Company snapshot"
-              onSelect={onJumpToSource ? () => onJumpToSource(namedCard('FMCSA registration')) : undefined}
+              onSelect={onJumpToSource ? () => onJumpToSource(docCard(f.id)) : undefined}
             />
           ))}
         </span>
@@ -238,7 +243,7 @@ const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void)
             title={`NPI ${x.number}`}
             url={x.sourceUrl}
             annotation={x.profession}
-            onSelect={onJumpToSource ? () => onJumpToSource(namedCard(x.registry)) : undefined}
+            onSelect={onJumpToSource ? () => onJumpToSource(docCard(x.id)) : undefined}
           />
         ))}
       </span>
@@ -281,7 +286,7 @@ const licenceSource = (l: StateLicence, onJumpToSource?: (cardId: string) => voi
   domain: 'Professional license',
   title: [l.state, 'licence', l.number].filter(Boolean).join(' '),
   annotation: `${licenceTypeText(l.type)} licence`.trim(),
-  onSelect: onJumpToSource ? () => onJumpToSource(namedCard('Professional license')) : undefined
+  onSelect: onJumpToSource ? () => onJumpToSource(docCard(l.id)) : undefined
 })
 
 const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => [
@@ -302,7 +307,7 @@ const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSour
         label="Professional license"
         title={[l.state, 'licence', l.number].filter(Boolean).join(' ')}
         annotation={`${licenceTypeText(l.type)} licence`.trim()}
-        onSelect={onJumpToSource ? () => onJumpToSource(namedCard('Professional license')) : undefined}
+        onSelect={onJumpToSource ? () => onJumpToSource(docCard(l.id)) : undefined}
       />
     ),
     values: [{ value: l.number ?? absent('Not provided') }]
@@ -366,7 +371,7 @@ const locationCell = (
               label: l.registry,
               domain: l.registry,
               title: `NPI ${l.number}`,
-              onSelect: onJumpToSource ? () => onJumpToSource(namedCard(l.registry)) : undefined,
+              onSelect: onJumpToSource ? () => onJumpToSource(docCard(l.id)) : undefined,
               annotation: titleCase(l.holder)
             }))}
             onJumpToSource={onJumpToSource}
@@ -545,8 +550,6 @@ export const LocationsStrip = ({
         // city's.
         const undeliverable = here.length > 0 && here.every((a) => a.deliverable === false)
         const deliverable = here.some((a) => a.deliverable === true)
-        const delivers = here.filter((a) => a.deliverable === true).length
-        const cannot = here.filter((a) => a.deliverable === false).length
         return {
           key: p,
           // Pointed at, the chip says what is there: how many addresses, the
@@ -564,22 +567,48 @@ export const LocationsStrip = ({
                 </span>
               </HoverCardTrigger>
               <HoverCardContent side="top" className="w-72 p-3">
-                <span className="block text-sm font-medium text-foreground">{p}</span>
-                <span className="mt-0.5 block text-caption text-text-secondary">
-                  {[
-                    `${here.length} address${here.length === 1 ? '' : 'es'}`,
-                    submitted && 'the submitted office',
-                    delivers > 0 && `${delivers} deliverable`,
-                    cannot > 0 && `${cannot} undeliverable`
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
+                {/* As the people preview reads: the office's Submitted chip
+                    over the place, verified as its cell decides — a filing or
+                    another record lists it. */}
+                {submitted && (
+                  <span className="mb-1.5 flex">
+                    <SubmittedChip
+                      verified={here.some((a) => a.submitted && (filingsListing(record, a.fullAddress, 'addresses').length > 0 || a.sourceNames.some((n) => !REGISTRY_LABELS.has(n))))}
+                      by={[...new Set(here.filter((a) => a.submitted).flatMap((a) => [...filingsListing(record, a.fullAddress, 'addresses').map((f) => `SOS · ${f.state}`), ...a.sourceNames.filter((n) => !REGISTRY_LABELS.has(n))]))]}
+                      onJumpToSource={onJumpToSource}
+                    />
+                  </span>
+                )}
+                {/* The place, and how many addresses it holds — as the filing
+                    preview counts a state's filings. */}
+                <span className="flex items-baseline justify-between gap-4">
+                  <span className="text-sm font-medium text-foreground">{p}</span>
+                  <span className="text-caption text-text-secondary">
+                    {here.length} address{here.length === 1 ? '' : 'es'}
+                  </span>
                 </span>
-                <ul className="mt-1.5 flex flex-col gap-0.5 text-caption text-foreground">
+                {/* The addresses, under a hairline, each with its mark: commercial
+                    or residential, then whether the post reaches it, then whether
+                    it is an agent's. */}
+                <ul className="mt-1.5 flex flex-col gap-0.5 border-t border-[var(--core-color-border-divider)] pt-1.5 text-caption text-foreground">
                   {here.slice(0, SHOWN_ADDRESSES).map((a, i) => (
-                    <li key={`${a.fullAddress}-${i}`} className="truncate">
-                      {a.fullAddress.split(',')[0]}
-                      {a.submitted && <span className="text-text-secondary"> · Office</span>}
+                    <li key={`${a.fullAddress}-${i}`} className="flex items-start gap-1.5">
+                      <MapPin aria-hidden="true" size={12} strokeWidth={1.5} className="mt-0.5 shrink-0 text-text-secondary" />
+                      <span className="min-w-0">
+                        {a.fullAddress.split(',')[0]}
+                        {[
+                          a.propertyType && a.propertyType.toLowerCase().replace(/^./, (c) => c.toUpperCase()),
+                          a.deliverable === true ? 'Deliverable' : a.deliverable === false ? 'Not deliverable' : undefined,
+                          (a.isRegisteredAgent || a.labels.includes('registered_agent')) && 'Registered agent'
+                        ]
+                          .filter((x): x is string => Boolean(x))
+                          .map((x) => (
+                            <span key={x} className="text-text-secondary">
+                              {' · '}
+                              {x}
+                            </span>
+                          ))}
+                      </span>
                     </li>
                   ))}
                   {here.length > SHOWN_ADDRESSES && (
@@ -594,7 +623,7 @@ export const LocationsStrip = ({
       detail={(p) => (
         <AttributeCells
           className="-mb-px"
-          items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, a.submitted ? 'Office' : 'Address', ops, record, onJumpToSource))}
+          items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, addressLabel(a), ops, record, onJumpToSource))}
         />
       )}
     />

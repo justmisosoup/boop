@@ -9,10 +9,11 @@ import { cn } from '../utils/twUtils'
 import type { AttributeRow } from '../lib/attributes'
 import type { BusinessRecord, Derived, SourceRef } from '../lib/deriveResults'
 import { GROUPS, type GroupId } from '../lib/groups'
-import { PROFILES, SUBMITTED_CARD, namedCard, registrationCard } from '../lib/sourceCards'
+import { NOT_A_CARD, PROFILES, STREET_VIEW_CARD, SUBMITTED_CARD, docCard, kindLabel, namedCard } from '../lib/sourceCards'
+import { filingCardOf, sourceDocuments, type SourceDoc, type SourceKind } from '../lib/sourceInventory'
 import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
-import { filedName, longDate, maskTin, roleLabel as filedRole } from '../lib/attributes'
+import { attributesFor, filedName, longDate, maskTin, roleLabel as filedRole } from '../lib/attributes'
 import { NOT_PROVIDED, registrationState } from '../lib/registrationStatus'
 import { entityFormLabel } from '../lib/normalise'
 import { formationCardFilingOf } from '../lib/linkedFormation'
@@ -24,6 +25,9 @@ import { relatedBusinessesOf } from '../lib/relatedBusinesses'
 import { priorNameRecords } from '../lib/cityRegistrations'
 import { sameName } from '../lib/registrationStatus'
 import { cityRegistrationCells } from './Report/CityStrip'
+import { MediaBlock, PepBlock, WatchlistBlock } from './Report/ScreeningCard'
+import { IndustryTable } from './IndustryTable'
+import { screenedOf } from '../lib/screening'
 
 /** The tab's own group names. THEME holds the short forms used on citation
  *  chips, where "Name and formation" does not fit; a heading has the room, and
@@ -84,29 +88,24 @@ const withoutRole = (value: string, role?: string) =>
  * the company. Registrations say the entity exists; these say it has been
  * transacting — a different question, and worth reading as its own set.
  */
-/**
- * Source types issued by one jurisdiction at a time.
- *
- * Each record carries its own state, status and identifiers, so one card per
- * type flattened several separate permits into a single unlabelled list.
- *
- * `Lien` is here because the filings themselves now arrive scoped — "Lien ·
- * Virginia" — and an unscoped `Lien` card built from a name row's source ref
- * sat beside them holding the same Virginia filing under a vaguer title.
- */
-const PER_JURISDICTION = new Set(['Tax permit', 'City registration', 'Lien'])
-
-
-const GOVERNMENT = new Set([
-  'Tax permit',
-  'City registration',
-  'Form 5500',
-  'Lien',
-  'Court record',
-  'Bankruptcy court',
-  'SAM',
-  'SOS document',
-  'Tax exempt org'
+const GOVERNMENT = new Set<SourceKind>([
+  'sales_tax_permit',
+  'city_registration',
+  'form_5500',
+  'lien',
+  'litigation',
+  'bankruptcy',
+  'sam_entity_extract',
+  'sec_filing',
+  'sba_entity_v2',
+  'npi_record',
+  'parsed_sos_document',
+  'historical_registration',
+  'jurisdiction_registration',
+  'professional_license',
+  'fmcsa_registration',
+  'license',
+  'epa_frs_facility'
 ])
 
 /**
@@ -120,16 +119,13 @@ const GOVERNMENT = new Set([
  */
 const NOT_SUPPLIED = new Set<GroupId>(['screening', 'registration'])
 
-/**
- * Google's own card.
- *
- * Street View is a source in its own right — a car was at the address and the
- * frame is what it saw — so it gets a card rather than living inside the
- * registries that stated the addresses. It supplies nothing the filings
- * supplied; what it gives is the one thing none of them can, which is a look
- * at the place.
+/*
+ * Google's own card, `STREET_VIEW_CARD`. Street View is a source in its own
+ * right — a car was at the address and the frame is what it saw — so it gets a
+ * card rather than living inside the registries that stated the addresses. It
+ * supplies nothing the filings supplied; what it gives is the one thing none
+ * of them can, which is a look at the place.
  */
-const STREET_VIEW_CARD = 'src:Street View'
 
 /** One source, and everything on the record that came from it. */
 export type Source = {
@@ -137,8 +133,14 @@ export type Source = {
   label: string
   /** The filing itself, where the source IS a filing. */
   registration?: Registration
-  /** The FMCSA's carrier records, where the source is the FMCSA. */
+  /** The FMCSA's carrier record, where the source is the FMCSA. */
   fmcsa?: NonNullable<BusinessRecord['fmcsaRegistrations']>
+  /** The one document this card stands for (`sourceDocuments`). Absent on a
+   *  card that is no document: Submitted, Street View, USPS, Related businesses. */
+  doc?: SourceDoc
+  /** Other ids a chip may follow here by: a kind's name, where this is the
+   *  record's only document of that kind ("src:Tax permit"). */
+  aliases?: string[]
   /** Every instance of this source on the record, metadata intact. A business
    *  can hold three sales tax permits; they are three records, not one. */
   refs: SourceRef[]
@@ -205,6 +207,44 @@ export const sourcesFor = (
     return made
   }
 
+  /*
+   * The documents first, each its own card, from the record itself. Cards used
+   * to be made only once a row cited a source, and keyed by its label — so a
+   * filing no address row carried had no card, and two Form 5500s or ten court
+   * cases were one card each. Rows are filed under these below.
+   */
+  const docs = sourceDocuments(record)
+  for (const d of docs) {
+    const card = get(
+      d.card,
+      d.registration ? `Secretary of State · ${stateName(d.registration.state)}` : d.answers,
+      d.registration,
+      d.registration?.sourceUrl ?? undefined,
+      d.kind
+    )
+    card.doc = d
+    if (d.ref) card.refs.push(d.ref)
+    if (d.fmcsa) card.fmcsa = [d.fmcsa]
+  }
+
+  /*
+   * A kind the record holds one document of answers to its name too: a row
+   * that cites "Website" or "Form 5500" with no reference can only mean that
+   * one. Where there are several, the reference decides and nothing guesses.
+   */
+  const ofKind = new Map<string, SourceDoc[]>()
+  for (const d of docs) {
+    const k = d.answers.toLowerCase()
+    ofKind.set(k, [...(ofKind.get(k) ?? []), d])
+  }
+  for (const [k, list] of ofKind)
+    if (list.length === 1 && !list[0].registration) {
+      const card = byId.get(list[0].card)!
+      const alias = namedCard(sourceLabel(list[0].answers))
+      if (alias !== card.id) card.aliases = [...(card.aliases ?? []), alias]
+      void k
+    }
+
   const byGroup = attributeRowsByGroup(record, results, groupFor)
 
   for (const [group, rows] of byGroup) {
@@ -227,7 +267,7 @@ export const sourcesFor = (
         // into one person.
         if (group === 'people') continue
 
-        const id = registrationCard(r)
+        const id = filingCardOf(record, r)
         // The ref for THIS filing, so the row can be labelled by the role it
         // played on it rather than by its role in general.
         const ref = (row.refs ?? []).find(
@@ -248,65 +288,39 @@ export const sourcesFor = (
         })
       }
 
+      // Every other document the row cites, by the reference's own id: three
+      // tax permits are three records, each with its own state and status,
+      // and each is its own card.
+      const placed = new Set<string>()
+      for (const x of row.refs ?? []) {
+        if (x.type === 'registration') continue
+        const card = byId.get(docCard(x.id))
+        if (!card) continue
+        add(card.supplied, group, { row, ref: x })
+        placed.add(kindLabel(x.type).toLowerCase())
+      }
+
       for (const name of row.sources ?? []) {
         // Keyed on the LABEL, not the raw name: "Website crawl" and "Website"
         // both read as Website, so keying on the raw value made two cards with
         // the same title — the URL in one, the domain in the other.
-        //
-        // Profiles fold into one Web presence card: five profiles are five
-        // records of one thing, and as five cards they crowded out the filings
-        // while each held a single attribute.
         const named = sourceLabel(name)
-        const profile = PROFILES.has(named)
-        const title = profile ? 'Web presence' : named
+        if (NOT_A_CARD.test(named)) continue
+        const kind = kindLabel(name).toLowerCase()
+        if (placed.has(kind)) continue
 
-        // Every instance, deduplicated by the API's own source id — three tax
-        // permits are three records and each carries its own state and status.
-        // Both sides through `sourceLabel`: `row.sources` holds the readable
-        // form ("form 5500") while a ref holds the raw type ("form_5500"), so
-        // comparing them directly never matched and every non-filing source
-        // came out with no records at all.
-        const matches = (x: SourceRef) => sourceLabel(x.type) === sourceLabel(name)
-        const mine = (row.refs ?? []).filter(matches)
-
-        // A permit is issued by ONE jurisdiction. Three of them in one card put
-        // Pennsylvania's registration number a line above California's with
-        // nothing saying which was which, and merged their statuses into a set.
-        if (PER_JURISDICTION.has(named) && mine.length > 0) {
-          const byState = new Map<string, SourceRef[]>()
-          for (const x of mine) {
-            // A city registration is its own card, one per registration, as
-            // the dashboard shows Sprig's two San Francisco ones.
-            const st =
-              named === 'City registration'
-                ? `${((x.metadata as { state?: string })?.state ?? '').toUpperCase()}|${x.id}`
-                : ((x.metadata as { state?: string })?.state ?? '').toUpperCase()
-            byState.set(st, [...(byState.get(st) ?? []), x])
-          }
-
-          for (const [key, refs] of byState) {
-            const st = key.split('|')[0]
-            const scoped = st ? `${named} · ${stateName(st)}` : named
-            const card = get(`src:${scoped}${key.includes('|') ? `|${key.split('|')[1]}` : ''}`, scoped, undefined, undefined, named)
-            for (const x of refs)
-              if (!card.refs.some((r) => r.id === x.id)) card.refs.push(x)
-            add(card.supplied, group, { row, ref: refs[0] })
-          }
+        // A kind with documents of its own: the one there is, or — where there
+        // are several and the row names none of them — none of them.
+        const own = ofKind.get(kind)
+        if (own && own.length > 0) {
+          if (own.length === 1) add(byId.get(own[0].card)!.supplied, group, { row })
           continue
         }
 
-        // Created only once it is known this is not a per-jurisdiction type —
-        // calling `get` first left an empty "Tax permit" shell beside the three
-        // real ones, since `get` registers the card as a side effect.
-        const source = get(namedCard(named), title)
-        for (const x of mine) if (!source.refs.some((r) => r.id === x.id)) source.refs.push(x)
-
-        const ref = mine[0]
-        // Merged, but each row still names the profile it came from — "Web
-        // presence" alone loses the only thing separating a Trustpilot review
-        // page from a LinkedIn company page.
-        // Labelled by the site alone — "Trustpilot" — as the row already is.
-        add(source.supplied, group, { row, ref })
+        // A source that is no one document: USPS, the related businesses.
+        // Profiles fold into the one profiles card.
+        const title = PROFILES.has(named) ? 'Web presence' : named
+        add(get(namedCard(named), title).supplied, group, { row })
       }
 
       // Submitted is a source too — the weakest one, and the only one the
@@ -423,13 +437,6 @@ export const sourcesFor = (
     }
   }
 
-  // The FMCSA's own records, on the card its references built — or a card of
-  // their own where no attribute cites them.
-  if ((record.fmcsaRegistrations ?? []).length > 0) {
-    const card = get(namedCard('FMCSA registration'), 'FMCSA registration', undefined, undefined, 'FMCSA registration')
-    card.fmcsa = record.fmcsaRegistrations
-  }
-
   const count = (s: Source) => [...s.supplied.values()].reduce((n, rows) => n + rows.length, 0)
 
   // Filings first and together, domestic at their head. They are one body of
@@ -446,11 +453,9 @@ export const sourcesFor = (
   const band = (s: Source): Source['band'] => {
     if (s.id === 'src:submitted') return 'submitted'
     if (s.registration) return 'registration'
-    // A jurisdiction-scoped source bands on its TYPE. "Lien · Virginia" and
-    // "Court record · Queens County Supreme Court" are a filing office and a
-    // court; matching the whole label put both in with the web pages.
-    const kind = (s.kind ?? s.label).split(' · ')[0]
-    return GOVERNMENT.has(kind) ? 'government' : 'web'
+    // A source bands on the KIND of document it is: a lien and a court case
+    // are a filing office's and a court's, not web pages.
+    return s.doc && GOVERNMENT.has(s.doc.kind) ? 'government' : 'web'
   }
 
   // Within the filings, oldest first: the order they were registered in is the
@@ -660,6 +665,7 @@ const APP_ORDER = [
   'registration',
   'fmcsa_registration',
   'professional_license',
+  'license',
   'sales_tax_permit',
   'sec_filing',
   'sam_entity_extract',
@@ -672,107 +678,253 @@ const APP_ORDER = [
   'poi_record',
   'form_5500',
   'tax_exempt_organization',
+  'parsed_sos_document',
+  'historical_registration',
+  'jurisdiction_registration',
+  'epa_frs_facility',
+  'tin',
   'website',
   'profiles',
+  'industry',
   'lien',
+  'litigation',
+  'bankruptcy',
+  'watchlist_result',
+  'pep_result',
+  'adverse_media_result',
+  'screen',
+  'document',
   'generic_verification_source'
 ]
 
+/** A card that is no document of its own, by the name it was filed under. */
 const TYPE_OF_LABEL: Record<string, string> = {
-  'Tax permit': 'sales_tax_permit',
-  'City registration': 'city_registration',
-  Lien: 'lien',
-  'SEC filing': 'sec_filing',
-  'Form 5500': 'form_5500',
-  SAM: 'sam_entity_extract',
-  'SBA entity v2': 'sba_entity_v2',
-  'FMCSA registration': 'fmcsa_registration',
-  'NPI record': 'npi_record',
   Website: 'website',
   'Web presence': 'profiles'
 }
 
-export const appTypeOf = (s: Source) =>
-  s.registration ? 'registration' : (TYPE_OF_LABEL[(s.kind ?? s.label).split(' · ')[0]] ?? 'generic_verification_source')
+export const appTypeOf = (s: Source): string =>
+  s.registration
+    ? 'registration'
+    : s.doc && s.doc.kind !== 'other'
+      ? s.doc.kind
+      : (TYPE_OF_LABEL[(s.kind ?? s.label).split(' · ')[0]] ?? 'generic_verification_source')
 
-type Meta = { state?: string; city?: string; status?: string; plan_year?: string; ack_id?: string; dot_number?: string; uei?: string; id?: string }
+type Meta = {
+  state?: string
+  city?: string
+  status?: string
+  plan_year?: string | number
+  ack_id?: string
+  dot_number?: string
+  uei?: string
+  id?: string
+  name?: string
+  file_number?: string
+  filing_date?: string
+  document_type?: string
+  license_type?: string
+  license_number?: string
+  jurisdiction?: { name?: string; state?: string; tax_type?: string }
+  source_data?: Array<{ name: string; value: unknown }>
+  source_data_link?: string
+}
 const metas = (s: Source) => s.refs.map((r) => (r.metadata ?? {}) as Meta)
 const unique = <T,>(xs: T[]) => [...new Set(xs)]
 /** The state a record is from: its own metadata, else the jurisdiction its
  *  card was scoped to ("Lien · Delaware"). */
 const stateOf = (s: Source) => {
-  const stated = metas(s).map((m) => m.state?.toUpperCase()).find(Boolean)
+  const stated = [s.doc?.lien?.state ?? undefined, ...metas(s).map((m) => m.state)].map((x) => x?.toUpperCase()).find(Boolean)
   if (stated) return stated
   const scoped = s.label.split(' · ')[1]
   return scoped ? Object.keys(STATE_NAMES).find((code) => STATE_NAMES[code].toLowerCase() === scoped.toLowerCase()) : undefined
 }
+/** Where a record is, where nothing else on its title tells it from its
+ *  siblings: nine California permits differ only by the address each lists. */
+const addressOf = (s: Source) => {
+  const row = (s.supplied.get('address') ?? [])[0]?.row
+  return row ? (row.matchValue ?? row.value) : undefined
+}
+
+/** A city registration by what the register calls it: its trade name or owner,
+ *  its account, and whether it is open. */
+const cityTitleOf = (s: Source) => {
+  const rows = s.doc?.city ?? []
+  if (rows.length === 0) return undefined
+  const first = rows[0]
+  const open = rows.some((r) => !r.locationEnd && !r.businessEnd)
+  return joined(first.dba ?? first.owner, first.accountNumber && `Account ${first.accountNumber}`, open ? 'Open' : 'Closed')
+}
+
 const citiesOf = (s: Source) =>
   unique(metas(s).filter((m) => m.city && m.state).map((m) => `${m.city}, ${stateName((m.state as string).toUpperCase())}`))
 
-/** The app's card title and subtitle for this source. */
+/** The words a status is stated in, for a subtitle. */
+const statusWord = (v?: string | null) => (v ? sentence(v) : undefined)
+const joined = (...xs: Array<string | null | undefined | false>) => xs.filter(Boolean).join(' · ') || undefined
+
+/** The app's card title and subtitle for this source. A subtitle says which
+ *  one this is: three permits, two plan years or ten cases each read apart. */
 export const appHeader = (s: Source): { title: string; subtitle?: string } => {
   const st = stateOf(s)
+  const m = metas(s)[0] ?? {}
+  const d = s.doc
   switch (appTypeOf(s)) {
     case 'registration':
-      return { title: 'Secretary of State', subtitle: stateName(s.registration!.state) }
+      return { title: 'Secretary of State', subtitle: joined(stateName(s.registration!.state), s.registration!.fileNumber) }
     case 'sales_tax_permit':
-      return { title: 'Sales Tax Permit', subtitle: st ? stateName(st) : undefined }
+      return { title: 'Sales Tax Permit', subtitle: joined(st && stateName(st), statusWord(m.status), addressOf(s)) }
     case 'city_registration':
-      return { title: 'City Registration', subtitle: citiesOf(s).join(' · ') || (st ? stateName(st) : undefined) }
+      return { title: 'City Registration', subtitle: joined(citiesOf(s).join(' · ') || (st ? stateName(st) : undefined), cityTitleOf(s)) }
     case 'lien':
-      return { title: 'Lien Filing', subtitle: st ? stateName(st) : undefined }
+      return { title: 'Lien Filing', subtitle: joined(st && stateName(st), d?.lien?.fileNumber && `File ${d.lien.fileNumber}`) }
+    case 'litigation':
+      return { title: 'Court record', subtitle: joined(d?.litigation?.court ?? d?.litigation?.courtState, d?.litigation?.caseNumber && `Case ${d.litigation.caseNumber}`) }
+    case 'bankruptcy':
+      return { title: 'Bankruptcy petition', subtitle: joined(d?.bankruptcy?.court ?? d?.bankruptcy?.courtState, d?.bankruptcy?.caseNumber && `Case ${d.bankruptcy.caseNumber}`) }
     case 'sec_filing':
-      return { title: 'SEC EDGAR Filings' }
+      return { title: 'SEC EDGAR Filings', subtitle: addressOf(s) }
     case 'form_5500':
-      return { title: 'Form 5500', subtitle: 'Internal Revenue Service' }
+      return { title: 'Form 5500', subtitle: joined('Internal Revenue Service', m.plan_year ? `Plan year ${m.plan_year}` : undefined, m.ack_id && `ACK ${m.ack_id}`) }
     case 'sam_entity_extract':
-      return { title: 'SAM Entity Registration' }
+      return { title: 'SAM Entity Registration', subtitle: addressOf(s) }
     case 'sba_entity_v2':
       return { title: 'Small Business Profile', subtitle: 'Small Business Administration' }
     case 'fmcsa_registration':
-      return { title: 'Federal Motor Carrier Safety Administration', subtitle: 'Department of Transportation' }
+      return { title: 'Federal Motor Carrier Safety Administration', subtitle: joined('Department of Transportation', d?.fmcsa?.dotNumber && `USDOT ${d.fmcsa.dotNumber}`) }
     case 'npi_record':
-      return { title: 'National Provider Identifier', subtitle: 'National Plan and Provider Enumeration System' }
+      return { title: 'National Provider Identifier', subtitle: joined('National Plan and Provider Enumeration System', m.id) }
+    case 'professional_license':
+      return { title: 'Professional License', subtitle: joined(st && stateName(st), m.license_number) }
+    case 'license':
+      return { title: d?.license?.registry ?? 'Licence', subtitle: joined(d?.license?.holder, d?.license?.number) }
+    case 'parsed_sos_document':
+      return { title: 'SOS Document', subtitle: joined(st && stateName(st), m.file_number) }
+    case 'historical_registration':
+      return { title: 'Historical Registration', subtitle: joined(st && stateName(st), m.file_number) }
+    case 'jurisdiction_registration':
+      return { title: 'Jurisdiction Registration', subtitle: m.jurisdiction?.name }
+    case 'epa_frs_facility':
+      return { title: 'EPA FRS Facility', subtitle: addressOf(s) }
+    case 'watchlist_result':
+      return { title: 'Watchlist result', subtitle: joined(d?.watchlist?.list.title, d?.watchlist?.result.entityName) }
+    case 'pep_result':
+      return { title: 'Politically exposed person result', subtitle: d?.pep?.name ?? undefined }
+    case 'adverse_media_result':
+      return { title: 'Adverse media result', subtitle: `${d?.media?.items.length ?? 0} ${(d?.media?.items.length ?? 0) === 1 ? 'article' : 'articles'}` }
+    case 'screen':
+      return { title: SCREEN_TITLE[d!.screen!], subtitle: 'No results · Screened' }
+    case 'industry':
+      return { title: 'Industry classification', subtitle: 'Middesk' }
+    case 'tin':
+      return { title: 'IRS TIN record', subtitle: 'Internal Revenue Service' }
+    case 'document':
+      return { title: 'Document', subtitle: d?.documents[0]?.filename ?? undefined }
     case 'website':
       return { title: 'Website' }
     case 'profiles':
       return { title: 'Third-party profiles' }
     default:
       if (s.id === SUBMITTED_CARD) return { title: 'Submitted' }
-      // No dashboard card reads this record; it keeps the name the chips use.
-      if (s.label === 'EPA FRS facility') return { title: 'EPA FRS Facility' }
       return { title: s.label }
   }
 }
+
+const SCREEN_TITLE = { watchlist: 'Sanctions & watchlists', pep: 'Politically exposed persons', media: 'Adverse media' } as const
 
 /** The app's name for the section a card's own details sit under. */
 const DETAILS: Record<string, string> = {
   sales_tax_permit: 'Taxpayer details',
   lien: 'Lien details',
-  sba_entity_v2: 'Entity details'
+  sba_entity_v2: 'Entity details',
+  litigation: 'Case details',
+  bankruptcy: 'Petition details',
+  npi_record: 'Provider details',
+  professional_license: 'License details',
+  jurisdiction_registration: 'Jurisdiction details',
+  parsed_sos_document: 'Document details',
+  form_5500: 'Filing details'
 }
 
-/** Fields the record's metadata holds for a source, under the app's labels. */
-const metaCells = (s: Source) => {
-  const ms = metas(s)
-  const first = <K extends keyof Meta>(k: K) => ms.map((m) => m[k]).find(Boolean)
-  const status = first('status')
+/** A value from a registry's own list, one cell per value. */
+const valuesOf = (v: unknown): string[] =>
+  Array.isArray(v) ? v.flatMap(valuesOf) : v === null || v === undefined || v === '' ? [] : [String(v)]
+
+/** Fields the record's metadata holds for a source, under the app's labels,
+ *  one field per cell. Each card is one document, so one reference. */
+const metaCells = (s: Source, record?: BusinessRecord) => {
+  const m = metas(s)[0] ?? {}
+  // The state's own register, where the record holds a filing there.
+  const sos = record?.registrations.find((r) => r.state === m.state?.toUpperCase() && r.sourceUrl)?.sourceUrl
+  const st = m.state ? stateName(m.state.toUpperCase()) : undefined
+  const sosLink = sos && st ? [cell('Record', <RecordLink href={sos}>{`${st} Secretary of State website`}</RecordLink>, { span: 'full' as const })] : []
   switch (appTypeOf(s)) {
     case 'sales_tax_permit':
-      return status ? [cell('Status', sentence(status))] : []
+      return [...(st ? [cell('State', st)] : []), ...(m.status ? [cell('Status', sentence(m.status))] : [])]
     case 'form_5500':
       return [
-        ...(first('plan_year') ? [cell('Plan Year', String(first('plan_year')))] : []),
-        ...(first('ack_id') ? [cell('ACK ID', String(first('ack_id')))] : [])
+        ...(m.plan_year ? [cell('Plan Year', String(m.plan_year))] : []),
+        ...(m.ack_id ? [cell('ACK ID', String(m.ack_id))] : []),
+        // The dashboard's own link: EFAST2's search, where the ACK ID finds it.
+        cell('Record', <RecordLink href="https://www.efast.dol.gov/5500Search">EFAST2 Form 5500 search</RecordLink>, { span: 'full' as const })
       ]
-    case 'fmcsa_registration':
-      return first('dot_number') ? [cell('USDOT number', String(first('dot_number')))] : []
     case 'sba_entity_v2':
-      return first('uei') ? [cell('Unique Entity Identifier (UEI)', String(first('uei')))] : []
+      return [
+        ...(m.name ? [cell('Business name', m.name)] : []),
+        ...(m.uei ? [cell('Unique Entity Identifier (UEI)', String(m.uei))] : [])
+      ]
+    case 'npi_record':
+      return [
+        ...(m.source_data ?? []).flatMap((f) => valuesOf(f.value).map((v) => cell(f.name, v))),
+        ...(m.source_data_link ? [cell('Record', <RecordLink href={m.source_data_link}>NPI Registry</RecordLink>)] : [])
+      ]
+    case 'parsed_sos_document':
+      return [
+        ...(st ? [cell('State', st)] : []),
+        ...(m.document_type ? [cell('Document type', m.document_type)] : []),
+        ...(m.file_number ? [cell('File number', m.file_number)] : []),
+        ...(m.filing_date ? [cell('Filed date', longDate(m.filing_date) ?? m.filing_date)] : []),
+        ...sosLink
+      ]
+    case 'historical_registration':
+      return [...(st ? [cell('State', st)] : []), ...(m.file_number ? [cell('File number', m.file_number)] : []), ...sosLink]
+    case 'license': {
+      const href = s.doc?.license?.sourceUrl
+      return href ? [cell('Record', <RecordLink href={href}>{`${s.doc!.license!.registry} website`}</RecordLink>, { span: 'full' as const })] : []
+    }
+    case 'website':
+      return record?.website?.url ? [cell('Record', <RecordLink href={record.website.url}>{record.website.url}</RecordLink>, { span: 'full' as const })] : []
+    case 'professional_license':
+      return [
+        ...(st ? [cell('State', st)] : []),
+        ...(m.license_type ? [cell('License type', sentence(m.license_type))] : []),
+        ...(m.license_number ? [cell('License number', m.license_number)] : []),
+        ...(m.status ? [cell('Status', sentence(m.status))] : [])
+      ]
+    case 'jurisdiction_registration':
+      return [
+        ...(m.jurisdiction?.name ? [cell('Jurisdiction', m.jurisdiction.name)] : []),
+        ...(m.jurisdiction?.state ? [cell('State', stateName(m.jurisdiction.state))] : []),
+        ...(m.jurisdiction?.tax_type ? [cell('Tax type', m.jurisdiction.tax_type)] : [])
+      ]
+    case 'lien':
+      // A lien the record cites without holding the filing: its state is all there is.
+      return s.doc?.lien ? [] : st ? [cell('State', st)] : []
     default:
       return []
   }
 }
+
+const RecordLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noreferrer"
+    className="underline decoration-[var(--core-color-border-strong)] underline-offset-2 hover:decoration-current"
+  >
+    {children}
+  </a>
+)
 
 /** Active green, inactive or dissolved red, nothing stated grey — the app's MetaTag. */
 const toneOf = (status?: string | null) =>
@@ -967,8 +1119,8 @@ const cityRegistrationOf = (s: Source, record?: BusinessRecord) => {
 }
 
 /** Any other source, under the app's section names for it. */
-const RecordSections = ({ s, record }: { s: Source; record?: BusinessRecord }) => {
-  const groups = sourceGroups(s)
+const RecordSections = ({ s, record, skip }: { s: Source; record?: BusinessRecord; skip?: GroupId[] }) => {
+  const groups = sourceGroups(s).filter(([g]) => !skip?.includes(g))
   const regs = cityRegistrationOf(s, record)
   // The register's own cells already name the business and its owner.
   const names = regs.length > 0 ? [] : (s.supplied.get('name') ?? [])
@@ -978,7 +1130,7 @@ const RecordSections = ({ s, record }: { s: Source; record?: BusinessRecord }) =
   )
   const addresses = s.supplied.get('address') ?? []
   const rest = groups.filter(([g]) => g !== 'name' && g !== 'people' && g !== 'address')
-  const details = metaCells(s)
+  const details = metaCells(s, record)
   const type = appTypeOf(s)
   return (
     <>
@@ -988,9 +1140,11 @@ const RecordSections = ({ s, record }: { s: Source; record?: BusinessRecord }) =
           <AttributeCells items={cityRegistrationCells(regs, regs[0].city)} />
         </>
       )}
-      {(names.length > 0 || details.length > 0) && type !== 'website' && type !== 'profiles' && (
+      {(names.length > 0 || details.length > 0) && type !== 'profiles' && (
         <>
-          <CardLabelRow as="h4">{s.id === SUBMITTED_CARD ? 'Business details' : (DETAILS[type] ?? 'Registration details')}</CardLabelRow>
+          <CardLabelRow as="h4">
+            {s.id === SUBMITTED_CARD ? 'Business details' : ROW_KEY[type] ? 'Names' : type === 'website' ? 'Site' : (DETAILS[type] ?? 'Registration details')}
+          </CardLabelRow>
           {names.length > 0 && (
             <AttributeCells
               items={cellsFromRows(
@@ -1025,6 +1179,126 @@ const RecordSections = ({ s, record }: { s: Source; record?: BusinessRecord }) =
           <SuppliedCells rows={addresses} />
         </>
       )}
+    </>
+  )
+}
+
+const SCREEN_RESULTS = new Set(['watchlist_result', 'pep_result', 'adverse_media_result'])
+
+/** The record kinds read out as one row each, as the report's strips read them. */
+const ROW_KEY: Record<string, string> = { lien: 'liens', litigation: 'litigations', bankruptcy: 'bankruptcies' }
+
+const docIdOf = (d?: SourceDoc) => d?.lien?.id ?? d?.litigation?.id ?? d?.bankruptcy?.id
+
+/**
+ * A lien, a court case or a petition, as the report reads it: the same row
+ * (`attributesFor`), with every field the filing carries under it — the
+ * debtors, the parties, the collateral, the judgments — and the filing
+ * office's own page.
+ */
+const RecordRowSection = ({ s, record }: { s: Source; record: BusinessRecord }) => {
+  const type = appTypeOf(s)
+  const id = docIdOf(s.doc)
+  const rows = attributesFor(ROW_KEY[type], record).filter((r) => r.docId === id)
+  if (rows.length === 0) return null
+  const href = s.doc?.lien?.url
+  return (
+    <>
+      <CardLabelRow as="h4">{DETAILS[type] ?? 'Details'}</CardLabelRow>
+      <AttributeCells
+        items={[
+          ...cellsFromRows(rows, { provenance: false }),
+          ...(href ? [cell('Record', <RecordLink href={href}>Filing office website</RecordLink>, { span: 'full' as const })] : [])
+        ]}
+      />
+    </>
+  )
+}
+
+/** The record's own PDFs filed with this source: a lien's initial filing and
+ *  amendments, a filing's certificate of good standing. */
+const DocumentsSection = ({ docs }: { docs: SourceDoc['documents'] }) =>
+  docs.length === 0 ? null : (
+    <>
+      <CardLabelRow as="h4">Documents</CardLabelRow>
+      <AttributeCells
+        items={docs.map((d) =>
+          cell(d.documentType ? sentence(d.documentType) : 'Document', d.filename ?? 'Unnamed file', {
+            note: d.filingDate ? `Filed ${longDate(d.filingDate.slice(0, 10)) ?? d.filingDate}` : undefined
+          })
+        )}
+      />
+    </>
+  )
+
+/** One screening result, as the report's screening card draws it. */
+const ScreeningSection = ({ s, record }: { s: Source; record: BusinessRecord }) => {
+  const sc = screenedOf(record)
+  const d = s.doc!
+  const ctx = { record }
+  if (d.kind === 'watchlist_result')
+    return <>{sc.watchlist.hits.filter((h) => h.hit.id === d.watchlist!.result.id).map((h, i) => <WatchlistBlock key={i} who={h} hit={h.hit} ctx={ctx} />)}</>
+  if (d.kind === 'pep_result')
+    return <>{sc.pep.hits.filter((h) => h.hit.id === d.pep!.id).map((h, i) => <PepBlock key={i} who={h} hit={h.hit} ctx={ctx} />)}</>
+  return <>{sc.media.hits.filter((h) => h.hit.id === d.media!.id).map((h, i) => <MediaBlock key={i} who={h} hit={h.hit} ctx={ctx} />)}</>
+}
+
+/** A screen that ran and returned nothing: what it searched. */
+const EmptyScreenSection = ({ s, record }: { s: Source; record: BusinessRecord }) => {
+  const screen = s.doc!.screen!
+  const sc = screenedOf(record)[screen]
+  const lists = screen === 'watchlist' ? (record.watchlist?.lists ?? []) : []
+  return (
+    <>
+      <CardLabelRow as="h4">Names screened</CardLabelRow>
+      {sc.names.length > 0 ? (
+        <AttributeCells items={sc.names.map((n) => cell(screen === 'pep' ? 'Person' : 'Name', n))} />
+      ) : (
+        // PEP runs on the submitted individuals only.
+        <MutedText className="block px-4 py-3">No individuals submitted</MutedText>
+      )}
+      {lists.length > 0 && (
+        <>
+          <CardLabelRow as="h4">Lists searched</CardLabelRow>
+          <AttributeCells items={lists.map((l) => cell(l.agencyAbbr ?? l.agency ?? 'List', l.title ?? l.abbr ?? 'Untitled list'))} />
+        </>
+      )}
+    </>
+  )
+}
+
+/** Middesk's classification, as the Attributes tab and the insight draw it. */
+const IndustrySection = ({ record }: { record: BusinessRecord }) => (
+  <>
+    <CardLabelRow as="h4">Classifications</CardLabelRow>
+    <IndustryTable rows={attributesFor('industry', record)} />
+  </>
+)
+
+/**
+ * Every profile, in full: the page's name for the business, the page, its
+ * status, and what it says — the same rows as the report's Web presence card
+ * (`attributesFor`), so the two read alike. One per page.
+ */
+const ProfilesSection = ({ record }: { record: BusinessRecord }) => {
+  const rows = attributesFor('profile', record).filter((r) => r.pageUrl || r.docId)
+  if (rows.length === 0) return null
+  return (
+    <>
+      <CardLabelRow as="h4">Profiles</CardLabelRow>
+      <AttributeCells
+        items={cellsFromRows(
+          rows.map((r) => ({
+            ...r,
+            fields: [...(r.sourceNote ? [{ label: 'Status', value: r.sourceNote }] : []), ...(r.fields ?? [])]
+          })),
+          {
+            provenance: false,
+            // The page's name for the business, opening the page itself.
+            valueFor: (r) => (r.pageUrl ? <RecordLink href={r.pageUrl}>{r.value}</RecordLink> : r.value)
+          }
+        )}
+      />
     </>
   )
 }
@@ -1091,7 +1365,10 @@ export const SourceDetail = ({
       <Collapsible open={open} id={bodyId}>
         <div className="-mb-px">
           {s.registration ? (
-            <RegistrationSections s={s} />
+            <>
+              <RegistrationSections s={s} />
+              <DocumentsSection docs={s.doc?.documents ?? []} />
+            </>
           ) : s.fmcsa ? (
             <FmcsaSections s={s} />
           ) : s.id === STREET_VIEW_CARD ? (
@@ -1099,9 +1376,23 @@ export const SourceDetail = ({
           ) : s.id === namedCard('Related businesses') && relatedBusinessesOf(record!).length > 0 ? (
             // Each related business, opening to the people and addresses it shares.
             <ConnectionSections record={record!} />
+          ) : record && SCREEN_RESULTS.has(appTypeOf(s)) ? (
+            <ScreeningSection s={s} record={record} />
+          ) : record && appTypeOf(s) === 'screen' ? (
+            <EmptyScreenSection s={s} record={record} />
+          ) : record && appTypeOf(s) === 'industry' ? (
+            <IndustrySection record={record} />
           ) : (
             <>
-              <RecordSections s={s} record={record} />
+              {record && ROW_KEY[appTypeOf(s)] && <RecordRowSection s={s} record={record} />}
+              {record && appTypeOf(s) === 'profiles' && <ProfilesSection record={record} />}
+              <RecordSections
+                s={s}
+                record={record}
+                // The record's own row is drawn above; filed again under its group it said everything twice.
+                skip={appTypeOf(s) === 'profiles' ? ['profiles'] : ROW_KEY[appTypeOf(s)] ? ['liens', 'litigation', 'bankruptcy'] : undefined}
+              />
+              <DocumentsSection docs={s.doc?.documents ?? []} />
               {s.id !== SUBMITTED_CARD && <SourceCaptures items={all} />}
             </>
           )}
@@ -1180,29 +1471,43 @@ export const SourcesSummary = ({
         (s) => toneOf(registrationState(s.registration!).status)
       )
     ],
-    ['FMCSA registrations', tags('fmcsa_registration', () => ['DOT'])],
-    ['Sales tax permits', tags('sales_tax_permit', (s) => [stateOf(s) ? `${stateOf(s)}・${Math.max(s.refs.length, 1)}` : 'Sales tax permit'])],
-    ['NPI records', tags('npi_record', () => ['NPI'])],
-    ['Form 5500 filings', tags('form_5500', (s) => unique(metas(s).map((m) => `IRS · ${m.plan_year ?? ''}`.trim())), () => 'subtle')],
+    ['FMCSA registrations', tags('fmcsa_registration', (s) => [s.doc?.fmcsa?.dotNumber ? `DOT ${s.doc.fmcsa.dotNumber}` : 'DOT'])],
+    ['Professional licenses', tags('professional_license', (s) => [stateOf(s) ?? 'License'])],
+    ['Licenses', tags('license', (s) => [s.doc?.license ? `${s.doc.license.registry} · ${s.doc.license.number}` : 'License'])],
+    ['Sales tax permits', tags('sales_tax_permit', (s) => [stateOf(s) ?? 'Sales tax permit'], (s) => toneOf(metas(s)[0]?.status))],
+    ['NPI records', tags('npi_record', (s) => [metas(s)[0]?.id ? `NPI ${metas(s)[0].id}` : 'NPI'])],
+    ['Form 5500 filings', tags('form_5500', (s) => [`IRS · ${metas(s)[0]?.plan_year ?? ''}`.trim()], () => 'subtle')],
     ['SEC EDGAR Filings', tags('sec_filing', () => ['SEC'])],
     [
       'City Registrations',
       tags(
         'city_registration',
-        (s) => unique(metas(s).filter((m) => m.city).map((m) => `${m.city}, ${m.state?.toUpperCase()}`)),
+        (s) => [unique(metas(s).filter((m) => m.city).map((m) => `${m.city}, ${m.state?.toUpperCase()}`))[0] ?? 'City registration'],
         // Active green, closed grey: a closed city registration is history.
         (s) => (metas(s).some((m) => /^active$/i.test(m.status ?? '')) ? 'success' : 'subtle')
       )
     ],
     ['SAM Entity Registration', tags('sam_entity_extract', () => ['SAM Registration'], () => 'subtle')],
     ['Small Business Administration records', tags('sba_entity_v2', () => ['SBA Profile'])],
-    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'])],
-    // Not a type the dashboard has: the prototype's own sources, and records
-    // such as an EPA facility that no dashboard card reads.
-    ['Other sources', tags('generic_verification_source', (s) => [appHeader(s).title], () => 'subtle')]
+    ['SOS documents', tags('parsed_sos_document', (s) => [stateOf(s) ?? 'SOS document'], () => 'subtle')],
+    ['Historical registrations', tags('historical_registration', (s) => [stateOf(s) ?? 'Historical'], () => 'subtle')],
+    ['Jurisdiction registrations', tags('jurisdiction_registration', (s) => [metas(s)[0]?.jurisdiction?.name ?? 'Jurisdiction'])],
+    ['EPA facilities', tags('epa_frs_facility', () => ['EPA FRS'], () => 'subtle')],
+    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'], (s) => (/open/i.test(s.doc?.lien?.status ?? '') ? 'danger' : 'subtle'))],
+    ['Court records', tags('litigation', (s) => [s.doc?.litigation?.caseNumber ?? s.doc?.litigation?.court ?? 'Case'], (s) => (/open/i.test(s.doc?.litigation?.caseStatus ?? '') ? 'danger' : 'subtle'))],
+    ['Bankruptcy petitions', tags('bankruptcy', (s) => [s.doc?.bankruptcy?.chapter ? `Chapter ${s.doc.bankruptcy.chapter}` : 'Petition'], () => 'danger')],
+    ['Screening results', [
+      ...tags('watchlist_result', (s) => [s.doc?.watchlist?.list.abbr ?? 'Watchlist'], () => 'danger'),
+      ...tags('pep_result', () => ['PEP'], () => 'danger'),
+      ...tags('adverse_media_result', () => ['Adverse media'], () => 'danger'),
+      ...tags('screen', (s) => [`${SCREEN_TITLE[s.doc!.screen!]} · No results · Screened`], () => 'subtle')
+    ]],
+    ['Documents', tags('document', (s) => [s.doc?.documents[0]?.documentType ?? 'Document'], () => 'subtle')],
+    // Not a type the dashboard has: the prototype's own sources.
+    ['Other sources', [...tags('tin', () => ['IRS TIN record'], () => 'subtle'), ...tags('generic_verification_source', (s) => [appHeader(s).title], () => 'subtle')]]
   ]
   const authoritative = rows.filter(([, t]) => t.length > 0)
-  const alternative = [...of('website'), ...of('profiles')].map((s) => (
+  const alternative = [...of('website'), ...of('profiles'), ...of('industry')].map((s) => (
     <SummaryTag key={s.id} label={appHeader(s).title} tone="success" onJump={() => onJump(s.id)} />
   ))
 

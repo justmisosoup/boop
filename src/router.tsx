@@ -4,6 +4,8 @@ import { Shell } from './Shell'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { RecordPage } from './pages/RecordPage'
 import { StubPage } from './pages/StubPage'
+import { WorkflowPage } from './pages/WorkflowPage'
+import { WorkflowsPage } from './pages/WorkflowsPage'
 
 /** A link from when each assessment had a page of its own lands on the business. */
 const BusinessRedirect = () => {
@@ -14,9 +16,10 @@ const BusinessRedirect = () => {
 /**
  * Where the prototype goes.
  *
- * Two real destinations — the businesses list and the assessment record it
- * opens. Everything else the rail links to falls through to the stub, so the
- * nav can be the app's own without any of its links dead-ending.
+ * Four real destinations — the businesses list, the assessment record it
+ * opens, the workflows marketplace and the workflow it opens. Everything else
+ * the rail links to falls through to the stub, so the nav can be the app's own
+ * without any of its links dead-ending.
  */
 export const AppRoutes = () => (
   <Routes>
@@ -25,6 +28,8 @@ export const AppRoutes = () => (
       <Route element={<BusinessesPage />} path='businesses' />
       <Route element={<RecordPage />} path='businesses/:businessId' />
       <Route element={<BusinessRedirect />} path='businesses/:businessId/assessments/*' />
+      <Route element={<WorkflowsPage />} path='workflows' />
+      <Route element={<WorkflowPage />} path='workflows/:slug' />
       <Route element={<StubPage />} path='*' />
     </Route>
   </Routes>

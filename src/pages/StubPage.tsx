@@ -19,7 +19,7 @@ export const StubPage = () => {
   return (
     <PageContainer width="wide">
       <EmptyState
-        description="This prototype covers the businesses list and the assessment record it opens. Everything else in the nav is here so the rail matches the app."
+        description="This prototype covers the businesses list, the assessment record it opens, and the workflows marketplace. Everything else in the nav is here so the rail matches the app."
         title={match ? match.link.label : 'Not built in this prototype'}
       />
     </PageContainer>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { displayName } from '@/lib/businessNames'
 import { ALL } from '@/lib/records'
 
 /** A single typeahead result, shaped like the app's `/autocomplete/search`. */
@@ -48,7 +49,7 @@ export const useBusinessSearch = (query: string) => {
         ALL.filter((record) => record.name.toLowerCase().includes(q)).map(
           (record) => ({
             id: record.id,
-            name: record.name,
+            name: displayName(record.name),
             created_date: record.createdAt,
             status: record.status
           })

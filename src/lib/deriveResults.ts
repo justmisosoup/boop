@@ -22,7 +22,7 @@ import {
 } from './businessNames'
 import { convertedFormationOf, domesticOf, formationFilingOf, notPublished } from './registrationStatus'
 import { domesticFilingOf } from './linkedFormation'
-import { statementFor } from './statements'
+import { entityTypeStatement, statementFor } from './statements'
 
 const CATALOG_SUBJECTS = (
   catalog as {
@@ -1066,6 +1066,8 @@ export const presented = (record: BusinessRecord, results: Derived[]): Derived[]
     .filter((d) => !RETIRED.has(d.insightId.split(':')[0]))
     .filter((d) => !(d.insightId === 'sos_unknown' && onlyDomesticUnknown))
     .map((d) => {
+      // The entity type in today's words: sentence case, and likely unless a filing states it.
+      if (d.insightId === 'entity_type' && !d.notReported) return { ...d, statement: entityTypeStatement(record) }
       if (d.insightId !== 'adverse_media') return d
       const found = (record.adverseMedia?.results ?? []).length > 0
       // The platform's sentence stands; only the grade lines leave the evidence.

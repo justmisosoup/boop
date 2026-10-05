@@ -106,10 +106,11 @@ export const KindStrip = ({
           ? [
               {
                 key: 'none',
+                empty: true,
                 chip: (
                   <MetaChip tone="neutral" size="compact">
                     <Check {...icon} />
-                    No results
+                    No results · Screened
                     <span className="tabular-nums text-text-secondary">{empty.length}</span>
                   </MetaChip>
                 )

@@ -1,11 +1,8 @@
 import {
-  Building2,
   CircleCheckBig,
   Compass,
-  Landmark,
-  Radio,
-  ScanSearch,
   Settings as SettingsIcon,
+  Workflow,
   Zap,
   type LucideIcon
 } from 'lucide-react'
@@ -21,9 +18,11 @@ import type {
  *
  * The app builds this from account roles, feature flags and package settings
  * (`app/src/components/AppChrome/useAppNav.tsx`). The prototype has no account,
- * so this is the same IA — same labels, hrefs, icons and order — held flat and
- * ungated. Every destination except Businesses renders a stub; they are kept
- * so the rail looks and behaves like the real one.
+ * so this is the app's IA — same labels, hrefs, icons and order — held flat and
+ * ungated, trimmed to what the concept covers: Formations, Customer Acquisition,
+ * Signal and the Tax registrations group are left out, and Workflows is added.
+ * Every destination except Businesses and Workflows renders a stub; they are
+ * kept so the rail looks and behaves like the real one.
  */
 
 // Lighter 1.5 stroke reads calmer/simpler at 16px than lucide's default.
@@ -31,48 +30,19 @@ const glyph = (Icon: LucideIcon) => (
   <Icon aria-hidden='true' size={16} strokeWidth={1.5} />
 )
 
-// Stands in for the real account id in the entity routes. Only shapes the URL.
-const ACCOUNT_ID = 'prototype'
-
 export const PRIMARY_NAV: AppNavLink[] = [
   { id: 'explorer', label: 'Explorer', href: '/explorer', icon: glyph(Compass) },
-  {
-    id: 'formations',
-    label: 'Formations',
-    href: `/entity/partner/${ACCOUNT_ID}/formations`,
-    icon: glyph(Building2)
-  },
-  {
-    id: 'convert',
-    label: 'Customer Acquisition',
-    href: '/convert',
-    icon: glyph(ScanSearch)
-  },
-  { id: 'signal', label: 'Signal', href: '/signal', icon: glyph(Radio) },
   {
     id: 'businesses',
     label: 'Businesses',
     href: '/businesses',
     icon: glyph(CircleCheckBig)
-  }
-]
-
-const entityItems: (AppNavLink | AppNavSection)[] = [
-  {
-    id: 'entity-home',
-    label: 'Home',
-    href: `/entity/partner/${ACCOUNT_ID}`,
-    exact: true
   },
   {
-    id: 'entity-export',
-    label: 'Export IDs',
-    href: `/entity/partner/${ACCOUNT_ID}/export?hide_completed=true`
-  },
-  {
-    id: 'entity-info',
-    label: 'Information requests',
-    href: `/entity/partner/${ACCOUNT_ID}/information_requests`
+    id: 'workflows',
+    label: 'Workflows',
+    href: '/workflows',
+    icon: glyph(Workflow)
   }
 ]
 
@@ -119,12 +89,6 @@ const settingsItems: (AppNavLink | AppNavSection)[] = [
 ]
 
 export const NAV_GROUPS: AppNavGroupConfig[] = [
-  {
-    id: 'entity',
-    label: 'Tax registrations',
-    icon: glyph(Landmark),
-    items: entityItems
-  },
   {
     id: 'automation',
     label: 'Automation',

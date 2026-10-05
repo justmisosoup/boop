@@ -41,7 +41,9 @@ import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { areaSummaries } from '../lib/areaSummaries'
+import { displayName } from '../lib/businessNames'
 import { byId } from '../lib/records'
+import { workflowByAssessmentId, workflowHref } from '../lib/workflows'
 import { GROUPS, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
 import { AssessmentEditor } from '../components/AssessmentEditor'
@@ -525,6 +527,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * chip — and cleared from the report's banner, or by the same block again.
    */
   const [focus, setFocus] = useState<ReportFocus | null>(null)
+  /** The workflow the narrowed area is, where it is one. */
+  const focusWorkflow = workflowByAssessmentId(focus?.id)
   const focusAssessment = (c: BriefCard) =>
     setFocus((cur) => (cur?.id === c.id ? null : { id: c.id, title: c.title, sentence: c.sentence, cards: c.cards }))
   /**
@@ -732,7 +736,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                     >
                       <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
                     </IconActionButton>
-                    <PageHeading size="md" weight="normal">{selected.name}</PageHeading>
+                    <PageHeading size="md" weight="normal">{displayName(selected.name)}</PageHeading>
                   </div>
                   {/* With a report, the report's hero carries these. */}
                   {!hero && (
@@ -802,7 +806,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               <EmptyState
                 className="mt-10"
                 title="No report yet"
-                description={`Nobody has assessed ${selected.name} yet. Running ${standing?.name ?? 'the assessment'} reads the record and writes the report, with the insights, attributes and sources it read kept alongside it.`}
+                description={`Nobody has assessed ${displayName(selected.name)} yet. Running ${standing?.name ?? 'the assessment'} reads the record and writes the report, with the insights, attributes and sources it read kept alongside it.`}
                 actionLabel={standing ? `Run ${standing.name}` : undefined}
                 onAction={standing ? runStanding : undefined}
               />
@@ -836,7 +840,16 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 negatives={negatives}
                 revealed={revealedSet}
                 only={focus ? new Set(focus.cards) : undefined}
-                focus={focus ? { title: focus.title, sentence: focus.sentence, onClear: () => setFocus(null) } : undefined}
+                focus={
+                  focus
+                    ? {
+                        title: focus.title,
+                        sentence: focus.sentence,
+                        href: focusWorkflow ? workflowHref(focusWorkflow) : undefined,
+                        onClear: () => setFocus(null)
+                      }
+                    : undefined
+                }
                 expand={expandCard}
                 onJumpToSource={jumpToSource}
                 onJumpToTimeline={jumpToTimeline}

@@ -114,7 +114,7 @@ const text = (key: string, label: string, value: ReactNode | null | undefined, e
 const lines = (xs: string[] | undefined) => (xs && xs.length > 0 ? xs.join(', ') : undefined)
 
 /** A watchlist hit as the list carries it: the entry, with its list's chip. */
-const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHit; ctx: BlockContext }) => {
+export const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHit; ctx: BlockContext }) => {
   const listLabel = [hit.list.agencyAbbr, hit.list.abbr].filter(Boolean).join(' · ') || hit.list.title || 'Watchlist'
   const sources: ChatSourceData[] = []
   if (hit.url) sources.push({ id: `${hit.id}-entry`, label: listLabel, domain: listLabel, title: hit.entityName ?? 'Listed entity', url: hit.url, annotation: hit.list.title ?? 'Entry', badge: out })
@@ -156,7 +156,7 @@ const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHi
 }
 
 /** A PEP result as the provider carries it: who the listed person is. */
-const PepBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: PepHit; ctx: BlockContext }) => {
+export const PepBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: PepHit; ctx: BlockContext }) => {
   const urls = hit.sourceUrls && hit.sourceUrls.length > 0 ? hit.sourceUrls : hit.url ? [hit.url] : []
   const type = hit.hitType === 'association' ? 'Association' : hit.hitType === 'direct_alias' ? 'Direct hit (alias)' : hit.hitType === 'direct' ? 'Direct hit' : undefined
   const sub = type
@@ -213,7 +213,7 @@ const HEAD = 'px-4 pb-2 pt-3 text-caption leading-snug text-text-secondary'
 const CELL = 'px-4 py-3 text-sm leading-snug'
 
 /** An adverse-media result: the match, then its articles as a compact table. */
-const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: BlockContext }) => {
+export const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: BlockContext }) => {
   const [all, setAll] = useState(false)
   const items = all ? hit.items : hit.items.slice(0, SHOW)
   const more = hit.items.length - SHOW
@@ -320,7 +320,18 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   const reasonOf = (h: H) => dismissalOf(screen, h)
   const counted = hits.filter((h) => !reasonOf(h))
   const dismissed = hits.filter((h) => reasonOf(h))
-  const clean = review.clean.filter((c) => c.screens.includes(screen))
+  /* PEP runs on the submitted individuals only — the provider says so ("no hits
+     on submitted individuals or their relatives") — so those are the names it
+     came back clean on. Listing every officer on the filings claimed screens
+     that never ran, and a submitted owner whose name is also the business's
+     (Firebird Yarns' Kathryn Bernard) went unlisted as a business name. */
+  const submitted = screen === 'pep' ? screenedOf(record).pep.names : []
+  const clean =
+    screen === 'pep'
+      ? submitted
+          .filter((n) => !hits.some((h) => nameKey(h.name) === nameKey(n)))
+          .map((name) => ({ name, kind: 'person' as const, screens: [screen] }))
+      : review.clean.filter((c) => c.screens.includes(screen))
   const tiles = [
     counted.length > 0 && {
       key: 'hits',
@@ -344,15 +355,29 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
     },
     clean.length > 0 && {
       key: 'clean',
+      empty: true,
       chip: (
         <MetaChip tone="neutral" size="compact">
           <Check {...icon} />
-          No results
+          No results · Screened
           <span className="tabular-nums text-text-secondary">{clean.length}</span>
         </MetaChip>
       )
     }
-  ].filter((t): t is { key: string; chip: ReactElement } => Boolean(t))
+  ].filter((t): t is { key: string; chip: ReactElement; static?: boolean; empty?: boolean } => Boolean(t))
+  // The screen ran and returned nothing, with no one submitted to run it on:
+  // the same No results chip as every clean screen, opening to say why.
+  if (tiles.length === 0 && screen === 'pep')
+    tiles.push({
+      key: 'clean',
+      empty: true,
+      chip: (
+        <MetaChip tone="neutral" size="compact">
+          <Check {...icon} />
+          No results · Screened
+        </MetaChip>
+      )
+    })
   if (tiles.length === 0) return null
   return (
     <div>
@@ -375,6 +400,8 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
                 </div>
               ))}
             </>
+          ) : clean.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-text-secondary">No individuals were submitted to screen.</div>
           ) : (
             <AttributeCells
               className="-mb-px"

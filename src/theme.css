@@ -24,6 +24,15 @@
   src: url('./fonts/SuisseIntl-Mono.ttf');
 }
 
+/* The serif middesk.com sets its headers in. Light is the one weight held
+   here, so anything set in it is set at that weight — never faux-bold. Used
+   on the workflow pages' titles only; core's own primitives keep Suisse. */
+@font-face {
+  font-family: 'ABC Arizona Serif';
+  font-weight: 300;
+  src: url('./fonts/ABCArizonaSerif-Light.otf');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -21,6 +21,7 @@ import {
   type FloatingPanelState
 } from '@/core'
 
+import { displayName } from '../../lib/businessNames'
 import { ALL, assessmentOf } from '../../lib/records'
 import { KIND_OF_BAND, KIND_SHORT } from '../../lib/reportBrief'
 import { usePortfolioAssistant, type PortfolioTurn } from '../../lib/usePortfolioAssistant'
@@ -62,8 +63,8 @@ export const PortfolioAssistant = () => {
       const assessed = assessmentOf(r)
       byId.set(r.id, {
         id: r.id,
-        label: r.name,
-        title: r.name,
+        label: displayName(r.name),
+        title: displayName(r.name),
         annotation: assessed ? `${KIND_SHORT[KIND_OF_BAND[assessed.score.band.id]]} · ${assessed.score.value}` : 'Not assessed',
         icon: <Building2 aria-hidden="true" size={12} strokeWidth={1.75} />,
         onSelect: () => navigate(`/businesses/${r.id}`)

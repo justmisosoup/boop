@@ -284,3 +284,44 @@ export const entityFallback = (record: BusinessRecord): string | undefined => {
     return `DBA of ${n.matchedDba.owner}`
   return undefined
 }
+
+/** Suffixes and initialisms a business name keeps in capitals. */
+const KEEP_UPPER = new Set(['LLC', 'LLP', 'LP', 'PLLC', 'PC', 'PBC', 'DDS', 'AI', 'DBA', 'USA', 'US', 'UK', 'NY', 'SF', 'LA'])
+/** Suffixes written in capitals on a filing that read as words. */
+const SUFFIX_WORD = new Set(['INC', 'CORP', 'LTD', 'CO', 'COS', 'BROS', 'MFG', 'INTL'])
+const TLD = /^(com|org|net|io|co|ai|app)$/i
+
+/** One word of a filed name, read in words. */
+const nameWord = (word: string): string => {
+  const bare = word.replace(/[^A-Za-z0-9]/g, '')
+  if (!bare) return word
+  if (KEEP_UPPER.has(bare)) return word
+  if (SUFFIX_WORD.has(bare)) return word.charAt(0) + word.slice(1).toLowerCase()
+  // A dotted token: each part on its own, a web suffix lower — Change.org,
+  // J.L.W., PT.XD.
+  if (/\w\.\w/.test(word))
+    return word
+      .split('.')
+      .map((part, i) => (i > 0 && TLD.test(part.replace(/[^A-Za-z]/g, '')) ? part.toLowerCase() : nameWord(part)))
+      .join('.')
+  // Initials and other letter groups with no vowel stay as they are: JC, CJG,
+  // XD, STLLR. A single letter too: C & N.
+  if (bare.length === 1 || (bare.length <= 5 && !/[AEIOUY]/.test(bare))) return word
+  // Otherwise a word: capitalised, and again after a hyphen, a slash or a
+  // digit (3Explorers), but not after an apostrophe (Olvera\'s).
+  return word.toLowerCase().replace(/(^|[-/\d(])([a-z])/g, (_, lead: string, c: string) => lead + c.toUpperCase())
+}
+
+/**
+ * A business name as the page says it: a name a filing wrote in capitals,
+ * read in words — MIETTE PATISSERIE & CONFISERIE as Miette Patisserie &
+ * Confiserie, JC SWIMMING POOL & SPA SERVICE as JC Swimming Pool & Spa
+ * Service — and a name already in mixed case left exactly as written. For
+ * titles, lists and the places the page names the business; a value on a
+ * card stays as the filing spells it.
+ */
+export const displayName = (name: string | null | undefined): string => {
+  const n = (name ?? '').trim()
+  if (!n || n !== n.toUpperCase()) return n
+  return n.split(/(\s+)/).map((part) => (/^\s+$/.test(part) ? part : nameWord(part))).join('')
+}

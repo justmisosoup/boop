@@ -23,6 +23,7 @@ import {
   type FloatingPanelState
 } from '@/core'
 
+import { displayName } from '../../lib/businessNames'
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { KIND_WORD, type BriefCard, type ReportBrief, type ReportFocus } from '../../lib/reportBrief'
@@ -302,7 +303,7 @@ export const AssistantPanel = ({
       <RecommendationCard
         recommendation={brief.determination}
         businessId={record.id}
-        businessName={record.name}
+        businessName={displayName(record.name)}
         reportId={analysis.selected.id}
         results={results}
         record={record}
@@ -612,7 +613,7 @@ export const AssistantPanel = ({
               )}
               <AssistantComposer
                 businessId={record.id}
-                businessName={record.name}
+                businessName={displayName(record.name)}
                 custom={custom}
                 disabled={disabled}
                 report={report}

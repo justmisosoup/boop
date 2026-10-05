@@ -1,6 +1,6 @@
 import { Surface } from '@/core'
 
-import { attributesFor, cityRegistrationRows, isPlaceholder, licenseRows, nameKey, type AttributeRow } from '../lib/attributes'
+import { attributesFor, cityRegistrationRows, isPlaceholder, licenseRows, nameKey, websiteRecordRows, type AttributeRow } from '../lib/attributes'
 import { convertedFormationOf } from '../lib/registrationStatus'
 import { FOREIGN_STATUS_ORDER } from '../lib/attributes'
 import type { BusinessRecord, Derived } from '../lib/deriveResults'
@@ -78,6 +78,14 @@ const ordered = (group: GroupId, rows: AttributeRow[]): AttributeRow[] => {
   return [...rows].sort((a, b) => rank(a) - rank(b) || value(a) - value(b))
 }
 
+/** A licence's row, keyed by its licence too: two licences both "Active" are
+ *  two statuses. The same key from the licence list and the licence check, so
+ *  the two merge. */
+const licenceKey = (a: AttributeRow) => {
+  const ref = (a.refs ?? []).find((x) => x.type === 'npi_registry')
+  return a.group === 'licenses' && ref ? `${ref.id}::${a.matchValue ?? `${a.label}::${a.value}`}` : undefined
+}
+
 export const attributeRowsByGroup = (
   record: BusinessRecord,
   results: Derived[],
@@ -89,8 +97,16 @@ export const attributeRowsByGroup = (
   // they are added directly rather than waiting for a check that does not exist.
   for (const a of licenseRows(record)) {
     const rows = byGroup.get('licenses') ?? new Map<string, AttributeRow>()
-    rows.set(a.matchValue ?? `${a.label}::${a.value}`, a)
+    rows.set(licenceKey(a)!, a)
     byGroup.set('licenses', rows)
+  }
+
+  // The website's own fields, the same way: the crawl returned them whatever
+  // the checks asked of it (`websiteRecordRows`).
+  for (const a of websiteRecordRows(record)) {
+    const rows = byGroup.get('website') ?? new Map<string, AttributeRow>()
+    rows.set(`${a.label}::${a.value}`, a)
+    byGroup.set('website', rows)
   }
 
   // City registrations the same way: read from the city's register, not from
@@ -122,10 +138,12 @@ export const attributeRowsByGroup = (
       // A person is one row per role: the same name as a registered agent and
       // as a member, or under two titles, is two facts, not one. The same role
       // from two producers is still one row.
-      const key =
-        (a.group ?? asked) === 'people' && a.matchValue
+      // A document is its own row, however its label and value read.
+      const key = licenceKey(a) ?? (a.docId
+        ? `doc:${a.docId}`
+        : (a.group ?? asked) === 'people' && a.matchValue
           ? `${a.label}::${norm(a.matchValue)}`
-          : a.matchValue ?? `${a.label}::${a.value}`
+          : a.matchValue ?? `${a.label}::${a.value}`)
       const seen = rows.get(key)
       // The fuller rendering wins: one producer may know the property type or
       // the registered-agent flag where another does not.
@@ -174,6 +192,20 @@ export const attributeRowsByGroup = (
       )
       byGroup.set(group, rows)
     }
+  }
+
+  // The website reads in one order whatever produced its rows: the site, what
+  // it is and how it answered, its domain, the contacts it lists, then the
+  // pages the crawl walked. The crawl's own fields are added first, so left in
+  // insertion order they pushed the site itself below them.
+  const site = byGroup.get('website')
+  if (site) {
+    const LEAD = ['Website', 'Title', 'Site status', 'HTTP status', 'Platform', 'Category', 'Parked', 'Coming soon', 'Domain', 'Email address', 'Phone number']
+    const rank = (r: AttributeRow) => {
+      const i = LEAD.indexOf(r.label)
+      return i === -1 ? LEAD.length : i
+    }
+    byGroup.set('website', new Map([...site].sort(([, a], [, b]) => rank(a) - rank(b))))
   }
 
   return byGroup

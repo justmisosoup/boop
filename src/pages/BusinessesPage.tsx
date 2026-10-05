@@ -18,6 +18,7 @@ import {
 } from '@/core'
 import type { BusinessRecord } from '@/lib/deriveResults'
 import { ALL, assessmentOf, type Assessed } from '@/lib/records'
+import { displayName } from '@/lib/businessNames'
 
 import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
@@ -62,7 +63,7 @@ const columns: DataTableColumnDef<Row>[] = [
     accessorFn: (row) => row.record.name,
     // The name is the row's primary identifier, so it's bold. `TruncatedText`
     // shows the full name in a tooltip when it's actually clipped.
-    cell: ({ row }) => <TruncatedText className="font-semibold">{row.original.record.name ?? ''}</TruncatedText>,
+    cell: ({ row }) => <TruncatedText className="font-semibold">{displayName(row.original.record.name)}</TruncatedText>,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
   },
   {
@@ -194,7 +195,9 @@ export const BusinessesPage = () => {
 
   return (
     <PageContainer width="wide">
-      <PageHeaderBand>
+      {/* The title's centre on the rail's search line (74px from the top):
+          24px of container padding, then 50px less half the 28px line. */}
+      <PageHeaderBand className="pt-[36px]">
         <PageHeader>
           <PageHeading count={ALL.length} weight="normal">
             Businesses

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { entityTypeShown } from './normalise'
 
 import type { AnalysisDraft, AnalysisResult, ReportSnapshot } from '../types'
 import { deriveResults, type BusinessRecord, type Derived } from './deriveResults'
@@ -424,7 +425,8 @@ export const useAnalysis = (
           businessId: record.id,
           business: {
             name: record.name,
-            entityType: record.formation?.entityType,
+            // As the report states it: likely, unless a filing says so.
+            entityType: entityTypeShown(record, record.formation?.entityType),
             state: record.formation?.state,
             formed: record.formation?.date
           },
