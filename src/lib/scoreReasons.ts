@@ -41,7 +41,7 @@ export const scoreLine = (
   score: IdentityScore,
   areas: ScoreArea[] = [],
   evidence?: { record: BusinessRecord; results: Derived[] },
-  { followsLede = false }: { followsLede?: boolean } = {}
+  { followsLede = false, lede }: { followsLede?: boolean; lede?: string } = {}
 ): string => {
   const cap = score.ceilings[0]
   if (cap)
@@ -49,7 +49,9 @@ export const scoreLine = (
       score.band.id === 'not_established' ? 'That alone rules out approval.' : 'It has to be resolved before approval.'
     }`
   const held = heldArea(score, areas)
-  if (held) return `${held.name} left a question open. ${held.openQuestions?.[0] ?? ''}`.trim()
+  // A gap's `point` is the writer's note to itself, not a sentence for the
+  // reviewer; the report's own call says why the file waits.
+  if (held) return lede || `${held.name} is held for review until the steps below are met.`
   if (score.findings > 0 && evidence) {
     const { relevant, registry } = splitFlags(evidence.record, evidence.results)
     if (relevant.length > 0) {

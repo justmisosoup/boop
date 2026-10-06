@@ -148,6 +148,34 @@ export const BANDS: readonly ScoreBand[] = [
   { id: 'established', label: 'Approve', range: '90+', tone: 'success', from: 90 }
 ]
 
+/**
+ * The report's own call, read off its headline, as a band.
+ *
+ * The score is computed from how the insights read, and it cannot see what a
+ * record holds behind them — a money judgment under active garnishment is a
+ * "neutral" litigation to it. The report reads the record whole, so where it
+ * has made a call, the call is the determination: the card, the status and
+ * the list all follow it, and the score stays as supporting detail. Read in
+ * order of severity, so "do not onboard" is never taken for "onboard".
+ */
+export const bandOfCall = (headline: string | null | undefined): ScoreBand | undefined => {
+  const h = (headline ?? '').toLowerCase()
+  const id: BandId | undefined = /\b(do not onboard|decline|reject)\b/.test(h)
+    ? 'not_established'
+    : /\brequest information\b|^request\b/.test(h)
+      ? 'conditions'
+      : /\bonboard\b|\bapprove\b/.test(h)
+        ? 'established'
+        : undefined
+  return id ? BANDS.find((b) => b.id === id) : undefined
+}
+
+/** A score whose band is the report's call, where the report made one. */
+export const withCall = (score: IdentityScore, headline: string | null | undefined): IdentityScore => {
+  const band = bandOfCall(headline)
+  return band ? { ...score, band } : score
+}
+
 const bandFor = (value: number) =>
   [...BANDS].reverse().find((b) => value >= b.from) ?? BANDS[0]
 

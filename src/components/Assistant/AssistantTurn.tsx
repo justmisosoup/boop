@@ -315,7 +315,12 @@ export const RollupCitation = ({
       sources={[
         {
           id: `rollup-${first.id}`,
-          label: sources.length > 1 ? `${first.label} +${sources.length - 1}` : first.label,
+          // Narrowed to these cards, the chip says so and counts them.
+          label: shown
+            ? `Showing · ${sources.length} card${sources.length === 1 ? '' : 's'}`
+            : sources.length > 1
+              ? `${first.label} +${sources.length - 1}`
+              : first.label,
           title: names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0],
           annotation: `${sources.length} card${sources.length === 1 ? '' : 's'} · ${insights} insight${insights === 1 ? '' : 's'}`,
           snippet: shown ? 'Click to show the full report again.' : 'Click to show only these cards in the report.',
@@ -397,26 +402,17 @@ export const BriefTurn = memo(function BriefTurn({
         )}
         {brief.cards.map((c) => {
           const focused = focus?.id === c.id
-          // Narrow the report to this assessment; a title with nothing to
-          // narrow to scrolls to its card instead.
-          const select = () => (onFocusAssessment ? onFocusAssessment(c) : onJumpToCard?.(c.anchor))
           return (
             <div
               key={c.id}
               aria-current={focused || undefined}
               className="flex flex-col gap-1"
             >
-              {onFocusAssessment || onJumpToCard ? (
-                <button
-                  type="button"
-                  onClick={select}
-                  className="w-fit text-left text-sm font-medium leading-5 text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {c.title}
-                </button>
-              ) : (
-                <span className="text-sm font-medium leading-5 text-foreground">{c.title}</span>
-              )}
+              {/* The area's headline is a heading, not a control: the card
+                  chip under it is what narrows the report. */}
+              {/* Narrowed to this area, the card chip under it says so ("Showing ·
+                  3 cards"): the mark sits on the control that undoes it. */}
+              <span className="text-sm font-medium leading-5 text-foreground">{c.title}</span>
               {c.sentence && (
                 <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
                   {c.sentence}

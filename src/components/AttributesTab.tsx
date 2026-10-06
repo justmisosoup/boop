@@ -200,7 +200,7 @@ export const attributeRowsByGroup = (
   // insertion order they pushed the site itself below them.
   const site = byGroup.get('website')
   if (site) {
-    const LEAD = ['Website', 'Title', 'Site status', 'HTTP status', 'Platform', 'Category', 'Parked', 'Coming soon', 'Domain', 'Email address', 'Phone number']
+    const LEAD = ['Website', 'Title', 'Site status', 'Platform', 'Parked', 'Coming soon', 'Domain', 'Email address', 'Phone number']
     const rank = (r: AttributeRow) => {
       const i = LEAD.indexOf(r.label)
       return i === -1 ? LEAD.length : i

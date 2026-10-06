@@ -102,6 +102,11 @@ type Holder = {
 
 const nameKeyOf = (s: string) => baseName(s)
 
+/** Whether a name on the record is a business's rather than a person's: it
+ *  carries an entity suffix ("Registered Agents Inc") that `baseName` strips. */
+const isEntityName = (name: string) =>
+  baseName(name) !== name.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim()
+
 /** The name-match confidence at which the articles are taken to be about the name. */
 export const MEDIA_MATCH = 0.9
 
@@ -306,8 +311,8 @@ export const screeningOf = (record: BusinessRecord): Screening => {
   const wholeName = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim()
   /* Everyone the screens ran on: every business name and every person on the
      record, as the dashboard's screening cards list them. PEP runs on people
-     only. A name with no result on a screen is clean on it. */
-  const isEntity = (name: string) => baseName(name) !== name.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim()
+     only — every person, submitted or found on a filing. A name with no result on a screen is clean on it. */
+  const isEntity = isEntityName
   const everyone = [
     ...[record.name, ...(record.names ?? []).map((n) => n.name)].map((name) => ({ name, kind: 'business' as const })),
     ...record.people.map((p) => ({ name: p.name, kind: (isEntity(p.name) ? 'business' : 'person') as Subject['kind'] }))
@@ -360,6 +365,10 @@ export const screenedOf = (record: BusinessRecord): Screened => {
   const business = (record.names ?? []).find((n) => n.submitted)?.name ?? record.name
   const businessNames = [...new Set([record.name, ...(record.names ?? []).map((n) => n.name).filter(Boolean)])]
   const people = [...new Set(record.people.filter((p) => p.submitted && p.name).map((p) => p.name))]
+  // PEP screens every person on the record — those the customer submitted and
+  // those found on the filings — but not a business listed among them, such
+  // as a registered agent.
+  const pepPeople = [...new Set(record.people.filter((p) => p.name && !isEntityName(p.name)).map((p) => p.name))]
   const holders: Holder[] = [...(record.names ?? []).map((n) => ({ ...n, entity: true })), ...record.people]
   // Who a result was returned against: the names carrying its id; else the
   // business. Each with what it is to the record — a business name or a
@@ -396,7 +405,7 @@ export const screenedOf = (record: BusinessRecord): Screened => {
 
   return {
     watchlist: { hits: watchlistHits, names: [...businessNames, ...people], lists: (record.watchlist?.lists ?? []).length, ran: Boolean(record.watchlist) },
-    pep: { hits: pepHits, names: people, ran: Boolean(record.pep) },
+    pep: { hits: pepHits, names: pepPeople, ran: Boolean(record.pep) },
     media: { hits: mediaHits, names: [...businessNames, ...people], ran: Boolean(record.adverseMedia) }
   }
 }

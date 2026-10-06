@@ -8,7 +8,8 @@ import {
   identityScore,
   polarityCounts,
   type AssessmentWeight,
-  type IdentityScore
+  type IdentityScore,
+  withCall
 } from './identityScore'
 
 /** The assessments' tiers, from the bundled agent — the list has no hook. */
@@ -69,7 +70,9 @@ export const assessmentOf = (r: BusinessRecord): Assessed | null => {
       held.report.sections,
       held.policy.map((p) => ({ ...p, weight: TIER_OF.get(p.id) }))
     )
-    const score = identityScore(record, results, areas)
+    // The list's status chip shows the report's call, as the record page does.
+    const computed = identityScore(record, results, areas)
+    const score = computed ? withCall(computed, held.report.headline) : computed
     if (score)
       out = {
         at: held.at ?? '',

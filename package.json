@@ -10,6 +10,7 @@
     "build": "vite build",
     "build:refresh": "bun run pull && bun run data && vite build",
     "pull": "bun run scripts/pull-records.ts",
+    "patch:liens": "bun run scripts/patch-liens.ts",
     "pull:timeline": "bun run scripts/pull-timeline.ts",
     "pull:licenses": "bun run scripts/pull-licenses.ts",
     "questions": "bun run scripts/export-questions.ts",

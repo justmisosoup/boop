@@ -177,7 +177,7 @@ export const StatusChip = ({ reg }: { reg: Registration }) => {
       ) : (
         <Minus {...chipIcon} />
       )}
-      {st.status ?? 'Not published by the state'}
+      {st.status ?? NOT_PROVIDED}
     </MetaChip>
   )
 }

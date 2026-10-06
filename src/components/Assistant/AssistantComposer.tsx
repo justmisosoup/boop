@@ -196,8 +196,10 @@ export const AssistantComposer = ({
           report out of context, card and all; the crosshairs puts it back.
           With no report there is nothing to take out. */}
       {(!report || withReport) && (
-        <div className="mb-1.5 flex min-w-0 items-center gap-1.5 rounded-card border border-solid border-border bg-[var(--core-color-surface-subtle)] px-2.5 py-1 text-caption leading-4 text-foreground">
-          <Building2 aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0 text-text-secondary" />
+        // On the inverse surface, the midnight the tooltip sits on, with inverse
+        // text: the context reads as set apart from the conversation above it.
+        <div className="mb-1.5 flex min-w-0 items-center gap-1.5 rounded-card border border-solid border-[var(--core-color-surface-inverse)] bg-[var(--core-color-surface-inverse)] px-2.5 py-1 text-caption leading-4 text-[var(--core-color-text-inverse)]">
+          <Building2 aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{businessName}</span>
           {report && (
             <button
@@ -205,7 +207,7 @@ export const AssistantComposer = ({
               aria-label="Take the report out of context"
               title="Take the report out of context"
               onClick={() => setWithReport(false)}
-              className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-control text-text-secondary hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-control text-[var(--core-color-text-inverse)] opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X aria-hidden="true" size={12} strokeWidth={1.75} />
             </button>

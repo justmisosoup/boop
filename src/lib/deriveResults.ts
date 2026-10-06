@@ -420,16 +420,26 @@ export type Lien = {
   fileNumber: string | null
   state: string | null
   status: string | null
+  /** The API's reading of the status: open, processing, closed or unknown. */
+  statusCategory?: string | null
   filingDate: string | null
   lapseDate: string | null
+  /** When the filing office last changed the record. */
+  updatedDate?: string | null
   collateral: string | null
+  /** The filing office's classification of what is secured, where it gives one. */
+  collateralType?: string | null
   liabilityCents: number | null
   loanPrincipalCents: number | null
   /** The filing office's own page for this lien. */
   url: string | null
-  debtors: Array<{ name: string; type: string | null }>
-  securedParties: Array<{ name: string; type: string | null }>
+  debtors: LienParty[]
+  securedParties: LienParty[]
 }
+
+/** A party to a lien — a debtor or a secured party — with every address the
+ *  filing states for it. Optional until a record is patched with them. */
+export type LienParty = { name: string; type: string | null; addresses?: string[] }
 
 export type Bankruptcy = {
   id: string
@@ -439,6 +449,14 @@ export type Bankruptcy = {
   filingDate: string | null
   court: string | null
   courtState: string | null
+  /** When the court closed the case, where it has. */
+  closedDate?: string | null
+  /** How the case ended, in the court's word. */
+  disposition?: string | null
+  /** Who filed, as the petition names them. */
+  debtors?: Array<{ name: string }>
+  /** The court's docket, as published. */
+  caseUpdates?: Array<{ date: string | null; description: string | null }>
 }
 
 /** DBA filings are not supported in these states (source doc 01). */

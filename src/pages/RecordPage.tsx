@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
-import { Navigate, useNavigate, useParams } from 'react-router'
+import { Link, Navigate, useParams } from 'react-router'
 
 import {
   EmptyState,
-  IconActionButton,
   MutedText,
-  PageHeader,
-  PageHeaderBand,
-  PageHeaderActions,
+  PageBreadcrumb,
+  PageBreadcrumbItem,
   PageHeading,
   TabsContent,
   TabsRoot,
@@ -16,7 +13,7 @@ import {
   type FloatingPanelState
 } from '@/core'
 
-import { areasOf, identityScore, negativesFor, type AssessmentWeight } from '../lib/identityScore'
+import { areasOf, identityScore, negativesFor, type AssessmentWeight, bandOfCall } from '../lib/identityScore'
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { Timeline } from '../components/Timeline'
@@ -43,7 +40,7 @@ import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '
 import { areaSummaries } from '../lib/areaSummaries'
 import { displayName } from '../lib/businessNames'
 import { byId } from '../lib/records'
-import { workflowByAssessmentId, workflowHref } from '../lib/workflows'
+import { workflowByAssessmentId } from '../lib/workflows'
 import { GROUPS, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
 import { AssessmentEditor } from '../components/AssessmentEditor'
@@ -162,7 +159,6 @@ export function RecordPage() {
  * each; that has been set aside, see `heldReports.ts`.
  */
 function Record({ record: selected }: { record: BusinessRecord }) {
-  const navigate = useNavigate()
   /** What the business is now. What a new report is run against. */
   const live = useMemo(() => deriveResults(selected), [selected])
 
@@ -246,7 +242,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     [view, record, results, scoreAreas]
   )
   /** The status the determination implies, and the reviewer's review of it. */
-  const determined = statusForBand(score?.band.id)
+  // The header's status defaults to the report's call, not the score's band.
+  const determined = statusForBand(
+    (bandOfCall(analysis.selected && 'headline' in analysis.selected.result ? (analysis.selected.result as { headline?: string }).headline : undefined) ?? score?.band)?.id
+  )
   const review = useReview(selected.id, determined)
 
   /**
@@ -495,6 +494,63 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * for, so it opens on it.
    */
   const panelRef = useRef<HTMLDivElement | null>(null)
+  /**
+   * The report's head — crumb, name and controls — sticks to the top of the
+   * scroller, and the filter bar pins directly under it. The head publishes
+   * its measured height as `--report-head-h` and the bar reads it, the
+   * mechanism the businesses list uses for its table header, so the two never
+   * overlap however the head wraps.
+   */
+  const headRef = useRef<HTMLDivElement | null>(null)
+  /**
+   * Whether the report has scrolled under the head. Pinned, the lowest of the
+   * pinned bars — the head, or the filter bar under it when narrowed — casts
+   * a shadow, so the reader can see the report sliding beneath; at rest there
+   * is none. Read off the head's position, which works whichever element is
+   * scrolling (the panel from `wide`, the document below it).
+   */
+  const [pinned, setPinned] = useState(false)
+  useEffect(() => {
+    const read = () => {
+      const head = headRef.current
+      if (!head) return
+      const panel = panelRef.current
+      const top = panel && panel.scrollHeight > panel.clientHeight ? panel.getBoundingClientRect().top : 0
+      const scrolled = (panel?.scrollTop ?? 0) > 0 || window.scrollY > 0
+      setPinned(scrolled && head.getBoundingClientRect().top <= top + 1)
+    }
+    read()
+    const panel = panelRef.current
+    panel?.addEventListener('scroll', read, { passive: true })
+    window.addEventListener('scroll', read, { passive: true })
+    return () => {
+      panel?.removeEventListener('scroll', read)
+      window.removeEventListener('scroll', read)
+    }
+  }, [])
+  useEffect(() => {
+    const el = headRef.current
+    const panel = panelRef.current
+    if (!el) return
+    // The head's height, for the filter bar to pin under; and the scroll
+    // area's inner width, for both bars to paint their canvas and shadow
+    // edge to edge while their content keeps to the reading column.
+    const root = document.documentElement.style
+    const publish = () => {
+      root.setProperty('--report-head-h', `${el.offsetHeight}px`)
+      if (panel) root.setProperty('--report-scroll-w', `${panel.clientWidth}px`)
+    }
+    publish()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(publish)
+    observer.observe(el)
+    if (panel) observer.observe(panel)
+    return () => {
+      observer.disconnect()
+      root.removeProperty('--report-head-h')
+      root.removeProperty('--report-scroll-w')
+    }
+  })
 
   /** Open the right-hand panel on one of its views. */
   const showPanel = (view: PanelView) => {
@@ -527,10 +583,31 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * chip — and cleared from the report's banner, or by the same block again.
    */
   const [focus, setFocus] = useState<ReportFocus | null>(null)
-  /** The workflow the narrowed area is, where it is one. */
-  const focusWorkflow = workflowByAssessmentId(focus?.id)
-  const focusAssessment = (c: BriefCard) =>
-    setFocus((cur) => (cur?.id === c.id ? null : { id: c.id, title: c.title, sentence: c.sentence, cards: c.cards }))
+  /** The area as the filter bar names it: its workflow's name, else the policy's. */
+  const focusName = focus ? (workflowByAssessmentId(focus.id)?.name ?? policy.find((p) => p.id === focus.id)?.name ?? focus.title) : ''
+  const focusAssessment = (c: BriefCard) => {
+    const narrowing = focus?.id !== c.id
+    setFocus(narrowing ? { id: c.id, title: c.title, sentence: c.sentence, cards: c.cards } : null)
+    // Narrowed, the report starts again from the top, where the filter bar
+    // says what changed. Widened, the reader stays where they chose to leave.
+    if (narrowing) {
+      panelRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+  // Escape leaves the narrowed view, as it leaves any mode — unless the key is
+  // meant for a field or a dialog that is open.
+  useEffect(() => {
+    if (!focus) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.closest('input, textarea, [contenteditable="true"]') || document.querySelector('[role="dialog"]'))) return
+      setFocus(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [focus])
   /**
    * An assistant chip leads to its card IN THE REPORT, and only there: the
    * report scrolls to the card's top. Nothing opens — not the card's
@@ -699,54 +776,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             value="assessment"
             className="flex min-h-0 flex-col wide:flex-1"
           >
-            {/*
-              * The page header, the dashboard's pattern: where you came from,
-              * what you are looking at, and the faces of it — a band across the
-              * head of the column, its rule edge to edge, its content on the
-              * report's measure. The tabs are up here, above the scroller, so
-              * the report cannot scroll past them; the report they belong to
-              * is named at the head of the column below. It replaces a bar fixed across the whole
-              * window that carried the name in 14px and left the tabs on a
-              * second bar below it.
-              *
-              * Sticky, for the widths where the page scrolls rather than the
-              * column: the report passes under it and the band stays whole
-              * across the page. At `wide` the column scrolls inside itself and
-              * the band sits above the scroller, so `sticky` is inert there.
-              */}
-            <PageHeaderBand className="sticky top-0 z-chrome flex h-[49px] shrink-0 items-center border-b border-solid border-border bg-surface-canvas px-0 py-0">
-              <PageHeader className={cn(MEASURE, 'w-full gap-2')}>
-                {/* A back arrow beside the name, not a breadcrumb: the only
-                    place up is the list, and a crumb that named the business
-                    over a heading that named it again said it twice. */}
-                {/* The arrow hangs in the left margin — 32px button plus the
-                    8px gap — so the name starts where the tabs start. The
-                    assignee and the status sit in the report's hero; with no
-                    report, the assignee stays here. */}
-                <div className="-ml-10 flex min-w-0 items-center justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {/* A button that navigates, not `asChild` over a Link: the
-                        core button renders its icon slots beside the child, so
-                        Radix's Slot sees several children and throws. */}
-                    <IconActionButton
-                      variant="quiet"
-                      size="compact"
-                      aria-label="All businesses"
-                      onClick={() => navigate('/businesses')}
-                    >
-                      <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-                    </IconActionButton>
-                    <PageHeading size="md" weight="normal">{displayName(selected.name)}</PageHeading>
-                  </div>
-                  {/* With a report, the report's hero carries these. */}
-                  {!hero && (
-                    <PageHeaderActions className="shrink-0">
-                      <AssigneeDropdown businessId={selected.id} />
-                    </PageHeaderActions>
-                  )}
-                </div>
-              </PageHeader>
-            </PageHeaderBand>
 
             {/*
               * The report scrolls itself, under its own tabs.
@@ -761,7 +790,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               */}
             <div
               ref={panelRef}
-              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-6 wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
+              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
             >
               <div className={MEASURE}>
                 {/* One report column: the determination opens it at every
@@ -814,11 +843,47 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             {/* The report's head: the business, the assessment it was run under,
                 the call and the score. The one place the recommendation is
                 acted on. */}
+            {/* With no report there is no hero, so the crumb, the name and the
+                assignee head the page on their own. */}
+            {/* The head sticks: at the scroller's true top from \`wide\` (its
+                54px padding lifted, as the filter bar's is), on the canvas so
+                the cards pass under it. */}
+            {!hero && (
+              <div ref={headRef} className={`sticky top-0 z-[4] pt-3 wide:top-[-54px] flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none ${pinned && !focus ? 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]' : ''}`}>
+                <div className="flex min-w-0 flex-col">
+                  <PageBreadcrumb className="mb-2">
+                  {/* The dashboard's crumb, as the workflow pages carry it: where
+                      you came from, then the business. It replaces a sticky bar
+                      with a back arrow over the same name. */}
+                  <PageBreadcrumbItem asChild>
+                    <Link to="/businesses" className="no-underline">
+                      Businesses
+                    </Link>
+                  </PageBreadcrumbItem>
+                  <PageBreadcrumbItem current>{displayName(selected.name)}</PageBreadcrumbItem>
+                </PageBreadcrumb>
+                  <PageHeading level={2} size="lg" weight="normal" className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]">
+                    {displayName(selected.name)}
+                  </PageHeading>
+                </div>
+                <AssigneeDropdown businessId={selected.id} />
+              </div>
+            )}
             {hero && analysis.selected && brief && (
-              <div className="mb-8">
+              <div ref={headRef} className={`sticky top-0 z-[4] pt-3 wide:top-[-54px] pb-4 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none ${pinned && !focus ? 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]' : ''}`}>
+                <PageBreadcrumb className="mb-2">
+                {/* The dashboard's crumb, as the workflow pages carry it: where
+                    you came from, then the business. It replaces a sticky bar
+                    with a back arrow over the same name. */}
+                <PageBreadcrumbItem asChild>
+                  <Link to="/businesses" className="no-underline">
+                    Businesses
+                  </Link>
+                </PageBreadcrumbItem>
+                <PageBreadcrumbItem current>{displayName(selected.name)}</PageBreadcrumbItem>
+              </PageBreadcrumb>
                 <ReportHero
                   record={record}
-                  report={analysis.selected}
                   controls={
                     <>
                       <AssigneeDropdown businessId={selected.id} />
@@ -840,16 +905,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 negatives={negatives}
                 revealed={revealedSet}
                 only={focus ? new Set(focus.cards) : undefined}
-                focus={
-                  focus
-                    ? {
-                        title: focus.title,
-                        sentence: focus.sentence,
-                        href: focusWorkflow ? workflowHref(focusWorkflow) : undefined,
-                        onClear: () => setFocus(null)
-                      }
-                    : undefined
-                }
+                focus={focus ? { id: focus.id, name: focusName, onClear: () => setFocus(null) } : undefined}
+                pinned={pinned}
                 expand={expandCard}
                 onJumpToSource={jumpToSource}
                 onJumpToTimeline={jumpToTimeline}

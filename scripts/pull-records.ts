@@ -14,6 +14,8 @@
  * reads. The API's own field names are preserved in the normaliser below so the
  * mapping is auditable.
  */
+import { mapLien } from './lib/lien'
+
 const KEY = process.env.MIDDESK_API_KEY
 const BASE = process.env.MIDDESK_API_URL ?? 'https://api.middesk.com/v1'
 
@@ -382,28 +384,8 @@ const normalise = (b: Any) => ({
     }))
   })),
 
-  liens: (b.liens ?? []).map((l: Any) => ({
-    id: l.id,
-    type: l.type ?? null,
-    fileNumber: l.file_number ?? null,
-    state: l.state ?? null,
-    status: l.status ?? l.status_category ?? null,
-    filingDate: l.filing_date ?? null,
-    lapseDate: l.lapse_date ?? null,
-    collateral: l.collateral ?? null,
-    // What it secures, where the filing office states it. Null on most UCC-1s,
-    // which is a fact about the filing rather than a gap in the pull.
-    liabilityCents: typeof l.liability_cents === 'number' ? l.liability_cents : null,
-    loanPrincipalCents:
-      typeof l.loan_principal_amount_cents === 'number' ? l.loan_principal_amount_cents : null,
-    // The filing office's own page for this lien.
-    url: l.source ?? null,
-    debtors: (l.debtors ?? []).map((x: Any) => ({ name: x.name, type: x.type ?? null })),
-    securedParties: (l.secured_parties ?? []).map((x: Any) => ({
-      name: x.name,
-      type: x.type ?? null
-    }))
-  })),
+  // Mapped in scripts/lib/lien.ts, shared with the lien-only patch.
+  liens: (b.liens ?? []).map(mapLien),
 
   bankruptcies: (b.bankruptcies ?? []).map((x: Any) => ({
     id: x.id,
@@ -412,7 +394,12 @@ const normalise = (b: Any) => ({
     status: x.status ?? null,
     filingDate: x.filing_date ?? null,
     court: x.court ?? x.jurisdiction ?? null,
-    courtState: x.jurisdiction_state ?? null
+    courtState: x.jurisdiction_state ?? null,
+    closedDate: x.closed_date ?? null,
+    disposition: x.disposition ?? null,
+    debtors: (x.debtors ?? []).map((d: Any) => ({ name: d.name })).filter((d: Any) => d.name),
+    // The court's docket as published: `case_updates[].pub_date` and `description`.
+    caseUpdates: (x.case_updates ?? []).map((u: Any) => ({ date: u.pub_date ?? null, description: u.description ?? null }))
   })),
 
   // The businesses connected to this one, strongest first. The review task

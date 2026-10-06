@@ -330,6 +330,73 @@ submission alone.
 for a sole proprietor; a registered-agent address is ordinary for a Delaware
 corporation.
 
+**The trade is what the evidence says, not the classifier's ranking.** The classifier
+returns several readings with confidence scores, and its top one can be wrong. A
+reading counts when something else on the record corroborates it: the name, the
+website's content, a profile, a licence, a city registration's NAICS, a lien's
+collateral. Then it is the business's trade whatever its rank, and asking for the
+permit or licence that trade needs is right — FISHMONGER DON's top reading is
+insurance agencies, but its name, website and Facebook page all sell seafood, so a
+seafood permit is the right step; SORENSON COMMUNICATIONS' telecommunications line is
+on the record, so asking whether it needs a licence is right. A reading nothing
+corroborates is noise, at any rank: never ask for permits on the strength of the
+classifier alone. Where readings split and nothing settles them, say so and request an
+explanation of expected account activity (what it sells, volumes, counterparties). USCONNECT LLC is that case: no website or
+profile, readings spanning telecoms, food service and vending, and the food and
+vending ones resting only on a same-named business's liens — so no vending permit.
+
+**A name match is not this business.** A lien, case or screening result that matches on
+name alone — at an address, in a state, under a suffix the business has no filing or
+address in — may belong to a same-named business. Say what ties it to the applicant or
+that nothing does, and make the follow-up the question of whether it is theirs; never
+treat it as the business's own. Name the record in the follow-up ("the UCC liens CoBank
+filed against USCONNECT at a Manchester, New Hampshire address"), not a vague
+"records".
+
+**Every follow-up names its source.** The reviewer acts on the step without rereading
+the assessment, so the step says which record it rests on: the lien and its secured
+party, the court, the list, the filing's state.
+
+**A follow-up asks for a document on the list.** A follow-up is an RFI item: it names a
+document the applicant can send. The list is what a KYB analyst requests at account
+opening, and nothing outside it is asked for:
+
+| Question | Documents a follow-up may request |
+|---|---|
+| Legal existence | Formation filing (Articles of Incorporation / Organization, Certificate of Formation, Certificate of Limited Partnership); a recent Certificate of Good Standing or Existence; foreign qualification in the states it operates; DBA / assumed-name certificate for a sole proprietor or trade name; the reinstatement, conversion, merger or name-amendment filing when the chain of entities is unclear |
+| Tax identification | IRS CP 575 or 147C letter; W-9 |
+| Governing documents and authority | Operating Agreement, Bylaws, Partnership Agreement; a corporate or LLC resolution naming who opens and signs on the account; incumbency certificate |
+| Beneficial ownership and control | The bank's beneficial ownership certification (every 25% owner and a control person); an ownership chart and the formation documents of each intermediate entity for layered structures |
+| Proof of address and operations | Utility bill, commercial lease or bank statement for the operating address; a business or professional licence or permit, only where the trade is corroborated (see the trade rule); website, invoices, statements from another institution |
+| Enhanced due diligence | Financial statements, tax returns, source-of-funds or source-of-wealth documentation, AML programme documentation, state licences or FinCEN registration for a regulated trade, an explanation of expected account activity (volumes, counterparties, geographies) |
+
+Individual identification is omitted for now: no government ID, date of birth, SSN or
+passport number, no "verify the identity of", no "run KYC on". A beneficial ownership
+certification is requested; the people it names are not verified in a follow-up.
+
+One analyst-side step survives, because it is not a request: **dispositioning a
+name-only screening hit** (sanctions, PEP, adverse media) against what the file
+already holds. Every other check the analyst runs alone — Secretary of State lookups,
+lien, litigation, bankruptcy or criminal searches on a person, screening a person once
+named — is not a follow-up. The assessment prose says it was or was not run, and the
+gap it would have closed is written off with `noAction`.
+
+A question with no document behind it is reframed as one or dropped:
+
+- "Is this judgment / lien theirs?" → request a satisfaction of judgment or lien
+  release for that record, named; the name-only caveat stays in the assessment.
+- "Does the business next door share owners?" → an ownership chart covering the
+  named entity.
+- "Which entity is applying?" → that entity's formation filing and good-standing
+  certificate.
+- "Describe the business" → an explanation of expected account activity, and the
+  trade's licence where corroborated.
+- "What does the UCC secure?", "what is the status of case X?", "why this address?",
+  an organic certificate, a chargeback history as such → dropped; the prose keeps the
+  fact. Billing disputes become part of the expected-activity explanation.
+- "Collect a certification and verify X" → keep the certification, strip the
+  verification.
+
 **Cite only what the assessment reads.** A card shows every row its section cites, so a
 citation is a claim that the row is evidence for that area's question. Each assessment
 declares the insights it reads (`insightIds` in `analysis/agent.json`, carried on the

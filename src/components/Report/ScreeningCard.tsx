@@ -320,15 +320,15 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   const reasonOf = (h: H) => dismissalOf(screen, h)
   const counted = hits.filter((h) => !reasonOf(h))
   const dismissed = hits.filter((h) => reasonOf(h))
-  /* PEP runs on the submitted individuals only — the provider says so ("no hits
-     on submitted individuals or their relatives") — so those are the names it
-     came back clean on. Listing every officer on the filings claimed screens
-     that never ran, and a submitted owner whose name is also the business's
-     (Firebird Yarns' Kathryn Bernard) went unlisted as a business name. */
-  const submitted = screen === 'pep' ? screenedOf(record).pep.names : []
+  /* PEP runs on every person on the record, submitted or found on a filing,
+     so those are the names it came back clean on. Listed from the record's
+     people rather than the shared clean list: a submitted owner whose name is
+     also the business's (Firebird Yarns' Kathryn Bernard) would go unlisted
+     there as a business name. */
+  const people = screen === 'pep' ? screenedOf(record).pep.names : []
   const clean =
     screen === 'pep'
-      ? submitted
+      ? people
           .filter((n) => !hits.some((h) => nameKey(h.name) === nameKey(n)))
           .map((name) => ({ name, kind: 'person' as const, screens: [screen] }))
       : review.clean.filter((c) => c.screens.includes(screen))
@@ -365,7 +365,7 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
       )
     }
   ].filter((t): t is { key: string; chip: ReactElement; static?: boolean; empty?: boolean } => Boolean(t))
-  // The screen ran and returned nothing, with no one submitted to run it on:
+  // The screen ran and returned nothing, with no person on the record to run it on:
   // the same No results chip as every clean screen, opening to say why.
   if (tiles.length === 0 && screen === 'pep')
     tiles.push({
@@ -401,7 +401,7 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
               ))}
             </>
           ) : clean.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-text-secondary">No individuals were submitted to screen.</div>
+            <div className="px-4 py-3 text-sm text-text-secondary">No people on the record to screen.</div>
           ) : (
             <AttributeCells
               className="-mb-px"

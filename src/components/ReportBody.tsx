@@ -2,7 +2,7 @@ import { Fragment, cloneElement, isValidElement, useMemo } from 'react'
 
 import { Text } from '@/core'
 
-import { attributesFor } from '../lib/attributes'
+import { attributesFor, isPlaceholder } from '../lib/attributes'
 import { categoriesOf } from '../lib/deriveResults'
 import { GROUPS, makeGroupFor, type GroupId } from '../lib/groups'
 import type { AreaSummary } from '../lib/areaSummaries'
@@ -316,7 +316,12 @@ const attributePattern = (results: Derived[], record?: BusinessRecord) => {
       const v = a.value?.trim()
       // Anything shorter is a state code or an entity suffix. They sit inside
       // ordinary sentences, and marking them marks the sentence.
-      if (v && v.length > 3) values.add(v)
+      if (!v || v.length <= 3) continue
+      // A placeholder is what a card shows when it holds nothing — "No people
+      // submitted", "None submitted", "No state filing on record". It is not
+      // attribute text, and marking it underlined whole sentences of prose.
+      if (isPlaceholder(v) || /^(no|none|not)\b/i.test(v)) continue
+      values.add(v)
     }
   }
   if (values.size === 0) return null

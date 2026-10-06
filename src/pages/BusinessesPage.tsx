@@ -196,10 +196,15 @@ export const BusinessesPage = () => {
   return (
     <PageContainer width="wide">
       {/* The title's centre on the rail's search line (74px from the top):
-          24px of container padding, then 50px less half the 28px line. */}
-      <PageHeaderBand className="pt-[36px]">
+          24px of container padding, then 50px less half the serif's 40px line. */}
+      <PageHeaderBand className="px-0 pt-[30px]">
         <PageHeader>
-          <PageHeading count={ALL.length} weight="normal">
+          {/* The Workflows page's H1 treatment: the serif at its one weight. */}
+          <PageHeading
+            count={ALL.length}
+            weight="normal"
+            className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]"
+          >
             Businesses
           </PageHeading>
         </PageHeader>

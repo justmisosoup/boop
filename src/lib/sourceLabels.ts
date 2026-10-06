@@ -98,4 +98,4 @@ export const faviconFor = (href: string) => {
  * reader could see at the URL. Shown under a capture of the home page, each
  * would claim the page had stated it, so these say what they are instead.
  */
-export const WEBSITE_METADATA = new Set(['Title', 'Domain', 'Platform', 'Category'])
+export const WEBSITE_METADATA = new Set(['Title', 'Domain', 'Platform'])

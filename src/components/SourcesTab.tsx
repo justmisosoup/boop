@@ -20,6 +20,11 @@ import { formationCardFilingOf } from '../lib/linkedFormation'
 import { STATE_NAMES, stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 import { Collapsible } from './Collapsible'
+import { StatusChip } from './Report/ClaimsStrips'
+import { bankruptcySections } from './Report/bankruptcySections'
+import { LienSections, lienStatusKind } from './Report/lienSections'
+import { litigationSections } from './Report/litigationSections'
+import { RecordSections as RecordGrids } from './Report/recordSections'
 import { ConnectionSections } from './ConnectionSections'
 import { relatedBusinessesOf } from '../lib/relatedBusinesses'
 import { priorNameRecords } from '../lib/cityRegistrations'
@@ -1202,6 +1207,35 @@ const RecordRowSection = ({ s, record }: { s: Source; record: BusinessRecord }) 
   const rows = attributesFor(ROW_KEY[type], record).filter((r) => r.docId === id)
   if (rows.length === 0) return null
   const href = s.doc?.lien?.url
+  const lien = s.doc?.lien
+  // A lien draws the same sections the report's lien block does — filing
+  // information, secured parties, debtors — with its status as the first
+  // cell (the report's band carries the chip) and the filing office's page
+  // as the last.
+  const statusCell = (status: string | null | undefined) =>
+    cell('Status', lienStatusKind(status) ? <StatusChip status={status} /> : status && !/^unknown$/i.test(status) ? sentence(status) : 'Not stated')
+  const sectionHeading = (label: string) => <CardLabelRow as="h4">{label}</CardLabelRow>
+  // A court case and a petition draw their sections the same way: the status
+  // first, then the dashboard's arrangement of the record.
+  const litigation = s.doc?.litigation
+  if (litigation)
+    return <RecordGrids sections={litigationSections(litigation, { lead: [statusCell(litigation.caseStatus)] })} heading={sectionHeading} />
+  const bankruptcy = s.doc?.bankruptcy
+  if (bankruptcy)
+    return <RecordGrids sections={bankruptcySections(bankruptcy, { lead: [statusCell(bankruptcy.status)] })} heading={sectionHeading} />
+  if (lien) {
+    const kind = lienStatusKind(lien.status)
+    return (
+      <LienSections
+        lien={lien}
+        heading={(label) => <CardLabelRow as="h4">{label}</CardLabelRow>}
+        extra={{
+          lead: [cell('Status', kind ? <StatusChip status={lien.status} /> : lien.status ? sentence(lien.status) : 'Not stated')],
+          trail: href ? [cell('Record', <RecordLink href={href}>Filing office website</RecordLink>, { span: 'full' as const })] : []
+        }}
+      />
+    )
+  }
   return (
     <>
       <CardLabelRow as="h4">{DETAILS[type] ?? 'Details'}</CardLabelRow>
@@ -1254,8 +1288,8 @@ const EmptyScreenSection = ({ s, record }: { s: Source; record: BusinessRecord }
       {sc.names.length > 0 ? (
         <AttributeCells items={sc.names.map((n) => cell(screen === 'pep' ? 'Person' : 'Name', n))} />
       ) : (
-        // PEP runs on the submitted individuals only.
-        <MutedText className="block px-4 py-3">No individuals submitted</MutedText>
+        // PEP runs on every person on the record, submitted or found.
+        <MutedText className="block px-4 py-3">No people on the record</MutedText>
       )}
       {lists.length > 0 && (
         <>
@@ -1423,7 +1457,7 @@ export const appOrderedSources = (sources: Source[], record: BusinessRecord) => 
 }
 
 /** One summary tag, following to its card. */
-const SummaryTag = ({ label, tone, onJump }: { label: string; tone: 'success' | 'danger' | 'subtle'; onJump: () => void }) => (
+const SummaryTag = ({ label, tone, onJump }: { label: string; tone: 'success' | 'warning' | 'danger' | 'subtle'; onJump: () => void }) => (
   <button type="button" onClick={onJump} className="rounded-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
     <Tag tone={tone} size="compact" className={BADGE}>
       {label}
@@ -1455,7 +1489,7 @@ export const SourcesSummary = ({
   onJump: (sourceId: string) => void
 }) => {
   const of = (type: string) => sources.filter((s) => appTypeOf(s) === type)
-  const tags = (type: string, label: (s: Source) => string[], tone: (s: Source) => 'success' | 'danger' | 'subtle' = () => 'success') =>
+  const tags = (type: string, label: (s: Source) => string[], tone: (s: Source) => 'success' | 'warning' | 'danger' | 'subtle' = () => 'success') =>
     of(type).flatMap((s) => label(s).map((l, i) => <SummaryTag key={`${s.id}:${i}`} label={l} tone={tone(s)} onJump={() => onJump(s.id)} />))
 
   const rows: Array<[string, React.ReactNode[]]> = [
@@ -1493,9 +1527,10 @@ export const SourcesSummary = ({
     ['Historical registrations', tags('historical_registration', (s) => [stateOf(s) ?? 'Historical'], () => 'subtle')],
     ['Jurisdiction registrations', tags('jurisdiction_registration', (s) => [metas(s)[0]?.jurisdiction?.name ?? 'Jurisdiction'])],
     ['EPA facilities', tags('epa_frs_facility', () => ['EPA FRS'], () => 'subtle')],
-    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'], (s) => (/open/i.test(s.doc?.lien?.status ?? '') ? 'danger' : 'subtle'))],
-    ['Court records', tags('litigation', (s) => [s.doc?.litigation?.caseNumber ?? s.doc?.litigation?.court ?? 'Case'], (s) => (/open/i.test(s.doc?.litigation?.caseStatus ?? '') ? 'danger' : 'subtle'))],
-    ['Bankruptcy petitions', tags('bankruptcy', (s) => [s.doc?.bankruptcy?.chapter ? `Chapter ${s.doc.bankruptcy.chapter}` : 'Petition'], () => 'danger')],
+    // Open is the report's amber, not red: a live lien is a fact to read, not a verdict.
+    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'], (s) => (/open/i.test(s.doc?.lien?.status ?? '') ? 'warning' : 'subtle'))],
+    ['Court records', tags('litigation', (s) => [s.doc?.litigation?.caseNumber ?? s.doc?.litigation?.court ?? 'Case'], (s) => (/open/i.test(s.doc?.litigation?.caseStatus ?? '') ? 'warning' : 'subtle'))],
+    ['Bankruptcy petitions', tags('bankruptcy', (s) => [s.doc?.bankruptcy?.chapter ? `Chapter ${s.doc.bankruptcy.chapter}` : 'Petition'], (s) => (/open/i.test(s.doc?.bankruptcy?.status ?? '') ? 'warning' : 'subtle'))],
     ['Screening results', [
       ...tags('watchlist_result', (s) => [s.doc?.watchlist?.list.abbr ?? 'Watchlist'], () => 'danger'),
       ...tags('pep_result', () => ['PEP'], () => 'danger'),

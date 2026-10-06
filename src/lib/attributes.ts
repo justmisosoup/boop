@@ -442,7 +442,7 @@ export const FOREIGN_STATUS_ORDER = ['active', 'inactive', 'unknown']
  * and rendered raw the Foreign filings group read as three different sources
  * rather than one field with three values.
  */
-const sentence = (value: string | null | undefined) =>
+export const sentence = (value: string | null | undefined) =>
   value ? value.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase()) : value
 
 /**
@@ -455,7 +455,7 @@ const sentence = (value: string | null | undefined) =>
  * parses as UTC midnight, and west of Greenwich that prints as the day before.
  */
 /** A lien's kind as a label. The API's `type` names the filing, not a tax. */
-const LIEN_KIND: Record<string, string> = { ucc: 'UCC lien', state: 'State lien', federal: 'Federal lien' }
+export const LIEN_KIND: Record<string, string> = { ucc: 'UCC lien', state: 'State lien', federal: 'Federal lien' }
 
 /** "Nov 17, 2003" — a record's date in a line of its metadata. */
 export const shortDate = (iso: string | null | undefined) => {
@@ -603,7 +603,7 @@ const registrationRowsFor = (filings: BusinessRecord['registrations']): Attribut
         FOREIGN_STATUS_ORDER.indexOf(b.value.toLowerCase())
     ),
     // Each of the registry's three fields only where the filing states it. A
-    // filling for the missing ones ("Not published by the state") claimed to
+    // filling for the missing ones ("Not provided by state") claimed to
     // know why a value was absent, which the record does not say — except in
     // Delaware and New Jersey, whose Status row already says so.
     ...byLabel('Sub status', (r) => subStatusLabel(r)),
@@ -2199,7 +2199,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
           ...c.parties.map((p) => ({ label: p.role ? (sentence(p.role) ?? p.role) : 'Party', value: p.name })),
           ...c.judgments.flatMap((j) => [
             ...(j.text ? [{ label: 'Judgment', value: j.text }] : []),
-            ...(j.date ? [{ label: 'Judgment date', value: j.date }] : []),
+            ...(j.date ? [{ label: 'Judgment date', value: shortDate(j.date) ?? j.date }] : []),
             ...(j.amountCents ? [{ label: 'Judgment amount', value: money(j.amountCents) }] : [])
           ]),
           ...(awarded > 0 ? [{ label: 'Awarded', value: money(awarded) }] : [])
@@ -2220,7 +2220,6 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       // The filing office, per state: a UCC-1 in Idaho and one in New Jersey
       // are held by different offices and searched separately.
       const source = `Lien · ${l.state ? stateName(l.state) : 'Unknown state'}`
-      const amount = l.liabilityCents ?? l.loanPrincipalCents
 
       return {
         group: 'liens' as const,
@@ -2241,10 +2240,17 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
         // secures it, the amount and when it lapses. They are the filing's,
         // not a reading of ours, so they show wherever the lien does.
         fields: [
-          ...(l.debtors ?? []).map((d) => ({ label: 'Debtor', value: d.name })),
+          ...(l.debtors ?? []).flatMap((d) => [
+            { label: 'Debtor', value: d.name },
+            ...(d.addresses ?? []).map((a) => ({ label: 'Debtor address', value: a }))
+          ]),
+          ...(l.securedParties ?? []).flatMap((p) => (p.addresses ?? []).map((a) => ({ label: 'Secured party address', value: a }))),
+          ...(l.collateralType ? [{ label: 'Collateral type', value: l.collateralType }] : []),
           ...(l.collateral ? [{ label: 'Collateral', value: l.collateral }] : []),
-          ...(amount ? [{ label: 'Amount', value: money(amount) }] : []),
-          ...(l.lapseDate ? [{ label: 'Lapse date', value: l.lapseDate }] : [])
+          ...(l.liabilityCents ? [{ label: 'Liability amount', value: money(l.liabilityCents) }] : []),
+          ...(l.loanPrincipalCents ? [{ label: 'Loan principal', value: money(l.loanPrincipalCents) }] : []),
+          ...(l.lapseDate ? [{ label: 'Lapse date', value: shortDate(l.lapseDate) ?? l.lapseDate }] : []),
+          ...(l.updatedDate ? [{ label: 'Updated date', value: shortDate(l.updatedDate) ?? l.updatedDate }] : [])
         ],
         // The filing office's own page for this lien.
         href: l.url ?? undefined,
@@ -2626,9 +2632,9 @@ export const websiteRecordRows = (record: BusinessRecord): AttributeRow[] => {
   return [
     ...row('Title', w.title, { href: w.url }),
     ...row('Site status', w.status ? sentence(w.status) : undefined),
-    ...row('HTTP status', typeof w.httpStatusCode === 'number' ? String(w.httpStatusCode) : undefined),
+    // Not the HTTP status code or the crawl's category: the status word says
+    // whether the site answered, and the category was the crawler's guess.
     ...row('Platform', w.platform),
-    ...row('Category', w.category),
     ...row('Parked', yesNo(w.parked)),
     ...row('Coming soon', yesNo(w.comingSoon)),
     ...row('Domain', w.domain?.toLowerCase(), {

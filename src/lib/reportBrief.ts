@@ -5,7 +5,7 @@ import { FORMATION_CARD_INSIGHTS } from './identitySections'
 import type { AreaSummary } from './areaSummaries'
 import type { BusinessRecord, Derived } from './deriveResults'
 import type { GroupId } from './groups'
-import type { BandId, IdentityScore, ScoreArea } from './identityScore'
+import { withCall, type BandId, type IdentityScore, type ScoreArea } from './identityScore'
 import { REPORT_CARDS, cardAnchor, cardFor } from './reportCards'
 import { webPresenceSummary } from './webPresence'
 import { statusForBand, type ReviewStatus } from './review'
@@ -142,22 +142,27 @@ export const reportBrief = ({
     cards: webCites.length > 0 ? ['website'] : []
   }
 
+  // The report's call drives the determination; the score is its detail.
+  const called = score ? withCall(score, headline) : null
+  const overridden = Boolean(score && called && called.band.id !== score.band.id)
   return {
     lede: headline || undefined,
-    determination: score
+    determination: called
       ? {
           // The assessment's own call, which the reviewer accepts or not; the
           // page header's control says where the review stands.
-          kind: KIND_OF_BAND[score.band.id],
-          status: statusForBand(score.band.id),
-          label: KIND_WORD[KIND_OF_BAND[score.band.id]],
-          value: score.value,
-          reason: scoreLine(score, scoreAreas, { record, results }),
-          score,
+          kind: KIND_OF_BAND[called.band.id],
+          status: statusForBand(called.band.id),
+          label: KIND_WORD[KIND_OF_BAND[called.band.id]],
+          value: called.value,
+          // Where the call is the report's rather than the score's, its reason
+          // is the report's headline: the score's line argues the other way.
+          reason: overridden ? headline : scoreLine(called, scoreAreas, { record, results }, { lede: headline }),
+          score: called,
           // Each follow-up is the instruction, then the facts behind it. An
           // Approve has none: a call with something still to get is not an
           // approval, so whatever follow-ups the report wrote are not its steps.
-          steps: (KIND_OF_BAND[score.band.id] === 'approve'
+          steps: (KIND_OF_BAND[called.band.id] === 'approve'
             ? []
             : 'followUps' in version.result
               ? ((version.result as { followUps?: Array<{ text: string; cites?: string[] }> }).followUps ?? [])

@@ -785,7 +785,7 @@ export const formationParts = (
           <AttributeSources sources={[]} registrations={[domestic]} domesticState={domesticState} onJumpToSource={onJumpToSource} />
         ) : undefined
       // The standing as the filing's own detail in the strip states it — the
-      // same chips, the same words: "Not published by the state" for Delaware.
+      // same chips, the same words: "Not provided by state" for Delaware.
       const asChip =
         tier === 'formation' && domestic && (c.label === 'Status' || c.label === 'Sub status')
           ? [{ value: c.label === 'Status' ? <StatusChip reg={domestic} /> : <SubStatusChip reg={domestic} /> }]

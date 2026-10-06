@@ -1,5 +1,5 @@
 import { Briefcase, Check, PackageOpen } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 
 import { MetaChip } from '@/core'
 
@@ -15,7 +15,7 @@ const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink
  * Whether a record is still live, as a chip: open is an open box, orange;
  * closed a shut case, grey. A status the source did not give draws nothing.
  */
-const StatusChip = ({ status }: { status: string | null | undefined }) => {
+export const StatusChip = ({ status }: { status: string | null | undefined }) => {
   const s = (status ?? '').toLowerCase()
   if (/open/.test(s))
     return (
@@ -44,6 +44,7 @@ export const KindStrip = ({
   rows,
   statusOf,
   empty = [],
+  block,
   onJumpToSource
 }: {
   label: string
@@ -52,6 +53,9 @@ export const KindStrip = ({
   /** What was searched and came back with nothing — the tax lien search where
    *  only UCC liens were found — as a "No results" tile, as a screen's is. */
   empty?: AttributeCell[]
+  /** The record drawn as its own block — the lien's band and sections — in
+   *  place of the row's cell. Without it, the row's cell as before. */
+  block?: (i: number) => ReactNode
   onJumpToSource?: (cardId: string) => void
 }) => {
   if (rows.length === 0) return null
@@ -122,12 +126,16 @@ export const KindStrip = ({
           {rows
             .map((row, i) => [row, i] as const)
             .filter(([row, i]) => keyOf(row, i) === k)
-            .map(([row, i]) => (
-              // A solid rule between records; the dashed rules stay within one.
-              <div key={i} className="overflow-hidden border-b border-[var(--core-color-border-divider)] last:border-b-0">
-                <AttributeCells className="-mb-px" items={chipped(row, i)} />
-              </div>
-            ))}
+            .map(([row, i]) =>
+              block ? (
+                <Fragment key={i}>{block(i)}</Fragment>
+              ) : (
+                // A solid rule between records; the dashed rules stay within one.
+                <div key={i} className="overflow-hidden border-b border-[var(--core-color-border-divider)] last:border-b-0">
+                  <AttributeCells className="-mb-px" items={chipped(row, i)} />
+                </div>
+              )
+            )}
         </>
       )}
     />

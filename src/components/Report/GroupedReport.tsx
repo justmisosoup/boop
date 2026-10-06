@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
-import { Check, Globe, Users } from 'lucide-react'
+import { Check, Globe, ListFilter, Users, X } from 'lucide-react'
 
-import { ActionButton, ActionLink, MetaChip, Surface } from '@/core'
+import { ActionButton, MetaChip, Surface, Tag, Toolbar, ToolbarCount, ToolbarSection, ToolbarSeparator, ToolbarSpacer } from '@/core'
 
 import { attributesFor, peopleByPerson, peopleRows } from '../../lib/attributes'
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
@@ -15,12 +15,16 @@ import type { Kind } from '../../lib/timeline/types'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { attributeRowsByGroup } from '../AttributesTab'
 import { cellsFromRows } from '../attributeCells'
-import { CardHeader } from '../CardHeader'
+import { Collapsible } from '../Collapsible'
+import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
 import { Para } from '../ReportBody'
 import { useScreenshotViewer } from '../ScreenshotViewer'
 import { OtherFilings } from './OtherFilings'
 import { KindStrip } from './ClaimsStrips'
+import { BankruptcyBlock } from './BankruptcyBlock'
+import { LienBlock } from './LienBlock'
+import { LitigationBlock } from './LitigationBlock'
 import { FilingStrip } from './FilingStrip'
 import { GroupCard } from './GroupCard'
 import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
@@ -116,9 +120,9 @@ const cellsOf = (
 /** A result reads before an unknown, an unknown before a no-result. */
 const STATE_RANK: Record<string, number> = { result: 0, unknown: 1, no_result: 2 }
 
-/** The assessment the report is narrowed to, as the banner says it — and,
- *  where the area is a workflow, the way to the workflow's own page. */
-export type ReportFocusBanner = { title: string; sentence?: string; href?: string; onClear: () => void }
+/** The assessment the report is narrowed to, as the filter bar names it:
+ *  the workflow's name, and the way back. */
+export type ReportFocusBanner = { id: string; name: string; onClear: () => void }
 
 /**
  * The report, by card.
@@ -139,6 +143,7 @@ export const GroupedReport = ({
   revealed,
   only,
   focus,
+  pinned = false,
   expand,
   onJumpToSource,
   onJumpToTimeline
@@ -152,6 +157,9 @@ export const GroupedReport = ({
   only?: ReadonlySet<string>
   /** With `only`: the assessment the report is narrowed to. */
   focus?: ReportFocusBanner
+  /** The report has scrolled under the pinned head: the filter bar, when it
+   *  is the lowest pinned bar, casts the shadow. */
+  pinned?: boolean
   /** The card an Assistant chip just led to, opened; `n` counts the jumps. */
   expand?: { card: string; n: number }
   onJumpToSource?: (cardId: string) => void
@@ -357,6 +365,7 @@ export const GroupedReport = ({
           label="Results"
           rows={attributesFor('liens', record)}
           statusOf={(i) => liens[i]?.status}
+          block={(i) => <LienBlock lien={liens[i]} record={record} onJumpToSource={onJumpToSource} />}
           empty={emptySearches(
             record,
             'liens',
@@ -380,6 +389,7 @@ export const GroupedReport = ({
           label="Results"
           rows={attributesFor('litigations', record)}
           statusOf={(i) => cases[i]?.caseStatus}
+          block={(i) => <LitigationBlock litigation={cases[i]} record={record} onJumpToSource={onJumpToSource} />}
           empty={emptySearches(
             record,
             'litigation',
@@ -393,7 +403,13 @@ export const GroupedReport = ({
       ),
     bankruptcy:
       petitions.length > 0 ? (
-        <KindStrip label="Results" rows={attributesFor('bankruptcies', record)} statusOf={(i) => petitions[i]?.status} onJumpToSource={onJumpToSource} />
+        <KindStrip
+          label="Results"
+          rows={attributesFor('bankruptcies', record)}
+          statusOf={(i) => petitions[i]?.status}
+          block={(i) => <BankruptcyBlock bankruptcy={petitions[i]} record={record} onJumpToSource={onJumpToSource} />}
+          onJumpToSource={onJumpToSource}
+        />
       ) : (
         <NoneOnFile record={record} kind="bankruptcy" />
       )
@@ -440,44 +456,77 @@ export const GroupedReport = ({
   const drawn = at < 0 ? byResults : [...rest.slice(0, at), ...run, ...rest.slice(at)]
   const shown = only ? drawn.filter(({ card }) => only.has(card.id)) : drawn
 
+  const narrowed = Boolean(only && focus)
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Narrowed to one assessment: which, why, and the way back. */}
-      {only && focus && (
-        <Surface variant="card" padding="none" className="overflow-hidden" role="status">
-          <CardHeader
-            title={focus.title}
-            trailing={
-              <span className="flex items-center gap-2">
-                {/* The workflow this area is: what it does, and where else it has run. */}
-                {focus.href && (
-                  <ActionLink variant="quiet" size="compact" to={focus.href}>
-                    View workflow
-                  </ActionLink>
+    <>
+      {/*
+       * Narrowed to one assessment: an applied filter, as Dovetail's
+       * "Filtered by" pill and HubSpot's filter chips read it — the area as a
+       * removable badge, the count, and the way back — and sticky so it is
+       * there wherever the reader has scrolled. The sticky shell stays mounted at zero height so
+       * the bar can grow in and collapse out with the house motion; it sits
+       * outside the card stack so a closed bar takes no gap.
+       */}
+      {/* The report's scroller (RecordPage's panel, from `wide`) pads its top
+          by 54px, and a sticky box pins inside that padding, so the bar pins
+          54px higher, directly under the sticky report head (whose height the
+          page publishes as `--report-head-h`). Its canvas and shadow are a
+          layer as wide as the scroll area (`--report-scroll-w`), so nothing
+          shows past the reading column as the cards slide under. */}
+      <div
+        className={cn(
+          'sticky top-[var(--report-head-h,0px)] z-[3] wide:top-[calc(var(--report-head-h,0px)-54px)]',
+          'before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none',
+          // The lowest pinned bar casts the shadow, its bottom edge only.
+          pinned && narrowed && 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]'
+        )}
+      >
+        <Collapsible open={narrowed}>
+          <div className="pb-4">
+            <Toolbar
+              role="status"
+              aria-live="polite"
+              // The data-table toolbar, as shadcn draws it: a neutral surface,
+              // the applied filter as an outline badge, a hairline, the count
+              // in muted text, and a ghost reset at the right. No tint: the
+              // badge and the reset are what say "filtered".
+              className="h-10 flex-nowrap gap-2 rounded-card border border-border bg-card px-2"
+            >
+              <ToolbarSection className="min-w-0 gap-2">
+                <ListFilter aria-hidden="true" size={14} strokeWidth={1.5} className="ml-1 shrink-0 text-text-secondary" />
+                <span className="whitespace-nowrap text-sm text-text-secondary">Filtered to</span>
+                {focus && (
+                  <Tag tone="default" onRemove={focus.onClear} removeLabel="Show full report">
+                    {focus.name}
+                  </Tag>
                 )}
-                <ActionButton variant="secondary" size="compact" onClick={focus.onClear}>
-                  Full report
-                </ActionButton>
-              </span>
-            }
-            className="border-b-0 pb-1"
-          />
-          {focus.sentence && (
-            <div className="px-4 pb-3">
-              <Para inline className="text-sm leading-5 text-text-secondary" results={results} record={record}>
-                {focus.sentence}
-              </Para>
-            </div>
-          )}
-        </Surface>
-      )}
+                <ToolbarSeparator />
+                <ToolbarCount>
+                  {shown.length} of {drawn.length} cards
+                </ToolbarCount>
+              </ToolbarSection>
+              <ToolbarSpacer />
+              <ActionButton
+                variant="quiet"
+                size="compact"
+                onClick={focus?.onClear}
+                leadingIcon={<X aria-hidden="true" size={14} strokeWidth={1.75} />}
+              >
+                Show full report
+              </ActionButton>
+            </Toolbar>
+          </div>
+        </Collapsible>
+      </div>
+      <div className="flex flex-col gap-4">
       {shown.map(({ card, rows }) => {
         /* Led here from the Assistant — narrowed to an assessment, or the card
            a chip landed on — its data opens: each strip on its first tile.
            Keyed on it, so the card opens afresh each time it is led to. */
         const open = Boolean(only) || expand?.card === card.id
         return (
-          <StripExpand.Provider key={`${card.id}:${open ? `open-${focus?.title ?? ''}-${expand?.n ?? ''}` : ''}`} value={open}>
+          <StripExpand.Provider key={`${card.id}:${open ? `open-${focus?.id ?? ''}-${expand?.n ?? ''}` : ''}`} value={open}>
             <GroupCard
               id={card.id}
               title={card.label}
@@ -492,6 +541,7 @@ export const GroupedReport = ({
           </StripExpand.Provider>
         )
       })}
-    </div>
+      </div>
+    </>
   )
 }
