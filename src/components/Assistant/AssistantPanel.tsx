@@ -38,6 +38,7 @@ import { AssistantComposer, type Send } from './AssistantComposer'
 import { AssistantEmpty } from './AssistantEmpty'
 import { AnswerTurn, BriefTurn, DecisionTurn, DismissedTurn, ErrorTurn, PendingTurn, UserTurn } from './AssistantTurn'
 import { RecommendationCard, restoreRecommendation, useAnsweredCall, useRecommendationRemoval } from './RecommendationCard'
+import { AssessmentSteps } from './AssessmentSteps'
 import { Conversations, conversationTitle, pastConversations, type AssessmentEntry } from './Conversations'
 import { suggestionsFor } from './starters'
 
@@ -76,6 +77,8 @@ export const AssistantPanel = ({
   focus,
   onFocusAssessment,
   revision,
+  assessmentInHeader = false,
+  reviewStepsRequest = 0,
   onJumpToCard,
   className
 }: {
@@ -104,6 +107,8 @@ export const AssistantPanel = ({
   /** What the newest document did to the recommendation — the hero shows
    *  it; a further document is read against it. */
   revision?: RevisedRecommendation & { at: string }
+  assessmentInHeader?: boolean
+  reviewStepsRequest?: number
   /** A brief card's title scrolls the report to that card. */
   onJumpToCard?: (anchor: string) => void
   className?: string
@@ -138,6 +143,8 @@ export const AssistantPanel = ({
    * assessment-led one.
    */
   const [fresh, setFresh] = useState(false)
+  const [decisionRequest, setDecisionRequest] = useState<{ index?: number; request: number } | null>(null)
+  const stepsRef = useRef<HTMLDivElement>(null)
   /** The conversation the record opened on — the assessment's. A new
    *  conversation can always go back to it. */
   const [assessmentThread] = useState(analysis.activeThreadId)
@@ -145,6 +152,15 @@ export const AssistantPanel = ({
     analysis.openThread(assessmentThread)
     setFresh(false)
   }
+  useEffect(() => {
+    if (!reviewStepsRequest) return
+    analysis.openThread(assessmentThread)
+    setFresh(false)
+    setView('thread')
+    setDecisionRequest(null)
+    const frame = window.requestAnimationFrame(() => stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [reviewStepsRequest])
   const lead = fresh ? undefined : brief
   const suggestions = useMemo(
     () =>
@@ -285,7 +301,7 @@ export const AssistantPanel = ({
      under its last turn. */
   const recRef = useRef<HTMLDivElement>(null)
   const [recH, setRecH] = useState(0)
-  const recShown = Boolean(!fresh && brief?.determination && analysis.selected && !call.answer && !recommendationRemoved)
+  const recShown = Boolean(!fresh && brief?.determination && analysis.selected && !call.answer && !recommendationRemoved && (!assessmentInHeader || decisionRequest))
   useEffect(() => {
     const el = recRef.current
     if (!el || !recShown || view !== 'thread') return setRecH(0)
@@ -299,7 +315,7 @@ export const AssistantPanel = ({
   /* The recommendation. Not in a new conversation: the decision is the
      assessment's, and a new conversation starts without it. */
   const recommendation =
-    !fresh && brief?.determination && analysis.selected && !call.answer && !recommendationRemoved ? (
+    recShown && brief?.determination && analysis.selected ? (
       <RecommendationCard
         recommendation={brief.determination}
         businessId={record.id}
@@ -310,6 +326,9 @@ export const AssistantPanel = ({
         groupFor={groupFor}
         onJumpToGroup={onJumpToGroup}
         revision={revision}
+        assessmentInHeader={assessmentInHeader}
+        reviewRequest={decisionRequest ?? undefined}
+        onClose={assessmentInHeader ? () => setDecisionRequest(null) : undefined}
         // The files the analyst already has for its steps: read against the
         // recommendation, as a document added in the chat box is.
         onDocuments={(files, typed) =>
@@ -520,6 +539,23 @@ export const AssistantPanel = ({
                   onJumpToCard={onJumpToCard}
                   onJumpToGroup={onJumpToGroup}
                 />
+              )}
+
+              {lead && assessmentInHeader && call.d && (
+                <div ref={stepsRef}>
+                  <AssessmentSteps
+                    recommendation={call.d}
+                    resolved={revision?.resolved}
+                    results={results}
+                    groupFor={groupFor}
+                    reviewable={!call.answer}
+                    onJumpToGroup={onJumpToGroup}
+                    onReview={(index) => {
+                      if (analysis.selected) restoreRecommendation(analysis.selected.id)
+                      setDecisionRequest((current) => ({ index, request: (current?.request ?? 0) + 1 }))
+                    }}
+                  />
+                </div>
               )}
 
               {turns.map((v, i) => (

@@ -7,8 +7,8 @@ import { CURRENT_USER, CURRENT_USER_EMAIL } from './user'
  *
  * The dashboard keeps these on the business (`assignee_id`, `status`) and
  * changes them over the API. There is no API here, so they live in the browser
- * — see `localStore` — keyed by business id, and every business starts the way
- * a new one does in the dashboard: unassigned, in review.
+ * — see `localStore` — keyed by business id. Reviews are assigned to the
+ * current user automatically, and can then be reassigned with the picker.
  */
 export type ReviewStatus = 'approved' | 'in_review' | 'rejected'
 
@@ -75,7 +75,25 @@ export type Review = {
   answer?: RecommendationAnswer
 }
 
-const store = createLocalStore<Stored>('prototype.review.v1')
+const REVIEW_KEY = 'prototype.review.v1'
+const AUTO_ASSIGN_KEY = 'prototype.review.auto-assigned.v1'
+
+if (typeof window !== 'undefined') {
+  try {
+    if (window.localStorage.getItem(AUTO_ASSIGN_KEY) !== CURRENT_USER_ID) {
+      const saved = JSON.parse(window.localStorage.getItem(REVIEW_KEY) ?? '{}') as Record<string, Stored>
+      const assigned = Object.fromEntries(
+        Object.entries(saved).map(([id, review]) => [id, { ...review, assigneeId: CURRENT_USER_ID }])
+      )
+      window.localStorage.setItem(REVIEW_KEY, JSON.stringify(assigned))
+      window.localStorage.setItem(AUTO_ASSIGN_KEY, CURRENT_USER_ID)
+    }
+  } catch {
+    // The default assignment still works when browser storage is unavailable.
+  }
+}
+
+const store = createLocalStore<Stored>(REVIEW_KEY)
 
 /**
  * The status the assessment's determination implies, before anyone has set
@@ -89,7 +107,7 @@ export const useReview = (businessId: string, fallback: ReviewStatus = 'in_revie
   const all = store.useAll()
   const stored = all[businessId]
   return {
-    assigneeId: stored?.assigneeId,
+    assigneeId: stored?.assigneeId ?? CURRENT_USER_ID,
     status: stored?.status ?? fallback,
     change: stored?.change,
     requested: stored?.requested,
@@ -101,7 +119,7 @@ export const useReview = (businessId: string, fallback: ReviewStatus = 'in_revie
 export const reviewOf = (businessId: string, fallback: ReviewStatus = 'in_review'): Review => {
   const stored = store.get(businessId)
   return {
-    assigneeId: stored?.assigneeId,
+    assigneeId: stored?.assigneeId ?? CURRENT_USER_ID,
     status: stored?.status ?? fallback,
     change: stored?.change,
     requested: stored?.requested,

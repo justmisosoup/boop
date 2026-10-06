@@ -208,14 +208,14 @@ export const AttributeCells = ({
 }: {
   items: AttributeCell[]
   /** Two by default; the Formation card reads three across. */
-  columns?: 2 | 3
+  columns?: 1 | 2 | 3
   className?: string
 }) => {
   if (items.length === 0) return null
   const wide = spans(items, columns)
 
   return (
-    <div className={cn('-mr-px grid', items.length > 1 && (columns === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'), className)}>
+    <div className={cn('-mr-px grid', items.length > 1 && columns > 1 && (columns === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'), className)}>
       {items.map((item, i) => {
         const key = item.key ?? `${item.label ?? ''}-${i}`
         const cls = cn('attribute-cell p-4', SPAN[wide[i]])

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Paperclip, Pencil, Upload, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -142,6 +142,9 @@ export const RecommendationCard = ({
   groupFor,
   onJumpToGroup,
   revision,
+  assessmentInHeader = false,
+  reviewRequest,
+  onClose,
   onDocuments
 }: {
   recommendation: Recommendation
@@ -155,6 +158,9 @@ export const RecommendationCard = ({
   onJumpToGroup?: (groupId: string, insightIds: string[]) => void
   /** What the newest document did to the recommendation, and when. */
   revision?: RevisedRecommendation & { at: string }
+  assessmentInHeader?: boolean
+  reviewRequest?: { index?: number; request: number }
+  onClose?: () => void
   /** Files the analyst already has, sent to the Assistant as documents. */
   onDocuments?: (files: Attachment[], typed: string) => void
 }) => {
@@ -170,6 +176,15 @@ export const RecommendationCard = ({
      then drafts the message from the ones to ask for. */
   const [stage, setStage] = useState<'options' | 'steps'>('options')
   const [at, setAt] = useState(0)
+  useEffect(() => {
+    if (!reviewRequest) return
+    if (reviewRequest.index === undefined || open.length === 0) {
+      setStage('options')
+      return
+    }
+    setStage('steps')
+    setAt(Math.max(0, open.findIndex((step) => step === d.steps[reviewRequest.index!])))
+  }, [reviewRequest?.request])
   const [stepAnswers, setStepAnswers] = useState<Record<number, StepAnswer>>({})
   /** The files the analyst already has, by step. */
   const [stepFiles, setStepFiles] = useState<Record<number, Attachment[]>>({})
@@ -400,13 +415,13 @@ export const RecommendationCard = ({
             title="Remove"
             variant="quiet"
             size="compact"
-            onClick={() => removed.set(reportId, { by: CURRENT_USER, at: new Date().toISOString() })}
+            onClick={onClose ?? (() => removed.set(reportId, { by: CURRENT_USER, at: new Date().toISOString() }))}
           >
             <X size={14} strokeWidth={1.75} />
           </IconActionButton>
         </div>
         {/* Why, beside the score; the answers under both. */}
-        {stage === 'options' && (
+        {stage === 'options' && !assessmentInHeader && (
           <div className="flex items-center gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               {d.reason && (

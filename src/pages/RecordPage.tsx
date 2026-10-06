@@ -15,6 +15,7 @@ import {
 
 import { areasOf, identityScore, negativesFor, type AssessmentWeight, bandOfCall } from '../lib/identityScore'
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
+import { standingCall } from '../components/Assistant/RecommendationCard'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { Timeline } from '../components/Timeline'
 import type { Kind } from '../lib/timeline/types'
@@ -409,6 +410,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       .at(-1)
     return latest ? { ...latest.result.revisedRecommendation!, at: latest.at } : undefined
   }, [analysis.threads])
+  const assessment = brief?.determination ? standingCall(brief.determination, revision) : undefined
+  const [reviewStepsRequest, setReviewStepsRequest] = useState(0)
 
   /**
    * Run the standing workflow, from where the report would be.
@@ -790,7 +793,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               */}
             <div
               ref={panelRef}
-              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll"
+              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll [overflow-anchor:none]"
             >
               <div className={MEASURE}>
                 {/* One report column: the determination opens it at every
@@ -816,12 +819,6 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                         own title already said. */}
                     <div>
               <TabsContent value="assessment" className="mt-0">
-            {/*
-              * No determination card at the head of the report. The call is
-              * the status control in the page header and the first thing the
-              * Assistant says (its opening message carries the ring, the word
-              * and the reason), so the report opens on the record's facts.
-              */}
             {/*
               * No report, where the report goes.
               *
@@ -871,7 +868,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             )}
             {hero && analysis.selected && brief && (
               <div ref={headRef} className={`sticky top-0 z-[4] pt-3 wide:top-[-54px] pb-4 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none ${pinned && !focus ? 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]' : ''}`}>
-                <PageBreadcrumb className="mb-2">
+                <PageBreadcrumb className={cn('mb-2', pinned && 'hidden')}>
                 {/* The dashboard's crumb, as the workflow pages carry it: where
                     you came from, then the business. It replaces a sticky bar
                     with a back arrow over the same name. */}
@@ -884,19 +881,19 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               </PageBreadcrumb>
                 <ReportHero
                   record={record}
-                  controls={
-                    <>
-                      <AssigneeDropdown businessId={selected.id} />
-                      <StatusDropdown businessId={selected.id} defaultStatus={determined} />
-                    </>
-                  }
+                  assessment={assessment}
+                  summary={revision?.reason ?? brief.lede ?? assessment?.reason}
+                  resolved={revision?.resolved}
+                  compact={pinned}
+                  onReviewSteps={() => {
+                    showPanel('assistant')
+                    setReviewStepsRequest((request) => request + 1)
+                  }}
+                  status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
+                  assignee={<AssigneeDropdown businessId={selected.id} />}
                 />
               </div>
             )}
-            {/* The record, by group — the Insights tab's grouping, each with
-                its data view and its review tasks. With or without a report:
-                these are the record's facts; what the assessment made of
-                them is the Assistant's, whose citations land here. */}
             <div className={!view && !running ? 'mt-6' : undefined}>
               <GroupedReport
                 record={record}
@@ -1012,6 +1009,8 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           focus={focus}
           onFocusAssessment={focusAssessment}
           revision={revision}
+          assessmentInHeader
+          reviewStepsRequest={reviewStepsRequest}
           // A brief card's title: the report scrolls to that card.
           onJumpToCard={(anchor) =>
             panelRef.current

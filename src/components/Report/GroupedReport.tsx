@@ -19,7 +19,6 @@ import { Collapsible } from '../Collapsible'
 import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
 import { Para } from '../ReportBody'
-import { useScreenshotViewer } from '../ScreenshotViewer'
 import { OtherFilings } from './OtherFilings'
 import { KindStrip } from './ClaimsStrips'
 import { BankruptcyBlock } from './BankruptcyBlock'
@@ -30,6 +29,7 @@ import { GroupCard } from './GroupCard'
 import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
 import { PeopleStrips } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
+import { WebsiteDetails } from './WebsiteDetails'
 import { relatedBusinessesOf } from '../../lib/relatedBusinesses'
 import { Strip, StripExpand } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
@@ -172,7 +172,6 @@ export const GroupedReport = ({
   const ops = useMemo(() => operationsOf(record), [record])
   const byGroup = useMemo(() => attributeRowsByGroup(record, results, groupFor), [record, results, groupFor])
   const screens = useMemo(() => screenedOf(record), [record])
-  const { open: openScreenshot } = useScreenshotViewer()
 
   /* The card's rows, as the Insights tab files them: flagged first — the
      record came back adverse, or the score read it against the identity —
@@ -198,23 +197,11 @@ export const GroupedReport = ({
   }
 
   const siteShot = screenshotFor(record.website?.url ?? undefined, 'Website')
-  const websiteCells = cellsOf(byGroup, 'website', record, onJumpToSource).map((c) =>
-    siteShot && c.label === 'Website'
-      ? {
-          ...c,
-          aside: (
-            <button
-              type="button"
-              onClick={() => openScreenshot(siteShot)}
-              aria-label={`View screenshot: ${siteShot.alt}`}
-              title="View screenshot"
-              className="block h-20 w-32 shrink-0 overflow-hidden rounded-control border border-solid border-border transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <img src={siteShot.src} alt="" className="size-full object-cover object-top" />
-            </button>
-          )
-        }
-      : c
+  const websiteCells = cellsFromRows(
+    [...(byGroup.get('website')?.values() ?? [])]
+      .filter((row) => row.label !== 'Site status')
+      .map((row) => row.label === 'Website' ? { ...row, trailing: undefined } : row),
+    { domesticState: record.formation?.state, onJumpToSource }
   )
 
   const profileCells = cellsOf(byGroup, 'profiles', record, onJumpToSource)
@@ -346,7 +333,7 @@ export const GroupedReport = ({
               : [])
           ]}
           detail={(key) =>
-            key === 'site' ? <AttributeCells items={websiteCells} columns={3} className="-mb-px" /> : profilesGrid
+            key === 'site' ? <WebsiteDetails website={record.website} cells={websiteCells} screenshot={siteShot} /> : profilesGrid
           }
         />
       </div>
