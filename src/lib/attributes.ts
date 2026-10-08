@@ -3022,14 +3022,38 @@ export const licenseRows = (record: BusinessRecord): AttributeRow[] => {
     rows.push({ ...base, label: 'Licence status', value: l.status })
     if (l.enumeratedAt) rows.push({ ...base, label: 'Enumerated', value: l.enumeratedAt })
     if (l.lastUpdated) rows.push({ ...base, label: 'Registry last updated', value: l.lastUpdated })
+    // The practice address or phone, where the customer submitted the same:
+    // Submitted, as every claim the record holds is marked.
     if (l.address)
-      rows.push({ ...base, label: 'Practice address', value: l.address, matchValue: l.address })
+      rows.push({
+        ...base,
+        label: 'Practice address',
+        value: l.address,
+        matchValue: l.address,
+        submitted: record.addresses.some((a) => a.submitted && sameStreet(a.fullAddress, l.address ?? ''))
+      })
     if (l.phone)
-      rows.push({ ...base, label: 'Practice phone', value: l.phone, matchValue: l.phone })
+      rows.push({
+        ...base,
+        label: 'Practice phone',
+        value: l.phone,
+        matchValue: l.phone,
+        submitted: (record.website?.phones ?? []).some((x) => x.submitted && phoneDigits(x.phone) === phoneDigits(l.phone ?? ''))
+      })
   }
 
   return rows
 }
+
+/** An address by its street line and ZIP: "801 Madison Ave Fl 3, …10065" is "801 Madison Ave, …10065-5930". */
+const sameStreet = (a: string, b: string) => {
+  const key = (v: string) =>
+    `${(v.split(',')[0] ?? '').toUpperCase().replace(/\b(FL|FLOOR|STE|SUITE|APT|UNIT|RM|ROOM)\b.*$/, '').replace(/[^A-Z0-9]+/g, ' ').trim()}|${(v.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] ?? ''}`
+  return key(a) === key(b)
+}
+
+/** A phone number's last ten digits: "(646) 300-0954" is "646-300-0954". */
+const phoneDigits = (v: string) => v.replace(/\D+/g, '').slice(-10)
 
 /**
  * A city registration, read out of the city's own register.

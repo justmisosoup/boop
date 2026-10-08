@@ -7,7 +7,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
+import { Check, ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
 
 import {
   ActionButton,
@@ -60,6 +60,7 @@ import {
 import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
 import { ResultGrid, ResultTable, type ResultRow } from './ResultTable'
+import { SubmittedChip } from '../Provenance'
 import { BankruptcyTable, LienTable, LitigationTable } from './ClaimTables'
 import { WebsiteDetails } from './WebsiteDetails'
 import { useScreenshotViewer } from '../ScreenshotViewer'
@@ -293,14 +294,23 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
         role="row"
         className={cn('grid grid-cols-1 items-center gap-x-4 gap-y-1 px-4 py-3', cols)}
       >
-        <span role="cell" className="grid min-w-0 gap-1">
-          <span className="text-sm font-medium text-text-primary">{maskTin(tin.tin)}</span>
-          <span className="text-xs text-text-secondary">
-            {matchedBy
-              ? (tin.name ?? '—')
-              : notIssued
-                ? 'Not yet in the IRS database. Newly formed businesses can take several weeks to appear after their EIN is assigned.'
-                : 'No match on the IRS record'}
+        <span role="cell" className="min-w-0">
+          {/* Over the number: the business name the IRS matched it to — or,
+              unmatched, why: not yet issued, or no match. */}
+          <span className="block text-caption text-text-secondary">
+            {matchedBy ? (tin.name ?? '') : notIssued ? 'Not yet in the IRS database' : 'No match on the IRS record'}
+          </span>
+          {/* The number, with the mark a verified value carries: green where the
+              IRS matched it, amber where it did not. */}
+          <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+            {maskTin(tin.tin)}
+            <span role="img" aria-label={matchedBy ? 'Verified' : 'Unverified'} className="flex shrink-0">
+              <StatusDot intent={matchedBy ? 'success' : 'warning'} />
+            </span>
+          </span>
+          {/* The customer's number: Submitted. */}
+          <span className="mt-0.5 flex">
+            <SubmittedChip verified={Boolean(matchedBy)} plain />
           </span>
         </span>
         <span role="cell">
@@ -309,7 +319,12 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
               {/business/i.test(matchedBy) ? 'Business' : 'Individual'}
             </MetaChip>
           ) : (
-            <span className="text-sm text-text-secondary">—</span>
+            // No type without a match. Not yet issued: why that is usual.
+            <span className="text-sm text-text-secondary">
+              {notIssued
+                ? 'Newly formed businesses can take several weeks to appear after their EIN is assigned.'
+                : '—'}
+            </span>
           )}
         </span>
       </div>
@@ -369,12 +384,19 @@ const handleOf = (p: Profile): string | undefined => {
 const titleCase = (v: string) =>
   v.charAt(0).toUpperCase() + v.slice(1).toLowerCase().replace(/_/g, ' ')
 
-const StatusChips = ({ status }: { status?: string | null }) => (
+/** Whether it is up — "Online" — and, where it is, verified: the green check
+ *  every verified value carries. Found goes without saying: it is listed. */
+const StatusChips = ({ status, verified = false }: { status?: string | null; verified?: boolean }) => (
   <span className="flex flex-wrap items-center gap-1.5">
-    <MetaChip size="compact">Found</MetaChip>
     {status && (
       <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'warning'}>
         {titleCase(status)}
+      </MetaChip>
+    )}
+    {verified && (
+      <MetaChip size="compact" tone="success">
+        <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+        Verified
       </MetaChip>
     )}
   </span>
@@ -493,17 +515,29 @@ const WebsiteSummary = ({
   status,
   profiles,
   analysis,
-  view
+  view,
+  siteVerified = false
 }: {
   url?: string | null
   status?: string | null
   profiles: Profile[]
   analysis: ReactNode
   view: WebView
+  /** The site states the submitted business name. */
+  siteVerified?: boolean
 }) => {
   const rows: ResultRow[] = [
     ...(url
-      ? [{ key: 'site', caption: 'Website', title: hostOf(url), chips: <StatusChips status={status} />, cleared: false, detail: analysis }]
+      ? [
+          {
+            key: 'site',
+            caption: 'Website',
+            title: hostOf(url),
+            chips: <StatusChips status={status} verified={siteVerified} />,
+            cleared: false,
+            detail: analysis
+          }
+        ]
       : profiles.length > 0
         ? // Profiles without a site: the site's absence is still a fact the card states.
           [
@@ -522,7 +556,8 @@ const WebsiteSummary = ({
       // The page's own name, and on a social platform its handle — not the
       // link, which is a click away in the details.
       title: [p.name || platformOf(p), handleOf(p)].filter(Boolean).join(' · '),
-      chips: <StatusChips status={p.status} />,
+      // Verified where the platform marks the account so.
+      chips: <StatusChips status={p.status} verified={Boolean((p.metadata as { verified?: boolean } | null | undefined)?.verified)} />,
       cleared: false,
       detail: <ProfileDetails profile={p} />
     }))
@@ -822,6 +857,9 @@ export const GroupedReport = ({
     website: (
       <WebsiteSummary
         view={webView}
+        siteVerified={/^verified$/i.test(
+          record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? ''
+        )}
         url={record.website?.url}
         status={record.website?.status}
         profiles={record.profiles ?? []}
@@ -918,10 +956,30 @@ export const GroupedReport = ({
     ...all.filter(({ card }) => !noResults(card.id)),
     ...all.filter(({ card }) => noResults(card.id))
   ]
-  /* The compliance checks read as one run, in a fixed order: Sanctions, PEP,
-     Adverse media, then Liens, Litigation, Bankruptcy — the screens above the
-     public record. The run sits with what was found where any of it found
-     something, at the end where none did. */
+  /* The compliance checks read as one run: what still stands first — a hit,
+     an open lien — then what was only dismissed or closed, then the checks that
+     came back with nothing, each group in the run's own order (Sanctions, PEP,
+     Adverse media, then Liens, Litigation, Bankruptcy). The run sits with what
+     was found where any of it found something, at the end where none did. */
+  const CLOSED = /closed|terminated|lapsed|released|dismissed|satisfied|discharged/i
+  const standingOf = (statuses: Array<string | null | undefined>) =>
+    statuses.some((st) => !CLOSED.test(st ?? '')) ? 0 : statuses.length > 0 ? 1 : 2
+  const screenRank = (screen: 'watchlist' | 'pep' | 'media') =>
+    counts(screen) ? 0 : screens[screen].hits.length > 0 ? 1 : 2
+  const foundRank = (id: string) =>
+    id === 'screening-watchlist'
+      ? screenRank('watchlist')
+      : id === 'screening-pep'
+        ? screenRank('pep')
+        : id === 'screening-media'
+          ? screenRank('media')
+          : id === 'liens'
+            ? standingOf(liens.map((l) => l.status))
+            : id === 'litigation'
+              ? standingOf(cases.map((c) => c.caseStatus))
+              : id === 'bankruptcy'
+                ? standingOf(petitions.map((b) => b.status))
+                : 0
   const COMPLIANCE = [
     'screening-watchlist',
     'screening-pep',
@@ -933,7 +991,11 @@ export const GroupedReport = ({
   const inRun = ({ card }: (typeof byResults)[number]) => COMPLIANCE.includes(card.id)
   const run = byResults
     .filter(inRun)
-    .sort((x, y) => COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id))
+    .sort(
+      (x, y) =>
+        foundRank(x.card.id) - foundRank(y.card.id) ||
+        COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id)
+    )
   const at = byResults.findIndex(inRun)
   const rest = byResults.filter((x) => !inRun(x))
   const drawn = at < 0 ? byResults : [...rest.slice(0, at), ...run, ...rest.slice(at)]

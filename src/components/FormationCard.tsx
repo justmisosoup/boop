@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { ChatSourceChip, Text } from '@/core'
 
 import {
+  corroborated,
   currentDomesticRows,
   formationIdentityRows,
   maskTin,
@@ -856,8 +857,16 @@ export const formationParts = (
       }
     : undefined
 
+  // Submitted, and verified where a filing (or, with none, the website) states
+  // it: the mark after the name, as a verified address or person carries.
+  const leadRow = identityRows[0]
+  const leadSubmitted = Boolean(leadRow?.submitted) || (tier === 'submitted' && lead.label === 'Business name')
+  const leadVerified =
+    tier === 'submitted' ? websiteStatesName(record, record.name) : Boolean(leadRow && corroborated(leadRow))
   const leadCell: AttributeCell = {
     ...lead,
+    submitted: leadSubmitted,
+    verified: leadVerified,
     // No filing to cite: the submitted name, verified where the website
     // states it — Miette Patisserie's site shows MIETTE PATISSERIE &
     // CONFISERIE.

@@ -4,19 +4,24 @@ import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
 import { ChatSourceChip, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
-import { filingsListing, provenanceList } from '../../lib/attributes'
+import { filingsListing, licenseRows, provenanceList } from '../../lib/attributes'
 import { sameName } from '../../lib/registrationStatus'
 import { docCard } from '../../lib/sourceCards'
 import {
   operationsOf,
   type FmcsaRegistration,
+  type Licence,
   type Operations,
   type StateLicence
 } from '../../lib/operations'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
+import { useScreenshotViewer } from '../ScreenshotViewer'
+import { capturedLabel, screenshotFor } from '../../lib/sourceScreenshots'
+import { cellsFromRows } from '../attributeCells'
 import { IndustryTable } from '../IndustryTable'
 import { AttributeSources, SubmittedChip } from '../Provenance'
 import { AddressTable } from './AddressTable'
+import { ResultTable, type ResultRow } from './ResultTable'
 import { Strip } from './Strip'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
@@ -175,101 +180,6 @@ const fmcsaCells = (
   ]
 }
 
-const licenceCell = (
-  ops: Operations,
-  onJumpToSource?: (cardId: string) => void
-): AttributeCell | undefined => {
-  const l = ops.licence
-  if (!l.required) return undefined
-  // Under its own strip, so the cell names the record, not the strip again.
-  const base = {
-    key: 'licence',
-    label: l.registry === 'FMCSA' ? 'FMCSA record' : 'NPI Registry record',
-    span: 'full' as const
-  }
-  if (l.registry === 'none')
-    return {
-      ...base,
-      values: [{ value: absent(`Required for ${l.profession}; no public register checked`) }]
-    }
-  if (l.found.length === 0)
-    return {
-      ...base,
-      values: [
-        {
-          value: absent(
-            l.registry === 'NPI'
-              ? 'None found in the NPI Registry for the people submitted'
-              : 'No FMCSA registration on the record'
-          )
-        }
-      ]
-    }
-  if (l.registry === 'FMCSA')
-    return {
-      ...base,
-      badge: (
-        <span className="flex flex-wrap items-center gap-1">
-          {l.found.map((f) => (
-            <RegistryChip
-              key={f.id}
-              id={f.id}
-              label="FMCSA"
-              title={`USDOT ${f.dotNumber ?? ''}`}
-              url={f.sourceUrl}
-              annotation="Company snapshot"
-              onSelect={onJumpToSource ? () => onJumpToSource(docCard(f.id)) : undefined}
-            />
-          ))}
-        </span>
-      ),
-      values: l.found.map((f) => ({
-        key: f.id,
-        value: `USDOT ${f.dotNumber ?? '—'}`,
-        note: (
-          <span className="flex flex-col gap-0.5 text-caption text-text-secondary">
-            {f.legalName && <span>{f.legalName}</span>}
-            {f.addresses.map((x) => (
-              <span key={x}>{x}</span>
-            ))}
-          </span>
-        )
-      }))
-    }
-  return {
-    ...base,
-    badge: (
-      <span className="flex flex-wrap items-center gap-1">
-        {l.found.map((x) => (
-          <RegistryChip
-            key={x.id}
-            id={x.id}
-            label={x.registry}
-            title={`NPI ${x.number}`}
-            url={x.sourceUrl}
-            annotation={x.profession}
-            onSelect={onJumpToSource ? () => onJumpToSource(docCard(x.id)) : undefined}
-          />
-        ))}
-      </span>
-    ),
-    values: l.found.map((x) => ({
-      key: x.id,
-      value: [x.holder, x.credential].filter(Boolean).join(', '),
-      note: (
-        <span className="flex flex-col gap-0.5 text-caption text-text-secondary">
-          <span>
-            {x.profession}
-            {x.licenseState && x.licenseNumber && ` · ${x.licenseState} licence ${x.licenseNumber}`}
-            {x.status && ` · ${x.status}`}
-          </span>
-          {x.address && <span>{x.address}</span>}
-        </span>
-      )
-    }))
-  }
-}
-
 /** The app's licence-type text: `general_contractor` as General Contractor. */
 const licenceTypeText = (t?: string) =>
   (t ?? '').split('_').filter(Boolean).map(titleCase).join(' ')
@@ -400,6 +310,126 @@ export const IndustryStrip = ({ ops }: { ops: Operations }) => {
  * as the register holds it — a tile opening the record, or an absence as a
  * statement — then each state licence on the record, opening its fields.
  */
+/** A licence's standing as a chip: active green with a check; anything else
+ *  grey with a cross — "Inactive", "Deactivated", as the register says it. */
+const LicenceStatus = ({ status }: { status?: string | null }) => {
+  if (!status) return null
+  const on = isActive(status) || /^a$/i.test(status)
+  return (
+    <MetaChip tone={on ? 'success' : 'neutral'} size="compact">
+      {on ? <Check {...icon} /> : <X {...icon} />}
+      {on ? 'Active' : titleCase(status)}
+    </MetaChip>
+  )
+}
+
+/** Out to the register's own page for the record. */
+const RegisterLink = ({ url, register }: { url?: string | null; register: string }) =>
+  url ? (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 text-text-primary underline-offset-2 hover:underline"
+    >
+      View in the {register}
+      <ArrowUpRight aria-hidden="true" size={12} strokeWidth={2} className="text-text-secondary" />
+    </a>
+  ) : (
+    absent('No link given')
+  )
+
+/** An NPI Registry record in full, field for field as its Sources card reads
+ *  it (`licenseRows`) — a submitted practice address or phone marked so — then
+ *  the link out to the register. */
+const npiCells = (
+  x: Licence,
+  record: BusinessRecord,
+  onJumpToSource?: (cardId: string) => void
+): AttributeCell[] => {
+  const rows = licenseRows(record).filter((r) => r.refs?.[0]?.id === x.id)
+  // The row names the register; its fields carry no chip of it. A value the
+  // customer submitted says so, under it.
+  const cells = cellsFromRows(rows, { domesticState: record.formation?.state, onJumpToSource, provenance: false })
+  return [
+  ...(cells.length === rows.length ? cells.map((c, i) => submittedUnder(c, rows[i].submitted)) : cells),
+  ...registerTail(x.id, x.sourceUrl, x.registry || 'NPI Registry')
+  ]
+}
+
+/** A register page's capture, as a thumbnail that opens it full size. */
+const CaptureThumb = ({ url, register }: { url: string; register: string }) => {
+  const { open } = useScreenshotViewer()
+  const shot = screenshotFor(url, register)
+  if (!shot) return absent('No capture')
+  return (
+    <button
+      type="button"
+      aria-label={`View capture: ${shot.alt}`}
+      onClick={() => open(shot)}
+      className="block h-24 w-36 overflow-hidden rounded-control border border-border transition-opacity duration-fast hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <img src={shot.src} alt="" className="block h-full w-full object-cover object-top" />
+    </button>
+  )
+}
+
+/**
+ * The foot of a register's record, in the report and on its Sources card
+ * alike: the link out to the register, and beside it the capture of the page.
+ */
+export const registerTail = (id: string, url: string | null | undefined, register: string): AttributeCell[] => {
+  const shot = url ? screenshotFor(url, register) : undefined
+  return [
+    { key: `${id}-link`, label: 'Link', values: [{ value: <RegisterLink url={url} register={register} /> }] },
+    ...(url
+      ? [
+          {
+            key: `${id}-capture`,
+            label: 'Capture',
+            values: [
+              {
+                value: <CaptureThumb url={url} register={register} />,
+                note: shot ? (
+                  <span className="text-caption text-text-secondary">{capturedLabel(shot.capturedAt)}</span>
+                ) : undefined
+              }
+            ]
+          }
+        ]
+      : [])
+  ]
+}
+
+/** A cell with the Submitted tag under its value, where the customer submitted it. */
+export const submittedUnder = (c: AttributeCell, submitted?: boolean): AttributeCell =>
+  submitted
+    ? {
+        ...c,
+        values: c.values.map((v, i) =>
+          i === 0
+            ? {
+                ...v,
+                note: (
+                  <span className="mt-0.5 flex">
+                    <SubmittedChip verified plain />
+                  </span>
+                )
+              }
+            : v
+        )
+      }
+    : c
+
+/**
+ * Every licence the business holds or is required to, as the other cards read
+ * their records: a row per licence — its register over its holder, the
+ * register's source chip under, active or not beside — opening to the record
+ * in full with the link out to the register. One pattern for every register:
+ * the NPI Registry, FMCSA, a state's licence board. A licence the business's
+ * line of work requires and no register returned reads as the card's "No
+ * results" display.
+ */
 export const LicenceStrip = ({
   ops,
   record,
@@ -410,93 +440,93 @@ export const LicenceStrip = ({
   onJumpToSource?: (cardId: string) => void
 }) => {
   const lic = ops.licence
-  const licence = licenceCell(ops, onJumpToSource)
-  const required: Array<{ key: string; chip: ReactNode; static?: boolean }> =
-    !lic.required || !licence
-      ? []
-      : lic.registry === 'none'
-        ? [
-            {
-              key: 'none',
-              static: true,
-              chip: (
-                <MetaChip tone="neutral" size="compact">
-                  Required · no public register checked
-                </MetaChip>
-              )
-            }
-          ]
-        : lic.found.length === 0
-          ? [
-              {
-                key: 'missing',
-                static: true,
-                chip: (
-                  <MetaChip tone="danger" size="compact">
-                    <X {...icon} />
-                    {lic.registry === 'NPI'
-                      ? 'None found in the NPI Registry'
-                      : 'No FMCSA registration'}
-                  </MetaChip>
-                )
-              }
-            ]
-          : lic.registry === 'FMCSA'
-            ? lic.found.map((f) => ({
-                key: f.id,
-                chip: (
-                  <MetaChip tone="success" size="compact">
-                    <Check {...icon} />
-                    USDOT {f.dotNumber}
-                  </MetaChip>
-                )
-              }))
-            : lic.found.map((x) => ({
-                key: x.id,
-                chip: (
-                  <MetaChip tone="success" size="compact">
-                    <Check {...icon} />
-                    {[titleCase(x.holder), x.credential].filter(Boolean).join(', ')}
-                  </MetaChip>
-                )
-              }))
-  const tiles = [
-    ...required,
-    ...ops.stateLicences.map((l) => ({
-      key: `state-licence:${l.id}`,
-      chip: (
-        <MetaChip tone={isActive(l.status) ? 'success' : 'neutral'} size="compact">
-          {isActive(l.status) && <Check {...icon} />}
-          {[l.state, licenceTypeText(l.type), 'licence'].filter(Boolean).join(' ')}
-        </MetaChip>
-      )
-    }))
-  ]
-  if (tiles.length === 0) return null
-  return (
-    <Strip
-      label="Professional licence"
-      tiles={tiles}
-      detail={(key) => {
-        const state = ops.stateLicences.find((l) => `state-licence:${l.id}` === key)
-        if (state)
-          return (
+  const jump = (id: string) => (onJumpToSource ? () => onJumpToSource(docCard(id)) : undefined)
+  const rows: ResultRow[] = [
+    ...(lic.required && lic.registry === 'NPI'
+      ? lic.found.map((x) => ({
+          key: x.id,
+          caption: x.registry || 'NPI Registry',
+          title: [titleCase(x.holder), x.credential].filter(Boolean).join(', '),
+          sub: (
+            <RegistryChip
+              id={x.id}
+              label={x.registry || 'NPI Registry'}
+              title={`NPI ${x.number}`}
+              url={x.sourceUrl}
+              annotation={x.profession}
+              onSelect={jump(x.id)}
+            />
+          ),
+          chips: <LicenceStatus status={x.status} />,
+          cleared: false,
+          detail: <AttributeCells items={npiCells(x, record, onJumpToSource)} className="-mb-px" />
+        }))
+      : []),
+    ...(lic.required && lic.registry === 'FMCSA'
+      ? lic.found.map((f) => ({
+          key: f.id,
+          caption: 'FMCSA',
+          title: `USDOT ${f.dotNumber ?? '—'}`,
+          sub: (
+            <RegistryChip
+              id={f.id}
+              label="FMCSA"
+              title={`USDOT ${f.dotNumber ?? ''}`}
+              url={f.sourceUrl}
+              annotation="Company snapshot"
+              onSelect={jump(f.id)}
+            />
+          ),
+          chips: (
+            <MetaChip tone="success" size="compact">
+              <Check {...icon} />
+              Registered
+            </MetaChip>
+          ),
+          cleared: false,
+          detail: (
             <AttributeCells
-              items={stateLicenceCells(state, record, onJumpToSource)}
+              items={[
+                ...fmcsaCells(f, record, onJumpToSource),
+                ...registerTail(f.id, f.sourceUrl, 'FMCSA company snapshot')
+              ]}
               className="-mb-px"
             />
           )
-        const f =
-          lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
-        return (
-          <AttributeCells
-            items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []}
-            className="-mb-px"
-          />
-        )
-      }}
-    />
-  )
+        }))
+      : []),
+    ...ops.stateLicences.map((l) => ({
+      key: `state-licence:${l.id}`,
+      caption: [l.state, licenceTypeText(l.type), 'licence'].filter(Boolean).join(' '),
+      title: l.number ? `Licence ${l.number}` : (l.names[0] ?? 'Licence'),
+      sub: (
+        <RegistryChip
+          id={l.id}
+          label="Professional license"
+          title={[l.state, 'licence', l.number].filter(Boolean).join(' ')}
+          annotation={`${licenceTypeText(l.type)} licence`.trim()}
+          onSelect={jump(l.id)}
+        />
+      ),
+      chips: <LicenceStatus status={l.status} />,
+      cleared: false,
+      detail: <AttributeCells items={stateLicenceCells(l, record, onJumpToSource)} className="-mb-px" />
+    }))
+  ]
+  // Required and nothing returned: said as every card says it found nothing.
+  const noneTitle = !lic.required
+    ? 'No licences found'
+    : lic.registry === 'NPI'
+      ? 'No results in the NPI Registry'
+      : lic.registry === 'FMCSA'
+        ? 'No FMCSA registration'
+        : `Required for ${lic.profession}; no public register checked`
+  const none =
+    lic.required && lic.registry !== 'none'
+      ? `A licence is required for ${lic.profession}.`
+      : undefined
+  if (rows.length === 0 && !lic.required) return null
+  return <ResultTable columns={['Licences', 'Status']} rows={rows} noneTitle={noneTitle} none={none} />
 }
 
 /** Every address on the record, as a table — the Addresses card's body. */

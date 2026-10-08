@@ -20,6 +20,7 @@ import { formationCardFilingOf } from '../lib/linkedFormation'
 import { STATE_NAMES, stateName } from '../lib/states'
 import { useScreenshotViewer } from './ScreenshotViewer'
 import { Collapsible } from './Collapsible'
+import { registerTail, submittedUnder } from './Report/OperationsCard'
 import { StatusChip } from './Report/ClaimsStrips'
 import { bankruptcySections } from './Report/bankruptcySections'
 import { LienSections, lienStatusKind } from './Report/lienSections'
@@ -428,7 +429,11 @@ export const sourcesFor = (
       row: { group: 'tin', label, value, source: '', sources: [] },
       bare: true
     })
-    if (!has('TIN')) add(card.supplied, 'tin', fact('TIN', maskTin(tin.tin)))
+    // The customer's number: marked Submitted, as the report's TIN reads.
+    if (!has('TIN')) {
+      const number = fact('TIN', maskTin(tin.tin))
+      add(card.supplied, 'tin', { ...number, row: { ...number.row, submitted: true } })
+    }
     if (tin.name && !has('IRS name')) add(card.supplied, 'tin', fact('IRS name', tin.name))
     // Issuance first where the IRS has not issued the number: that is why
     // there is no record for the combination, and the second sentence reads
@@ -893,10 +898,9 @@ const metaCells = (s: Source, record?: BusinessRecord) => {
       ]
     case 'historical_registration':
       return [...(st ? [cell('State', st)] : []), ...(m.file_number ? [cell('File number', m.file_number)] : []), ...sosLink]
-    case 'license': {
-      const href = s.doc?.license?.sourceUrl
-      return href ? [cell('Record', <RecordLink href={href}>{`${s.doc!.license!.registry} website`}</RecordLink>, { span: 'full' as const })] : []
-    }
+    // A licence's link and capture close its card (`registerTail`), as on the report.
+    case 'license':
+      return []
     case 'website':
       return record?.website?.url ? [cell('Record', <RecordLink href={record.website.url}>{record.website.url}</RecordLink>, { span: 'full' as const })] : []
     case 'professional_license':
@@ -1071,7 +1075,11 @@ const SuppliedCells = ({ rows }: { rows: Supplied[] }) => {
         provenance: false
       }
     )
-  return <AttributeCells items={cells} />
+  // But a value the customer submitted still says so, under it, as it does on
+  // the report — the practice address an NPI record shares with the submitted office.
+  const marked =
+    cells.length === rows.length ? cells.map((c, i) => submittedUnder(c, rows[i].row.submitted)) : cells
+  return <AttributeCells items={marked} />
 }
 
 /**
@@ -1427,7 +1435,15 @@ export const SourceDetail = ({
                 skip={appTypeOf(s) === 'profiles' ? ['profiles'] : ROW_KEY[appTypeOf(s)] ? ['liens', 'litigation', 'bankruptcy'] : undefined}
               />
               <DocumentsSection docs={s.doc?.documents ?? []} />
-              {s.id !== SUBMITTED_CARD && <SourceCaptures items={all} />}
+              {appTypeOf(s) === 'license' && s.doc?.license ? (
+                // The register's link and the capture of its page, side by side
+                // at the foot, as the report's licence record ends.
+                <AttributeCells
+                  items={registerTail(s.doc.license.id, s.doc.license.sourceUrl, s.doc.license.registry || 'NPI Registry')}
+                />
+              ) : (
+                s.id !== SUBMITTED_CARD && <SourceCaptures items={all} />
+              )}
             </>
           )}
         </div>
