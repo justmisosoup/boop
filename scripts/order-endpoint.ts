@@ -32,6 +32,9 @@ import {
 } from '../src/lib/customOrders/catalog'
 import type { CustomOrderConfig, CustomOrderError } from '../src/lib/customOrders/types'
 import type { OrderedAssessment, OrderedBusiness } from '../src/lib/orderedWorkflows'
+
+/** As `ORDERING_CAP_MS` in src/lib/orderedWorkflows.ts. */
+const ORDERING_CAP_MS = 10 * 60 * 1000
 import { type Any, fetchFull, normalise } from './lib/business'
 
 const ROOT = process.cwd()
@@ -204,7 +207,9 @@ const check = async (id: string) => {
   const { business, status } = await pull(id)
   const ordered = readJson<OrderedWorkflows>(ORDERED, {})
   const open = ordered[id]?.assessments.filter((a) => !a.completedAt) ?? []
-  const done = open.filter((a) => assessmentDone(a, business))
+  // Done when its orders finish — or once it has waited past the cap, so an
+  // order the API is slow on never leaves it "Ordering".
+  const done = open.filter((a) => assessmentDone(a, business) || Date.now() - Date.parse(a.orderedAt) > ORDERING_CAP_MS)
   if (done.length > 0) {
     const at = new Date().toISOString()
     done.forEach((a) => (a.completedAt = at))

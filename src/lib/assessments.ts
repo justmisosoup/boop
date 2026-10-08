@@ -4,7 +4,7 @@ import { deriveResults, type BusinessRecord, type Derived } from './deriveResult
 import { heldReportFor } from './heldReports'
 import { identityScore, polarityCounts, type IdentityScore } from './identityScore'
 import { outcomeOf } from './insightOutcome'
-import { orderedFor } from './orderedWorkflows'
+import { orderedFor, stillOrdering } from './orderedWorkflows'
 import { assessmentOf } from './records'
 
 /**
@@ -123,7 +123,7 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
     counts: polarityCounts(record, live, ids),
     tally: tallyOf(record, shown),
     summary: kept ? { text: kept.section.body[0]?.text ?? '', at: kept.at, body: kept.section.body } : undefined,
-    ordering: !a.completedAt
+    ordering: a.orderedAt ? stillOrdering({ orderedAt: a.orderedAt, completedAt: a.completedAt }) : false
   }
 }
 

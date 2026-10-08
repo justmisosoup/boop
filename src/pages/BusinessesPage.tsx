@@ -57,8 +57,20 @@ type Row = {
   reads?: AssessmentRead[]
   /** Across its assessments, each insight once. */
   counts?: { positive: number; negative: number; neutral: number }
+  /** When it was last assessed: the newest run, completion or summary. */
+  lastAt?: string
   pending?: string[]
 }
+
+/** The newest date any of its assessments carries. */
+const lastAssessedOf = (reads: AssessmentRead[], held?: string) =>
+  [
+    held,
+    ...reads.flatMap((r) => [r.assessment.orderedAt, r.assessment.completedAt, r.summary?.at])
+  ]
+    .filter((d): d is string => Boolean(d))
+    .sort()
+    .at(-1)
 
 /** A business, as a row: its newest report for "Full Business KYB", or each of its
  *  custom orders' assessments with their insights counted once. */
@@ -66,12 +78,12 @@ const rowFor = (record: BusinessRecord): Row => {
   const reads = readAssessments(record)
   if (reads.every((r) => r.assessment.full)) {
     const assessed = assessmentOf(record)
-    return { record, assessed, reads, counts: assessed?.counts }
+    return { record, assessed, reads, counts: assessed?.counts, lastAt: lastAssessedOf(reads, assessed?.at) }
   }
   const results = deriveResults(record)
   const keys = new Set(reads.flatMap((r) => r.assessment.insights ?? []))
   const ids = results.filter((r) => keys.has(r.insightId.split(':')[0])).map((r) => r.insightId)
-  return { record, assessed: null, reads, counts: polarityCounts(record, results, ids) }
+  return { record, assessed: null, reads, counts: polarityCounts(record, results, ids), lastAt: lastAssessedOf(reads, assessmentOf(record)?.at) }
 }
 
 /** Ordered from `/order` but not in records.json yet — the pull right after
@@ -138,7 +150,8 @@ const columns: DataTableColumnDef<Row>[] = [
     id: 'assessments',
     header: 'Assessments',
     accessorFn: (row) => row.reads?.length ?? 0,
-    /** One chip per assessment: its name and its own call. */
+    /** One chip per assessment, by name: no status — each one's call is on
+     *  the business itself. */
     cell: ({ row }) => {
       const reads = row.original.reads
       if (row.original.pending)
@@ -147,13 +160,8 @@ const columns: DataTableColumnDef<Row>[] = [
       return (
         <span className="flex flex-wrap gap-1">
           {reads.map((r) => (
-            <MetaChip
-              key={r.assessment.id}
-              size="compact"
-              tone={r.ordering ? 'neutral' : r.score ? STATUS_CHIP[r.score.band.id === 'established' ? 'approved' : r.score.band.id === 'not_established' ? 'rejected' : 'in_review'].tone : 'neutral'}
-            >
+            <MetaChip key={r.assessment.id} size="compact">
               {r.assessment.name}
-              {r.ordering ? ' · Ordering' : r.score ? ` · ${r.score.band.label}` : ''}
             </MetaChip>
           ))}
         </span>
@@ -182,13 +190,13 @@ const columns: DataTableColumnDef<Row>[] = [
   {
     id: 'assessed',
     header: 'Last assessed',
-    accessorFn: (row) => row.assessed?.at ?? '',
+    accessorFn: (row) => row.lastAt ?? '',
     // When the newest report ran — not when the record was created, which is
     // what the column said before and which no decision turns on.
     cell: ({ row }) =>
-      row.original.assessed?.at ? (
+      row.original.lastAt ? (
         <DateTime className="whitespace-nowrap text-caption text-text-secondary" relative>
-          {row.original.assessed.at}
+          {row.original.lastAt}
         </DateTime>
       ) : (
         <span className="text-caption text-text-disabled">—</span>
@@ -207,7 +215,7 @@ const sortKey = (row: Row, id: string): number | string => {
     case 'insights':
       return row.assessed?.counts.negative ?? -1
     case 'assessed':
-      return row.assessed?.at ?? ''
+      return row.lastAt ?? ''
     default:
       return ''
   }

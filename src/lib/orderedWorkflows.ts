@@ -32,9 +32,20 @@ export const ORDERED = ordered as Record<string, OrderedBusiness>
 export const orderedFor = (businessId: string | undefined): OrderedBusiness | undefined =>
   businessId ? ORDERED[businessId] : undefined
 
-/** Ordered, and some of its orders still running. */
+/**
+ * How long an assessment may read as "Ordering". Past it, it reads from
+ * whatever results have landed — an order the API is slow to finish never
+ * holds the business up — and later results still fill in as they arrive.
+ */
+export const ORDERING_CAP_MS = 10 * 60 * 1000
+
+/** Still waiting on this assessment's orders, inside the cap. */
+export const stillOrdering = (a: Pick<OrderedAssessment, 'orderedAt' | 'completedAt'>, now = Date.now()) =>
+  !a.completedAt && now - Date.parse(a.orderedAt) < ORDERING_CAP_MS
+
+/** Ordered, and some of its orders still running (inside the cap). */
 export const isOrdering = (businessId: string) =>
-  Boolean(ORDERED[businessId]?.assessments.some((a) => !a.completedAt))
+  Boolean(ORDERED[businessId]?.assessments.some((a) => stillOrdering(a)))
 
 /** When the business was first ordered here. */
 export const firstOrderedAt = (businessId: string) =>

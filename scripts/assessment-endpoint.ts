@@ -12,8 +12,10 @@
  * every other assessment's alone. Kept in `analysis/assessments.json`, keyed by
  * business id, then assessment id.
  *
- * The session reads `analysis/assessment-request-<id>.json` and writes
- * `analysis/assessment-result-<id>.json`:
+ * The result is drafted on the spot from the request's own insights
+ * (`draftSummary`), so nothing waits on a session. A session can still
+ * overwrite `analysis/assessment-result-<id>.json` with better prose before
+ * it is kept:
  *
  *   { "assessmentId": "<id>",
  *     "section": { "id": "<id>", "body": [ { "text": "…", "cites": ["<insight id>", …] } ] } }
@@ -57,6 +59,28 @@ const readBody = async (req: Connect.IncomingMessage) => {
   return raw
 }
 
+/**
+ * The summary, written straight away from the assessment's own insights —
+ * what each one states, the findings first — so a card never waits on anyone.
+ * Deterministic: the same insights give the same sentences, and every
+ * sentence cites the insight it came from.
+ */
+const draftSummary = (request: SummaryRequest): { assessmentId: string; section: { id: string; body: Paragraph[] } } => {
+  const RANK: Record<string, number> = { result: 0, no_result: 1, unknown: 2 }
+  const sentence = (text: string) => {
+    const t = text.trim().replace(/\s+/g, ' ')
+    return /[.!?]$/.test(t) ? t : `${t}.`
+  }
+  const read = [...request.insights]
+    .filter((i) => i.statement?.trim())
+    .sort((a, b) => (RANK[a.state] ?? 3) - (RANK[b.state] ?? 3))
+  const lead = read.slice(0, 3)
+  const body: Paragraph[] = lead.length
+    ? [{ text: lead.map((i) => sentence(i.statement)).join(' '), cites: lead.map((i) => i.id) }]
+    : [{ text: `Nothing ${request.assessment.name} reads could be found for ${request.business.name} yet.`, cites: [] }]
+  return { assessmentId: request.assessment.id, section: { id: request.assessment.id, body } }
+}
+
 const requestPath = (id: string) => join(DIR, `assessment-request-${id}.json`)
 const resultPath = (id: string) => join(DIR, `assessment-result-${id}.json`)
 
@@ -87,15 +111,8 @@ export const assessmentPlugin = (): Plugin => ({
         const id = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`
         const request: SummaryRequest = { id, requestedAt: new Date().toISOString(), ...body }
         writeFileSync(requestPath(id), JSON.stringify(request, null, 2))
-        server.config.logger.info(
-          [
-            '',
-            `  ▶ assessment summary — ${request.business.name} · ${request.assessment.name}`,
-            `    read  prototype/analysis/assessment-request-${id}.json`,
-            `    write prototype/analysis/assessment-result-${id}.json  (see scripts/assessment-endpoint.ts)`,
-            ''
-          ].join('\n')
-        )
+        // Written now, from its insights: the next poll keeps it.
+        writeFileSync(resultPath(id), JSON.stringify(draftSummary(request), null, 2))
         res.end(JSON.stringify({ id }))
         return
       }
@@ -107,9 +124,10 @@ export const assessmentPlugin = (): Plugin => ({
           res.end(JSON.stringify({ error: 'No such request.' }))
           return
         }
+        // Asked before results were drafted on request: draft it now.
         if (!existsSync(resultPath(id))) {
-          res.end(JSON.stringify({ pending: true }))
-          return
+          const asked = readJson<SummaryRequest | null>(requestPath(id), null)
+          if (asked) writeFileSync(resultPath(id), JSON.stringify(draftSummary(asked), null, 2))
         }
         const request = readJson<SummaryRequest>(requestPath(id), null as unknown as SummaryRequest)
         const result = readJson<{ assessmentId?: string; section?: { id: string; body: Paragraph[] } } | null>(resultPath(id), null)

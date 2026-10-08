@@ -1,0 +1,24 @@
+{
+  "id": "1791496911628kf85",
+  "requestedAt": "2026-10-08T22:01:51.628Z",
+  "businessId": "53ea6dad-3a0f-4e1f-a529-f18e629073e9",
+  "business": {
+    "name": "SORENSON COMMUNICATIONS, LLC"
+  },
+  "assessment": {
+    "id": "a-mv012kfp-0",
+    "name": "Liens only",
+    "instructions": "Summarise what the Liens only assessment found for SORENSON COMMUNICATIONS, LLC, from these insights only: Liens. Business liens for credit decisions.",
+    "insightIds": [
+      "liens"
+    ]
+  },
+  "insights": [
+    {
+      "id": "liens",
+      "statement": "We found 2 Open Lien(s)",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}
