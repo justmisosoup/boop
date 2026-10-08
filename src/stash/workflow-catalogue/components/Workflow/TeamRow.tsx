@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ActionLink, Heading, IconActionButton, PageHeadingCount } from '@/core'
 import { cn } from '@/utils/twUtils'
 
-import { teamHref, type WorkflowListing, type WorkflowTeam } from '../../lib/workflowCatalogue'
+import { teamHref, type WorkflowListing, type WorkflowTeam } from '../../../../lib/workflowCatalogue'
 import { WorkflowCard } from './WorkflowCard'
 
 /**

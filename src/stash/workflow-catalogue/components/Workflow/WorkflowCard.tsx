@@ -4,8 +4,8 @@ import { Link } from 'react-router'
 
 import { Heading, Surface, Text } from '@/core'
 
-import { hasDetail, listingShape, OUTPUT_ICON, type WorkflowListing } from '../../lib/workflowCatalogue'
-import { workflowHref, type WorkflowStatus } from '../../lib/workflows'
+import { hasDetail, listingShape, OUTPUT_ICON, type WorkflowListing } from '../../../../lib/workflowCatalogue'
+import { workflowHref, type WorkflowStatus } from '../../../../lib/workflows'
 
 /**
  * One workflow in the marketplace.

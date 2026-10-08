@@ -46,6 +46,7 @@ import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { areaSummaries } from '../lib/areaSummaries'
 import { displayName } from '../lib/businessNames'
+import { orderedFor } from '../lib/orderedWorkflows'
 import { byId } from '../lib/records'
 import { workflowByAssessmentId } from '../lib/workflows'
 import { GROUPS, makeGroupFor } from '../lib/groups'
@@ -170,7 +171,12 @@ export function RecordPage() {
  */
 function Record({ record: selected }: { record: BusinessRecord }) {
   /** What the business is now. What a new report is run against. */
-  const live = useMemo(() => deriveResults(selected), [selected])
+  // An ordered business's report is run on its workflows' insights alone.
+  const live = useMemo(() => {
+    const all = deriveResults(selected)
+    const keys = orderedFor(selected.id)?.insights
+    return keys ? all.filter((r) => keys.includes(r.insightId.split(':')[0])) : all
+  }, [selected])
 
   // The skill that runs on arrival. Not a special case: it is the same thing a
   // reader could have dropped into the composer themselves.
@@ -216,6 +222,18 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     : null
   const record = view?.record ?? selected
   const results: Derived[] = view?.results ?? []
+  /**
+   * A business ordered from `/order` reads as its workflows: only the insights
+   * they include, on only the cards those insights belong to. Its sources stay
+   * whole, and the score still reads the whole report. A business never
+   * ordered here shows everything, as before.
+   */
+  const ordered = orderedFor(selected.id)
+  const shownResults: Derived[] = useMemo(() => {
+    if (!ordered) return results
+    const keys = new Set(ordered.insights)
+    return results.filter((r) => keys.has(r.insightId.split(':')[0]))
+  }, [results, ordered])
 
   const [agentOpen, setAgentOpen] = useState<string | null>(null)
 
@@ -388,6 +406,11 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   // on it (00-MASTER-PLAN.md rule 3).
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
+  /** The cards an ordered business's workflows cover; absent, every card. */
+  const workflowCards = useMemo(
+    () => (ordered ? new Set(ordered.insights.map((k) => cardFor(k, groupFor))) : undefined),
+    [ordered, groupFor]
+  )
 
   /** The open report as the Assistant's first message: the determination and
    *  each card's title and sentence, from the functions the page draws with. */
@@ -690,12 +713,12 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    *  context. The left column lists them in place of the areas. */
   const allInsights = useMemo(() => {
     const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
-    return results
+    return shownResults
       .filter((r) => !r.notReported)
       .map((r) => ({ r, card: cardFor(r.insightId, groupFor), outcome: outcomeOf(r, record) }))
       .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
       .map(({ r, card, outcome }) => ({ id: r.insightId, statement: r.statement, outcome, group: cardById(card)?.label ?? card }))
-  }, [results, groupFor, record])
+  }, [shownResults, groupFor, record])
   const briefShown = !brief
     ? undefined
     : shownArea
@@ -1026,11 +1049,15 @@ function Record({ record: selected }: { record: BusinessRecord }) {
               )}
               <GroupedReport
                 record={record}
-                results={results}
+                results={shownResults}
                 groupFor={groupFor}
                 negatives={negatives}
                 revealed={revealedSet}
-                only={focus ? new Set(focus.cards) : undefined}
+                only={
+                  focus
+                    ? new Set(focus.cards.filter((c) => !workflowCards || workflowCards.has(c)))
+                    : workflowCards
+                }
                 // No filter bar, ever: the card above the report names what it is
                 // narrowed to and carries the way back.
                 // The insights are listed in the left card, grouped by card,

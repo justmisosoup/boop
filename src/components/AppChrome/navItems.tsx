@@ -40,8 +40,8 @@ export const PRIMARY_NAV: AppNavLink[] = [
   },
   {
     id: 'workflows',
-    label: 'Workflows',
-    href: '/workflows',
+    label: 'Custom orders',
+    href: '/custom-orders',
     icon: glyph(Workflow)
   }
 ]

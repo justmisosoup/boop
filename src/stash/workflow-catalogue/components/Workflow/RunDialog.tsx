@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router'
 
 import { ActionButton, Combobox, Dialog, Field, FieldDescription, FieldLabel } from '@/core'
 
-import { displayName } from '../../lib/businessNames'
-import { ALL } from '../../lib/records'
-import type { Workflow } from '../../lib/workflows'
+import { displayName } from '../../../../lib/businessNames'
+import { ALL } from '../../../../lib/records'
+import type { Workflow } from '../../../../lib/workflows'
 
 /**
  * Run this workflow, as a modal.

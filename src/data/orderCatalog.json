@@ -1,0 +1,2428 @@
+{
+  "catalog": {
+    "version": "2026-10-07",
+    "packages": [
+      {
+        "key": "business_verification_verify",
+        "label": "Business Verification",
+        "description": "Verify the business with TIN Match, detailed business and SOS filing information, U.S. watchlist screening, and more.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "business_name",
+          "dba_name",
+          "name_entity_type",
+          "sos_registration_status",
+          "sos_domestic_standing",
+          "sos_state_match",
+          "formation_state",
+          "entity_type_match",
+          "entity_type",
+          "tin_match",
+          "tin_type",
+          "address_verification",
+          "address_deliverability",
+          "address_property_type",
+          "location_frequency",
+          "address_flags",
+          "address_risk",
+          "person_verification",
+          "watchlist",
+          "bankruptcies",
+          "ppp_loans",
+          "business_connections"
+        ]
+      },
+      {
+        "key": "enhanced_screenings",
+        "label": "Enhanced Screenings",
+        "description": "Identify global and expanded U.S. watchlist hits and Politically Exposed Persons.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "watchlist",
+          "politically_exposed_persons"
+        ]
+      },
+      {
+        "key": "adverse_media",
+        "label": "Adverse Media",
+        "description": "Screen for adverse media related to a business and associated people.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "adverse_media"
+        ]
+      },
+      {
+        "key": "web_analysis",
+        "label": "Web Analysis",
+        "description": "Analyze a business's online footprint to assess quality indicators and verify information consistency.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          {
+            "any_of": [
+              "website_url",
+              "address"
+            ]
+          }
+        ],
+        "insight_group_ids": [
+          "website_status",
+          "website_discovery",
+          "domain",
+          "web_presence_quality",
+          "web_content_match",
+          "profiles",
+          "risky_keywords"
+        ]
+      },
+      {
+        "key": "industry_classification",
+        "label": "Industry Classification",
+        "description": "Flag high-risk industries and retrieve NAICS / SIC / MCC codes classifications.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "industry"
+        ]
+      },
+      {
+        "key": "email_risk",
+        "label": "Email Risk",
+        "description": "Analyze email addresses for validity, deliverability, and risk signals.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "email"
+        ],
+        "insight_group_ids": [
+          "email_risk"
+        ]
+      },
+      {
+        "key": "phone_risk",
+        "label": "Phone Risk",
+        "description": "Analyze phone numbers for validity, line status, and risk signals.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "phone"
+        ],
+        "insight_group_ids": [
+          "phone_risk"
+        ]
+      },
+      {
+        "key": "kyc",
+        "label": "KYC & Fraud",
+        "description": "Perform KYC and fraud checks on the people associated with the business.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "person",
+          "person_dob",
+          "person_ssn"
+        ],
+        "insight_group_ids": [
+          "kyc"
+        ]
+      },
+      {
+        "key": "liens",
+        "label": "Business Liens",
+        "description": "UCC and Federal Tax Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "liens"
+        ]
+      },
+      {
+        "key": "tax_liens",
+        "label": "Business Federal & State Tax Lien Search",
+        "description": "Business Federal & State Tax Lien Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "liens"
+        ]
+      },
+      {
+        "key": "ucc_liens",
+        "label": "Business UCC Lien Search",
+        "description": "Business UCC Lien Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "liens"
+        ]
+      },
+      {
+        "key": "litigations",
+        "label": "Business Litigation Search",
+        "description": "Business Litigation Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "litigations"
+        ]
+      },
+      {
+        "key": "bankruptcies",
+        "label": "Business Bankruptcy Search",
+        "description": "Business Bankruptcy Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address"
+        ],
+        "insight_group_ids": [
+          "bankruptcies"
+        ]
+      },
+      {
+        "key": "people_tax_liens",
+        "label": "People Federal & State Tax Lien Search",
+        "description": "People Federal & State Tax Lien Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address",
+          "person"
+        ],
+        "insight_group_ids": [
+          "people_liens"
+        ]
+      },
+      {
+        "key": "people_ucc_liens",
+        "label": "People UCC Lien Search",
+        "description": "People UCC Lien Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address",
+          "person"
+        ],
+        "insight_group_ids": [
+          "people_liens"
+        ]
+      },
+      {
+        "key": "people_bankruptcies",
+        "label": "People Bankruptcy Search",
+        "description": "Search for bankruptcies on people associated with a business.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address",
+          "person",
+          "person_ssn"
+        ],
+        "insight_group_ids": [
+          "people_bankruptcies"
+        ]
+      },
+      {
+        "key": "people_litigations",
+        "label": "People Litigation Search",
+        "description": "People Litigation Search",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address",
+          "person"
+        ],
+        "insight_group_ids": [
+          "people_litigations"
+        ]
+      },
+      {
+        "key": "people_criminal_history",
+        "label": "People Criminal History Search",
+        "description": "Search for criminal history on people associated with a business.",
+        "exclusive_with": [],
+        "required_inputs": [
+          "name",
+          "address",
+          "person"
+        ],
+        "insight_group_ids": [
+          "people_criminal_history"
+        ]
+      }
+    ],
+    "insight_groups": [
+      {
+        "id": "business_name",
+        "label": "Business name",
+        "description": "Match the submitted name to registrations and other sources.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "name"
+        ],
+        "report_section": "name",
+        "trigger_inputs": []
+      },
+      {
+        "id": "dba_name",
+        "label": "DBA name",
+        "description": "Match a submitted DBA to source records.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "dba_name"
+        ],
+        "report_section": "name",
+        "trigger_inputs": [
+          "dba_name"
+        ]
+      },
+      {
+        "id": "name_entity_type",
+        "label": "Name and entity type",
+        "description": "Check the name with its entity suffix against the registration.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "name_and_entity_type"
+        ],
+        "report_section": "name",
+        "trigger_inputs": [
+          "entity_type"
+        ]
+      },
+      {
+        "id": "sos_registration_status",
+        "label": "Secretary of State status",
+        "description": "Whether the business’s state registrations are active.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "sos_active",
+          "sos_inactive",
+          "sos_not_found",
+          "sos_unknown"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": []
+      },
+      {
+        "id": "sos_domestic_standing",
+        "label": "Domestic registration standing",
+        "description": "Status and standing of the registration in the formation state.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "sos_domestic_sub_status",
+          "sos_domestic"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": []
+      },
+      {
+        "id": "sos_state_match",
+        "label": "Registered in submitted state",
+        "description": "Whether the business is registered where its office is.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "sos_match"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": []
+      },
+      {
+        "id": "formation_state",
+        "label": "Formation state",
+        "description": "Compare the submitted formation state to the one found.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "formation_state"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": [
+          "formation_state"
+        ]
+      },
+      {
+        "id": "entity_type_match",
+        "label": "Entity type match",
+        "description": "Compare the submitted entity type to the one found.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "entity_type_match"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": [
+          "entity_type"
+        ]
+      },
+      {
+        "id": "entity_type",
+        "label": "Entity type",
+        "description": "Identify the entity type from formation records.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "entity_type"
+        ],
+        "report_section": "sos",
+        "trigger_inputs": []
+      },
+      {
+        "id": "tin_match",
+        "label": "TIN match",
+        "description": "Match the TIN and business name with the IRS.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "tin",
+          "tin_error",
+          "tin_issued"
+        ],
+        "report_section": "tin",
+        "trigger_inputs": [
+          "tin"
+        ]
+      },
+      {
+        "id": "tin_type",
+        "label": "TIN type",
+        "description": "Confirm the TIN is the submitted type (EIN or SSN).",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "tin_type"
+        ],
+        "report_section": "tin",
+        "trigger_inputs": [
+          "tin"
+        ]
+      },
+      {
+        "id": "address_verification",
+        "label": "Office address",
+        "description": "Match the submitted address to source records.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "address_verification"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "address_deliverability",
+        "label": "Mail deliverability",
+        "description": "USPS deliverability, including mail-drop (CMRA) addresses.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "address_deliverability",
+          "address_cmra"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "address_property_type",
+        "label": "Property type",
+        "description": "Whether the address is commercial or residential.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "address_property_type"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "location_frequency",
+        "label": "Address usage",
+        "description": "How many businesses use the same address.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "location_frequency"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "address_flags",
+        "label": "Registered agent and high-risk address",
+        "description": "Addresses tied to registered agents or known risk.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "address_registered_agent",
+          "address_high_risk"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "address_risk",
+        "label": "Address risk",
+        "description": "Risk rating and indicators for the office address.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "address_risk"
+        ],
+        "report_section": "address",
+        "trigger_inputs": []
+      },
+      {
+        "id": "person_verification",
+        "label": "People verification",
+        "description": "Match submitted people to officers and other sources.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "person_verification"
+        ],
+        "report_section": "people",
+        "trigger_inputs": [
+          "person"
+        ]
+      },
+      {
+        "id": "kyc",
+        "label": "KYC decision",
+        "description": "Identity and fraud checks on associated people.",
+        "packages": [
+          "kyc"
+        ],
+        "insight_keys": [
+          "kyc_decision"
+        ],
+        "report_section": "people",
+        "trigger_inputs": []
+      },
+      {
+        "id": "watchlist",
+        "label": "Watchlist screening",
+        "description": "Sanctions and watchlist hits on the business and its people.",
+        "packages": [
+          "business_verification_verify",
+          "enhanced_screenings"
+        ],
+        "insight_keys": [
+          "watchlist"
+        ],
+        "report_section": "watchlist",
+        "trigger_inputs": []
+      },
+      {
+        "id": "politically_exposed_persons",
+        "label": "Politically exposed persons",
+        "description": "PEP hits on submitted people and their associates.",
+        "packages": [
+          "enhanced_screenings"
+        ],
+        "insight_keys": [
+          "politically_exposed_persons"
+        ],
+        "report_section": "politically_exposed_persons",
+        "trigger_inputs": [
+          "person"
+        ]
+      },
+      {
+        "id": "adverse_media",
+        "label": "Adverse media",
+        "description": "Negative news about the business.",
+        "packages": [
+          "adverse_media"
+        ],
+        "insight_keys": [
+          "adverse_media"
+        ],
+        "report_section": "adverse_media",
+        "trigger_inputs": []
+      },
+      {
+        "id": "bankruptcies",
+        "label": "Bankruptcies",
+        "description": "Bankruptcy filings for the business.",
+        "packages": [
+          "business_verification_verify",
+          "bankruptcies"
+        ],
+        "insight_keys": [
+          "bankruptcies"
+        ],
+        "report_section": "bankruptcies",
+        "trigger_inputs": []
+      },
+      {
+        "id": "liens",
+        "label": "Liens",
+        "description": "UCC and tax liens filed against the business.",
+        "packages": [
+          "liens",
+          "tax_liens",
+          "ucc_liens"
+        ],
+        "insight_keys": [
+          "liens"
+        ],
+        "report_section": "liens",
+        "trigger_inputs": []
+      },
+      {
+        "id": "litigations",
+        "label": "Litigations",
+        "description": "Court cases involving the business.",
+        "packages": [
+          "litigations"
+        ],
+        "insight_keys": [
+          "litigations"
+        ],
+        "report_section": "litigations",
+        "trigger_inputs": []
+      },
+      {
+        "id": "ppp_loans",
+        "label": "PPP loans",
+        "description": "Paycheck Protection Program loans to the business.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "ppp_loans"
+        ],
+        "report_section": "loans",
+        "trigger_inputs": []
+      },
+      {
+        "id": "business_connections",
+        "label": "Business connections",
+        "description": "Related businesses that share people or addresses.",
+        "packages": [
+          "business_verification_verify"
+        ],
+        "insight_keys": [
+          "business_connections"
+        ],
+        "report_section": "business_connections",
+        "trigger_inputs": []
+      },
+      {
+        "id": "people_bankruptcies",
+        "label": "People bankruptcies",
+        "description": "Bankruptcies of associated people.",
+        "packages": [
+          "people_bankruptcies"
+        ],
+        "insight_keys": [
+          "people_bankruptcies"
+        ],
+        "report_section": "people_bankruptcies",
+        "trigger_inputs": []
+      },
+      {
+        "id": "people_criminal_history",
+        "label": "Criminal history",
+        "description": "Criminal records of associated people.",
+        "packages": [
+          "people_criminal_history"
+        ],
+        "insight_keys": [
+          "people_criminal_history"
+        ],
+        "report_section": "people_criminal_history",
+        "trigger_inputs": []
+      },
+      {
+        "id": "people_liens",
+        "label": "People liens",
+        "description": "Liens filed against associated people.",
+        "packages": [
+          "people_tax_liens",
+          "people_ucc_liens"
+        ],
+        "insight_keys": [
+          "people_liens"
+        ],
+        "report_section": "people_liens",
+        "trigger_inputs": []
+      },
+      {
+        "id": "people_litigations",
+        "label": "People litigations",
+        "description": "Court cases involving associated people.",
+        "packages": [
+          "people_litigations"
+        ],
+        "insight_keys": [
+          "people_litigations"
+        ],
+        "report_section": "people_litigations",
+        "trigger_inputs": []
+      },
+      {
+        "id": "website_status",
+        "label": "Website status",
+        "description": "Whether the site is online, offline or parked.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "website_status",
+          "website_parked"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "website_discovery",
+        "label": "Website discovery",
+        "description": "Find the business’s website when none is submitted.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "website_url_discovery"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "domain",
+        "label": "Domain ownership and redirects",
+        "description": "Whether the domain belongs to the business.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "website_url_domain_ownership",
+          "domain_redirect"
+        ],
+        "report_section": "website",
+        "trigger_inputs": [
+          "website_url"
+        ]
+      },
+      {
+        "id": "web_presence_quality",
+        "label": "Web presence quality",
+        "description": "Overall quality of the business’s web presence.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "web_presence_quality"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "web_content_match",
+        "label": "Website matches submitted details",
+        "description": "Name, address, phone, email and people found on the site.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "web_business_name_verification",
+          "web_address_verification",
+          "web_phone_number_verification",
+          "web_email_address_verification",
+          "web_person_verification"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "profiles",
+        "label": "Online profiles",
+        "description": "Social and business profiles and whether they are live.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "profile_discovery",
+          "profile_status"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "risky_keywords",
+        "label": "Risky keywords",
+        "description": "Prohibited or review-worthy terms on the site.",
+        "packages": [
+          "web_analysis"
+        ],
+        "insight_keys": [
+          "risky_keywords"
+        ],
+        "report_section": "website",
+        "trigger_inputs": []
+      },
+      {
+        "id": "industry",
+        "label": "Industry classification",
+        "description": "Industry and high-risk industry flags.",
+        "packages": [
+          "industry_classification"
+        ],
+        "insight_keys": [
+          "industry"
+        ],
+        "report_section": "industry",
+        "trigger_inputs": []
+      },
+      {
+        "id": "email_risk",
+        "label": "Email risk",
+        "description": "Fraud risk of the submitted email address.",
+        "packages": [
+          "email_risk"
+        ],
+        "insight_keys": [
+          "email_risk"
+        ],
+        "report_section": "email",
+        "trigger_inputs": []
+      },
+      {
+        "id": "phone_risk",
+        "label": "Phone risk",
+        "description": "Fraud risk of the submitted phone number.",
+        "packages": [
+          "phone_risk"
+        ],
+        "insight_keys": [
+          "phone_risk"
+        ],
+        "report_section": "phone",
+        "trigger_inputs": []
+      }
+    ],
+    "insights": [
+      {
+        "key": "name",
+        "label": "Name",
+        "group_id": "business_name",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "similar_match",
+            "label": "Similar Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "dba_match",
+            "label": "DBA Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "similar_dba_match",
+            "label": "Similar DBA match",
+            "default_status": "warning"
+          },
+          {
+            "key": "alternate_name",
+            "label": "Alternate Name",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "dba_name",
+        "label": "DBA name",
+        "group_id": "dba_name",
+        "trigger_inputs": [
+          "dba_name"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "similar_match",
+            "label": "Similar Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "dba_match",
+            "label": "DBA Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "similar_dba_match",
+            "label": "Similar DBA match",
+            "default_status": "warning"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "name_and_entity_type",
+        "label": "Name and entity type",
+        "group_id": "name_entity_type",
+        "trigger_inputs": [
+          "entity_type"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_active",
+        "label": "SOS active",
+        "group_id": "sos_registration_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "active",
+            "label": "Active",
+            "default_status": "success"
+          }
+        ]
+      },
+      {
+        "key": "sos_domestic_sub_status",
+        "label": "SOS domestic sub status",
+        "group_id": "sos_domestic_standing",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "good_standing",
+            "label": "Good Standing",
+            "default_status": "success"
+          },
+          {
+            "key": "pending_active",
+            "label": "Pending Active",
+            "default_status": "warning"
+          },
+          {
+            "key": "pending_inactive",
+            "label": "Pending Inactive",
+            "default_status": "warning"
+          },
+          {
+            "key": "not_provided_by_state",
+            "label": "Not Provided by State",
+            "default_status": "warning"
+          },
+          {
+            "key": "not_in_good_standing",
+            "label": "Not in Good Standing",
+            "default_status": "failure"
+          },
+          {
+            "key": "dissolved",
+            "label": "Dissolved",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_inactive",
+        "label": "SOS inactive",
+        "group_id": "sos_registration_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "partially_inactive",
+            "label": "Partially Inactive",
+            "default_status": "warning"
+          },
+          {
+            "key": "inactive",
+            "label": "Inactive",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_match",
+        "label": "SOS match",
+        "group_id": "sos_state_match",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "submitted_active",
+            "label": "Submitted Active",
+            "default_status": "success"
+          },
+          {
+            "key": "submitted_unknown",
+            "label": "Submitted Unknown",
+            "default_status": "warning"
+          },
+          {
+            "key": "submitted_inactive",
+            "label": "Submitted Inactive",
+            "default_status": "failure"
+          },
+          {
+            "key": "submitted_not_registered",
+            "label": "Submitted Not Registered",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_not_found",
+        "label": "SOS not found",
+        "group_id": "sos_registration_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "not_registered",
+            "label": "Not Registered",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_unknown",
+        "label": "SOS unknown",
+        "group_id": "sos_registration_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "partially_unknown",
+            "label": "Partially Unknown",
+            "default_status": "warning"
+          }
+        ]
+      },
+      {
+        "key": "formation_state",
+        "label": "Formation state",
+        "group_id": "formation_state",
+        "trigger_inputs": [
+          "formation_state"
+        ],
+        "outcomes": [
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "success"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "entity_type_match",
+        "label": "Entity type match",
+        "group_id": "entity_type_match",
+        "trigger_inputs": [
+          "entity_type"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "entity_type",
+        "label": "Entity type",
+        "group_id": "entity_type",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "tin",
+        "label": "TIN",
+        "group_id": "tin_match",
+        "trigger_inputs": [
+          "tin"
+        ],
+        "outcomes": [
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "success"
+          },
+          {
+            "key": "warning",
+            "label": "Warning",
+            "default_status": "warning"
+          },
+          {
+            "key": "pending",
+            "label": "Pending",
+            "default_status": "warning"
+          },
+          {
+            "key": "error",
+            "label": "Error",
+            "default_status": "failure"
+          },
+          {
+            "key": "not_found",
+            "label": "Not Found",
+            "default_status": "failure"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "tin_error",
+        "label": "TIN error",
+        "group_id": "tin_match",
+        "trigger_inputs": [
+          "tin"
+        ],
+        "outcomes": [
+          {
+            "key": "denylisted",
+            "label": "Denylisted",
+            "default_status": "failure"
+          },
+          {
+            "key": "duplicate_request",
+            "label": "Duplicate request",
+            "default_status": "failure"
+          },
+          {
+            "key": "invalid_tin",
+            "label": "Invalid TIN",
+            "default_status": "failure"
+          },
+          {
+            "key": "irs_unavailable",
+            "label": "IRS unavailable",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "tin_issued",
+        "label": "TIN issued",
+        "group_id": "tin_match",
+        "trigger_inputs": [
+          "tin"
+        ],
+        "outcomes": [
+          {
+            "key": "not_issued",
+            "label": "Not Issued",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "tin_type",
+        "label": "TIN type",
+        "group_id": "tin_type",
+        "trigger_inputs": [
+          "tin"
+        ],
+        "outcomes": [
+          {
+            "key": "success",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "failure",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_verification",
+        "label": "Address verification",
+        "group_id": "address_verification",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "approximate_match",
+            "label": "Approximate Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "similar_match",
+            "label": "Similar Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "incomplete_match",
+            "label": "Incomplete Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_deliverability",
+        "label": "Address deliverability",
+        "group_id": "address_deliverability",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "deliverable",
+            "label": "Deliverable",
+            "default_status": "success"
+          },
+          {
+            "key": "unknown",
+            "label": "Unknown",
+            "default_status": "warning"
+          },
+          {
+            "key": "vacant",
+            "label": "Vacant",
+            "default_status": "failure"
+          },
+          {
+            "key": "undeliverable",
+            "label": "Undeliverable",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_cmra",
+        "label": "Address CMRA",
+        "group_id": "address_deliverability",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "cmra",
+            "label": "CMRA",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_risk",
+        "label": "Address risk",
+        "group_id": "address_risk",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "low",
+            "label": "Low",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate",
+            "label": "Moderate",
+            "default_status": "warning"
+          },
+          {
+            "key": "high",
+            "label": "High",
+            "default_status": "failure"
+          },
+          {
+            "key": "not_available",
+            "label": "Not available",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "person_verification",
+        "label": "Person verification",
+        "group_id": "person_verification",
+        "trigger_inputs": [
+          "person"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "kyc_decision",
+        "label": "KYC decision",
+        "group_id": "kyc",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "accepted",
+            "label": "Accepted",
+            "default_status": "success"
+          },
+          {
+            "key": "review",
+            "label": "Review",
+            "default_status": "warning"
+          },
+          {
+            "key": "error",
+            "label": "Error",
+            "default_status": "failure"
+          },
+          {
+            "key": "rejected",
+            "label": "Rejected",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "people_bankruptcies",
+        "label": "People bankruptcies",
+        "group_id": "people_bankruptcies",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "people_criminal_history",
+        "label": "People criminal history",
+        "group_id": "people_criminal_history",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "people_liens",
+        "label": "People liens",
+        "group_id": "people_liens",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "no_liens",
+            "label": "No People Liens",
+            "default_status": "success"
+          },
+          {
+            "key": "open_liens_found",
+            "label": "Open People Liens Found",
+            "default_status": "warning"
+          },
+          {
+            "key": "liens_found",
+            "label": "People Liens Found",
+            "default_status": "warning"
+          },
+          {
+            "key": "high_risk_liens_found",
+            "label": "High Risk People Liens Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "people_litigations",
+        "label": "People litigations",
+        "group_id": "people_litigations",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "watchlist",
+        "label": "Watchlist",
+        "group_id": "watchlist",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "dismissed",
+            "label": "Dismissed",
+            "default_status": "success"
+          },
+          {
+            "key": "no_hits",
+            "label": "No Hits",
+            "default_status": "success"
+          },
+          {
+            "key": "pending",
+            "label": "Pending",
+            "default_status": "warning"
+          },
+          {
+            "key": "hits",
+            "label": "Hits",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "politically_exposed_persons",
+        "label": "Politically exposed persons",
+        "group_id": "politically_exposed_persons",
+        "trigger_inputs": [
+          "person"
+        ],
+        "outcomes": [
+          {
+            "key": "no_hits",
+            "label": "No hits",
+            "default_status": "success"
+          },
+          {
+            "key": "associate_hits",
+            "label": "Associate hits",
+            "default_status": "warning"
+          },
+          {
+            "key": "hits",
+            "label": "Direct hits",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "adverse_media",
+        "label": "Adverse media",
+        "group_id": "adverse_media",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "no_results",
+            "label": "No results",
+            "default_status": "success"
+          },
+          {
+            "key": "dismissed",
+            "label": "Dismissed",
+            "default_status": "success"
+          },
+          {
+            "key": "low_risk",
+            "label": "Low risk",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate_risk",
+            "label": "Moderate risk",
+            "default_status": "warning"
+          },
+          {
+            "key": "high_risk",
+            "label": "High risk",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "bankruptcies",
+        "label": "Bankruptcies",
+        "group_id": "bankruptcies",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "liens",
+        "label": "Liens",
+        "group_id": "liens",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "no_liens",
+            "label": "No Liens",
+            "default_status": "success"
+          },
+          {
+            "key": "open_liens_found",
+            "label": "Open Liens Found",
+            "default_status": "warning"
+          },
+          {
+            "key": "liens_found",
+            "label": "Liens Found",
+            "default_status": "warning"
+          },
+          {
+            "key": "high_risk_liens_found",
+            "label": "High Risk Liens Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "litigations",
+        "label": "Litigations",
+        "group_id": "litigations",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "ppp_loans",
+        "label": "PPP loans",
+        "group_id": "ppp_loans",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none_found",
+            "label": "None Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "warning"
+          }
+        ]
+      },
+      {
+        "key": "website_url_discovery",
+        "label": "Website URL discovery",
+        "group_id": "website_discovery",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "submitted",
+            "label": "Submitted",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "success"
+          },
+          {
+            "key": "not_found",
+            "label": "Not Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "website_url_domain_ownership",
+        "label": "Website URL domain ownership",
+        "group_id": "domain",
+        "trigger_inputs": [
+          "website_url"
+        ],
+        "outcomes": [
+          {
+            "key": "high_confidence",
+            "label": "High Confidence",
+            "default_status": "success"
+          },
+          {
+            "key": "medium_confidence",
+            "label": "Medium Confidence",
+            "default_status": "warning"
+          },
+          {
+            "key": "low_confidence",
+            "label": "Low Confidence",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "website_status",
+        "label": "Website status",
+        "group_id": "website_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "online",
+            "label": "Online",
+            "default_status": "success"
+          },
+          {
+            "key": "offline",
+            "label": "Offline",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "website_parked",
+        "label": "Website parked",
+        "group_id": "website_status",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "parking_page",
+            "label": "Parking Page",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "domain_redirect",
+        "label": "Domain redirect",
+        "group_id": "domain",
+        "trigger_inputs": [
+          "website_url"
+        ],
+        "outcomes": [
+          {
+            "key": "redirected",
+            "label": "Redirected",
+            "default_status": "warning"
+          },
+          {
+            "key": "shortened",
+            "label": "Shortened",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_presence_quality",
+        "label": "Web presence quality",
+        "group_id": "web_presence_quality",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "high",
+            "label": "High",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate",
+            "label": "Moderate",
+            "default_status": "warning"
+          },
+          {
+            "key": "low",
+            "label": "Low",
+            "default_status": "failure"
+          },
+          {
+            "key": "not_available",
+            "label": "Not Available",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_business_name_verification",
+        "label": "Web business name verification",
+        "group_id": "web_content_match",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "similar_match",
+            "label": "Similar Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_address_verification",
+        "label": "Web address verification",
+        "group_id": "web_content_match",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "approximate_match",
+            "label": "Approximate Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "similar_match",
+            "label": "Similar Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "incomplete_match",
+            "label": "Incomplete Match",
+            "default_status": "warning"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_phone_number_verification",
+        "label": "Web phone number verification",
+        "group_id": "web_content_match",
+        "trigger_inputs": [
+          "phone"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_email_address_verification",
+        "label": "Web email address verification",
+        "group_id": "web_content_match",
+        "trigger_inputs": [
+          "email"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "web_person_verification",
+        "label": "Web person verification",
+        "group_id": "web_content_match",
+        "trigger_inputs": [
+          "person"
+        ],
+        "outcomes": [
+          {
+            "key": "verified",
+            "label": "Verified",
+            "default_status": "success"
+          },
+          {
+            "key": "mismatch",
+            "label": "Mismatch",
+            "default_status": "failure"
+          },
+          {
+            "key": "unverified",
+            "label": "Unverified",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "profile_discovery",
+        "label": "Profile discovery",
+        "group_id": "profiles",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "submitted",
+            "label": "Submitted",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "success"
+          },
+          {
+            "key": "not_found",
+            "label": "Not Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "profile_status",
+        "label": "Profile status",
+        "group_id": "profiles",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "online",
+            "label": "Online",
+            "default_status": "success"
+          },
+          {
+            "key": "unknown",
+            "label": "Unknown",
+            "default_status": "warning"
+          },
+          {
+            "key": "offline",
+            "label": "Offline",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "risky_keywords",
+        "label": "Risky keywords",
+        "group_id": "risky_keywords",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "none",
+            "label": "None",
+            "default_status": "success"
+          },
+          {
+            "key": "needs_review",
+            "label": "Needs Review",
+            "default_status": "warning"
+          },
+          {
+            "key": "prohibited",
+            "label": "Prohibited",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "industry",
+        "label": "Industry",
+        "group_id": "industry",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "no_hits",
+            "label": "No Hits",
+            "default_status": "success"
+          },
+          {
+            "key": "hits",
+            "label": "Hits",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "business_connections",
+        "label": "Business connections",
+        "group_id": "business_connections",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "not_found",
+            "label": "Not Found",
+            "default_status": "success"
+          },
+          {
+            "key": "found",
+            "label": "Found",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_property_type",
+        "label": "Property type",
+        "group_id": "address_property_type",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "commercial",
+            "label": "Commercial",
+            "default_status": "success"
+          },
+          {
+            "key": "residential",
+            "label": "Residential",
+            "default_status": "warning"
+          }
+        ]
+      },
+      {
+        "key": "location_frequency",
+        "label": "Address usage",
+        "group_id": "location_frequency",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "low_frequency",
+            "label": "Low frequency",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate_frequency",
+            "label": "Moderate frequency",
+            "default_status": "warning"
+          },
+          {
+            "key": "high_frequency",
+            "label": "High frequency",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "address_registered_agent",
+        "label": "Registered agent address",
+        "group_id": "address_flags",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "registered_agent",
+            "label": "Registered Agent",
+            "default_status": "warning"
+          }
+        ]
+      },
+      {
+        "key": "address_high_risk",
+        "label": "High-risk address",
+        "group_id": "address_flags",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "high_risk",
+            "label": "High Risk",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "sos_domestic",
+        "label": "Domestic registration status",
+        "group_id": "sos_domestic_standing",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "domestic_active",
+            "label": "Domestic Active",
+            "default_status": "success"
+          },
+          {
+            "key": "domestic_unknown",
+            "label": "Domestic Unknown",
+            "default_status": "warning"
+          },
+          {
+            "key": "domestic_inactive",
+            "label": "Domestic Inactive",
+            "default_status": "failure"
+          },
+          {
+            "key": "domestic_missing",
+            "label": "Domestic Missing",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "email_risk",
+        "label": "Email risk",
+        "group_id": "email_risk",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "low",
+            "label": "Low",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate",
+            "label": "Moderate",
+            "default_status": "warning"
+          },
+          {
+            "key": "high",
+            "label": "High",
+            "default_status": "failure"
+          }
+        ]
+      },
+      {
+        "key": "phone_risk",
+        "label": "Phone risk",
+        "group_id": "phone_risk",
+        "trigger_inputs": [],
+        "outcomes": [
+          {
+            "key": "low",
+            "label": "Low",
+            "default_status": "success"
+          },
+          {
+            "key": "moderate",
+            "label": "Moderate",
+            "default_status": "warning"
+          },
+          {
+            "key": "high",
+            "label": "High",
+            "default_status": "failure"
+          }
+        ]
+      }
+    ],
+    "inputs": [
+      {
+        "key": "name",
+        "label": "Business name"
+      },
+      {
+        "key": "address",
+        "label": "Office address"
+      },
+      {
+        "key": "website_url",
+        "label": "Website"
+      },
+      {
+        "key": "tin",
+        "label": "TIN"
+      },
+      {
+        "key": "dba_name",
+        "label": "DBA name"
+      },
+      {
+        "key": "formation_state",
+        "label": "Formation state"
+      },
+      {
+        "key": "entity_type",
+        "label": "Entity type"
+      },
+      {
+        "key": "email",
+        "label": "Email address"
+      },
+      {
+        "key": "phone",
+        "label": "Phone number"
+      },
+      {
+        "key": "person",
+        "label": "Person name"
+      },
+      {
+        "key": "person_dob",
+        "label": "Date of birth"
+      },
+      {
+        "key": "person_ssn",
+        "label": "SSN"
+      }
+    ],
+    "context_inputs": [
+      "name",
+      "address",
+      "tin"
+    ]
+  },
+  "resolution": {
+    "packageOrder": [
+      "business_verification_verify",
+      "identity",
+      "enhanced_screenings",
+      "adverse_media",
+      "web_analysis",
+      "industry_classification",
+      "email_risk",
+      "phone_risk",
+      "kyc",
+      "liens",
+      "tax_liens",
+      "ucc_liens",
+      "litigations",
+      "bankruptcies",
+      "people_tax_liens",
+      "people_ucc_liens",
+      "people_bankruptcies",
+      "people_litigations",
+      "people_criminal_history"
+    ],
+    "orderOf": {
+      "web_analysis": {
+        "package": "website",
+        "subproduct": "web_analysis"
+      },
+      "industry_classification": {
+        "package": "website",
+        "subproduct": "industry_classification"
+      }
+    },
+    "dependency": {
+      "satisfiedBy": [
+        "identity",
+        "business_verification_verify",
+        "business_verification_qualify"
+      ],
+      "provider": "business_verification_verify",
+      "dependents": [
+        "liens",
+        "tax_liens",
+        "ucc_liens",
+        "litigations",
+        "bankruptcies",
+        "adverse_media",
+        "enhanced_screenings",
+        "documents",
+        "people_litigations",
+        "people_bankruptcies",
+        "people_criminal_history",
+        "people_tax_liens",
+        "people_ucc_liens"
+      ]
+    },
+    "producible": {
+      "identity": [
+        "name",
+        "dba_name",
+        "name_and_entity_type",
+        "sos_active",
+        "sos_domestic_sub_status",
+        "sos_inactive",
+        "sos_match",
+        "sos_not_found",
+        "sos_unknown",
+        "formation_state",
+        "entity_type_match",
+        "entity_type",
+        "address_verification",
+        "address_deliverability",
+        "address_cmra",
+        "address_risk",
+        "person_verification",
+        "watchlist",
+        "bankruptcies",
+        "ppp_loans",
+        "website_status",
+        "website_parked",
+        "website_verification",
+        "phone",
+        "industry",
+        "address_property_type",
+        "location_frequency",
+        "address_registered_agent",
+        "address_high_risk",
+        "sos_domestic"
+      ],
+      "business_verification_qualify": [
+        "name",
+        "sos_status",
+        "time_in_business",
+        "address_verification",
+        "person_verification"
+      ],
+      "business_verification_verify": [
+        "name",
+        "dba_name",
+        "name_and_entity_type",
+        "sos_active",
+        "sos_domestic_sub_status",
+        "sos_inactive",
+        "sos_match",
+        "sos_not_found",
+        "sos_unknown",
+        "formation_state",
+        "entity_type_match",
+        "entity_type",
+        "tin",
+        "tin_error",
+        "tin_issued",
+        "tin_type",
+        "address_verification",
+        "address_deliverability",
+        "address_cmra",
+        "address_risk",
+        "person_verification",
+        "watchlist",
+        "bankruptcies",
+        "ppp_loans",
+        "business_connections",
+        "address_property_type",
+        "location_frequency",
+        "address_registered_agent",
+        "address_high_risk",
+        "sos_domestic"
+      ],
+      "risk": [
+        "sos_active",
+        "sos_domestic_sub_status",
+        "sos_inactive",
+        "sos_match",
+        "sos_not_found",
+        "sos_unknown",
+        "entity_type",
+        "address_risk",
+        "watchlist",
+        "website_status",
+        "website_parked",
+        "website_verification",
+        "web_presence_quality",
+        "web_business_name_verification",
+        "web_address_verification",
+        "web_phone_number_verification",
+        "web_email_address_verification",
+        "web_person_verification",
+        "risky_keywords",
+        "industry"
+      ],
+      "tin": [
+        "tin",
+        "tin_error",
+        "tin_issued",
+        "tin_type"
+      ],
+      "kyc": [
+        "kyc_decision"
+      ],
+      "people_bankruptcies": [
+        "people_bankruptcies"
+      ],
+      "people_criminal_history": [
+        "people_criminal_history"
+      ],
+      "people_tax_liens": [
+        "people_liens"
+      ],
+      "people_ucc_liens": [
+        "people_liens"
+      ],
+      "people_litigations": [
+        "people_litigations"
+      ],
+      "enhanced_screenings": [
+        "watchlist",
+        "politically_exposed_persons"
+      ],
+      "adverse_media": [
+        "adverse_media"
+      ],
+      "bankruptcies": [
+        "bankruptcies"
+      ],
+      "liens": [
+        "liens"
+      ],
+      "tax_liens": [
+        "liens"
+      ],
+      "ucc_liens": [
+        "liens"
+      ],
+      "litigations": [
+        "litigations"
+      ],
+      "web_analysis": [
+        "website_url_discovery",
+        "website_url_domain_ownership",
+        "website_status",
+        "website_parked",
+        "website_verification",
+        "domain_redirect",
+        "web_presence_quality",
+        "web_business_name_verification",
+        "web_address_verification",
+        "web_phone_number_verification",
+        "web_email_address_verification",
+        "web_person_verification",
+        "profile_discovery",
+        "profile_status",
+        "risky_keywords"
+      ],
+      "industry_classification": [
+        "industry"
+      ],
+      "email_risk": [
+        "email_risk"
+      ],
+      "phone_risk": [
+        "phone_risk"
+      ]
+    }
+  }
+}

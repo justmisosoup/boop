@@ -3,16 +3,16 @@ import { ChevronDown } from 'lucide-react'
 
 import { CountBubble, Hint, MetaChip, MutedText, PageHeadingCount, Surface, Text } from '@/core'
 
-import { cn } from '../../utils/twUtils'
+import { cn } from '../../../../utils/twUtils'
 import {
   insightLabel,
   weightLabel,
   type Workflow,
   type WorkflowStep
-} from '../../lib/workflows'
-import { CardHeader } from '../CardHeader'
-import { Collapsible } from '../Collapsible'
-import { teamBySlug } from '../../lib/workflowCatalogue'
+} from '../../../../lib/workflows'
+import { CardHeader } from '../../../../components/CardHeader'
+import { Collapsible } from '../../../../components/Collapsible'
+import { teamBySlug } from '../../../../lib/workflowCatalogue'
 import { INVERSE_CHIP } from './inverseChip'
 
 /**

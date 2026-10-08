@@ -22,7 +22,7 @@ import {
 
 import { TeamRow } from '../components/Workflow/TeamRow'
 import { WorkflowCard } from '../components/Workflow/WorkflowCard'
-import { listingsByTeam, teamBySlug, WORKFLOW_COUNT, WORKFLOW_TEAMS } from '../lib/workflowCatalogue'
+import { listingsByTeam, teamBySlug, WORKFLOW_COUNT, WORKFLOW_TEAMS } from '../../../lib/workflowCatalogue'
 
 /**
  * The workflows marketplace.

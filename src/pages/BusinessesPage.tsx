@@ -2,11 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import {
+  ActionButton,
   DataTable,
   DateTime,
+  MetaChip,
   PageContainer,
   PageHeader,
+  PageHeaderActions,
   PageHeaderBand,
+  PageHeaderBar,
+  PageHeaderTitles,
   PageHeading,
   SearchInput,
   Toolbar,
@@ -19,6 +24,7 @@ import {
 import type { BusinessRecord } from '@/lib/deriveResults'
 import { ALL, assessmentOf, type Assessed } from '@/lib/records'
 import { displayName } from '@/lib/businessNames'
+import { isOrdering, ORDERED } from '@/lib/orderedWorkflows'
 
 import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
@@ -37,11 +43,27 @@ const COLUMN_WIDTHS = {
   assessed: 148
 }
 
-/** What a row holds: the record and its newest assessment. */
+/** What a row holds: the record and its newest assessment. A business whose
+ *  order is placed but not yet pulled has only its id, name and workflows. */
 type Row = {
-  record: BusinessRecord
+  record: Pick<BusinessRecord, 'id' | 'name'>
   assessed: Assessed | null
+  pending?: string[]
 }
+
+/** Ordered from `/order` but not in records.json yet — the pull right after
+ *  ordering failed, and the poll below retries it. */
+const pendingRows = (): Row[] =>
+  Object.entries(ORDERED)
+    .filter(([id, o]) => !o.completedAt && !ALL.some((r) => r.id === id))
+    .sort(([, a], [, b]) => b.orderedAt.localeCompare(a.orderedAt))
+    .map(([id, o]) => ({ record: { id, name: o.name }, assessed: null, pending: o.workflows.map((w) => w.name) }))
+
+/** Every business whose orders are still running, pulled or not. */
+const ORDERING = Object.keys(ORDERED).filter(isOrdering)
+
+/** How often a pending order is checked on. */
+const POLL_MS = 10_000
 
 const columns: DataTableColumnDef<Row>[] = [
   {
@@ -54,7 +76,12 @@ const columns: DataTableColumnDef<Row>[] = [
      * with no assessment reads Not assessed. It leads the row, ahead of the
      * name, so the list scans by outcome first.
      */
-    cell: ({ row }) => <DeterminationChip band={row.original.assessed?.score.band ?? null} />,
+    cell: ({ row }) =>
+      row.original.pending || isOrdering(row.original.record.id) ? (
+        <MetaChip size="xs">Ordering</MetaChip>
+      ) : (
+        <DeterminationChip band={row.original.assessed?.score.band ?? null} />
+      ),
     meta: { width: COLUMN_WIDTHS.status }
   },
   {
@@ -79,6 +106,8 @@ const columns: DataTableColumnDef<Row>[] = [
      */
     cell: ({ row }) => {
       const assessed = row.original.assessed
+      if (row.original.pending)
+        return <TruncatedText className="text-caption text-text-secondary">{row.original.pending.join(', ')}</TruncatedText>
       if (!assessed) return <span className="text-caption text-text-disabled">—</span>
       return <InsightCounts counts={assessed.counts} />
     },
@@ -174,13 +203,36 @@ export const BusinessesPage = () => {
 
   /** Every record, read once, with its newest assessment. */
   const all = useMemo<Row[]>(() => ALL.map((record) => ({ record, assessed: assessmentOf(record) })), [])
+  const pending = useMemo(pendingRows, [])
+
+  /**
+   * Pull each business still ordering again until its orders finish. The
+   * endpoint rewrites its record in records.json when it changed, and the dev
+   * server reloads the page with it.
+   */
+  useEffect(() => {
+    if (ORDERING.length === 0) return
+    const check = () =>
+      ORDERING.forEach((id) => {
+        fetch(`/api/order?id=${encodeURIComponent(id)}`).catch(() => {})
+      })
+    check()
+    const timer = window.setInterval(check, POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     const out = all.filter((row) => !q || row.record.name.toLowerCase().includes(q))
     if (sort) out.sort((a, b) => (sort.direction === 'asc' ? 1 : -1) * compare(a, b, sort.id))
-    return out
-  }, [all, query, sort])
+    // Just ordered: at the top whatever the sort, as the app lists a new business.
+    const ordering = out.filter((row) => isOrdering(row.record.id))
+    return [
+      ...pending.filter((row) => !q || row.record.name.toLowerCase().includes(q)),
+      ...ordering,
+      ...out.filter((row) => !ordering.includes(row))
+    ]
+  }, [all, pending, query, sort])
 
   const onQueryChange = (value: string) => {
     setQuery(value)
@@ -199,14 +251,23 @@ export const BusinessesPage = () => {
           24px of container padding, then 50px less half the serif's 40px line. */}
       <PageHeaderBand className="px-0 pt-[30px]">
         <PageHeader>
-          {/* The Workflows page's H1 treatment: the serif at its one weight. */}
-          <PageHeading
-            count={ALL.length}
-            weight="normal"
-            className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]"
-          >
-            Businesses
-          </PageHeading>
+          <PageHeaderBar>
+            <PageHeaderTitles>
+              {/* The Workflows page's H1 treatment: the serif at its one weight. */}
+              <PageHeading
+                count={ALL.length}
+                weight="normal"
+                className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]"
+              >
+                Businesses
+              </PageHeading>
+            </PageHeaderTitles>
+            <PageHeaderActions>
+              <ActionButton onClick={() => navigate('/order', { state: { origin: '/businesses' } })} variant="primary">
+                Place order
+              </ActionButton>
+            </PageHeaderActions>
+          </PageHeaderBar>
         </PageHeader>
       </PageHeaderBand>
 
@@ -251,7 +312,9 @@ export const BusinessesPage = () => {
           kind: 'detail',
           // The business — the container — with its assessments listed under
           // it. The row's number and chip are the newest of those.
-          onOpen: (row) => navigate(`/businesses/${row.record.id}`)
+          onOpen: (row) => {
+            if (!row.pending) navigate(`/businesses/${row.record.id}`)
+          }
         }}
         sort={sort}
         onSortChange={setSort}

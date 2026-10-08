@@ -18,8 +18,8 @@ import {
 
 import { RunDialog } from '../components/Workflow/RunDialog'
 import { Adds, Needs, Overview, Steps } from '../components/Workflow/WorkflowSections'
-import { teamBySlug, teamHref } from '../lib/workflowCatalogue'
-import { workflowBySlug } from '../lib/workflows'
+import { teamBySlug, teamHref } from '../../../lib/workflowCatalogue'
+import { workflowBySlug } from '../../../lib/workflows'
 
 /**
  * One workflow.
