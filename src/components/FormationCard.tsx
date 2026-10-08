@@ -732,7 +732,9 @@ export const formationParts = (
         ? 'Trademark'
         : 'DBA'
   const dbaEntries: Array<{ name: string; dbaOf?: boolean; type: string }> = [
-    ...listedFor.map((owner) => ({ name: owner, dbaOf: true, type: 'DBA' })),
+    // The business a register lists the legal name under is its owner, not
+    // another of its names: Mixboard Inc for SPRIG TECHNOLOGIES INC.
+    ...listedFor.map((owner) => ({ name: owner, dbaOf: true, type: 'Owner' })),
     ...dbas.map((d) => ({ name: d.name, type: nameType(d.source) }))
   ]
   // Each follows to the city registration in Sources — a chip with somewhere
@@ -770,7 +772,7 @@ export const formationParts = (
   // One row per kind — DBA, FBN, Trademark — each with its own names.
   const dbaCells: AttributeCell[] =
     tier === 'formation' && lead?.label === 'Legal name'
-      ? ['DBA', 'FBN', 'Trademark'].flatMap((type) => {
+      ? ['Owner', 'DBA', 'FBN', 'Trademark'].flatMap((type) => {
           const entries = dbaEntries.filter((d) => d.type === type)
           if (entries.length === 0) return []
           return [

@@ -16,6 +16,7 @@ import {
 } from '../../lib/attributes'
 import { sameName } from '../../lib/registrationStatus'
 import { isBusinessName } from '../../lib/businessNames'
+import { LIKELY_MATCH } from '../../lib/relatedBusinesses'
 import { RowProvenance } from '../Provenance'
 import { Relevance, addressSources, partialMatchOf } from './AddressTable'
 import { selectedStyle } from './FilingStrip'
@@ -25,7 +26,7 @@ type Connection = NonNullable<BusinessRecord['connections']>[number]
 type Shared = 'people' | 'entities' | 'addresses'
 
 /** The match a business must reach, sharing people, to read as likely related. */
-const LIKELY = 0.95
+const LIKELY = LIKELY_MATCH
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
 const COLUMNS = 'md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
@@ -57,7 +58,7 @@ const sharedCount = (c: Connection) =>
   sharedPeople(c).length + sharedEntities(c).length + (c.addresses ?? []).length
 
 const ColumnLabel = ({ children }: { children: string }) => (
-  <span className="text-caption font-medium uppercase tracking-wide text-text-secondary">
+  <span className="text-xs font-medium text-[var(--core-color-table-header-text)]">
     {children}
   </span>
 )
@@ -161,7 +162,7 @@ const SharedList = ({
   <div className="border-t border-[var(--core-color-border-divider)]">
     {kind === 'entities' ? (
       <>
-        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid', COLUMNS)}>
+        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid', COLUMNS)}>
           <ColumnLabel>Shared entities</ColumnLabel>
           <ColumnLabel>Roles</ColumnLabel>
         </div>
@@ -175,7 +176,7 @@ const SharedList = ({
       </>
     ) : kind === 'people' ? (
       <>
-        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid', COLUMNS)}>
+        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid', COLUMNS)}>
           <ColumnLabel>Shared people</ColumnLabel>
           <ColumnLabel>Roles</ColumnLabel>
         </div>
@@ -195,7 +196,7 @@ const SharedList = ({
       </>
     ) : (
       <>
-        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid', COLUMNS)}>
+        <div className={cn('hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid', COLUMNS)}>
           <ColumnLabel>Shared addresses</ColumnLabel>
           <ColumnLabel>Characteristics</ColumnLabel>
         </div>
@@ -391,7 +392,7 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
   const neighbours = rows.filter((r) => !r.related).length
   const shown = [
     ...rows.filter((r) => r.related),
-    ...(showNeighbours || neighbours === rows.length ? rows.filter((r) => !r.related) : [])
+    ...(showNeighbours ? rows.filter((r) => !r.related) : [])
   ]
   const toggle = (i: number, kind: Shared) =>
     setOpen((cur) => (cur?.i === i && cur.kind === kind ? null : { i, kind }))
@@ -399,15 +400,22 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
   return (
     <RadixTooltip.Provider>
     <div className="border-t border-[var(--core-color-border-divider)]">
-      <div
-        className={cn(
-          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
-          COLUMNS
-        )}
-      >
-        <ColumnLabel>Business</ColumnLabel>
-        <ColumnLabel>Shared</ColumnLabel>
-      </div>
+      {/* Nothing at 95% or above: said so, the weaker ones a click away. */}
+      {neighbours === rows.length && (
+        <div className="px-4 py-3 text-sm text-text-primary">No confident matches found</div>
+      )}
+      {shown.length > 0 && (
+        <div
+          className={cn(
+            'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid',
+            neighbours === rows.length && 'border-t',
+            COLUMNS
+          )}
+        >
+          <ColumnLabel>Business</ColumnLabel>
+          <ColumnLabel>Shared</ColumnLabel>
+        </div>
+      )}
       {shown.map(({ c, i, related: isRelated }) => {
         const people = sharedPeople(c).length
         const entities = sharedEntities(c).length
@@ -488,12 +496,12 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
           </Fragment>
         )
       })}
-      {neighbours > 0 && neighbours < rows.length && (
+      {neighbours > 0 && (
         <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
           <ActionButton variant="quiet" size="compact" onClick={() => setShowNeighbours(!showNeighbours)}>
             {showNeighbours
-              ? `Hide possible ${neighbours === 1 ? 'company' : 'companies'}`
-              : `Show ${neighbours} possible ${neighbours === 1 ? 'company' : 'companies'}`}
+              ? `Hide possible ${neighbours === 1 ? 'business' : 'businesses'}`
+              : `Show ${neighbours} possible ${neighbours === 1 ? 'business' : 'businesses'}`}
           </ActionButton>
         </div>
       )}

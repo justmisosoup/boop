@@ -347,11 +347,11 @@ export const PeopleView = ({
   return (
     <div className="border-t border-[var(--core-color-border-divider)]">
       {shown.length > 0 && (
-      <div className="hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <span className="text-caption font-medium uppercase tracking-wide text-text-secondary">
+      <div className="hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <span className="text-xs font-medium text-[var(--core-color-table-header-text)]">
           People
         </span>
-        <span className="text-caption font-medium uppercase tracking-wide text-text-secondary">
+        <span className="text-xs font-medium text-[var(--core-color-table-header-text)]">
           Roles
         </span>
       </div>

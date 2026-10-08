@@ -121,7 +121,7 @@ const COLUMNS = 'md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
 const ColumnLabel = ({ children, className }: { children: ReactNode; className?: string }) => (
   <span
     className={cn(
-      'text-caption font-medium uppercase tracking-wide text-text-secondary',
+      'text-xs font-medium text-[var(--core-color-table-header-text)]',
       className
     )}
   >
@@ -400,7 +400,7 @@ const TableView = ({ rows, lead, ...props }: AddressProps & { rows: Location[]; 
       {shown.length > 0 && (
       <div
         className={cn(
-          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
+          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid',
           COLUMNS
         )}
       >

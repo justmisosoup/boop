@@ -22,7 +22,7 @@ import { cn } from '../utils/twUtils'
  */
 const ORDER = ['Prohibited', 'NAICS', 'MCC', 'SIC']
 
-const HEAD = 'pl-4 pb-2 pt-3 text-caption leading-snug text-text-secondary whitespace-nowrap'
+const HEAD = 'pl-4 pb-1.5 pt-2 text-xs font-medium leading-snug text-[var(--core-color-table-header-text)] whitespace-nowrap'
 const CELL = 'pl-4 text-sm leading-snug'
 
 export const IndustryTable = ({ rows }: { rows: AttributeRow[] }) => {

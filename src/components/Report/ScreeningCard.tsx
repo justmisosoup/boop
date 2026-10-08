@@ -212,7 +212,7 @@ const Sentiment = ({ value }: { value?: string | null }) => {
 }
 
 const SHOW = 5
-const HEAD = 'px-4 pb-2 pt-3 text-caption leading-snug text-text-secondary'
+const HEAD = 'px-4 pb-1.5 pt-2 text-xs font-medium leading-snug text-[var(--core-color-table-header-text)]'
 const CELL = 'px-4 py-3 text-sm leading-snug'
 
 /** An adverse-media result: the match, then its articles as a compact table. */

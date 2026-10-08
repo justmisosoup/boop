@@ -1258,11 +1258,11 @@ export const FilingStrip = ({
               </div>
             ) : layout === 'list' ? (
               <div role="radiogroup" aria-label="State filings">
-                <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid">
+                <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid">
                   {[cities.length > 0 ? 'Registration' : 'State', 'Status'].map((h) => (
                     <span
                       key={h}
-                      className="text-caption font-medium uppercase tracking-wide text-text-secondary"
+                      className="text-xs font-medium text-[var(--core-color-table-header-text)]"
                     >
                       {h}
                     </span>

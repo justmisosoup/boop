@@ -25,3 +25,15 @@ export const relatedBusinessesOf = (record: BusinessRecord): Connection[] => {
     return addresses.length === 1 && residential.has(norm(addresses[0].fullAddress))
   })
 }
+
+/** The match a connection must reach, sharing people or a business named on
+ *  both filings, to read as likely related (the Related businesses card's cut). */
+export const LIKELY_MATCH = 0.95
+
+/** The connections that read as likely related: a confident match that shares
+ *  someone. The card's count and its place in the report follow these. */
+export const confidentRelatedOf = (record: BusinessRecord): Connection[] =>
+  (record.connections ?? []).filter(
+    (c) =>
+      (c.people ?? []).length + (c.businesses ?? []).length > 0 && (c.confidence ?? 0) >= LIKELY_MATCH
+  )

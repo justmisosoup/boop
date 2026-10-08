@@ -11,6 +11,7 @@ import { Check, ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-re
 
 import {
   ActionButton,
+  ChatSourceChip,
   CopyButton,
   MetaChip,
   SegmentedControl,
@@ -48,7 +49,7 @@ import { formationParts } from '../FormationCard'
 import { OtherFilings } from './OtherFilings'
 import { FilingStrip, FilingsViewToggle, type FilingsLayout } from './FilingStrip'
 import { GroupCard } from './GroupCard'
-import { AddressViewToggle, type AddressView } from './AddressTable'
+import { AddressViewToggle, Explained, type AddressView } from './AddressTable'
 import {
   IndustryStrip,
   LicenceStrip,
@@ -61,10 +62,11 @@ import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip
 import { RelatedBusinesses } from './RelatedBusinesses'
 import { ResultGrid, ResultTable, type ResultRow } from './ResultTable'
 import { SubmittedChip } from '../Provenance'
+import { CHIP_NO_GLYPH } from '../chipStyles'
 import { BankruptcyTable, LienTable, LitigationTable } from './ClaimTables'
 import { WebsiteDetails } from './WebsiteDetails'
 import { useScreenshotViewer } from '../ScreenshotViewer'
-import { relatedBusinessesOf } from '../../lib/relatedBusinesses'
+import { confidentRelatedOf } from '../../lib/relatedBusinesses'
 import { StripExpand } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
 
@@ -276,7 +278,7 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
       <div
         role="row"
         className={cn(
-          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
+          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid',
           cols
         )}
       >
@@ -284,7 +286,7 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
           <span
             key={h}
             role="columnheader"
-            className="text-caption font-medium uppercase tracking-wide text-text-secondary"
+            className="text-xs font-medium text-[var(--core-color-table-header-text)]"
           >
             {h}
           </span>
@@ -384,23 +386,117 @@ const handleOf = (p: Profile): string | undefined => {
 const titleCase = (v: string) =>
   v.charAt(0).toUpperCase() + v.slice(1).toLowerCase().replace(/_/g, ' ')
 
-/** Whether it is up — "Online" — and, where it is, verified: the green check
- *  every verified value carries. Found goes without saying: it is listed. */
-const StatusChips = ({ status, verified = false }: { status?: string | null; verified?: boolean }) => (
-  <span className="flex flex-wrap items-center gap-1.5">
-    {status && (
-      <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'warning'}>
-        {titleCase(status)}
-      </MetaChip>
-    )}
-    {verified && (
-      <MetaChip size="compact" tone="success">
-        <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
-        Verified
-      </MetaChip>
+/**
+ * Whether the submitted website is the business's: online, and either the
+ * domain's ownership is held with high confidence or the site confirmed one of
+ * the submitted details — its name, office address, email or phone.
+ * kairosphysio.com: online, high-confidence ownership, the address, email and
+ * phone all verified on it, though its name ("Kairos Physio") is not the legal one.
+ */
+const siteVerifiedOf = (record: BusinessRecord) => {
+  const said = (key: string) => record.reviewTasks.find((t) => t.key === key)?.subLabel ?? ''
+  const online = /online/i.test(record.website?.status ?? '') || /online/i.test(said('website_status'))
+  const owned = /high confidence/i.test(said('website_url_domain_ownership'))
+  const confirmed = [
+    'web_business_name_verification',
+    'web_address_verification',
+    'web_email_address_verification',
+    'web_phone_number_verification'
+  ].some((k) => /^verified$/i.test(said(k)))
+  return online && (owned || confirmed)
+}
+
+/** What a site's or profile's status means, on hover. */
+const statusTipOf = (status: string | null | undefined, kind: 'site' | 'profile') =>
+  !status
+    ? undefined
+    : /online|active/i.test(status)
+      ? kind === 'site'
+        ? 'The site was online when the business record was ordered.'
+        : 'The profile was live when the business record was ordered.'
+      : `The ${kind === 'site' ? 'site' : 'profile'} was ${status.toLowerCase()} when the business record was ordered.`
+
+/** Why the submitted website reads as verified: the reasons that held. */
+const siteVerifiedWhyOf = (record: BusinessRecord) => {
+  const said = (key: string) => record.reviewTasks.find((t) => t.key === key)?.subLabel ?? ''
+  const confirmed = [
+    ['web_business_name_verification', 'business name'],
+    ['web_address_verification', 'address'],
+    ['web_email_address_verification', 'email'],
+    ['web_phone_number_verification', 'phone']
+  ]
+    .filter(([k]) => /^verified$/i.test(said(k)))
+    .map(([, what]) => what)
+  const reasons = [
+    /high confidence/i.test(said('website_url_domain_ownership')) && 'its domain ownership is high confidence',
+    confirmed.length > 0 &&
+      `it confirmed the submitted ${confirmed.length > 1 ? `${confirmed.slice(0, -1).join(', ')} and ${confirmed[confirmed.length - 1]}` : confirmed[0]}`
+  ].filter(Boolean)
+  return reasons.length > 0 ? `The submitted website belongs to the business: ${reasons.join(', and ')}.` : undefined
+}
+
+/** Where a site or profile came from, under its name: the customer's
+ *  Submitted tag, or Found where Middesk discovered it. */
+const Origin = ({ submitted, verified = true }: { submitted: boolean; verified?: boolean }) =>
+  submitted ? (
+    <SubmittedChip verified={verified} plain />
+  ) : (
+    // The same chip as Submitted, saying the other thing.
+    <ChatSourceChip
+      className={CHIP_NO_GLYPH}
+      sources={[{ id: 'found', label: 'Found', title: 'Found', annotation: 'Discovered by Middesk, not submitted' }]}
+    />
+  )
+
+/** A site or profile's name, with the mark a submitted value carries after it:
+ *  green where verified, amber where not. Found ones carry none. */
+const WebTitle = ({ text, submitted, verified }: { text: ReactNode; submitted: boolean; verified: boolean }) => (
+  <span className="inline-flex items-center gap-1.5">
+    {text}
+    {submitted && (
+      <span role="img" aria-label={verified ? 'Verified' : 'Unverified'} className="flex shrink-0">
+        <StatusDot intent={verified ? 'success' : 'warning'} />
+      </span>
     )}
   </span>
 )
+
+/** Whether it is up — "Online" — and, where it is, verified: the green check
+ *  every verified value carries. Found goes without saying: it is listed. */
+const StatusChips = ({
+  status,
+  verified = false,
+  statusTip,
+  verifiedTip
+}: {
+  status?: string | null
+  verified?: boolean
+  /** What the status means, on hover. */
+  statusTip?: string
+  /** Why it reads as verified, on hover. */
+  verifiedTip?: string
+}) => {
+  const tip = (text: string | undefined, chip: ReactNode) => (text ? <Explained tip={text}>{chip}</Explained> : chip)
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {status &&
+        tip(
+          statusTip,
+          <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'warning'}>
+            {titleCase(status)}
+          </MetaChip>
+        )}
+      {verified &&
+        tip(
+          verifiedTip,
+          <MetaChip size="compact" tone="success">
+            <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+            Verified
+          </MetaChip>
+        )}
+    </span>
+  )
+}
 
 const DetailList = ({ items }: { items: Array<[string, ReactNode]> }) => (
   <dl className="m-0 grid gap-3">
@@ -416,45 +512,65 @@ const DetailList = ({ items }: { items: Array<[string, ReactNode]> }) => (
 /** One third-party profile in full, as a state's filing opens on the Registrations
  *  card: the platform's name, then what it says about the business, in cells. */
 const ProfileDetails = ({ profile }: { profile: Profile }) => {
-  const { open } = useScreenshotViewer()
-  const shot = screenshotFor(profile.url ?? undefined, platformOf(profile))
   const cell = (label: string, value: ReactNode, note?: ReactNode): AttributeCell => ({
     key: label,
     label,
     values: [{ value, note }]
   })
-  // The platform's id and the handle (already in the link) are plumbing.
-  const meta = Object.entries(profile.metadata ?? {}).filter(
-    ([k, v]) =>
-      !['external_id', 'handle'].includes(k) &&
-      v !== null &&
-      v !== '' &&
-      (typeof v !== 'object' || Array.isArray(v))
-  )
+  const m = (profile.metadata ?? {}) as Record<string, unknown>
+  // What the page says, a line each: its standing and figures, then — where
+  // the platform says it — whether the account is public or private.
+  const fields = profileFields(profile)
+  // The kind of account is a cell of its own; the rest of what it says is Detail.
+  const account = fields.find((f) => f.label === 'Account')
+  const details = fields.filter((f) => f !== account)
+  const bio = typeof m.biography === 'string' && m.biography.trim() ? m.biography.trim() : undefined
+  const linked = Array.isArray(m.website_urls)
+    ? (m.website_urls as unknown[]).filter((u): u is string => typeof u === 'string' && u.length > 0)
+    : []
   const items: AttributeCell[] = [
     ...(profile.url ? [cell('Link', <WebLink row={{ label: 'Link', href: profile.url }} />)] : []),
     ...(profile.name ? [cell('Name on profile', profile.name)] : []),
-    ...profileFields(profile).map((f) => cell(f.label ?? 'Detail', f.value)),
+    ...(account ? [cell('Account', account.value)] : []),
     ...((profile.categories ?? []).length > 0
       ? [cell('Categories', (profile.categories ?? []).join(', '))]
       : []),
-    cell(
-      'Screenshot',
-      shot ? (
-        <button
-          type="button"
-          aria-label={`View screenshot: ${shot.alt}`}
-          onClick={() => open(shot)}
-          className="block h-24 w-36 overflow-hidden rounded-control border border-border transition-opacity duration-fast hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <img src={shot.src} alt="" className="block h-full w-full object-cover object-top" />
-        </button>
-      ) : (
-        <span className="text-text-secondary">No image</span>
-      ),
-      shot ? capturedLabel(shot.capturedAt) : undefined
-    ),
-    ...meta.map(([k, v]) => cell(titleCase(k), Array.isArray(v) ? v.join(', ') : String(v)))
+    ...(linked.length > 0
+      ? [
+          cell(
+            'Website on profile',
+            <span className="flex flex-col gap-0.5">
+              {linked.map((u) => (
+                <WebLink key={u} row={{ label: 'Website', href: u }} />
+              ))}
+            </span>
+          )
+        ]
+      : []),
+    ...(bio ? [{ ...cell('Bio', bio), span: 'full' as const }] : []),
+    // What the page says, in one cell, a line each — "Verified business",
+    // "1,282 followers · 73 following · 26 posts", "Last post: Aug 22, 2026" —
+    // as its Sources card reads it.
+    ...(details.length > 0
+      ? [
+          {
+            key: 'detail',
+            label: 'Detail',
+            span: 'full' as const,
+            values: [
+              {
+                value: (
+                  <span className="flex flex-col gap-0.5">
+                    {details.map((f) => (
+                      <span key={f.value}>{f.label ? `${f.label}: ${f.value}` : f.value}</span>
+                    ))}
+                  </span>
+                )
+              }
+            ]
+          }
+        ]
+      : []),
   ]
   return (
     <div className="min-w-0 border-t border-[var(--core-color-border-divider)]">
@@ -516,7 +632,9 @@ const WebsiteSummary = ({
   profiles,
   analysis,
   view,
-  siteVerified = false
+  siteVerified = false,
+  siteSubmitted = false,
+  siteVerifiedWhy
 }: {
   url?: string | null
   status?: string | null
@@ -525,6 +643,10 @@ const WebsiteSummary = ({
   view: WebView
   /** The site states the submitted business name. */
   siteVerified?: boolean
+  /** The customer submitted the site, rather than it being found. */
+  siteSubmitted?: boolean
+  /** Why the submitted site reads as verified, for its chip's tooltip. */
+  siteVerifiedWhy?: string
 }) => {
   const rows: ResultRow[] = [
     ...(url
@@ -532,8 +654,18 @@ const WebsiteSummary = ({
           {
             key: 'site',
             caption: 'Website',
-            title: hostOf(url),
-            chips: <StatusChips status={status} verified={siteVerified} />,
+            title: <WebTitle text={hostOf(url)} submitted={siteSubmitted} verified={siteVerified} />,
+            // Where it came from, under it: submitted by the customer, or found.
+            sub: <Origin submitted={siteSubmitted} verified={siteVerified} />,
+            // Verified where the submitted site is shown to be the business's.
+            chips: (
+              <StatusChips
+                status={status}
+                statusTip={statusTipOf(status, 'site')}
+                verified={siteSubmitted && siteVerified}
+                verifiedTip={siteVerifiedWhy}
+              />
+            ),
             cleared: false,
             detail: analysis
           }
@@ -555,9 +687,37 @@ const WebsiteSummary = ({
       caption: platformOf(p),
       // The page's own name, and on a social platform its handle — not the
       // link, which is a click away in the details.
-      title: [p.name || platformOf(p), handleOf(p)].filter(Boolean).join(' · '),
-      // Verified where the platform marks the account so.
-      chips: <StatusChips status={p.status} verified={Boolean((p.metadata as { verified?: boolean } | null | undefined)?.verified)} />,
+      title: (
+        <WebTitle
+          text={[p.name || platformOf(p), handleOf(p)].filter(Boolean).join(' · ')}
+          submitted={Boolean((p as { submitted?: boolean }).submitted)}
+          // A submitted profile found online is the one submitted.
+          verified={/online|active/i.test(p.status ?? '')}
+        />
+      ),
+      sub: (
+        <Origin
+          submitted={Boolean((p as { submitted?: boolean }).submitted)}
+          verified={/online|active/i.test(p.status ?? '')}
+        />
+      ),
+      // Verified where the platform marks the account so — a social account's
+      // badge — or where the customer submitted it and it was found online.
+      chips: (
+        <StatusChips
+          status={p.status}
+          statusTip={statusTipOf(p.status, 'profile')}
+          verified={
+            Boolean((p.metadata as { verified?: boolean } | null | undefined)?.verified) ||
+            (Boolean((p as { submitted?: boolean }).submitted) && /online|active/i.test(p.status ?? ''))
+          }
+          verifiedTip={
+            (p.metadata as { verified?: boolean } | null | undefined)?.verified
+              ? `${platformOf(p)} marks this account as verified.`
+              : 'The submitted profile was found online.'
+          }
+        />
+      ),
       cleared: false,
       detail: <ProfileDetails profile={p} />
     }))
@@ -743,7 +903,8 @@ export const GroupedReport = ({
   const tally: Partial<Record<string, number>> = {
     people: people.length,
     address: ops.locations.length,
-    connections: relatedBusinessesOf(record).length,
+    // The confident ones only: "No confident matches found" counts none.
+    connections: confidentRelatedOf(record).length,
     licenses: ops.stateLicences.length + (ops.licence.required ? ops.licence.found.length : 0),
     'screening-watchlist': returned(screens.watchlist.hits),
     'screening-pep': returned(screens.pep.hits),
@@ -857,9 +1018,9 @@ export const GroupedReport = ({
     website: (
       <WebsiteSummary
         view={webView}
-        siteVerified={/^verified$/i.test(
-          record.reviewTasks.find((t) => t.key === 'web_business_name_verification')?.subLabel ?? ''
-        )}
+        siteSubmitted={Boolean((record.website as { submitted?: boolean } | null | undefined)?.submitted)}
+        siteVerified={siteVerifiedOf(record)}
+        siteVerifiedWhy={siteVerifiedWhyOf(record)}
         url={record.website?.url}
         status={record.website?.status}
         profiles={record.profiles ?? []}
@@ -936,6 +1097,8 @@ export const GroupedReport = ({
         ? !counts('pep')
         : id === 'screening-media'
           ? !counts('media')
+          : id === 'connections'
+            ? confidentRelatedOf(record).length === 0
           : id === 'website'
             ? !record.website?.url && !profilesGrid
             : id === 'liens'

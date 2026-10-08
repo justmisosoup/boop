@@ -28,7 +28,7 @@ export type ResultRow = {
 }
 
 const ColumnLabel = ({ children }: { children: ReactNode }) => (
-  <span className="text-caption font-medium uppercase tracking-wide text-text-secondary">
+  <span className="text-xs font-medium text-[var(--core-color-table-header-text)]">
     {children}
   </span>
 )
@@ -108,7 +108,7 @@ export const ResultTable = ({
   const header = (
     <div
       className={cn(
-        'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
+        'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid',
         COLUMNS
       )}
     >

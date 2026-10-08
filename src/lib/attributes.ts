@@ -996,15 +996,20 @@ export const profileName = (type: string) =>
  * counts, and when it was last active. One field per line; nothing the page
  * does not state.
  */
+/** One fact a profile states: a figure ("1,282 followers"), or its standing
+ *  on the platform (`status`: verified, private, claimed, closed). */
+type ProfileField = { label?: string; value: string; icon?: 'verified'; status?: boolean }
+
 export const profileFields = (
   p: NonNullable<BusinessRecord['profiles']>[number]
-): Array<{ label?: string; value: string; icon?: 'verified' }> => {
+): ProfileField[] => {
   const m = (p.metadata ?? {}) as Record<string, unknown>
   const type = (p.type ?? '').toLowerCase()
   const num = (v: unknown) => (typeof v === 'number' && v > 0 ? v : undefined)
   const count = (v: unknown, word: string) =>
     num(v) !== undefined ? { value: `${(v as number).toLocaleString()} ${word}` } : undefined
-  const flag = (on: boolean, value: string) => (on ? { value } : undefined)
+  // A standing the platform gives the profile — private, claimed, closed — not a figure.
+  const flag = (on: boolean, value: string) => (on ? { value, status: true } : undefined)
   const lastLabel: Record<string, string> = {
     google: 'Last review',
     yelp: 'Last review',
@@ -1014,20 +1019,28 @@ export const profileFields = (
   }
   const price =
     typeof m.price_range === 'string' && /^\$+$/.test(m.price_range) ? m.price_range : undefined
-  return [
+  const fields: Array<ProfileField | undefined> = [
     // The flags the dashboard raises under the profile's name.
     // With the platform's verified mark beside it.
-    type === 'instagram' && m.is_business_account === true
-      ? { value: 'Verified business', icon: 'verified' as const }
+    // What kind of account it is, in words: "Public business account".
+    type === 'instagram' && (typeof m.is_private === 'boolean' || typeof m.is_business_account === 'boolean')
+      ? {
+          label: 'Account',
+          value: [
+            m.is_private === true ? 'Private' : 'Public',
+            m.is_business_account === true ? 'business' : 'personal',
+            'account'
+          ].join(' '),
+          status: true
+        }
       : undefined,
-    flag(type === 'instagram' && m.is_private === true, 'Private'),
     flag(type === 'google' && m.status === 'temporarily_closed', 'Temporary closure'),
     flag(type === 'google' && m.status === 'permanently_closed', 'Permanent closure'),
     flag(type === 'yelp' && m.is_claimed === true, 'Business claimed'),
     flag(type === 'yelp' && m.is_closed === true, 'Closed'),
     // The platform's verified mark on a social account.
     (type === 'x' || type === 'tiktok') && m.verified === true
-      ? { value: 'Verified account', icon: 'verified' as const }
+      ? { value: 'Verified account', icon: 'verified' as const, status: true }
       : undefined,
     flag(type === 'trustpilot' && m.is_claimed === true, 'Profile claimed'),
     flag(type === 'trustpilot' && m.is_claimed === false, 'Profile not claimed'),
@@ -1066,22 +1079,24 @@ export const profileFields = (
             : undefined
         )
       : undefined,
-    // Counts that belong together share a line: "107,811 followers · 97
-    // following", then "163 posts · Last post: Sep 19, 2026".
-    line(count(m.followers ?? p.followers, 'followers'), count(m.following, 'following')),
+    // Counts that belong together share a line: "1,282 followers · 73
+    // following · 26 posts", then "Last post: Aug 22, 2026" on its own.
+    line(
+      count(m.followers ?? p.followers, 'followers'),
+      count(m.following, 'following'),
+      count(m.posts_count, 'posts')
+    ),
     typeof m.company_size === 'string'
       ? { label: 'Company size', value: m.company_size }
       : undefined,
     line(count(m.likes, 'likes'), count(m.were_here, 'check-ins')),
     line(count(m.statuses_count, 'posts'), count(m.videos, 'videos')),
     price ? { label: 'Price range', value: price } : undefined,
-    line(
-      count(m.posts_count, 'posts'),
-      lastLabel[type] && typeof m.last_post === 'string'
-        ? { value: `${lastLabel[type]}: ${shortDate(m.last_post) ?? m.last_post}` }
-        : undefined
-    )
-  ].filter((x): x is { label?: string; value: string; icon?: 'verified' } => Boolean(x))
+    lastLabel[type] && typeof m.last_post === 'string'
+      ? { value: `${lastLabel[type]}: ${shortDate(m.last_post) ?? m.last_post}` }
+      : undefined
+  ]
+  return fields.filter((x): x is ProfileField => Boolean(x))
 }
 
 /** Platforms whose page is its reviews: no reviews is a fact about them. */
