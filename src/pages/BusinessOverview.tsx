@@ -10,9 +10,9 @@ import { AlertsCard } from '../components/Assessments/AlertsCard'
 import {
   AssessmentCard,
   AssessmentLayoutToggle,
-  AssessmentRow,
   type AssessmentLayout
 } from '../components/Assessments/AssessmentCard'
+import { AssessmentTable } from '../components/Assessments/AssessmentTable'
 import { BusinessFrame } from '../components/Assessments/BusinessFrame'
 import { SectionTitle } from '../components/Assessments/SectionTitle'
 import { readAssessments, type Assessment } from '../lib/assessments'
@@ -166,11 +166,7 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
           <AssessmentLayoutToggle value={layout} onChange={setLayout} />
         </div>
         {layout === 'list' ? (
-          <ul className="m-0 list-none rounded-card border border-border bg-card p-0">
-            {shownReads.map((read) => (
-              <AssessmentRow key={read.assessment.id} {...cardProps(read)} />
-            ))}
-          </ul>
+          <AssessmentTable rows={shownReads.map(cardProps)} />
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {shownReads.map((read) => (
@@ -186,8 +182,8 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
       </section>
 
       <aside className="flex flex-col gap-12">
-        <AlertsCard />
         <RecentActivity record={record} reads={reads} />
+        <AlertsCard />
       </aside>
       </div>
     </BusinessFrame>

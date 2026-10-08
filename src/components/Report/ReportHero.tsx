@@ -8,6 +8,7 @@ import { ActionButton, DateTime, Hint, HintContent, HintTrigger, IconActionButto
 import { displayName } from '../../lib/businessNames'
 import type { BusinessRecord } from '../../lib/deriveResults'
 import type { ReportBrief } from '../../lib/reportBrief'
+import { InsightCounts } from '../InsightCounts'
 import { cn } from '../../utils/twUtils'
 import { CardHeader } from '../CardHeader'
 import { ScoreRing } from '../DeterminationCard'
@@ -132,16 +133,17 @@ export const ScoreCard = ({
     >
       {back && <div className="border-b border-[var(--core-color-border-divider)] px-4 py-2">{back}</div>}
       <div className="flex flex-col items-start gap-3 px-4 py-4">
-        {title && <h2 className="m-0 text-base font-semibold">{title}</h2>}
-        {/* The score as a number, the call it backs beside it, and how the
-            report's insights read under both. */}
+        {/* The call first, then the score with how its insights read, the
+            bar, and what was assessed under them. */}
+        {status}
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-3xl font-semibold leading-none tabular-nums text-text-primary" aria-label={`Assessment score ${assessment.value} out of 100`}>
             {assessment.value}
           </span>
-          {status}
+          {overall && <InsightCounts counts={countsOf(overall)} labels={false} />}
         </div>
         {overall && <OutcomeSpark tally={overall} />}
+        {title && <h2 className="m-0 text-base font-semibold">{title}</h2>}
         {blurb && <Text className="break-words leading-6">{blurb}</Text>}
         {summary !== undefined && (
           <div className="flex flex-col gap-1">
@@ -226,6 +228,14 @@ export type OutcomeTally = { good: number; review: number; bad: number; neutral:
  * context — each its share, in that order. Under each assessment and under
  * the score, so the whole and its parts read the same way.
  */
+/** A tally as the three counts the Businesses list shows: positive, negative
+ *  (failed or for review), neutral. */
+export const countsOf = (tally: OutcomeTally) => ({
+  positive: tally.good,
+  negative: tally.bad + tally.review,
+  neutral: tally.neutral
+})
+
 export const OutcomeSpark = ({ tally, className }: { tally: OutcomeTally; className?: string }) => {
   const parts = (
     [

@@ -49,13 +49,13 @@
       }
     },
     "a-mv012kfp-0": {
-      "at": "2026-10-08T22:02:54.090Z",
-      "requestId": "1791496911628kf85",
+      "at": "2026-10-08T23:35:56.000Z",
+      "requestId": "manual-2026-10-08T23:35:56.000Z",
       "section": {
         "id": "a-mv012kfp-0",
         "body": [
           {
-            "text": "We found 2 Open Lien(s).",
+            "text": "There are 2 of 15 liens that are open. One is a 2024 Utah UCC filing held by Oaktree Fund Administration; the other is a $126.13 State of Indiana lien from 2025. The remaining 13 are closed UCC filings from 2006 to 2019, nearly all naming lenders as collateral agents.",
             "cites": [
               "liens"
             ]

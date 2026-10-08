@@ -1,14 +1,31 @@
 import { useMemo } from 'react'
 import { Navigate, useParams } from 'react-router'
 
-import { ActivityTab } from '../components/Assessments/ActivityTab'
+import { PageHeadingCount } from '@/core'
+
+import { ActivityTab, useActivity } from '../components/Assessments/ActivityTab'
 import { BusinessFrame } from '../components/Assessments/BusinessFrame'
 import { SectionTitle } from '../components/Assessments/SectionTitle'
 import { Timeline } from '../components/Timeline'
-import { readAssessments } from '../lib/assessments'
+import { readAssessments, type AssessmentRead } from '../lib/assessments'
+import type { BusinessRecord } from '../lib/deriveResults'
 import { byId } from '../lib/records'
 
 const LABEL = { timeline: 'Timeline', activity: 'Activity' } as const
+
+/** Every event, counted in its heading as Recent activity counts them. */
+const ActivitySection = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
+  const events = useActivity(record, reads)
+  return (
+    <>
+      <SectionTitle className="mb-6 flex items-center gap-2">
+        {LABEL.activity}
+        <PageHeadingCount>{events.length}</PageHeadingCount>
+      </SectionTitle>
+      <ActivityTab record={record} reads={reads} />
+    </>
+  )
+}
 
 /**
  * The business's Timeline or Activity in full, under its profile — opened from
@@ -23,8 +40,14 @@ export const BusinessSectionPage = ({ section }: { section: 'timeline' | 'activi
 
   return (
     <BusinessFrame record={record} crumb={LABEL[section]}>
-      <SectionTitle className="mb-3">{LABEL[section]}</SectionTitle>
-      {section === 'timeline' ? <Timeline businessId={record.id} /> : <ActivityTab record={record} reads={reads} />}
+      {section === 'timeline' ? (
+        <>
+          <SectionTitle className="mb-6">{LABEL.timeline}</SectionTitle>
+          <Timeline businessId={record.id} />
+        </>
+      ) : (
+        <ActivitySection record={record} reads={reads} />
+      )}
     </BusinessFrame>
   )
 }

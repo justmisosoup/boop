@@ -334,6 +334,12 @@ export type AnalysisVerdict = {
    */
   headline: string
   /**
+   * The business in a sentence or two, as the assessment's cards and panel
+   * show it. The headline stays the call (it sets the band's words); where a
+   * report has no summary, the headline stands in.
+   */
+  summary?: string
+  /**
    * Carried with an empty `body`. The section renders the follow-ups and
    * nothing else: the assessments above hold the evidence and the reader has
    * just read them, so a paragraph here said everything twice in the one place

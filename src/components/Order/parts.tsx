@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
-import { ChevronLeft, X } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { ChevronLeft, Plus, X } from 'lucide-react'
+
+import { ActionButton, IconActionButton } from '@/core'
 
 import { cn } from '@/utils/twUtils'
 
-import { MiddeskMark } from '../MiddeskMark'
 
 /**
  * The Place order page's own pieces, from ~/Projects/prototype's
@@ -13,31 +13,43 @@ import { MiddeskMark } from '../MiddeskMark'
  * same layout, with tokens where those used the legacy theme.
  */
 
-/** Full page, no app chrome: the mark, a close button, a narrow column. */
+/** Full page, no app chrome: a bar with the breadcrumb, the step's actions and a
+ *  close button, pinned over a narrow column. */
 export const OrderPageFrame = ({
   children,
-  close
+  close,
+  actions,
+  crumbs
 }: {
   children: ReactNode
+  /** The page's breadcrumb, at the bar's left. */
+  crumbs?: ReactNode
   close: () => void
+  /** The step's buttons — Cancel and Next, Back and Run — at the bar's right. */
+  actions?: ReactNode
 }) => {
-  const navigate = useNavigate()
   return (
-    <div className='flex min-h-dvh w-full flex-col bg-[var(--core-color-surface-canvas)] pb-5 pt-6 text-foreground'>
-      <div className='relative flex justify-between px-10'>
-        <button
-          aria-label='Middesk Home'
-          className='-ml-3 flex items-center'
-          onClick={() => navigate('/businesses')}
+    // Its own scroller, with the scrollbar's room kept on both sides at every
+    // step: a longer step showing the bar no longer shifts the column.
+    <div className='flex h-dvh w-full flex-col overflow-y-auto bg-[var(--core-color-surface-canvas)] pb-5 text-foreground [scrollbar-gutter:stable_both-edges]'>
+      <div className='sticky top-0 z-10 border-b border-[var(--core-color-border-divider)] bg-[var(--core-color-surface-canvas)] px-4 py-4'>
+        {/* The crumb and the actions on the form's own column; close at the far right. */}
+        <div className='mx-auto flex w-full max-w-xl items-center justify-between gap-4'>
+          <div className='min-w-0'>{crumbs}</div>
+          <div className='flex shrink-0 items-center gap-2'>{actions}</div>
+        </div>
+        <IconActionButton
+          aria-label='Close'
+          className='absolute right-10 top-1/2 -translate-y-1/2'
+          onClick={close}
+          size='standard'
           type='button'
+          variant='quiet'
         >
-          <MiddeskMark className='h-6 w-10' />
-        </button>
-        <button aria-label='close' onClick={close} type='button'>
-          <X aria-hidden='true' size={26} strokeWidth={1.5} />
-        </button>
+          <X aria-hidden='true' />
+        </IconActionButton>
       </div>
-      <div className='mt-4 flex flex-col items-center px-4'>
+      <div className='mt-10 flex flex-col items-center px-4'>
         <div className='w-full max-w-xl'>{children}</div>
       </div>
     </div>
@@ -49,7 +61,7 @@ export const Title = ({ children }: { children: ReactNode }) => (
 )
 
 export const SubTitle = ({ children }: { children: ReactNode }) => (
-  <p className='m-0 mb-4 text-text-secondary'>{children}</p>
+  <p className='m-0 mb-4 text-sm text-text-secondary'>{children}</p>
 )
 
 export const LinkText = ({ children }: { children: ReactNode }) => (
@@ -71,16 +83,9 @@ export const Back = ({ onClick, children }: { onClick: () => void; children: Rea
   </button>
 )
 
-/** A field and its delete button side by side; the last row offers another. */
+/** A field, or a list of them; the last of a list offers another. */
 export const Row = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <div
-    className={cn(
-      'grid grid-cols-[100%_min-content] items-end gap-x-2 [&:not(:last-of-type)]:mb-1',
-      className
-    )}
-  >
-    {children}
-  </div>
+  <div className={cn('flex flex-col items-start gap-2 [&>*]:w-full', className)}>{children}</div>
 )
 
 export const ArrayFieldItem = ({
@@ -101,18 +106,33 @@ export const ArrayFieldItem = ({
   deleteAriaLabel: string
 }) => (
   <>
-    {children}
-    {canDelete ? (
-      <button aria-label={deleteAriaLabel} className='mb-3 p-1' onClick={onDelete} type='button'>
-        <X aria-hidden='true' size={16} />
-      </button>
-    ) : (
-      <div />
-    )}
+    {/* The delete sits inside the field's right end, so a list of them keeps
+        the same right edge as every other field. */}
+    <div className={cn('relative', canDelete && '[&_input]:pr-10')}>
+      {children}
+      {canDelete && (
+        <IconActionButton
+          aria-label={deleteAriaLabel}
+          className='absolute bottom-1 right-1'
+          onClick={onDelete}
+          type='button'
+          variant='quiet'
+        >
+          <X aria-hidden='true' />
+        </IconActionButton>
+      )}
+    </div>
     {isLast && (
-      <button className='mb-2 justify-self-start text-left' onClick={onAdd} type='button'>
-        <LinkText>{addButtonText}</LinkText>
-      </button>
+      <ActionButton
+        className='!w-auto'
+        leadingIcon={<Plus aria-hidden='true' />}
+        onClick={onAdd}
+        size='compact'
+        type='button'
+        variant='secondary'
+      >
+        {addButtonText}
+      </ActionButton>
     )}
   </>
 )

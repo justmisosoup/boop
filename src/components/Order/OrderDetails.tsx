@@ -1,32 +1,37 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 
-import { useNavigate } from 'react-router'
+import { useFormState } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
   ActionButton,
   ArrayField,
   Form,
-  FormSelectField,
-  FormTextField,
   InlineAlert,
+  MetaChip,
+  PageHeadingCount,
+  Text,
   Tooltip,
   useFormContext,
   useMiddeskForm,
   useToast
 } from '@/core'
 import cya from '@/utils/cya'
-import { CircleHelp } from 'lucide-react'
+import { ChevronDown, CircleHelp } from 'lucide-react'
+import { cn } from '@/utils/twUtils'
 
 import { combineConfigs, ORDER_CATALOG, requiredInputsFor } from '../../lib/customOrders/catalog'
 import { optionalInputs } from '../../lib/customOrders/model'
 import type { InputKey, InputRequirement } from '../../lib/customOrders/types'
 import type { BusinessRecord } from '../../lib/deriveResults'
-import { byId } from '../../lib/records'
+import { ALL, byId } from '../../lib/records'
+import { displayName } from '../../lib/businessNames'
 import { useSavedWorkflows } from '../../lib/savedWorkflows'
 import { STATE_NAMES } from '../../lib/states'
 import type { OrderSelection } from '../../pages/OrderPage'
-import { ArrayFieldItem, Back, ButtonContainer, Row, Title } from './parts'
+import { SectionTitle } from '../Assessments/SectionTitle'
+import { BusinessNameField, SelectInputField, TextInputField } from './fields'
+import { ArrayFieldItem, OrderPageFrame, Row, Title } from './parts'
 
 /**
  * Business details for the workflows chosen: ~/Projects/prototype's
@@ -136,7 +141,11 @@ const buildSchema = (required: InputRequirement[]) =>
     for (const r of required) {
       if (isAnyOf(r)) {
         if (!r.any_of.some((k) => valueOf(values, k).trim())) {
-          ctx.addIssue({ code: 'custom', path: [r.any_of[0]], message: 'Required' })
+          ctx.addIssue({
+            code: 'custom',
+            path: [r.any_of[0]],
+            message: 'Required'
+          })
         }
       } else if (!valueOf(values, r).trim()) {
         ctx.addIssue({ code: 'custom', path: [r], message: 'Required' })
@@ -157,18 +166,26 @@ const toPayload = (values: Values) => {
   const entityType = values.entity_type.trim()
   return {
     name: values.name.trim(),
-    ...(addresses.length && { addresses: addresses.map((full_address) => ({ full_address })) }),
+    ...(addresses.length && {
+      addresses: addresses.map((full_address) => ({ full_address }))
+    }),
     ...(values.url.trim() && { website: { url: values.url.trim() } }),
     ...(values.tin.trim() && { tin: { tin: values.tin.trim() } }),
-    ...(values.dba_name.trim() && { names: [{ name: values.dba_name.trim(), name_type: 'dba' }] }),
+    ...(values.dba_name.trim() && {
+      names: [{ name: values.dba_name.trim(), name_type: 'dba' }]
+    }),
     ...((formationState || entityType) && {
       formation: {
         ...(formationState && { formation_state: formationState }),
         ...(entityType && { entity_type: entityType })
       }
     }),
-    ...(emails.length && { email_addresses: emails.map((email) => ({ email })) }),
-    ...(phones.length && { phone_numbers: phones.map((phone_number) => ({ phone_number })) }),
+    ...(emails.length && {
+      email_addresses: emails.map((email) => ({ email }))
+    }),
+    ...(phones.length && {
+      phone_numbers: phones.map((phone_number) => ({ phone_number }))
+    }),
     ...(people.length && {
       people: people.map((p, i) => ({
         name: p.personName.trim(),
@@ -187,7 +204,13 @@ type ErrorState = { header: string; messages: string[] }
  * use, the form (prefilled from the business when there is one), and placing
  * the order.
  */
-export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelection; onPlaced: (count: number) => void }) => {
+export const useOrderDetails = ({
+  selection,
+  onPlaced
+}: {
+  selection: OrderSelection
+  onPlaced: (count: number) => void
+}) => {
   const { showToast } = useToast()
   const saved = useSavedWorkflows()
   const workflows = saved.filter((w) => selection.workflowIds.includes(w.id))
@@ -202,15 +225,14 @@ export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelec
   const required = requiredInputsFor(config).required
   const optional = optionalInputs(ORDER_CATALOG, config, required)
   const requiredKeys = required.flatMap((r) => (isAnyOf(r) ? r.any_of : [r]))
+  // Every business detail an order takes is offered — what isn't required is
+  // optional. A person's date of birth and SSN only when a package screens
+  // people with them, or an insight can use them.
+  const PERSON_ONLY: InputKey[] = ['person_dob', 'person_ssn']
   const shown = new Set(
     ORDER_CATALOG.inputs
       .map((i) => i.key)
-      .filter(
-        (k) =>
-          ORDER_CATALOG.context_inputs.includes(k) ||
-          requiredKeys.includes(k) ||
-          optional.some((o) => o.key === k)
-      )
+      .filter((k) => !PERSON_ONLY.includes(k) || requiredKeys.includes(k) || optional.some((o) => o.key === k))
   )
   const isRequired = (key: InputKey) => required.includes(key)
   const usedFor = (key: InputKey) => (isRequired(key) ? undefined : optional.find((o) => o.key === key)?.usedFor)
@@ -223,14 +245,31 @@ export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelec
   })
   const { trigger } = form
 
-  // Validate on mount, so a required field we don't hold gates the submit.
+  // Validate on mount, and whenever the assessments chosen change what is
+  // required, so a required field we don't hold gates the submit.
   useEffect(() => {
     void trigger()
-  }, [trigger])
+  }, [trigger, schema])
+
+  // An existing business picked from the name field: its details, in place of
+  // what was typed.
+  const firstInitial = useRef(initial)
+  useEffect(() => {
+    if (initial === firstInitial.current) return
+    firstInitial.current = initial
+    form.reset(initial)
+    void trigger()
+  }, [initial, form, trigger])
 
   const dryRun = new URLSearchParams(window.location.search).has('dryRun')
+  // One order at a time: a second click while one is sending does nothing.
+  const inFlight = useRef(false)
 
   const place = async (values: Values) => {
+    if (inFlight.current) return
+    inFlight.current = true
+    // Read when sending, not when the page drew: the address decides.
+    const dryRun = new URLSearchParams(window.location.search).has('dryRun')
     setSubmitting(true)
     setError({ header: '', messages: [] })
     try {
@@ -241,11 +280,17 @@ export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelec
           businessId: existing?.id,
           body: toPayload(values),
           // Only what the reader changed goes back to the business.
-          ...(existing && { patch: changedFields(toPayload(values), toPayload(initial)) }),
+          ...(existing && {
+            patch: changedFields(toPayload(values), toPayload(initial))
+          }),
           workflows: workflows.map((w) => ({
             id: w.id,
             name: w.name,
-            config: { packages: w.packages, insight_groups: w.insight_groups, status_overrides: w.status_overrides }
+            config: {
+              packages: w.packages,
+              insight_groups: w.insight_groups,
+              status_overrides: w.status_overrides
+            }
           }))
         })
       })
@@ -258,31 +303,56 @@ export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelec
         return
       }
       if (dryRun) {
-        console.info('Run assessment (dry run)', body)
-        showToast({ text: 'Dry run: request logged to the console', appearance: 'success' })
+        console.info('Run assessment (not sent)', body)
+        showToast({
+          text: 'Not sent — the request is logged to the console',
+          appearance: 'success'
+        })
         return
       }
       onPlaced(workflows.length)
     } catch {
       setError({ header: 'Couldn’t reach the order endpoint.', messages: [] })
     } finally {
+      inFlight.current = false
       setSubmitting(false)
     }
   }
 
-  return { form, workflows, existing, shown, isRequired, usedFor, place, submitting, error, dryRun }
+  return {
+    form,
+    workflows,
+    existing,
+    shown,
+    isRequired,
+    usedFor,
+    place,
+    submitting,
+    error,
+    dryRun
+  }
 }
 
 export type OrderDetailsState = ReturnType<typeof useOrderDetails>
 
 /** "Run 2 assessments" — the submit's label. */
-export const runLabel = (count: number, dryRun: boolean) =>
-  `Run ${count === 1 ? 'assessment' : `${count} assessments`}${dryRun ? ' (dry run)' : ''}`
+export const runLabel = (count: number) =>
+  `Run ${count === 1 ? 'assessment' : `${count} assessments`}`
 
 /** The fields, and any error placing the order, inside the form. */
-export const OrderDetailsForm = ({ state, children }: { state: OrderDetailsState; children?: ReactNode }) => (
+export const OrderDetailsForm = ({
+  state,
+  onPickBusiness,
+  children
+}: {
+  state: OrderDetailsState
+  /** A new business's name suggests the ones already held; picking one runs on it. */
+  onPickBusiness?: (business: BusinessRecord) => void
+  children?: ReactNode
+}) => (
   <Form form={state.form} onSubmit={state.place}>
     <WorkflowFields
+      onPickBusiness={state.existing ? undefined : onPickBusiness}
       isRequired={state.isRequired}
       label={(key) => ORDER_CATALOG.inputs.find((i) => i.key === key)?.label ?? key}
       shown={state.shown}
@@ -305,67 +375,97 @@ export const OrderDetailsForm = ({ state, children }: { state: OrderDetailsState
 
 /** The order page's details step: the form, with its own Back and Run buttons. */
 export const OrderDetails = ({
-  selection,
+  state,
   onBack,
-  done = '/businesses'
+  crumbs,
+  onPickBusiness,
+  onClearBusiness,
+  close
 }: {
-  selection: OrderSelection
+  /** The page's order — kept by the page, so step one can run it outright. */
+  state: OrderDetailsState
+  /** Leaves the page, from the bar's close button. */
+  close: () => void
   onBack: () => void
-  /** Where running lands: the business it was run on, or the list. */
-  done?: string
+  /** Run on an existing business found by name, rather than a new one. */
+  onPickBusiness?: (business: BusinessRecord) => void
+  /** Undo that: back to a new business. Absent when opened from the business. */
+  onClearBusiness?: () => void
+  /** The page's breadcrumb, which carries the way back to the checklist. */
+  crumbs?: ReactNode
 }) => {
-  const navigate = useNavigate()
-  const { showToast } = useToast()
-  const state = useOrderDetails({
-    selection,
-    onPlaced: (count) => {
-      showToast({ text: count === 1 ? 'Assessment started' : `${count} assessments started`, appearance: 'success' })
-      navigate(done)
-    }
-  })
-
   return (
-    <>
-      <Back onClick={onBack}>Back to assessments</Back>
+    <OrderPageFrame
+      actions={
+        <>
+          <ActionButton onClick={onBack} type='button' variant='secondary'>
+            Back
+          </ActionButton>
+          <RunButton state={state} />
+        </>
+      }
+      close={close}
+      crumbs={crumbs}
+    >
       <Title>Business details</Title>
-      <p className='m-0 mb-6 text-text-secondary'>
-        Running: {state.workflows.map((w) => w.name).join(', ')}
-        {state.existing && ` on ${state.existing.name}`}
-      </p>
-      <OrderDetailsForm state={state}>
-        <div className='mt-6'>
-          <ButtonContainer>
-            <ActionButton onClick={onBack} type='button' variant='secondary'>
-              Back
+      {/* What runs, as chips; the business is the crumb's. */}
+      <div className='mb-8 flex flex-wrap items-center gap-2'>
+        <Text size='sm' tone='secondary'>
+          Running
+        </Text>
+        {state.workflows.map((w) => (
+          <MetaChip key={w.id} size='compact'>
+            {w.name}
+          </MetaChip>
+        ))}
+      </div>
+      {state.existing && onClearBusiness && (
+        <InlineAlert className='-mt-4 mb-8' size='compact' tone='info'>
+          <div className='flex items-center justify-between gap-4'>
+            <span>This will add to the existing business {state.existing.name}.</span>
+            <ActionButton className='shrink-0' onClick={onClearBusiness} size='compact' type='button' variant='secondary'>
+              Undo
             </ActionButton>
-            <RunButton count={state.workflows.length} dryRun={state.dryRun} submitting={state.submitting} />
-          </ButtonContainer>
-        </div>
-      </OrderDetailsForm>
-    </>
+          </div>
+        </InlineAlert>
+      )}
+      <OrderDetailsForm onPickBusiness={onPickBusiness} state={state} />
+    </OrderPageFrame>
   )
 }
 
-const RunButton = ({ submitting, dryRun, count }: { submitting: boolean; dryRun: boolean; count: number }) => {
-  const {
-    formState: { isValid }
-  } = useFormContext<Values>()
+/** Outside the form, in the bar: it submits the form through its handle. */
+export const RunButton = ({ state, className }: { state: OrderDetailsState; className?: string }) => {
+  const { isValid } = useFormState({ control: state.form.control })
   return (
-    <ActionButton disabled={submitting || !isValid} isLoading={submitting} type='submit' variant='primary' {...cya('PlaceCustomOrder')}>
-      {runLabel(count, dryRun)}
+    <ActionButton
+      className={className}
+      disabled={state.submitting || !isValid}
+      isLoading={state.submitting}
+      onClick={state.form.handleSubmit(state.place)}
+      type='button'
+      variant='primary'
+      {...cya('PlaceCustomOrder')}
+    >
+      {runLabel(state.workflows.length)}
     </ActionButton>
   )
 }
 
-const STATE_OPTIONS = Object.entries(STATE_NAMES).map(([value, label]) => ({ label, value }))
+const STATE_OPTIONS = Object.entries(STATE_NAMES).map(([value, label]) => ({
+  label,
+  value
+}))
 
 // The regular form's fields, in its order, shown when a workflow needs them.
 const WorkflowFields = ({
+  onPickBusiness,
   shown,
   isRequired,
   label,
   usedFor
 }: {
+  onPickBusiness?: (business: BusinessRecord) => void
   shown: Set<InputKey>
   isRequired: (key: InputKey) => boolean
   label: (key: InputKey) => string
@@ -373,260 +473,313 @@ const WorkflowFields = ({
   usedFor: (key: InputKey) => string[] | undefined
 }) => {
   const { trigger } = useFormContext<Values>()
+  // Open to start; the reader can fold it away.
+  const [optionalOpen, setOptionalOpen] = useState(true)
+  const optionalId = useId()
   const revalidate = () => setTimeout(() => void trigger(), 100)
-  /** A field's label, and for an optional one, what it is used for. */
-  const L = (key: InputKey, text: ReactNode) => {
-    const uses = usedFor(key)
-    return uses?.length ? (
-      <span>
-        {text} <span className='font-normal text-text-secondary'>· Optional — {uses.join(', ')}</span>
-      </span>
-    ) : (
-      text
-    )
-  }
+  /** A field's label. Required ones carry the form's asterisk; optional ones
+   *  carry nothing more. */
+  const L = (_key: InputKey, text: ReactNode) => text
 
-  return (
-    <>
-      {shown.has('name') && (
-        <Row>
-          <FormTextField<Values>
+  // Each field by its input, in the regular form's order.
+  const fields: [InputKey, ReactNode][] = [
+    [
+      'name',
+      <Row>
+        {onPickBusiness ? (
+          <BusinessNameField<Values>
+            businesses={ALL}
+            label={L('name', 'Business name')}
+            name='name'
+            onPick={onPickBusiness}
+            placeholder='Enter business name'
+            required={isRequired('name')}
+          />
+        ) : (
+          <TextInputField<Values>
             label={L('name', 'Business name')}
             name='name'
             placeholder='Enter business name'
             required={isRequired('name')}
-            showError={false}
           />
-        </Row>
-      )}
-      {shown.has('address') && (
-        <ArrayField<Values, 'addresses'> name='addresses'>
-          {({ fields, append, remove }) => (
-            <Row>
-              {fields.map((field, i) => (
-                <ArrayFieldItem
-                  addButtonText='Add additional address'
-                  canDelete={fields.length > 1}
-                  deleteAriaLabel='Delete address'
-                  isLast={fields.length - 1 === i}
-                  key={field.id}
-                  onAdd={() => {
-                    append({ id: uuid(), address: '' })
-                    revalidate()
-                  }}
-                  onDelete={() => {
-                    remove(i)
-                    revalidate()
-                  }}
-                >
-                  <FormTextField<Values>
-                    label={i === 0 ? L('address', 'Office address') : ''}
-                    name={`addresses.${i}.address`}
-                    placeholder='Enter an address'
-                    required={i === 0 && isRequired('address')}
-                    showError={false}
-                  />
-                </ArrayFieldItem>
-              ))}
-            </Row>
-          )}
-        </ArrayField>
-      )}
-      {shown.has('dba_name') && (
-        <Row>
-          <FormTextField<Values>
-            label={
-              <span className='flex items-center gap-1'>
-                {L('dba_name', 'DBA name')}
-                <Tooltip
-                  content='We collect DBA (Doing Business As) names to run against watchlists'
-                  placement='right'
-                  trigger={<CircleHelp aria-hidden='true' size={14} />}
+        )}
+      </Row>
+    ],
+    [
+      'address',
+      <ArrayField<Values, 'addresses'> name='addresses'>
+        {({ fields, append, remove }) => (
+          <Row>
+            {fields.map((field, i) => (
+              <ArrayFieldItem
+                addButtonText='Add additional address'
+                canDelete={fields.length > 1}
+                deleteAriaLabel='Delete address'
+                isLast={fields.length - 1 === i}
+                key={field.id}
+                onAdd={() => {
+                  append({ id: uuid(), address: '' })
+                  revalidate()
+                }}
+                onDelete={() => {
+                  remove(i)
+                  revalidate()
+                }}
+              >
+                <TextInputField<Values>
+                  label={i === 0 ? L('address', 'Office address') : undefined}
+                  name={`addresses.${i}.address`}
+                  placeholder='Enter an address'
+                  required={i === 0 && isRequired('address')}
                 />
-              </span>
-            }
-            name='dba_name'
-            placeholder='Enter DBA name'
-            required={isRequired('dba_name')}
-            showError={false}
-          />
-        </Row>
-      )}
-      {shown.has('tin') && (
-        <Row>
-          <FormTextField<Values>
-            label={L('tin', 'Taxpayer Identification Number TIN/EIN')}
-            name='tin'
-            placeholder='XX-XXXXXXX'
-            required={isRequired('tin')}
-            showError={false}
-            type='ein'
-          />
-        </Row>
-      )}
-      {shown.has('person') && (
-        <ArrayField<Values, 'people_names'> name='people_names'>
-          {({ fields, append, remove }) => (
-            <Row>
-              {fields.map((field, i) => (
-                <ArrayFieldItem
-                  addButtonText='Add additional person'
-                  canDelete={fields.length > 1}
-                  deleteAriaLabel='Delete person'
-                  isLast={fields.length - 1 === i}
-                  key={field.id}
-                  onAdd={() => {
-                    append({ id: uuid(), personName: '', dob: '' })
-                    revalidate()
-                  }}
-                  onDelete={() => {
-                    remove(i)
-                    revalidate()
-                  }}
-                >
-                  {shown.has('person_dob') ? (
-                    <div className='grid grid-cols-[2fr_1fr] items-end gap-x-2'>
-                      <FormTextField<Values>
-                        label={i === 0 ? L('person', 'Associated person') : ''}
-                        name={`people_names.${i}.personName`}
-                        placeholder='Enter first and last name'
-                        showError={false}
-                      />
-                      <FormTextField<Values>
-                        label={i === 0 ? L('person_dob', 'Date of Birth') : ''}
-                        name={`people_names.${i}.dob`}
-                        placeholder='MM/DD/YYYY'
-                        showError={false}
-                        type='date'
-                      />
-                    </div>
-                  ) : (
-                    <FormTextField<Values>
-                      label={i === 0 ? L('person', 'Associated person') : ''}
+              </ArrayFieldItem>
+            ))}
+          </Row>
+        )}
+      </ArrayField>
+    ],
+    [
+      'dba_name',
+      <Row>
+        <TextInputField<Values>
+          label={
+            <span className='flex items-center gap-1'>
+              {L('dba_name', 'DBA name')}
+              <Tooltip
+                content='We collect DBA (Doing Business As) names to run against watchlists'
+                placement='right'
+                trigger={<CircleHelp aria-hidden='true' size={14} />}
+              />
+            </span>
+          }
+          name='dba_name'
+          placeholder='Enter DBA name'
+          required={isRequired('dba_name')}
+        />
+      </Row>
+    ],
+    [
+      'tin',
+      <Row>
+        <TextInputField<Values>
+          label={L('tin', 'TIN')}
+          name='tin'
+          placeholder='XX-XXXXXXX'
+          required={isRequired('tin')}
+          mask='ein'
+        />
+      </Row>
+    ],
+    [
+      'person',
+      <ArrayField<Values, 'people_names'> name='people_names'>
+        {({ fields, append, remove }) => (
+          <Row>
+            {fields.map((field, i) => (
+              <ArrayFieldItem
+                addButtonText='Add additional person'
+                canDelete={fields.length > 1}
+                deleteAriaLabel='Delete person'
+                isLast={fields.length - 1 === i}
+                key={field.id}
+                onAdd={() => {
+                  append({ id: uuid(), personName: '', dob: '' })
+                  revalidate()
+                }}
+                onDelete={() => {
+                  remove(i)
+                  revalidate()
+                }}
+              >
+                {shown.has('person_dob') ? (
+                  <div className='grid grid-cols-[2fr_1fr] items-end gap-x-2'>
+                    <TextInputField<Values>
+                      label={i === 0 ? L('person', 'Associated person') : undefined}
                       name={`people_names.${i}.personName`}
                       placeholder='Enter first and last name'
-                      showError={false}
                     />
-                  )}
-                </ArrayFieldItem>
-              ))}
-            </Row>
-          )}
-        </ArrayField>
-      )}
-      {shown.has('person_ssn') && (
-        <Row>
-          <FormTextField<Values>
-            label={L('person_ssn', label('person_ssn'))}
-            name='person_ssn'
-            placeholder='XXX-XX-XXXX'
-            required={isRequired('person_ssn')}
-            showError={false}
-          />
-        </Row>
-      )}
-      {shown.has('formation_state') && (
-        <Row>
-          <FormSelectField<Values>
-            isClearable
-            label={L('formation_state', 'Formation state')}
-            name='formation_state'
-            options={STATE_OPTIONS}
-            placeholder='Select a formation state'
-            required={isRequired('formation_state')}
-            showError={false}
-          />
-        </Row>
-      )}
-      {shown.has('entity_type') && (
-        <Row>
-          <FormTextField<Values>
-            label={L('entity_type', label('entity_type'))}
-            name='entity_type'
-            placeholder='Enter entity type'
-            required={isRequired('entity_type')}
-            showError={false}
-          />
-        </Row>
-      )}
-      {shown.has('website_url') && (
-        <Row>
-          <FormTextField<Values>
-            label={L('website_url', 'Website')}
-            name='url'
-            placeholder='www.website.com'
-            required={isRequired('website_url')}
-            showError={false}
-          />
-        </Row>
-      )}
-      {shown.has('email') && (
-        <ArrayField<Values, 'email_addresses'> name='email_addresses'>
-          {({ fields, append, remove }) => (
-            <Row>
-              {fields.map((field, i) => (
-                <ArrayFieldItem
-                  addButtonText='Add additional email address'
-                  canDelete={fields.length > 1}
-                  deleteAriaLabel='Delete email address'
-                  isLast={fields.length - 1 === i}
-                  key={field.id}
-                  onAdd={() => {
-                    append({ id: uuid(), email: '' })
-                    revalidate()
-                  }}
-                  onDelete={() => {
-                    remove(i)
-                    revalidate()
-                  }}
-                >
-                  <FormTextField<Values>
-                    label={i === 0 ? L('email', 'Email address') : ''}
-                    name={`email_addresses.${i}.email`}
-                    placeholder='Enter email'
-                    required={i === 0 && isRequired('email')}
-                    showError={false}
+                    <TextInputField<Values>
+                      label={i === 0 ? L('person_dob', 'Date of birth') : undefined}
+                      name={`people_names.${i}.dob`}
+                      placeholder='MM/DD/YYYY'
+                      mask='date'
+                    />
+                  </div>
+                ) : (
+                  <TextInputField<Values>
+                    label={i === 0 ? L('person', 'Associated person') : undefined}
+                    name={`people_names.${i}.personName`}
+                    placeholder='Enter first and last name'
                   />
-                </ArrayFieldItem>
-              ))}
-            </Row>
-          )}
-        </ArrayField>
+                )}
+              </ArrayFieldItem>
+            ))}
+          </Row>
+        )}
+      </ArrayField>
+    ],
+    [
+      'person_ssn',
+      <Row>
+        <TextInputField<Values>
+          label={L('person_ssn', label('person_ssn'))}
+          name='person_ssn'
+          placeholder='XXX-XX-XXXX'
+          required={isRequired('person_ssn')}
+        />
+      </Row>
+    ],
+    [
+      'formation_state',
+      <Row>
+        <SelectInputField<Values>
+          label={L('formation_state', 'Formation state')}
+          name='formation_state'
+          options={STATE_OPTIONS}
+          placeholder='Select a formation state'
+          required={isRequired('formation_state')}
+        />
+      </Row>
+    ],
+    [
+      'entity_type',
+      <Row>
+        <TextInputField<Values>
+          label={L('entity_type', label('entity_type'))}
+          name='entity_type'
+          placeholder='Enter entity type'
+          required={isRequired('entity_type')}
+        />
+      </Row>
+    ],
+    [
+      'website_url',
+      <Row>
+        <TextInputField<Values>
+          label={L('website_url', 'Website')}
+          name='url'
+          placeholder='www.website.com'
+          required={isRequired('website_url')}
+        />
+      </Row>
+    ],
+    [
+      'email',
+      <ArrayField<Values, 'email_addresses'> name='email_addresses'>
+        {({ fields, append, remove }) => (
+          <Row>
+            {fields.map((field, i) => (
+              <ArrayFieldItem
+                addButtonText='Add additional email address'
+                canDelete={fields.length > 1}
+                deleteAriaLabel='Delete email address'
+                isLast={fields.length - 1 === i}
+                key={field.id}
+                onAdd={() => {
+                  append({ id: uuid(), email: '' })
+                  revalidate()
+                }}
+                onDelete={() => {
+                  remove(i)
+                  revalidate()
+                }}
+              >
+                <TextInputField<Values>
+                  label={i === 0 ? L('email', 'Email address') : undefined}
+                  name={`email_addresses.${i}.email`}
+                  placeholder='Enter email'
+                  required={i === 0 && isRequired('email')}
+                />
+              </ArrayFieldItem>
+            ))}
+          </Row>
+        )}
+      </ArrayField>
+    ],
+    [
+      'phone',
+      <ArrayField<Values, 'phone_numbers'> name='phone_numbers'>
+        {({ fields, append, remove }) => (
+          <Row>
+            {fields.map((field, i) => (
+              <ArrayFieldItem
+                addButtonText='Add additional phone number'
+                canDelete={fields.length > 1}
+                deleteAriaLabel='Delete phone number'
+                isLast={fields.length - 1 === i}
+                key={field.id}
+                onAdd={() => {
+                  append({ id: uuid(), phone_number: '' })
+                  revalidate()
+                }}
+                onDelete={() => {
+                  remove(i)
+                  revalidate()
+                }}
+              >
+                <TextInputField<Values>
+                  label={i === 0 ? L('phone', 'Phone number') : undefined}
+                  name={`phone_numbers.${i}.phone_number`}
+                  placeholder='(XXX) XXX-XXXX'
+                  required={i === 0 && isRequired('phone')}
+                  mask='phone'
+                />
+              </ArrayFieldItem>
+            ))}
+          </Row>
+        )}
+      </ArrayField>
+    ]
+  ]
+  const visible = fields.filter(([key]) => shown.has(key))
+  const needed = visible.filter(([key]) => isRequired(key))
+  const optional = visible.filter(([key]) => !isRequired(key))
+
+  // The fields themselves stay mounted while folded, so what is in them is kept.
+  const fieldsOf = (group: [InputKey, ReactNode][]) =>
+    group.map(([key, node]) => <Fragment key={key}>{node}</Fragment>)
+
+  return (
+    // What the assessments need, then what they can use, each under its heading.
+    <div className='flex flex-col gap-10'>
+      {needed.length > 0 && (
+        <section aria-label='Required fields' className='flex flex-col gap-5'>
+          {/* Counted, as Available assessments is. */}
+          <SectionTitle className='flex items-center gap-2'>
+            Required fields
+            <PageHeadingCount>{needed.length}</PageHeadingCount>
+          </SectionTitle>
+          {fieldsOf(needed)}
+        </section>
       )}
-      {shown.has('phone') && (
-        <ArrayField<Values, 'phone_numbers'> name='phone_numbers'>
-          {({ fields, append, remove }) => (
-            <Row>
-              {fields.map((field, i) => (
-                <ArrayFieldItem
-                  addButtonText='Add additional phone number'
-                  canDelete={fields.length > 1}
-                  deleteAriaLabel='Delete phone number'
-                  isLast={fields.length - 1 === i}
-                  key={field.id}
-                  onAdd={() => {
-                    append({ id: uuid(), phone_number: '' })
-                    revalidate()
-                  }}
-                  onDelete={() => {
-                    remove(i)
-                    revalidate()
-                  }}
-                >
-                  <FormTextField<Values>
-                    label={i === 0 ? L('phone', 'Phone number') : ''}
-                    name={`phone_numbers.${i}.phone_number`}
-                    placeholder='(XXX) XXX-XXXX'
-                    required={i === 0 && isRequired('phone')}
-                    showError={false}
-                    type='phone'
-                  />
-                </ArrayFieldItem>
-              ))}
-            </Row>
-          )}
-        </ArrayField>
+      {optional.length > 0 && (
+        <section aria-label='Optional fields' className='flex flex-col gap-5'>
+          <SectionTitle className='m-0'>
+            <button
+              aria-controls={optionalId}
+              aria-expanded={optionalOpen}
+              className='flex w-full items-center gap-2 text-left'
+              onClick={() => setOptionalOpen((o) => !o)}
+              type='button'
+            >
+              Optional fields
+              <PageHeadingCount>{optional.length}</PageHeadingCount>
+              <ChevronDown
+                aria-hidden='true'
+                className={cn(
+                  // At the row's far right, under the fields' right edge.
+                  'ml-auto text-text-secondary transition-transform duration-[var(--core-duration)] motion-reduce:transition-none',
+                  optionalOpen && 'rotate-180'
+                )}
+                size={18}
+              />
+            </button>
+          </SectionTitle>
+          <div className={cn('flex flex-col gap-5', !optionalOpen && 'hidden')} id={optionalId}>
+            {fieldsOf(optional)}
+          </div>
+        </section>
       )}
-    </>
+    </div>
   )
 }

@@ -2,12 +2,14 @@ import {
   cloneElement,
   Fragment,
   isValidElement,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactElement,
   type ReactNode
 } from 'react'
-import { Check, ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
 
 import {
   ActionButton,
@@ -729,6 +731,64 @@ const WebsiteSummary = ({
     </div>
   ) : (
     <ResultTable columns={['Platform', 'Status']} rows={rows} noneTitle={noneTitle} />
+  )
+}
+
+/**
+ * Narrowed to some of the cards: the way back to the whole report, as a dark
+ * tab hanging over the first card — in the space above it, so the card keeps
+ * its place, level with the panel beside it. Scrolled away, it pins under the report's
+ * sticky head and turns its rounding over. ~/Projects/prototype's `BackTab`
+ * (`report/components/Report/GroupedReport.tsx`), its offset read from the
+ * head height RecordPage publishes rather than a sticky context. It sits at the
+ * top of the report's column, which runs the page's full height, so it stays
+ * pinned however far the page scrolls.
+ */
+export const BackTab = ({ onClick }: { onClick: () => void }) => {
+  const sentinel = useRef<HTMLSpanElement>(null)
+  const tab = useRef<HTMLButtonElement>(null)
+  const [stuck, setStuck] = useState(false)
+  useEffect(() => {
+    // Pinned once the tab has left its place, which the sentinel keeps.
+    // Capture: the page scrolls in a panel from `wide`, not the window.
+    const check = () => {
+      const from = sentinel.current?.getBoundingClientRect()
+      const at = tab.current?.getBoundingClientRect()
+      if (from && at) setStuck(at.top - from.bottom > 1)
+    }
+    check()
+    window.addEventListener('scroll', check, true)
+    window.addEventListener('resize', check)
+    return () => {
+      window.removeEventListener('scroll', check, true)
+      window.removeEventListener('resize', check)
+    }
+  }, [])
+  return (
+    <>
+      <span ref={sentinel} aria-hidden="true" className="block h-0" />
+      <button
+        ref={tab}
+        type="button"
+        onClick={() => {
+          // Back to the top of the report as it opens out again. Found before
+          // the tab unmounts: the page may scroll in a panel.
+          let scroller = tab.current?.parentElement ?? null
+          while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
+          onClick()
+          requestAnimationFrame(() => (scroller ?? window).scrollTo({ top: 0, behavior: 'smooth' }))
+        }}
+        className={cn(
+          'sticky top-[var(--report-head-h,0px)] z-[3] -mt-7 mx-3 flex h-7 w-[calc(100%-theme(spacing.6))] items-center gap-1.5 px-3 text-caption font-medium wide:top-[calc(var(--report-head-h,0px)-54px)]',
+          // The inverse surface, so the way back reads apart from the cards.
+          'bg-[var(--core-color-surface-inverse)] text-[var(--core-color-text-inverse)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          stuck ? 'rounded-b-card shadow-elevation-control' : 'rounded-t-card'
+        )}
+      >
+        <ArrowLeft aria-hidden="true" size={12} strokeWidth={2} />
+        Back to full report
+      </button>
+    </>
   )
 }
 

@@ -2,7 +2,7 @@ import summaryStore from '../../analysis/assessments.json'
 import { ORDER_CATALOG } from './customOrders/catalog'
 import { deriveResults, type BusinessRecord, type Derived } from './deriveResults'
 import { heldReportFor } from './heldReports'
-import { identityScore, polarityCounts, type IdentityScore } from './identityScore'
+import { BANDS, identityScore, polarityCounts, type IdentityScore } from './identityScore'
 import { outcomeOf } from './insightOutcome'
 import { orderedFor, stillOrdering } from './orderedWorkflows'
 import { assessmentOf } from './records'
@@ -97,6 +97,30 @@ const tallyOf = (record: BusinessRecord, results: Derived[]) => {
   }
 }
 
+/** What a failed outcome and one needing review cost an assessment scored on
+ *  its outcomes alone: one open finding in a one-insight assessment lands it in
+ *  Needs review, two failures in Reject. */
+const FAIL_COST = 30
+const REVIEW_COST = 15
+
+/**
+ * An assessment scored on what it saw, and nothing else.
+ *
+ * The identity score reads polarity, and some checks have none — a lien on
+ * record is neither for nor against the identity, so a Liens assessment gave
+ * it nothing to count and came back unscored beside a bar that read red. An
+ * assessment is a question asked of its own insights, so where polarity has
+ * nothing to say it is answered from their outcomes: 100, less for each
+ * failure and each one needing review, banded as every score is.
+ */
+const outcomeScore = (tally: AssessmentRead['tally']): IdentityScore | null => {
+  const total = tally.good + tally.review + tally.bad + tally.neutral
+  if (total === 0) return null
+  const value = Math.max(0, Math.min(100, 100 - FAIL_COST * tally.bad - REVIEW_COST * tally.review))
+  const band = [...BANDS].reverse().find((b) => value >= b.from) ?? BANDS[0]
+  return { value, weighted: value, band, components: [], ceilings: [], coverage: 100, findings: tally.bad + tally.review }
+}
+
 export const readAssessment = (record: BusinessRecord, a: Assessment, live = deriveResults(record)): AssessmentRead => {
   if (a.full) {
     const held = heldReportFor(record.name)
@@ -108,8 +132,13 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
       score: listed?.score ?? null,
       counts: listed?.counts ?? { positive: 0, negative: 0, neutral: 0 },
       tally: tallyOf(snap?.record ?? record, snap?.results ?? live),
-      summary: held?.report?.headline
-        ? { text: held.report.headline, at: held.at ?? '', body: [{ text: held.report.headline }] }
+      // The report's summary of the business; its headline — the call — where it has none.
+      summary: (held?.report?.summary ?? held?.report?.headline)
+        ? {
+            text: (held?.report?.summary ?? held?.report?.headline)!,
+            at: held?.at ?? '',
+            body: [{ text: (held?.report?.summary ?? held?.report?.headline)! }]
+          }
         : undefined,
       ordering: false
     }
@@ -117,11 +146,16 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
   const shown = resultsIn(a, live).filter((r) => !r.notReported)
   const ids = shown.map((r) => r.insightId)
   const kept = SUMMARIES[record.id]?.[a.id]
+  const tally = tallyOf(record, shown)
   return {
     assessment: a,
-    score: ids.length ? identityScore(record, live, [{ id: a.id, name: a.name, insightIds: ids }], scopeOf(a)) : null,
+    // The identity score where it can read the insights; where it can't, the
+    // assessment's own outcomes — never unscored when it saw something.
+    score:
+      (ids.length ? identityScore(record, live, [{ id: a.id, name: a.name, insightIds: ids }], scopeOf(a)) : null) ??
+      outcomeScore(tally),
     counts: polarityCounts(record, live, ids),
-    tally: tallyOf(record, shown),
+    tally,
     summary: kept ? { text: kept.section.body[0]?.text ?? '', at: kept.at, body: kept.section.body } : undefined,
     ordering: a.orderedAt ? stillOrdering({ orderedAt: a.orderedAt, completedAt: a.completedAt }) : false
   }

@@ -1,11 +1,13 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import { Building2, CircleCheck, Flag, Play, Sparkles } from 'lucide-react'
 
-import { ActionButton, DateTime, PageHeadingCount, Surface, Text } from '@/core'
+import { ActionLink, DateTime, PageHeadingCount, Surface, Text } from '@/core'
 import { cn } from '@/utils/twUtils'
 
+import { businessHref } from './BusinessFrame'
 import { SectionTitle } from './SectionTitle'
+import { CURRENT_USER } from '../../lib/user'
 
 import type { AssessmentRead } from '../../lib/assessments'
 import type { BusinessRecord } from '../../lib/deriveResults'
@@ -18,7 +20,13 @@ const STATUS_LABEL: Record<ReviewStatus, string> = {
 }
 
 type Kind = 'created' | 'run' | 'completed' | 'summary' | 'status'
-type Event = { at: string; text: string; kind: Kind; by?: string }
+/** Where it came from — the dashboard or the API — and who. */
+type Event = { at: string; text: string; kind: Kind; by: string; via: 'Dashboard' | 'API' }
+
+const MIDDESK = 'Middesk'
+// Everything here was done in the dashboard: the orders went through its
+// order page, and nothing reaches this prototype through the API yet.
+const DASHBOARD = 'Dashboard' as const
 
 /** What kind of thing happened, at a glance. */
 const ICON: Record<Kind, ReactNode> = {
@@ -38,11 +46,13 @@ const ICON: Record<Kind, ReactNode> = {
 export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Event[] => {
   const review = useReview(record.id)
   const events: Event[] = [
-    ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const }] : []),
+    // Who did it: the reader for what a person does — creating, running,
+    // changing the status — and Middesk for what follows on its own.
+    ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
     ...reads.flatMap(({ assessment: a, summary }) => [
-      ...(a.orderedAt ? [{ at: a.orderedAt, text: `${a.name} assessment run`, kind: 'run' as const }] : []),
-      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} assessment completed`, kind: 'completed' as const }] : []),
-      ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, kind: 'summary' as const }] : [])
+      ...(a.orderedAt ? [{ at: a.orderedAt, text: `${a.name} assessment run`, kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
+      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} assessment completed`, kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
+      ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, kind: 'summary' as const, by: MIDDESK, via: DASHBOARD }] : [])
     ]),
     ...(review.change
       ? [
@@ -50,7 +60,8 @@ export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Ev
             at: review.change.at,
             text: `Status changed from ${STATUS_LABEL[review.change.from]} to ${STATUS_LABEL[review.change.to]}`,
             kind: 'status' as const,
-            by: review.change.by
+            by: review.change.by,
+            via: DASHBOARD
           }
         ]
       : [])
@@ -82,9 +93,16 @@ const EventList = ({
           // in a circle on a thin line that runs down to the next. In a card,
           // ruled rows as before.
           flush
-            ? 'relative pb-4 last:pb-0 before:absolute before:bottom-0 before:left-[11px] before:top-6 before:w-px before:bg-[var(--core-color-border-divider)] last:before:hidden'
+            ? cn(
+                // The line runs from this icon's centre to the next one's — each
+                // row's two lines are 40px, the icon centred on them — and
+                // passes behind the icons.
+                'relative last:pb-0 before:absolute before:-bottom-5 before:left-[11px] before:top-5 before:w-px before:bg-[var(--core-color-border-divider)] last:before:hidden',
+                // The full page breathes; the overview's column stays compact.
+                timeAtEnd ? 'pb-6' : 'pb-4'
+              )
             : 'px-4 py-2.5 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[var(--core-color-border-divider)]',
-          stacked ? 'flex items-start gap-3 text-sm' : 'flex items-baseline justify-between gap-4'
+          stacked ? cn('flex gap-3 text-sm', flush ? 'items-center' : 'items-start') : 'flex items-baseline justify-between gap-4'
         )}
       >
         {stacked ? (
@@ -93,7 +111,7 @@ const EventList = ({
               className={cn(
                 'flex shrink-0 text-text-secondary',
                 flush
-                  ? 'size-6 items-center justify-center rounded-full border border-border bg-card'
+                  ? 'relative z-[1] size-6 items-center justify-center rounded-full border border-border bg-card'
                   : 'mt-0.5'
               )}
             >
@@ -102,25 +120,35 @@ const EventList = ({
             <span
               className={cn(
                 'flex min-w-0 flex-1',
-                timeAtEnd ? 'items-baseline justify-between gap-4' : 'flex-col',
-                flush && 'pt-0.5'
+                timeAtEnd ? 'items-baseline justify-between gap-4' : 'flex-col'
               )}
             >
-              <span className="min-w-0">
-                {e.text}
-                {e.by && <span className="text-text-secondary"> · {e.by}</span>}
+              {/* What happened, and under it who did it. */}
+              <span className="flex min-w-0 flex-col">
+                <span className="font-semibold">{e.text}</span>
+                <Text size="sm" tone="secondary">
+                  {e.via} · {e.by}
+                  {/* In the narrow column the time rides with the name. */}
+                  {!timeAtEnd && (
+                    <>
+                      {' · '}
+                      <DateTime relative>{e.at}</DateTime>
+                    </>
+                  )}
+                </Text>
               </span>
-              {/* The cards' "Generated …" line: small, secondary. */}
-              <Text size="sm" tone="secondary" className={cn(timeAtEnd && 'shrink-0 whitespace-nowrap')}>
-                <DateTime relative>{e.at}</DateTime>
-              </Text>
+              {timeAtEnd && (
+                <Text size="sm" tone="secondary" className="shrink-0 whitespace-nowrap">
+                  <DateTime relative>{e.at}</DateTime>
+                </Text>
+              )}
             </span>
           </>
         ) : (
           <>
             <span className="min-w-0">
               {e.text}
-              {e.by && <span className="text-text-secondary"> · {e.by}</span>}
+              <span className="text-text-secondary"> · {e.via} · {e.by}</span>
             </span>
             <DateTime className="shrink-0 whitespace-nowrap text-text-secondary" relative>
               {e.at}
@@ -144,32 +172,39 @@ export const ActivityTab = ({ record, reads }: { record: BusinessRecord; reads: 
 }
 
 const FIRST = 3
-const PAGE = 20
 
-/** The newest few, in the overview's right column; more twenty at a time. */
+/** The newest few, in the overview's right column; all of them on the Activity page. */
 export const RecentActivity = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
   const events = useActivity(record, reads)
-  const [shown, setShown] = useState(FIRST)
-  const more = Math.min(PAGE, events.length - shown)
   return (
-    <section aria-label="Recent activity" className="flex flex-col gap-3">
-      <SectionTitle className="flex items-center gap-2">
-        Recent activity
-        {/* Every event, as Assessments counts its cards. */}
-        <PageHeadingCount>{events.length}</PageHeadingCount>
-      </SectionTitle>
+    <section aria-label="Recent activity" className="flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-2">
+        <SectionTitle className="flex items-center gap-2">
+          Recent activity
+          {/* Every event, as Assessments counts its cards. */}
+          <PageHeadingCount>{events.length}</PageHeadingCount>
+        </SectionTitle>
+        {/* The rest is the business's Activity page, from the heading's end. */}
+        {events.length > FIRST && (
+          // A secondary button filled with the page's own canvas rather than
+          // white — its stroke kept — so it sits back beside the heading.
+          <ActionLink
+            className="!bg-surface-canvas hover:!bg-[var(--core-color-state-hover-bg)]"
+            size="compact"
+            to={businessHref(record.id, 'activity')}
+            variant="secondary"
+          >
+            Show all
+          </ActionLink>
+        )}
+      </div>
       {/* No card: a plain list under its title, ruled apart. */}
       <div>
         {events.length === 0 ? (
           <Text tone="secondary">No activity yet.</Text>
         ) : (
           <>
-            <EventList events={events.slice(0, shown)} stacked flush />
-            {more > 0 && (
-              <ActionButton className="mt-3" onClick={() => setShown((n) => n + PAGE)} size="compact" variant="secondary">
-                Show {more} more
-              </ActionButton>
-            )}
+            <EventList events={events.slice(0, FIRST)} stacked flush />
           </>
         )}
       </div>

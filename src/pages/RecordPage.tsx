@@ -21,10 +21,11 @@ import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 
 import { statusForBand, useReview } from '../lib/review'
+import { heldReportFor } from '../lib/heldReports'
 import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
-import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
-import { ScoreCard } from '../components/Report/ReportHero'
+import { BackTab, GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
+import { AssessmentPanel, type PanelGroup } from '../components/Report/AssessmentPanel'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
 import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
 import { outcomeOf } from '../lib/insightOutcome'
@@ -45,7 +46,6 @@ import { useSummaryRuns } from '../lib/useSummaryRuns'
 import { BusinessOverview } from './BusinessOverview'
 import { IdentityHeader } from '../components/Assessments/IdentityHeader'
 import { assessmentTransitionName } from '../components/Assessments/AssessmentCard'
-import { DeterminationChip } from '../components/DeterminationChip'
 import { byId } from '../lib/records'
 import { workflowByAssessmentId } from '../lib/workflows'
 import { GROUPS, makeGroupFor } from '../lib/groups'
@@ -752,11 +752,41 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
       .map(({ r, card, outcome }) => ({ id: r.insightId, statement: r.statement, outcome, group: cardById(card)?.label ?? card }))
   }, [shownResults, groupFor, record])
+  /** The same insights for the panel: one group per card, worst first. */
+  const panelGroups = useMemo<PanelGroup[]>(() => {
+    const INTENT = { fail: 'failure', review: 'warning', pass: 'success', neutral: 'unknown' } as const
+    const byCard = new Map<string, PanelGroup>()
+    const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
+    shownResults
+      .filter((r) => !r.notReported)
+      .map((r) => ({ r, card: cardFor(r.insightId, groupFor), outcome: outcomeOf(r, record) }))
+      .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
+      .forEach(({ r, card, outcome }) => {
+        const g = byCard.get(card) ?? { cardId: card, label: cardById(card)?.label ?? card, insights: [] }
+        g.insights.push({ id: r.insightId, intent: INTENT[outcome], verdict: r.value || r.statement, statement: r.statement })
+        byCard.set(card, g)
+      })
+    // Worst rows first, as the source orders its panel; the report's order within a kind.
+    const worst = (g: PanelGroup) => ['failure', 'warning', 'success', 'unknown'].indexOf(g.insights[0].intent)
+    return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
+  }, [shownResults, groupFor, record])
+  /** A row of the panel: the report narrowed to its card; the same row again widens it. */
+  const selectCard = (g: PanelGroup) => {
+    // One set of insights, one card: the report is already just that card, so
+    // there is nothing to narrow to — and no way back to show.
+    if (panelGroups.length <= 1) return landOn(g.cardId)
+    const id = `card-${g.cardId}`
+    if (focus?.id === id) return setFocus(null)
+    setFocus({ id, title: g.label, cards: [g.cardId] })
+    panelRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
   const briefShown = !brief
     ? undefined
     : shownArea
       ? { cards: brief.cards.filter((c) => areaOfBriefCard(c) === shownArea), title: REVIEW_AREAS.find((a) => a.id === shownArea)?.label }
-      : focus && !focus.id.startsWith('area-')
+      : // A card chosen in the panel has no brief block: the back tab is the way back.
+        focus && !focus.id.startsWith('area-') && !focus.id.startsWith('card-')
         ? { cards: brief.cards.filter((c) => c.id === focus.id), title: focusName }
         : // The whole report: no assessment card. The full account is the
           // Assistant's ("Generate full assessment"), not the page's.
@@ -1009,7 +1039,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                     <div className="flex flex-col gap-1 px-4 py-4">
                       <h2 className="m-0 text-base font-semibold">{scope.name}</h2>
                       <p className="m-0 text-[var(--core-color-text-secondary)]">
-                        {scopedRead?.ordering ? 'Its orders are still running.' : 'Nothing to read yet.'}
+                        {scopedRead?.ordering ? 'Results are still coming in.' : 'No insights came back for this assessment.'}
                       </p>
                     </div>
                   </div>
@@ -1017,23 +1047,24 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
               )}
               {hero && assessment && (
                 <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
-                  <ScoreCard
-                    assessment={assessment}
-                    title={scope.name}
-                    transitionName={assessmentTransitionName(scope.id)}
+                  <AssessmentPanel
+                    groups={panelGroups}
+                    onSelectCard={selectCard}
+                    regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
+                    score={assessment.score.value}
+                    selectedCard={focus?.id.startsWith('card-') ? focus.id.slice(5) : undefined}
                     summary={
                       scoped
                         ? (scopedRead?.summary ?? null)
                         : brief?.lede
-                          ? { text: revision?.reason ?? brief.lede, at: analysis.selected?.at }
+                          ? // A fresh run's reason; else the report's summary of the business; else its headline.
+                            { text: revision?.reason ?? heldReportFor(selected.name)?.report?.summary ?? brief.lede }
                           : null
                     }
-                    regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
                     summaryGenerated={generated.has(selected.id)}
-                    insights={allInsights}
-                    overall={overallTally}
-                    status={<DeterminationChip band={assessment.score.band} />}
-                    onSelectInsight={(id) => landOn(cardFor(id, groupFor))}
+                    tally={overallTally}
+                    title={scope.name}
+                    transitionName={assessmentTransitionName(scope.id)}
                     onShowSummary={() => {
                       GENERATED.add(selected.id)
                       setGenerated(new Set(GENERATED))
@@ -1050,7 +1081,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
               {/* No gap on the column itself: the report's first child is its
                   zero-height sticky bar, and a gap there pushed the first card
                   16px below the score card's top. The brief spaces itself. */}
-              <div className="min-w-0 flex-1">
+              {/* Full height (self-stretch), so the back tab pinned at its top
+                  stays pinned for the whole scroll. */}
+              <div className="min-w-0 flex-1 self-stretch">
+              {/* Narrowed — to a card or a set of them — the way back, as the
+                  dark tab hanging over the first card. */}
+              {focus && <BackTab onClick={() => setFocus(null)} />}
               {/* Narrowed to an area, its assessment first, then the cards it was read from. */}
               {hero && brief && briefShown && (
                 <div className="mb-4">
@@ -1062,9 +1098,6 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                   prose={shownArea ? areaBrief(shownArea, record, summaries) : undefined}
                   results={results}
                   record={record}
-                  // Narrowed to an area, the way back sits above its card, in
-                  // place of the filter bar.
-                  onShowFullReport={focus ? () => setFocus(null) : undefined}
                   // Nothing open in the area: it meets the policy, and says so.
                   satisfied={Boolean(shownArea) && (groups.find((g) => g.id === shownArea)?.steps.length ?? 0) === 0}
                   // The area's first open step: the Assistant walks on from it.
