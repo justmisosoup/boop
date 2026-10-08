@@ -2,11 +2,21 @@ import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { ArrowUpRight, Building2, FileText } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { ChatSourceChip, HoverCard, HoverCardContent, HoverCardTrigger, Text } from '@/core'
+import { ChatSourceChip, Text } from '@/core'
 
-import { currentDomesticRows, formationIdentityRows, maskTin, websiteStatesName, type AttributeRow } from '../lib/attributes'
+import {
+  currentDomesticRows,
+  formationIdentityRows,
+  maskTin,
+  websiteStatesName,
+  type AttributeRow
+} from '../lib/attributes'
 import { dbaRequirementNote, dbaRequirementOf } from '../lib/dbaRequirement'
-import { domesticFilingOf, formationCardFilingOf, linkedFormationNote } from '../lib/linkedFormation'
+import {
+  domesticFilingOf,
+  formationCardFilingOf,
+  linkedFormationNote
+} from '../lib/linkedFormation'
 import {
   convertedFormationNote,
   convertedFormationOf,
@@ -21,7 +31,7 @@ import {
 } from '../lib/registrationStatus'
 import { entityTypeShown } from '../lib/normalise'
 import { trueEntityType } from '../lib/deriveResults'
-import { dbasOf, nameStandingOf } from '../lib/businessNames'
+import { dbasOf, displayName, nameStandingOf } from '../lib/businessNames'
 import { priorNamesOf } from '../lib/nameHistory'
 import { formatDate } from '../lib/reportLabels'
 import { soleProprietorOf } from '../lib/soleProprietor'
@@ -88,7 +98,9 @@ const dedupe = (rows: AttributeRow[]) => {
   const seen = new Set<string>()
   return rows.filter((r) => {
     const key =
-      r.group === 'people' ? `people|${(r.value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')}` : `${r.label}|${r.value}`
+      r.group === 'people'
+        ? `people|${(r.value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')}`
+        : `${r.label}|${r.value}`
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -106,14 +118,23 @@ const submittedFoundNote = (record: BusinessRecord): string => {
     /^verified$/i.test(record.reviewTasks.find((t) => t.key === key)?.subLabel ?? '')
   const found = [
     // Only a website states a name: a match off a social profile is not one.
-    record.website?.url && verified('web_business_name_verification') ? 'the website shows the business name' : undefined,
+    record.website?.url && verified('web_business_name_verification')
+      ? 'the website shows the business name'
+      : undefined,
     verified('web_person_verification') ? 'the website names the submitted person' : undefined,
-    verified('web_address_verification') ? 'the website shows the submitted office address' : undefined,
-    verified('address_verification') ? 'a source of record lists the submitted office address' : undefined
+    verified('web_address_verification')
+      ? 'the website shows the submitted office address'
+      : undefined,
+    verified('address_verification')
+      ? 'a source of record lists the submitted office address'
+      : undefined
   ].filter((x): x is string => Boolean(x))
-  const joined = found.length > 1 ? `${found.slice(0, -1).join(', ')} and ${found[found.length - 1]}` : found[0]
+  const joined =
+    found.length > 1 ? `${found.slice(0, -1).join(', ')} and ${found[found.length - 1]}` : found[0]
   return `No state filing or city registration was found for the submitted details. ${
-    joined ? `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.` : 'None of them were matched elsewhere.'
+    joined
+      ? `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`
+      : 'None of them were matched elsewhere.'
   }`
 }
 
@@ -132,25 +153,55 @@ const formationNote = (record: BusinessRecord): string | undefined => {
   const f = formationFilingOf(record)
   if (!f) return formationStandingNote(record)
   const state = stateName(f.state)
-  const type = String(entityTypeShown(record, trueEntityType(record) ?? f.entityType ?? record.formation?.entityType) ?? '')
-  const noun = !type || /^unknown$/i.test(type) ? '' : /^[A-Z]{2}/.test(type) ? type : type.charAt(0).toLowerCase() + type.slice(1)
+  const type = String(
+    entityTypeShown(
+      record,
+      trueEntityType(record) ?? f.entityType ?? record.formation?.entityType
+    ) ?? ''
+  )
+  const noun =
+    !type || /^unknown$/i.test(type)
+      ? ''
+      : /^[A-Z]{2}/.test(type)
+        ? type
+        : type.charAt(0).toLowerCase() + type.slice(1)
   const iso = f.registrationDate ?? record.formation?.date
-  const when = iso ? formatDate(iso) : undefined
-  const formed = `Formed${noun ? ` as ${article(noun)} ${noun}` : ''} in ${state}${when ? ` on ${when}` : ''}.`
+  const when = iso ? longDate(iso) : undefined
+  // "The Mala Market, LLC was formed in Tennessee as a limited liability
+  // company (LLC) on September 14, 2017."
+  const formed = `${displayName(record.name)} was formed in ${state}${noun ? ` as ${article(noun)} ${noun}` : ''}${when ? ` on ${when}` : ''}.`
   const status = registrationState(f).silent
     ? `${state} does not publish filing status.`
     : formationStandingNote(record)
-        ?.replace(/^The formation filing is still active/, 'The filing is active')
-        .replace(/^The formation filing is no longer active/, 'The filing is no longer active')
-  return [formed, status, filedNameNote(record, f)].filter(Boolean).join(' ')
+        ?.replace(/^The formation filing is still active/, 'Its filing is active')
+        .replace(/^The formation filing is no longer active/, 'Its filing is no longer active')
+  const name = filedNameNote(record, f)
+  // One sentence where the filing is simply standing and the name agrees:
+  // "Its filing is active, and the filed name matches the one submitted."
+  if (
+    status &&
+    /^Its filing is (no longer )?active\.$/.test(status) &&
+    name === FILED_NAME_MATCHES
+  ) {
+    return `${formed} ${status.slice(0, -1)}, and the filed name matches the one submitted.`
+  }
+  return [formed, status, name].filter(Boolean).join(' ')
 }
+
+/** "September 14, 2017": a date in prose, not a cell. */
+const longDate = (iso: string) => {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : new Date(iso)
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+const FILED_NAME_MATCHES = 'The filed name matches the one submitted.'
 
 /** Whether the filing's name is the one the customer submitted. */
 const filedNameNote = (record: BusinessRecord, f: Registration) => {
   const submitted = (record.names ?? []).find((n) => n.submitted)?.name ?? record.name
   if (!f.name) return undefined
   return sameName(f.name, submitted)
-    ? 'The filed name matches the submitted business name.'
+    ? FILED_NAME_MATCHES
     : `It is filed as ${f.name}, not the submitted ${submitted}.`
 }
 
@@ -190,7 +241,10 @@ const dbaRuleCell = (record: BusinessRecord): AttributeCell | undefined => {
   if (!d) return undefined
   const r = d.rule
   const host = r.source ? new URL(r.source).hostname.replace(/^www\./, '') : undefined
-  const caption = [r.office && `${r.office.replace(/^the /, '').replace(/^\w/, (c) => c.toUpperCase())}`, r.statute]
+  const caption = [
+    r.office && `${r.office.replace(/^the /, '').replace(/^\w/, (c) => c.toUpperCase())}`,
+    r.statute
+  ]
     .filter(Boolean)
     .join(' · ')
   const s = stateName(d.state)
@@ -218,7 +272,14 @@ const dbaRuleCell = (record: BusinessRecord): AttributeCell | undefined => {
             title: r.statute ?? `${s} DBA rule`,
             url: r.source,
             annotation: 'Where the rule was confirmed',
-            badge: <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" />
+            badge: (
+              <ArrowUpRight
+                aria-label="Opens in a new tab"
+                size={12}
+                strokeWidth={2}
+                className="text-text-secondary"
+              />
+            )
           }
         ]}
       />
@@ -247,13 +308,19 @@ const dbaRuleCell = (record: BusinessRecord): AttributeCell | undefined => {
  * that some registrations have lapsed. Counted, not listed — the strip shows
  * the states. No-status states are not mentioned: silence is the registry's.
  */
-const registrationsNote = (record: BusinessRecord, formationState?: string | null): string | undefined => {
+const registrationsNote = (
+  record: BusinessRecord,
+  formationState?: string | null
+): string | undefined => {
   const s = otherStateStandings(record, formationState)
   if (s.total === 0) return undefined
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-  const active = s.active > 0 ? `Active in ${plural(s.active, 'other state', 'other states')}` : undefined
+  const active =
+    s.active > 0 ? `Active in ${plural(s.active, 'other state', 'other states')}` : undefined
   const inactive =
-    s.inactive > 0 ? `${plural(s.inactive, 'registration is', 'registrations are')} inactive` : undefined
+    s.inactive > 0
+      ? `${plural(s.inactive, 'registration is', 'registrations are')} inactive`
+      : undefined
   if (active && inactive) return `${active}; ${inactive}.`
   if (active) return `${active}.`
   return inactive ? `${inactive[0].toUpperCase()}${inactive.slice(1)}.` : undefined
@@ -279,7 +346,11 @@ export const formationCardTitle = (
       : rows.some((r) => (r.sources ?? []).includes(CITY))
         ? 'city'
         : 'submitted'
-  const strong = !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
+  const strong =
+    !linked &&
+    tier === 'formation' &&
+    formationConfirmed(record) &&
+    sameName(domestic?.name, record.name)
   const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
   // The formation, and where else it is registered — counted, not listed:
   // the strip under the title shows which states.
@@ -304,7 +375,9 @@ const tinNoteOf = (record: BusinessRecord): string | undefined => {
   const tinRec = record.tin as { tin?: string; issued?: boolean } | null
   if (!tinRec?.tin || tinRec.issued !== false) return undefined
   const formedDays = record.formation?.date
-    ? Math.floor((Date.now() - new Date(`${record.formation.date}T00:00:00`).getTime()) / 86_400_000)
+    ? Math.floor(
+        (Date.now() - new Date(`${record.formation.date}T00:00:00`).getTime()) / 86_400_000
+      )
     : undefined
   return formedDays !== undefined && formedDays <= 120
     ? `The IRS has not issued the TIN yet. The business was formed ${formedDays === 0 ? 'today' : `${formedDays} day${formedDays === 1 ? '' : 's'} ago`}, and new businesses often take a few weeks to appear in the IRS database.`
@@ -336,7 +409,11 @@ export const formationCardSummary = (
       : rows.some((r) => (r.sources ?? []).includes(CITY))
         ? 'city'
         : 'submitted'
-  const strong = !linked && tier === 'formation' && formationConfirmed(record) && sameName(domestic?.name, record.name)
+  const strong =
+    !linked &&
+    tier === 'formation' &&
+    formationConfirmed(record) &&
+    sameName(domestic?.name, record.name)
   // No state filing at all, and a city registration in the submitted person's own name.
   const sole = !linked && tier !== 'formation' ? soleProprietorOf(record) : undefined
   const tinNote = tinNoteOf(record)
@@ -344,8 +421,12 @@ export const formationCardSummary = (
     ? linkedFormationNote(record, linked, stateName)
     : strong
       ? converted
-        ? [convertedFormationNote(converted), filedNameNote(record, converted.now)].filter(Boolean).join(' ')
-        : [formationNote(record), registrationsNote(record, domestic?.state)].filter(Boolean).join(' ') || undefined
+        ? [convertedFormationNote(converted), filedNameNote(record, converted.now)]
+            .filter(Boolean)
+            .join(' ')
+        : [formationNote(record), registrationsNote(record, domestic?.state)]
+            .filter(Boolean)
+            .join(' ') || undefined
       : sole
         ? /* What was not found, what was, and what it suggests — generic: the
              grid under it names the owner, the DBA and the city. */
@@ -365,7 +446,11 @@ export const formationCardSummary = (
             ? classifiedSoleNote(record)
             : undefined
   // Beside the IRS note the filing reads as plain fact: "is active", not "is still active".
-  return [tinNote ? note?.replace(/ is still active/, ' is active') : note, tinNote].filter(Boolean).join(' ') || undefined
+  return (
+    [tinNote ? note?.replace(/ is still active/, ' is active') : note, tinNote]
+      .filter(Boolean)
+      .join(' ') || undefined
+  )
 }
 
 /** The tooltip the state filing tiles use, over a quiet icon button. */
@@ -414,7 +499,10 @@ const MARK = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink
  * DBA — San Francisco lists SPRIG TECHNOLOGIES INC. under Mixboard Inc.
  */
 const ListedAsDbaOf = ({ legalName, owner }: { legalName: string; owner: string }) => (
-  <HoverTip label={`${legalName} is listed as a DBA of ${owner}`} icon={<FileText aria-hidden="true" size={14} strokeWidth={2} />}>
+  <HoverTip
+    label={`${legalName} is listed as a DBA of ${owner}`}
+    icon={<FileText aria-hidden="true" size={14} strokeWidth={2} />}
+  >
     <span className="text-foreground">
       <span className="font-semibold">{legalName}</span> is listed as a DBA of
     </span>
@@ -456,7 +544,13 @@ const FORMATION_LABEL: Record<string, string> = {
 }
 
 /** The domestic filing's own fields, each cited to it. */
-const FROM_FILING = new Set(['Formation date', 'Formation state', 'Status', 'Sub status', 'Status details'])
+const FROM_FILING = new Set([
+  'Formation date',
+  'Formation state',
+  'Status',
+  'Sub status',
+  'Status details'
+])
 
 /**
  * The formation record, read once and dealt out by group for the grouped
@@ -485,13 +579,18 @@ export const formationParts = (
   // domestic filing it stands on now (Andytown's Delaware one).
   const converted = !linked ? convertedFormationOf(record) : undefined
   const domestic = formationCardFilingOf(record)
-  const domesticState = linked ? linked.filing.state : converted ? converted.now.state : record.formation?.state
+  const domesticState = linked
+    ? linked.filing.state
+    : converted
+      ? converted.now.state
+      : record.formation?.state
 
   // Which record there is, strongest first.
   const rows = allRows(record, results, groupFor)
   const cityRows = rows.filter((r) => (r.sources ?? []).includes(CITY))
 
-  const tier: Tier = record.formation || domestic ? 'formation' : cityRows.length > 0 ? 'city' : 'submitted'
+  const tier: Tier =
+    record.formation || domestic ? 'formation' : cityRows.length > 0 ? 'city' : 'submitted'
 
   const tierRows =
     tier === 'formation'
@@ -544,11 +643,11 @@ export const formationParts = (
           strip && CORROBORATED.has(r.label)
             ? withFormation(r)
             : CORROBORATED.has(r.label) && corroboratedBeyondCard(r)
-            ? {
-                ...r,
-                registrations: (r.registrations ?? []).filter((f) => !isCardFiling(f))
-              }
-            : { ...r, sources: [], source: '', registrations: undefined }
+              ? {
+                  ...r,
+                  registrations: (r.registrations ?? []).filter((f) => !isCardFiling(f))
+                }
+              : { ...r, sources: [], source: '', registrations: undefined }
         )
       : tierRows
 
@@ -562,7 +661,13 @@ export const formationParts = (
     ownFilings.length > 0
       ? shownRows.map((r) =>
           r.label === 'Legal name'
-            ? { ...r, value: ownFilings[0].name as string, registrations: ownFilings, sources: [], source: '' }
+            ? {
+                ...r,
+                value: ownFilings[0].name as string,
+                registrations: ownFilings,
+                sources: [],
+                source: ''
+              }
             : r
         )
       : shownRows
@@ -583,7 +688,8 @@ export const formationParts = (
      Registrations card, states where every filing stands. */
   const [lead, ...rest] = cells
   // Every name change on the business's filings, beside its legal name.
-  const priorNames = tier === 'formation' && lead?.label === 'Legal name' ? priorNamesOf(record) : []
+  const priorNames =
+    tier === 'formation' && lead?.label === 'Legal name' ? priorNamesOf(record) : []
   /* The names the business trades under, beside its legal name: Andytown LLC
      as Andytown, Andytown Coffee Roasters. The names only — who owns them is
      the legal name beside them. Cited by whatever states them — the city
@@ -594,35 +700,60 @@ export const formationParts = (
   // MIXBOARD INC., so Userleap Inc. is one of the names it trades under;
   // Sprig's reads its own name, so Sprig Technologies Inc is not.
   const dbas =
-    tier === 'formation' ? dbasOf(record, true).filter((d) => d.open !== false && !sameName(d.name, legalName)) : []
+    tier === 'formation'
+      ? dbasOf(record, true).filter((d) => d.open !== false && !sameName(d.name, legalName))
+      : []
   /* The legal name itself, where a register lists it as another business's
      DBA: San Francisco lists Sprig Technologies Inc under Mixboard Inc. It
      shows under DBA as the legal name spells it, with who lists it. */
   const listedFor = [
     ...new Set(
       (tier === 'formation' ? dbasOf(record, true) : [])
-        .filter((d) => d.open !== false && sameName(d.name, legalName) && d.owner && !sameName(d.owner, legalName))
+        .filter(
+          (d) =>
+            d.open !== false &&
+            sameName(d.name, legalName) &&
+            d.owner &&
+            !sameName(d.owner, legalName)
+        )
         .map((d) => d.owner as string)
     )
   ]
   /* Where a register lists the legal name as another business's DBA, the
      other business is the alternative name, with a tip saying which way
      round: San Francisco lists SPRIG TECHNOLOGIES INC. under Mixboard Inc. */
-  const dbaEntries: Array<{ name: string; dbaOf?: boolean }> = [
-    ...listedFor.map((owner) => ({ name: owner, dbaOf: true })),
-    ...dbas.map((d) => ({ name: d.name }))
+  // What kind of other name each is, by where it was found: a fictitious
+  // business name filing, a trademark, or otherwise a DBA.
+  const nameType = (source?: string) =>
+    /fictitious|assumed name|\bfbn\b/i.test(source ?? '')
+      ? 'FBN'
+      : /trademark|uspto/i.test(source ?? '')
+        ? 'Trademark'
+        : 'DBA'
+  const dbaEntries: Array<{ name: string; dbaOf?: boolean; type: string }> = [
+    ...listedFor.map((owner) => ({ name: owner, dbaOf: true, type: 'DBA' })),
+    ...dbas.map((d) => ({ name: d.name, type: nameType(d.source) }))
   ]
   // Each follows to the city registration in Sources — a chip with somewhere
   // to go is a chip that previews.
   // One chip per city; each registration is its own card in Sources, so the
   // chip follows to that city's open registration, else its newest.
   const cityCard = (chipId: string) => {
-    const regs = (record.cityRegistrations ?? []).filter((r) => `city-${r.city}|${r.state}` === chipId && r.refId)
-    const open = regs.find((r) => !r.locationEnd && !r.businessEnd) ?? [...regs].sort((a, b) => (b.locationStart ?? '').localeCompare(a.locationStart ?? ''))[0]
+    const regs = (record.cityRegistrations ?? []).filter(
+      (r) => `city-${r.city}|${r.state}` === chipId && r.refId
+    )
+    const open =
+      regs.find((r) => !r.locationEnd && !r.businessEnd) ??
+      [...regs].sort((a, b) => (b.locationStart ?? '').localeCompare(a.locationStart ?? ''))[0]
     if (open?.refId) return docCard(open.refId)
     const ref = (record.names ?? [])
       .flatMap((n) => n.sourceRefs ?? [])
-      .find((x) => x.type === 'city_registration' && `city-${(x.metadata as { city?: string }).city}|${(x.metadata as { state?: string }).state}` === chipId)
+      .find(
+        (x) =>
+          x.type === 'city_registration' &&
+          `city-${(x.metadata as { city?: string }).city}|${(x.metadata as { state?: string }).state}` ===
+            chipId
+      )
     return ref ? docCard(ref.id) : namedCard(CITY)
   }
   const cityChips = cityRegistrationSources(record).map((c) => ({
@@ -635,49 +766,57 @@ export const formationParts = (
       ...(listedFor.length > 0 ? [CITY] : [])
     ])
   ]
-  const dbaCell: AttributeCell | undefined =
+  // One row per kind — DBA, FBN, Trademark — each with its own names.
+  const dbaCells: AttributeCell[] =
     tier === 'formation' && lead?.label === 'Legal name'
-      ? {
-          key: 'dba',
-          label: 'Alternative names',
-          ...(dbaEntries.length > 0
-            ? {
-                // A city registration previews as a filing does: the city
-                // and its standing, the name and owner it is under.
-                badge: (
-                  <AttributeSources
-                    sources={dbaSources.filter((x) => x !== CITY || cityChips.length === 0)}
-                    extra={dbaSources.includes(CITY) ? cityChips : undefined}
-                    domesticState={domesticState}
-                    onJumpToSource={onJumpToSource}
-                  />
+      ? ['DBA', 'FBN', 'Trademark'].flatMap((type) => {
+          const entries = dbaEntries.filter((d) => d.type === type)
+          if (entries.length === 0) return []
+          return [
+            {
+              key: `dba-${type}`,
+              label: type,
+              // A city registration previews as a filing does: the city
+              // and its standing, the name and owner it is under.
+              badge: (
+                <AttributeSources
+                  sources={dbaSources.filter((x) => x !== CITY || cityChips.length === 0)}
+                  extra={dbaSources.includes(CITY) ? cityChips : undefined}
+                  domesticState={domesticState}
+                  onJumpToSource={onJumpToSource}
+                />
+              ),
+              values: entries.map((d) => ({
+                key: d.name,
+                value: (
+                  <>
+                    <span>{d.name}</span>
+                    {d.dbaOf && <ListedAsDbaOf legalName={legalName} owner={d.name} />}
+                  </>
                 )
-              }
-            : {}),
-          values:
-            dbaEntries.length > 0
-              ? dbaEntries.map((d) => ({
-                  key: d.name,
-                  value: (
-                    <>
-                      <span>{d.name}</span>
-                      {d.dbaOf && <ListedAsDbaOf legalName={legalName} owner={d.name} />}
-                    </>
-                  )
-                }))
-              : [{ value: <span className="text-text-secondary">None submitted</span> }]
-        }
-      : undefined
+              }))
+            }
+          ]
+        })
+      : []
   /* The TIN, when the record holds one: the number obscured to its last four,
      submitted by the customer and checked against the IRS — the check's own
      row is the Tax ID card's. */
-  const tinRec = record.tin as { tin?: string; verified?: boolean; mismatch?: boolean; issued?: boolean } | null
+  const tinRec = record.tin as {
+    tin?: string
+    verified?: boolean
+    mismatch?: boolean
+    issued?: boolean
+  } | null
   /* Whom the IRS matched the number to: the business (`verified_by:
      "business"`), a person, or — unverified — nobody. */
   const verifiedBy = (record.tin as { verified_by?: string | null } | null)?.verified_by ?? null
   const tinName = (record.tin as { name?: string } | null)?.name
   const tinMatch = verifiedBy
-    ? { title: tinName ?? undefined, note: /business/i.test(verifiedBy) ? 'Business name' : 'Individual' }
+    ? {
+        title: tinName ?? undefined,
+        note: /business/i.test(verifiedBy) ? 'Business name' : 'Individual'
+      }
     : { title: 'No match on the IRS record', note: 'IRS TIN record' }
   const tinCell: AttributeCell | undefined = tinRec?.tin
     ? {
@@ -700,7 +839,18 @@ export const formationParts = (
         ),
         values: [
           {
-            value: maskTin(tinRec.tin)
+            value: (
+              <span className="font-medium">
+                {verifiedBy && tinName ? tinName : maskTin(tinRec.tin)}
+              </span>
+            ),
+            note: (
+              <span className="text-caption text-text-secondary">
+                {verifiedBy && tinName
+                  ? `${maskTin(tinRec.tin)} · ${tinMatch.note}`
+                  : tinMatch.title}
+              </span>
+            )
           }
         ]
       }
@@ -731,44 +881,35 @@ export const formationParts = (
      California filing was USERLEAP INC. Where it dropped none, the cell says
      so, as the DBA cell does. */
   const monthYear = (iso: string) =>
-    new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    })
   const formerCell: AttributeCell | undefined =
-    tier === 'formation'
+    tier === 'formation' && priorNames.length > 0
       ? {
           key: 'former',
-          label: 'Former names',
-          // How many, and the names themselves on hover.
-          values: [
-            {
-              value:
-                priorNames.length > 0 ? (
-                  <HoverCard openDelay={200}>
-                    <HoverCardTrigger asChild>
-                      <button
-                        type="button"
-                        className="rounded-control text-left underline decoration-dotted underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {priorNames.length} former name{priorNames.length === 1 ? '' : 's'}
-                      </button>
-                    </HoverCardTrigger>
-                    <HoverCardContent side="top" className="w-72 p-3">
-                      <ul className="flex flex-col gap-1">
-                        {priorNames.map((n) => (
-                          <li key={n.eventId} className="flex flex-col">
-                            <span className="text-sm text-foreground">{n.name}</span>
-                            <span className="text-caption text-text-secondary">
-                              {[n.state, n.at && `until ${monthYear(n.at)}`].filter(Boolean).join(', ')}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </HoverCardContent>
-                  </HoverCard>
-                ) : (
-                  <span className="text-text-secondary">None on record</span>
-                )
+          label: 'Former name',
+          values: priorNames.map((n) => {
+            // The Secretary of State whose filing carried the name, cited
+            // under it as the formation fields cite theirs.
+            const filing =
+              record.registrations.find((r) => r.state === n.state && /^domestic$/i.test(r.jurisdiction ?? '')) ??
+              record.registrations.find((r) => r.state === n.state)
+            return {
+              key: n.eventId,
+              value: n.name,
+              qualifier: n.at ? `Changed ${monthYear(n.at)}` : undefined,
+              note: filing ? (
+                <AttributeSources
+                  sources={[]}
+                  registrations={[filing]}
+                  domesticState={domesticState}
+                  onJumpToSource={onJumpToSource}
+                />
+              ) : undefined
             }
-          ]
+          })
         }
       : undefined
   const formationCells: AttributeCell[] = [
@@ -782,13 +923,27 @@ export const formationParts = (
       const notProvided = c.values.some((v) => v.value === NOT_PROVIDED)
       const filingChip =
         tier === 'formation' && domestic && FROM_FILING.has(c.label ?? '') ? (
-          <AttributeSources sources={[]} registrations={[domestic]} domesticState={domesticState} onJumpToSource={onJumpToSource} />
+          <AttributeSources
+            sources={[]}
+            registrations={[domestic]}
+            domesticState={domesticState}
+            onJumpToSource={onJumpToSource}
+          />
         ) : undefined
       // The standing as the filing's own detail in the strip states it — the
       // same chips, the same words: "Not provided by state" for Delaware.
       const asChip =
         tier === 'formation' && domestic && (c.label === 'Status' || c.label === 'Sub status')
-          ? [{ value: c.label === 'Status' ? <StatusChip reg={domestic} /> : <SubStatusChip reg={domestic} /> }]
+          ? [
+              {
+                value:
+                  c.label === 'Status' ? (
+                    <StatusChip reg={domestic} />
+                  ) : (
+                    <SubStatusChip reg={domestic} />
+                  )
+              }
+            ]
           : undefined
       return {
         ...c,
@@ -800,16 +955,19 @@ export const formationParts = (
         ...(notProvided && !asChip
           ? {
               values: c.values.map((v) =>
-                v.value === NOT_PROVIDED ? { ...v, value: <span className="text-text-secondary">{NOT_PROVIDED}</span> } : v
+                v.value === NOT_PROVIDED
+                  ? { ...v, value: <span className="text-text-secondary">{NOT_PROVIDED}</span> }
+                  : v
               )
             }
           : {})
       }
-    }),
+    })
   ]
   // A sole proprietor with no filing: what the state of its office asks of a
   // trade name — under Other filings, not in the grid.
-  const dbaRule = tier === 'formation' && classifiedSole(record) ? dbaRuleCell(record) ?? undefined : undefined
+  const dbaRule =
+    tier === 'formation' && classifiedSole(record) ? (dbaRuleCell(record) ?? undefined) : undefined
 
   /* The Formation card's tag: its filing, cited once; or Submitted, verified
      where the website states the name. A city registration cites itself on
@@ -847,14 +1005,28 @@ export const formationParts = (
    * business as Firebird Yarns, San Francisco account 1089962.
    */
   const cityReg = sole
-    ? ((record.cityRegistrations ?? []).find((c) => sameName(c.owner, sole.person)) ?? record.cityRegistrations?.[0])
+    ? ((record.cityRegistrations ?? []).find((c) => sameName(c.owner, sole.person)) ??
+      record.cityRegistrations?.[0])
     : undefined
   // The registration's own reference, so its chip names the city; and the
   // site by its address.
-  const cityRefs = cityReg?.refId ? [{ id: cityReg.refId, type: 'city_registration', metadata: { city: cityReg.city, state: cityReg.state } }] : []
+  const cityRefs = cityReg?.refId
+    ? [
+        {
+          id: cityReg.refId,
+          type: 'city_registration',
+          metadata: { city: cityReg.city, state: cityReg.state }
+        }
+      ]
+    : []
   const siteNames = record.website?.url ? { Website: readableUrl(record.website.url) } : undefined
   const cityChip = (
-    <AttributeSources sources={[CITY]} refs={cityRefs} domesticState={record.formation?.state} onJumpToSource={onJumpToSource} />
+    <AttributeSources
+      sources={[CITY]}
+      refs={cityRefs}
+      domesticState={record.formation?.state}
+      onJumpToSource={onJumpToSource}
+    />
   )
   const longDate = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', {
@@ -863,7 +1035,9 @@ export const formationParts = (
       year: 'numeric'
     })
   const yearsSince = (iso: string) => {
-    const y = Math.floor((Date.now() - new Date(`${iso}T00:00:00`).getTime()) / (365.25 * 86_400_000))
+    const y = Math.floor(
+      (Date.now() - new Date(`${iso}T00:00:00`).getTime()) / (365.25 * 86_400_000)
+    )
     return `${y} year${y === 1 ? '' : 's'}`
   }
   if (sole && cityReg)
@@ -876,10 +1050,14 @@ export const formationParts = (
           // registration carries it.
           badge: (
             <AttributeSources
-              sources={websiteStatesName(record, cityReg.dba ?? record.name) ? [CITY, 'Website'] : [CITY]}
+              sources={
+                websiteStatesName(record, cityReg.dba ?? record.name) ? [CITY, 'Website'] : [CITY]
+              }
               refs={cityRefs}
               sourceNames={siteNames}
-              submitted={sameName(cityReg.dba ?? record.name, record.name) ? { verified: true } : undefined}
+              submitted={
+                sameName(cityReg.dba ?? record.name, record.name) ? { verified: true } : undefined
+              }
               domesticState={record.formation?.state}
               onJumpToSource={onJumpToSource}
             />
@@ -899,7 +1077,11 @@ export const formationParts = (
             <AttributeSources
               sources={[CITY]}
               refs={cityRefs}
-              submitted={record.people.some((p) => p.submitted && sameName(p.name, sole.person)) ? { verified: true } : undefined}
+              submitted={
+                record.people.some((p) => p.submitted && sameName(p.name, sole.person))
+                  ? { verified: true }
+                  : undefined
+              }
               domesticState={record.formation?.state}
               onJumpToSource={onJumpToSource}
             />
@@ -929,7 +1111,7 @@ export const formationParts = (
                 ]
               }
             ]
-          : []),
+          : [])
       ],
       tin: tinCell,
       city: record.cityRegistrations ?? [],
@@ -980,11 +1162,13 @@ export const formationParts = (
     }
 
   return {
-    names: [leadCell, ...(dbaCell ? [dbaCell] : []), ...(formerCell ? [formerCell] : [])],
+    names: [leadCell, ...dbaCells, ...(formerCell ? [formerCell] : [])],
     formation: formationCells,
     formationChip,
     tin: tinCell,
-    strip: strip ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName } : undefined,
+    strip: strip
+      ? { record: stripRecord, lead: converted?.now ?? domestic ?? undefined, legalName }
+      : undefined,
     // Its city registrations, under the state filings as Other filings.
     city: record.cityRegistrations ?? [],
     dbaRule

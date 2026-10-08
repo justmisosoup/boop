@@ -1,12 +1,13 @@
-import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
-import { ArrowUpRight, Building2, Check, Circle, CircleMinus, CirclePlus, TriangleAlert, User } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { ArrowUpRight, Building2, Circle, CircleMinus, CirclePlus, TriangleAlert, User } from 'lucide-react'
 
 import { ChatSourceChip, MetaChip, type ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
 import { dismissalOf, screenedOf, screeningOf, type MediaHit, type PepHit, type Screen, type ScreenedName, type WatchlistHit } from '../../lib/screening'
-import { Strip } from './Strip'
+import { ResultTable, type ResultRow } from './ResultTable'
+import { Explained } from './AddressTable'
 import { AttributeSources } from '../Provenance'
 import { cn } from '../../utils/twUtils'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
@@ -114,7 +115,7 @@ const text = (key: string, label: string, value: ReactNode | null | undefined, e
 const lines = (xs: string[] | undefined) => (xs && xs.length > 0 ? xs.join(', ') : undefined)
 
 /** A watchlist hit as the list carries it: the entry, with its list's chip. */
-export const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: WatchlistHit; ctx: BlockContext }) => {
+export const WatchlistBlock = ({ who, hit, ctx, bare = false }: { who: ScreenedName; hit: WatchlistHit; ctx: BlockContext; bare?: boolean }) => {
   const listLabel = [hit.list.agencyAbbr, hit.list.abbr].filter(Boolean).join(' · ') || hit.list.title || 'Watchlist'
   const sources: ChatSourceData[] = []
   if (hit.url) sources.push({ id: `${hit.id}-entry`, label: listLabel, domain: listLabel, title: hit.entityName ?? 'Listed entity', url: hit.url, annotation: hit.list.title ?? 'Entry', badge: out })
@@ -124,9 +125,11 @@ export const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: Watc
     sources.push({ id: `${hit.id}-agency`, label: hit.list.agencyAbbr ?? 'Agency', domain: hit.list.agencyAbbr ?? undefined, title: hit.list.agency ?? 'Agency', url: hit.agencyInfoUrl, annotation: hit.list.organization ?? 'Agency', badge: out })
   return (
     <div className="border-b border-[var(--core-color-border-divider)] last:border-b-0">
-      <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
-        {pct(hit.score, 100) && <span>Match score {pct(hit.score, 100)}</span>}
-      </NameRow>
+      {!bare && (
+        <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
+          {pct(hit.score, 100) && <span>Match score {pct(hit.score, 100)}</span>}
+        </NameRow>
+      )}
       <AttributeCells
         className="-mb-px"
         items={cells([
@@ -156,20 +159,20 @@ export const WatchlistBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: Watc
 }
 
 /** A PEP result as the provider carries it: who the listed person is. */
-export const PepBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: PepHit; ctx: BlockContext }) => {
+export const PepBlock = ({ who, hit, ctx, bare = false }: { who: ScreenedName; hit: PepHit; ctx: BlockContext; bare?: boolean }) => {
   const urls = hit.sourceUrls && hit.sourceUrls.length > 0 ? hit.sourceUrls : hit.url ? [hit.url] : []
   const type = hit.hitType === 'association' ? 'Association' : hit.hitType === 'direct_alias' ? 'Direct hit (alias)' : hit.hitType === 'direct' ? 'Direct hit' : undefined
   const sub = type
   return (
     <div className="border-b border-[var(--core-color-border-divider)] last:border-b-0">
-      <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
+      {!bare && <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
         {pct(hit.score, 1) && <span>Match score {pct(hit.score, 1)}</span>}
         {urls.length > 0 && (
           <ChatSourceChip
             sources={urls.map((u, i) => ({ id: `${hit.id}-src-${i}`, label: 'PEP', domain: 'PEP', title: hit.name ?? 'Listed person', url: u, annotation: host(u), badge: out }))}
           />
         )}
-      </NameRow>
+      </NameRow>}
       <AttributeCells
         className="-mb-px"
         items={cells([
@@ -213,19 +216,19 @@ const HEAD = 'px-4 pb-2 pt-3 text-caption leading-snug text-text-secondary'
 const CELL = 'px-4 py-3 text-sm leading-snug'
 
 /** An adverse-media result: the match, then its articles as a compact table. */
-export const MediaBlock = ({ who, hit, ctx }: { who: ScreenedName; hit: MediaHit; ctx: BlockContext }) => {
+export const MediaBlock = ({ who, hit, ctx, bare = false }: { who: ScreenedName; hit: MediaHit; ctx: BlockContext; bare?: boolean }) => {
   const [all, setAll] = useState(false)
   const items = all ? hit.items : hit.items.slice(0, SHOW)
   const more = hit.items.length - SHOW
   return (
     <div className="border-b border-[var(--core-color-border-divider)] last:border-b-0">
-      <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
+      {!bare && <NameRow who={who} record={ctx.record} onJumpToSource={ctx.onJumpToSource}>
         <span>
           {[typeof hit.matchScore === 'number' && `Match score ${pct(hit.matchScore, 1)}`, `${hit.items.length} ${hit.items.length === 1 ? 'article' : 'articles'}`]
             .filter(Boolean)
             .join(' · ')}
         </span>
-      </NameRow>
+      </NameRow>}
       <div role="table" className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
         <div role="row" className="contents">
           <span role="columnheader" className={HEAD}>Article</span>
@@ -298,28 +301,32 @@ type ScreenProps = { record: BusinessRecord; onJumpToSource?: (cardId: string) =
 const nameKey = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim()
 
 /**
- * One screen as chips, as the Addresses card draws its places: the results
- * still standing (Hits), the ones dismissed with the reason (`dismissalOf`:
- * excluded on the platform, or another name than the one screened), and the names
- * that came back with nothing (No results) — each only where there is one,
- * each opening to its results. Hits open from the start. The counts are the
- * card's only numbers: a separate tally of names screened read against them.
+ * One screen as a table, as the Addresses card draws its places: a row per
+ * result — what matched over the name screened, where the record holds that
+ * name under it, Hit and its match score beside — each opening to the result
+ * in full. The dismissed (`dismissalOf`: excluded on the platform, or another
+ * name than the one screened) follow the standing hits, or, with none
+ * standing, fold under "None found". The names that came back with nothing
+ * are said under the results.
  */
 const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: string | null; entityName?: string | null; name?: string | null; aliases?: string[] | null } }>({
   screen,
   hits,
   record,
+  onJumpToSource,
+  describe,
   block
 }: {
   screen: Screen
   hits: H[]
   record: BusinessRecord
+  onJumpToSource?: (cardId: string) => void
+  /** What matched, for the row: the list, the hit type, the articles; and its score. */
+  describe: (h: H) => { caption: string; score?: string }
   block: (h: H, i: number) => ReactNode
 }) => {
   const review = useMemo(() => screeningOf(record), [record])
   const reasonOf = (h: H) => dismissalOf(screen, h)
-  const counted = hits.filter((h) => !reasonOf(h))
-  const dismissed = hits.filter((h) => reasonOf(h))
   /* PEP runs on every person on the record, submitted or found on a filing,
      so those are the names it came back clean on. Listed from the record's
      people rather than the shared clean list: a submitted owner whose name is
@@ -332,90 +339,61 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
           .filter((n) => !hits.some((h) => nameKey(h.name) === nameKey(n)))
           .map((name) => ({ name, kind: 'person' as const, screens: [screen] }))
       : review.clean.filter((c) => c.screens.includes(screen))
-  const tiles = [
-    counted.length > 0 && {
-      key: 'hits',
-      chip: (
-        <MetaChip tone="danger" size="compact">
-          <TriangleAlert {...icon} />
-          Hits
-          <span className="tabular-nums">{counted.length}</span>
-        </MetaChip>
-      )
-    },
-    dismissed.length > 0 && {
-      key: 'dismissed',
-      chip: (
-        <MetaChip tone="neutral" size="compact">
-          <CircleMinus {...icon} />
-          Dismissed
-          <span className="tabular-nums text-text-secondary">{dismissed.length}</span>
-        </MetaChip>
-      )
-    },
-    clean.length > 0 && {
-      key: 'clean',
-      empty: true,
-      chip: (
-        <MetaChip tone="neutral" size="compact">
-          <Check {...icon} />
-          No results · Screened
-          <span className="tabular-nums text-text-secondary">{clean.length}</span>
-        </MetaChip>
-      )
-    }
-  ].filter((t): t is { key: string; chip: ReactElement; static?: boolean; empty?: boolean } => Boolean(t))
-  // The screen ran and returned nothing, with no person on the record to run it on:
-  // the same No results chip as every clean screen, opening to say why.
-  if (tiles.length === 0 && screen === 'pep')
-    tiles.push({
-      key: 'clean',
-      empty: true,
-      chip: (
-        <MetaChip tone="neutral" size="compact">
-          <Check {...icon} />
-          No results · Screened
-        </MetaChip>
-      )
-    })
-  if (tiles.length === 0) return null
-  return (
-    <div>
-      <Strip
-        label="Results"
-        tiles={tiles}
-        open={counted.length > 0 ? 'hits' : undefined}
-        detail={(key) =>
-          key === 'hits' ? (
-            <>{counted.map(block)}</>
-          ) : key === 'dismissed' ? (
-            <>
-              {dismissed.map((h, i) => (
-                <div key={`${h.hit.id}-${i}`}>
-                  {/* Why it was dismissed, over the result itself. */}
-                  <div className="border-b border-[var(--core-color-border-divider)] px-4 py-2 text-caption text-text-secondary">
-                    Dismissed: {reasonOf(h)}
-                  </div>
-                  {block(h, i)}
-                </div>
-              ))}
-            </>
-          ) : clean.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-text-secondary">No people on the record to screen.</div>
+  const rows: ResultRow[] = hits.map((h, i) => {
+    const reason = reasonOf(h)
+    const { caption, score } = describe(h)
+    return {
+      key: `${h.hit.id}-${i}`,
+      caption,
+      title: h.name,
+      sub: <Seen who={h} record={record} onJumpToSource={onJumpToSource} />,
+      chips: (
+        <>
+          {reason ? (
+            // Why it was dismissed, on the chip that says it was.
+            <Explained tip={`Dismissed: ${reason}`}>
+              <MetaChip tone="neutral" size="compact">
+                <CircleMinus {...icon} />
+                Dismissed
+              </MetaChip>
+            </Explained>
           ) : (
-            <AttributeCells
-              className="-mb-px"
-              columns={3}
-              items={clean.map((c, i) => ({
-                key: `${c.name}-${i}`,
-                label: c.kind === 'person' ? 'Person' : 'Business name',
-                values: [{ value: c.name }]
-              }))}
-            />
-          )
-        }
-      />
-    </div>
+            <MetaChip tone="danger" size="compact">
+              <TriangleAlert {...icon} />
+              Hit
+            </MetaChip>
+          )}
+          {score && (
+            <MetaChip tone="neutral" size="compact">
+              Match {score}
+            </MetaChip>
+          )}
+        </>
+      ),
+      cleared: Boolean(reason),
+      detail: block(h, i)
+    }
+  })
+  return (
+    <ResultTable
+      columns={['Results', 'Status']}
+      rows={rows}
+      // Every name screened — the clean and the matched alike — and what became
+      // of the matches: "Screened 24 names · 2 matches dismissed".
+      none={(() => {
+        const matched = new Set(hits.map((h) => nameKey(h.name))).size
+        const screened = clean.length + matched
+        const dismissed = hits.filter((h) => reasonOf(h)).length
+        if (screened === 0) return screen === 'pep' ? 'No people on the record to screen.' : undefined
+        return [
+          `Screened ${screened} ${screened === 1 ? 'name' : 'names'}`,
+          dismissed > 0 && `${dismissed} ${dismissed === 1 ? 'match' : 'matches'} dismissed`
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      })()}
+      clean={clean.map((c) => c.name)}
+    />
   )
 }
 
@@ -429,7 +407,12 @@ export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
       screen="watchlist"
       record={record}
       hits={s.watchlist.hits}
-      block={(h, i) => <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+      onJumpToSource={onJumpToSource}
+      describe={(h) => ({
+        caption: [h.hit.list.agencyAbbr, h.hit.list.abbr].filter(Boolean).join(' · ') || h.hit.list.title || 'Watchlist',
+        score: pct(h.hit.score, 100)
+      })}
+      block={(h, i) => <WatchlistBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} bare />}
     />
   )
 }
@@ -444,7 +427,17 @@ export const PepScreen = ({ record, onJumpToSource }: ScreenProps) => {
       screen="pep"
       record={record}
       hits={s.pep.hits}
-      block={(h, i) => <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+      onJumpToSource={onJumpToSource}
+      describe={(h) => ({
+        caption: [
+          h.hit.hitType === 'association' ? 'Association' : h.hit.hitType === 'direct_alias' ? 'Direct hit (alias)' : 'Direct hit',
+          h.hit.name && nameKey(h.hit.name) !== nameKey(h.name) ? `Listed as ${h.hit.name}` : null
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        score: pct(h.hit.score, 1)
+      })}
+      block={(h, i) => <PepBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} bare />}
     />
   )
 }
@@ -459,7 +452,12 @@ export const MediaScreen = ({ record, onJumpToSource }: ScreenProps) => {
       screen="media"
       record={record}
       hits={s.media.hits}
-      block={(h, i) => <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} />}
+      onJumpToSource={onJumpToSource}
+      describe={(h) => ({
+        caption: `${h.hit.items.length} ${h.hit.items.length === 1 ? 'article' : 'articles'}`,
+        score: typeof h.hit.matchScore === 'number' ? pct(h.hit.matchScore, 1) : undefined
+      })}
+      block={(h, i) => <MediaBlock key={`${h.hit.id}-${i}`} who={h} hit={h.hit} ctx={ctx} bare />}
     />
   )
 }

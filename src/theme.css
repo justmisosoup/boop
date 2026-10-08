@@ -226,13 +226,13 @@ body,
 }
 
 .core-theme {
-  --dash-rule-x: repeating-linear-gradient(
+  /* The report's rules between rows and cells: solid hairlines, the divider's
+     own colour. (They were dashed; only the Insights list keeps a dash.) */
+  --dash-rule-x: linear-gradient(var(--core-color-border-divider), var(--core-color-border-divider));
+  --dash-rule-y: linear-gradient(var(--core-color-border-divider), var(--core-color-border-divider));
+  /* The Insights list's rule between insights: dashed. */
+  --insight-rule-x: repeating-linear-gradient(
     to right,
-    var(--core-color-border-default) 0 4px,
-    transparent 4px 8px
-  );
-  --dash-rule-y: repeating-linear-gradient(
-    to bottom,
     var(--core-color-border-default) 0 4px,
     transparent 4px 8px
   );

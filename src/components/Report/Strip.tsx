@@ -34,6 +34,7 @@ type Tile = { key: string; chip: ReactNode; static?: boolean; empty?: boolean }
 
 export const Strip = ({
   label,
+  hideLabel = false,
   tiles,
   more,
   aside,
@@ -42,6 +43,8 @@ export const Strip = ({
   closed
 }: {
   label: string
+  /** Drop the visible label where the card's title already says it; tiles still name it. */
+  hideLabel?: boolean
   tiles: Tile[]
   /** A second lock-up of tiles under the first, with its own caption — the
    *  names a screen ran on and returned nothing, apart from the ones it hit. */
@@ -60,11 +63,17 @@ export const Strip = ({
   const expand = useContext(StripExpand)
   const result = closed ? undefined : all.find((t) => !t.static && !t.empty)
   const [selected, setSelected] = useState(open ?? result?.key ?? all.find((t) => !t.static)?.key)
-  const [collapsed, setCollapsed] = useState(!open && !result && !(expand && all.some((t) => !t.static)))
+  const [collapsed, setCollapsed] = useState(
+    !open && !result && !(expand && all.some((t) => !t.static))
+  )
   const detailId = useId()
   if (all.length === 0) return null
   const row = (list: Tile[], name: string, after?: ReactNode) => (
-    <div role="radiogroup" aria-label={name} className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+    <div
+      role="radiogroup"
+      aria-label={name}
+      className="flex flex-wrap items-center gap-1.5 px-4 pb-3"
+    >
       {list.map((t) => {
         const on = t.key === selected && !collapsed
         // A verdict with nothing under it: Non-prohibited is the whole fact.
@@ -86,7 +95,10 @@ export const Strip = ({
               setSelected(t.key)
               setCollapsed(false)
             }}
-            className={cn('flex rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', on && 'ring-1 ring-[var(--core-color-border-strong)]')}
+            className={cn(
+              'flex rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              on && 'ring-1 ring-[var(--core-color-border-strong)]'
+            )}
           >
             {t.chip}
           </button>
@@ -97,7 +109,7 @@ export const Strip = ({
   )
   return (
     <div className="border-t border-[var(--core-color-border-divider)]">
-      <Label>{label}</Label>
+      {!hideLabel && <Label>{label}</Label>}
       {tiles.length > 0 && <div className="pt-3">{row(tiles, label, aside)}</div>}
       {more && more.tiles.length > 0 && (
         <>

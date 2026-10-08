@@ -34,7 +34,8 @@ export const GroupCard = ({
   record,
   negatives,
   revealed,
-  onJumpToSource
+  onJumpToSource,
+  hideInsights = false
 }: {
   /** The report card's id (`REPORT_CARDS`). */
   id: string
@@ -54,8 +55,10 @@ export const GroupCard = ({
   /** Insight ids a citation has just led to: their rows open. */
   revealed?: ReadonlySet<string>
   onJumpToSource?: (cardId: string) => void
+  /** The insights are listed under the area instead, beside the report. */
+  hideInsights?: boolean
 }) => {
-  if (!visual && rows.length === 0) return null
+  if (!visual && (hideInsights || rows.length === 0)) return null
   return (
     <Surface
       id={cardAnchor(id)}
@@ -79,7 +82,7 @@ export const GroupCard = ({
         className="border-b-0"
       />
       {visual}
-      <InsightsDisclosure
+      {!hideInsights && <InsightsDisclosure
         open={rows.some((r) => revealed?.has(r.insightId))}
         rows={rows.map((r) => (
           <InsightRow
@@ -91,7 +94,7 @@ export const GroupCard = ({
             onJumpToSource={onJumpToSource}
           />
         ))}
-      />
+      />}
     </Surface>
   )
 }

@@ -267,8 +267,12 @@ export const dbaOwnerOf = (record: BusinessRecord, n: NameStanding) => {
   return { owner, filing: found?.filing }
 }
 
+/* Said as what the business is to this one — the owner of the submitted name
+   as a DBA — not "the related business", which read as a connection. */
 export const dbaOwnerStatement = ({ filing }: NonNullable<ReturnType<typeof dbaOwnerOf>>) =>
-  filing ? `The related business's ${filingText(filing)} is on record` : 'No state filing is on record for the related business'
+  filing
+    ? `The business that owns this name as a DBA has its ${filingText(filing)} on record`
+    : 'The business that owns this name as a DBA has no state filing on record'
 
 /**
  * What to call the entity when no state filing says.

@@ -17,23 +17,56 @@ export type ReportCard = {
 }
 
 const SCREENS: ReadonlyArray<ReportCard> = [
-  { id: 'screening-watchlist', group: 'screening', label: 'Sanctions & watchlists', keys: ['watchlist'] },
-  { id: 'screening-pep', group: 'screening', label: 'Politically exposed persons', keys: ['politically_exposed_persons'] },
+  {
+    id: 'screening-watchlist',
+    group: 'screening',
+    label: 'Sanctions & watchlists',
+    keys: ['watchlist']
+  },
+  {
+    id: 'screening-pep',
+    group: 'screening',
+    label: 'Politically exposed persons',
+    keys: ['politically_exposed_persons']
+  },
   { id: 'screening-media', group: 'screening', label: 'Adverse media', keys: ['adverse_media'] }
 ]
 
 /**
- * Groups drawn as part of another's card: the names are the formation's — the
- * legal name, the names it trades under, the ones it dropped — and the state
- * registrations are its filings in other states, so all three read on one
- * card: the names and formation grid, then the filings strip. The business's
- * third-party profiles are its web presence, as its site is: one card.
+ * Groups drawn as part of another's card: the state registrations are the
+ * formation's filings in other states, so they read on its card — the
+ * formation grid, then the filings strip. The business's third-party profiles
+ * are its web presence, as its site is: one card. The names have a card of
+ * their own.
  */
-const MERGED_INTO: Partial<Record<GroupId, GroupId>> = { name: 'formation', registration: 'formation', profiles: 'website' }
-const LABELS: Partial<Record<GroupId, string>> = { formation: 'Registrations', website: 'Web presence' }
+const MERGED_INTO: Partial<Record<GroupId, GroupId>> = {
+  registration: 'formation',
+  profiles: 'website'
+}
+const LABELS: Partial<Record<GroupId, string>> = {
+  formation: 'Registrations',
+  website: 'Web presence',
+  tin: 'TIN Match'
+}
 
-export const REPORT_CARDS: ReadonlyArray<ReportCard> = GROUPS.flatMap((g) =>
-  g.id === 'screening' ? SCREENS : MERGED_INTO[g.id] ? [] : [{ id: g.id, group: g.id, label: LABELS[g.id] ?? g.label }]
+const GROUP_CARDS: ReadonlyArray<ReportCard> = GROUPS.flatMap((g) =>
+  g.id === 'screening'
+    ? SCREENS
+    : MERGED_INTO[g.id]
+      ? []
+      : [{ id: g.id, group: g.id, label: LABELS[g.id] ?? g.label }]
+)
+
+/** The cards that read in a different place than their group: People under Addresses. */
+const AFTER: Partial<Record<string, string>> = { people: 'address' }
+
+export const REPORT_CARDS: ReadonlyArray<ReportCard> = GROUP_CARDS.reduce<ReportCard[]>(
+  (cards, card) => {
+    if (AFTER[card.id]) return cards
+    const moved = GROUP_CARDS.filter((c) => AFTER[c.id] === card.id)
+    return [...cards, card, ...moved]
+  },
+  []
 )
 
 const BY_ID = new Map(REPORT_CARDS.map((c) => [c.id, c]))

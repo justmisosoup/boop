@@ -28,9 +28,15 @@ import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
 import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
-import { GroupedReport } from '../components/Report/GroupedReport'
-import { ReportHero } from '../components/Report/ReportHero'
-import { cardAnchor } from '../lib/reportCards'
+import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
+import { ReportHero, ScoreCard } from '../components/Report/ReportHero'
+import { AssessmentBrief } from '../components/Report/AssessmentBrief'
+import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
+import { outcomeOf } from '../lib/insightOutcome'
+import { evidenceByCard } from '../components/Assistant/evidence'
+import { REVIEW_AREAS, areaOfAssessmentName, reviewGroups, type ReviewAreaId } from '../lib/reviewAreas'
+import { businessBlurb } from '../lib/businessBlurb'
+import { areaBrief } from '../lib/areaBriefs'
 import type { BriefCard, ReportFocus } from '../lib/reportBrief'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
 import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
@@ -87,14 +93,17 @@ const RAIL_W = '49px'
  * page wrapper has already set 24px in from the window's edge — with 48 inside
  * that, a 660px window put its prose 72px in from either side.
  *
- * 992 leaves the report 896px (56rem) of content at `wide`, less the 48 either
- * side: one column now — the determination, the Formation card, the
- * assessment cards — with no rail or reports panel beside it, so the 1200 it
- * was ran the two-column grids and the prose long. Core's widths either side
- * are 768 (`narrow`) and 1200.
+ * 1200 leaves 1104px of content at `wide`, less the 48 either side. Two
+ * columns now — the report's cards, and the score with its review steps
+ * (320px, plus the 16px gap) beside them — which puts the cards at 768px,
+ * core's `narrow` width: the grids keep their three columns and the prose
+ * its measure. At 992 the cards were down to 560 and the grids wrapped.
  */
 
-const MEASURE = 'mx-auto w-full max-w-[992px] px-6 wide:px-12'
+/** See `generated` in RecordPage. */
+const GENERATED = new Set<string>()
+
+const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
 
 /**
  * The assistant's state and presentation, remembered per browser.
@@ -309,7 +318,9 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * is put away to the rail. Below `wide` there is no column to dock into, so
    * the preference is remembered and not honoured: the window floats.
    */
-  const [assistantState, setAssistantStateRaw] = useState<FloatingPanelState>(readAssistantState)
+  // Dismissed on load: the report first. Brought back, it opens at the size
+  // last used (`readAssistantState`).
+  const [assistantState, setAssistantStateRaw] = useState<FloatingPanelState>('pill')
   const [assistantPreference, setAssistantPresentationRaw] =
     useState<FloatingPanelPresentation>(readAssistantPresentation)
   const setAssistantState = (next: FloatingPanelState) => {
@@ -412,6 +423,13 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   }, [analysis.threads])
   const assessment = brief?.determination ? standingCall(brief.determination, revision) : undefined
   const [reviewStepsRequest, setReviewStepsRequest] = useState(0)
+  const [reviewStepIndex, setReviewStepIndex] = useState<number>()
+  const [summaryRequest, setSummaryRequest] = useState(0)
+  /** The businesses whose full assessment the Assistant has written this
+   *  session. Module memory, not storage: it outlives leaving the record and
+   *  coming back, and every new load starts at "Generate". */
+  const [generated, setGenerated] = useState<ReadonlySet<string>>(() => GENERATED)
+  const [recommendRequest, setRecommendRequest] = useState<{ area: string; index: number; request: number }>()
 
   /**
    * Run the standing workflow, from where the report would be.
@@ -559,7 +577,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const showPanel = (view: PanelView) => {
     setPanelView(view)
     if (view === 'assistant') {
-      if (assistantState === 'pill') setAssistantState('window')
+      if (assistantState === 'pill') setAssistantState(readAssistantState())
     } else setChatOpen(true)
   }
 
@@ -631,6 +649,62 @@ function Record({ record: selected }: { record: BusinessRecord }) {
     pendingCard.current = cardId
     setFocus(null)
   }
+  /**
+   * An area, chosen: the report narrowed to the cards the area is read from
+   * (`REVIEW_AREAS`), plus any its open steps cite. The same area again
+   * widens back out.
+   */
+  const groups = useMemo(() => (assessment ? reviewGroups(assessment, revision?.resolved) : []), [assessment, revision?.resolved])
+  const showArea = (areaId: ReviewAreaId) => {
+    const area = REVIEW_AREAS.find((a) => a.id === areaId)
+    if (!area) return
+    const id = `area-${areaId}`
+    if (focus?.id === id) return setFocus(null)
+    // The area's own cards — fixed per area — and whatever its steps add.
+    const fromSteps = (groups.find((g) => g.id === areaId)?.steps ?? []).flatMap((s) => {
+      const step = assessment?.steps[s.index]
+      return step ? evidenceByCard(step.cites, results, groupFor).sources.map((src) => src.id) : []
+    })
+    const cards = [...new Set([...area.cards, ...fromSteps])]
+    setFocus({ id, title: area.label, cards })
+    panelRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const selectedArea = focus?.id.startsWith('area-') ? (focus.id.slice(5) as ReviewAreaId) : undefined
+  /** The brief, as narrowed: the selected area's block, or the Assistant's
+   *  own narrowing's. Nothing, unnarrowed. */
+  const areaOfBriefCard = (c: BriefCard) => areaOfAssessmentName(workflowByAssessmentId(c.id)?.name ?? policy.find((p) => p.id === c.id)?.name, c.id)
+  const shownArea = selectedArea
+  /** Every insight on the report, the same reading: the spark under the score. */
+  const overallTally = useMemo(() => {
+    const read = results.filter((r) => !r.notReported).map((r) => outcomeOf(r, record))
+    return {
+      good: read.filter((o) => o === 'pass').length,
+      review: read.filter((o) => o === 'review').length,
+      bad: read.filter((o) => o === 'fail').length,
+      neutral: read.filter((o) => o === 'neutral').length
+    }
+  }, [results, record])
+  /** Every insight on the report, grouped by the card it is about, in the
+   *  report's order; within a group, failed first, then needs review, passed,
+   *  context. The left column lists them in place of the areas. */
+  const allInsights = useMemo(() => {
+    const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
+    return results
+      .filter((r) => !r.notReported)
+      .map((r) => ({ r, card: cardFor(r.insightId, groupFor), outcome: outcomeOf(r, record) }))
+      .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
+      .map(({ r, card, outcome }) => ({ id: r.insightId, statement: r.statement, outcome, group: cardById(card)?.label ?? card }))
+  }, [results, groupFor, record])
+  const briefShown = !brief
+    ? undefined
+    : shownArea
+      ? { cards: brief.cards.filter((c) => areaOfBriefCard(c) === shownArea), title: REVIEW_AREAS.find((a) => a.id === shownArea)?.label }
+      : focus && !focus.id.startsWith('area-')
+        ? { cards: brief.cards.filter((c) => c.id === focus.id), title: focusName }
+        : // The whole report: no assessment card. The full account is the
+          // Assistant's ("Generate full assessment"), not the page's.
+          undefined
   // Widened for a chip: land once the whole report has drawn.
   useEffect(() => {
     const cardId = pendingCard.current
@@ -883,18 +957,73 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                   record={record}
                   assessment={assessment}
                   summary={revision?.reason ?? brief.lede ?? assessment?.reason}
-                  resolved={revision?.resolved}
                   compact={pinned}
-                  onReviewSteps={() => {
-                    showPanel('assistant')
-                    setReviewStepsRequest((request) => request + 1)
-                  }}
                   status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
                   assignee={<AssigneeDropdown businessId={selected.id} />}
                 />
               </div>
             )}
-            <div className={!view && !running ? 'mt-6' : undefined}>
+            {/* Two columns under the head: the score and its steps at the
+                left; the report's cards at the right.
+                The left card scrolls with the page — pinned, it fought the
+                sticky head for the same strip of screen. */}
+            <div className={cn(!view && !running && 'mt-6', hero && assessment && 'flex items-start gap-4')}>
+              {hero && assessment && (
+                <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
+                  <ScoreCard
+                    assessment={assessment}
+                    blurb={businessBlurb(record)}
+                    summaryGenerated={generated.has(selected.id)}
+                    insights={allInsights}
+                    overall={overallTally}
+                    status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
+                    onSelectInsight={(id) => landOn(cardFor(id, groupFor))}
+                    onShowSummary={() => {
+                      GENERATED.add(selected.id)
+                      setGenerated(new Set(GENERATED))
+                      // The assessment opens out of the pill, expanded over the
+                      // report — this time only; the docked preference stands.
+                      setPanelView('assistant')
+                      setAssistantPresentationRaw('floating')
+                      setAssistantStateRaw('expanded')
+                      setSummaryRequest((request) => request + 1)
+                    }}
+                  />
+                </aside>
+              )}
+              {/* No gap on the column itself: the report's first child is its
+                  zero-height sticky bar, and a gap there pushed the first card
+                  16px below the score card's top. The brief spaces itself. */}
+              <div className="min-w-0 flex-1">
+              {/* Narrowed to an area, its assessment first, then the cards it was read from. */}
+              {hero && brief && briefShown && (
+                <div className="mb-4">
+                <AssessmentBrief
+                  brief={brief}
+                  cards={briefShown.cards}
+                  title={briefShown.title}
+                  // The area's answer, in one paragraph.
+                  prose={shownArea ? areaBrief(shownArea, record, summaries) : undefined}
+                  results={results}
+                  record={record}
+                  // Narrowed to an area, the way back sits above its card, in
+                  // place of the filter bar.
+                  onShowFullReport={focus ? () => setFocus(null) : undefined}
+                  // Nothing open in the area: it meets the policy, and says so.
+                  satisfied={Boolean(shownArea) && (groups.find((g) => g.id === shownArea)?.steps.length ?? 0) === 0}
+                  // The area's first open step: the Assistant walks on from it.
+                  onRecommend={
+                    shownArea && (groups.find((g) => g.id === shownArea)?.steps.length ?? 0) > 0
+                      ? () => {
+                          const group = groups.find((g) => g.id === shownArea)!
+                          showPanel('assistant')
+                          setRecommendRequest((cur) => ({ area: group.label, index: group.steps[0].index, request: (cur?.request ?? 0) + 1 }))
+                        }
+                      : undefined
+                  }
+                />
+                </div>
+              )}
               <GroupedReport
                 record={record}
                 results={results}
@@ -902,12 +1031,17 @@ function Record({ record: selected }: { record: BusinessRecord }) {
                 negatives={negatives}
                 revealed={revealedSet}
                 only={focus ? new Set(focus.cards) : undefined}
-                focus={focus ? { id: focus.id, name: focusName, onClear: () => setFocus(null) } : undefined}
+                // No filter bar, ever: the card above the report names what it is
+                // narrowed to and carries the way back.
+                // The insights are listed in the left card, grouped by card,
+                // so the cards carry none of their own.
+                hideInsights
                 pinned={pinned}
                 expand={expandCard}
                 onJumpToSource={jumpToSource}
                 onJumpToTimeline={jumpToTimeline}
               />
+              </div>
             </div>
 
               </TabsContent>
@@ -1011,6 +1145,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
           revision={revision}
           assessmentInHeader
           reviewStepsRequest={reviewStepsRequest}
+          reviewStepIndex={reviewStepIndex}
+          summaryRequest={summaryRequest}
+          briefGenerated={generated.has(selected.id)}
+          recommendRequest={recommendRequest}
           // A brief card's title: the report scrolls to that card.
           onJumpToCard={(anchor) =>
             panelRef.current

@@ -32,6 +32,7 @@ export const registrationSources = (
     const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
     const st = registrationState(r)
     const tone = toneOfStatus(st.status, st.subStatus)
+    const past = registrations.filter((o) => o.state === r.state && o !== r).length
     return {
       id: `${r.state}-${r.fileNumber ?? i}`,
       // The chip reads "SOS · CA". No `domain` and no `url`: the core chip's
@@ -42,19 +43,14 @@ export const registrationSources = (
       // its status as a tag — over the source and whether this is the
       // formation (domestic) filing or a foreign one.
       title: stateName(r.state),
-      badge: (
-        <StatusTag
-          label={st.status ?? NOT_PROVIDED}
-          tone={tone}
-        />
-      ),
+      badge: <StatusTag label={st.status ?? NOT_PROVIDED} tone={tone} />,
       // What the reader wants on hover: which filing this is, and its standing.
       snippet: [
         r.sourceUrl ? new URL(r.sourceUrl).hostname.replace(/^www\./, '') : null,
         r.name,
         r.status ? `Status: ${r.status}` : null,
         `Sub-status: ${subStatusLabel(r)}`,
-        r.fileNumber ? `File number: ${r.fileNumber}` : null,
+        past ? `${past + 1} filings in this state` : null,
         r.registrationDate ? `Registered ${r.registrationDate}` : null
       ]
         .filter(Boolean)
@@ -83,10 +79,15 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
       const r = same[0]
       const open = same.some((x) => !x.locationEnd && !x.businessEnd)
       const name = r.state === 'DC' ? `${r.city}, DC` : r.city
-      const distinct = (xs: Array<string | null | undefined>) => [...new Set(xs.filter((x): x is string => Boolean(x)))]
+      const distinct = (xs: Array<string | null | undefined>) => [
+        ...new Set(xs.filter((x): x is string => Boolean(x)))
+      ]
       const dbas = distinct(same.map((x) => x.dba))
       const owners = distinct(same.map((x) => x.owner))
-      const since = same.map((x) => x.businessStart ?? x.locationStart).filter(Boolean).sort()[0]
+      const since = same
+        .map((x) => x.businessStart ?? x.locationStart)
+        .filter(Boolean)
+        .sort()[0]
       const licences = same.some((x) => x.licenseType)
       return {
         id: `city-${k}`,
@@ -94,11 +95,17 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
         label: name,
         title: name,
         // Closed is grey, as the City registrations strip draws it.
-        badge: <StatusTag label={open ? 'Active' : 'Closed'} tone={open ? toneOfStatus('active', null) : 'neutral'} />,
+        badge: (
+          <StatusTag
+            label={open ? 'Active' : 'Closed'}
+            tone={open ? toneOfStatus('active', null) : 'neutral'}
+          />
+        ),
         snippet: [
           dbas.length > 0 && `DBA: ${dbas.join(', ')}`,
           owners.length > 0 && `Owner: ${owners.join(', ')}`,
-          licences && `${same.length} licence${same.length === 1 ? '' : 's'}, ${same.filter((x) => !x.locationEnd && !x.businessEnd).length} active`,
+          licences &&
+            `${same.length} licence${same.length === 1 ? '' : 's'}, ${same.filter((x) => !x.locationEnd && !x.businessEnd).length} active`,
           since && `Since ${since}`
         ]
           .filter(Boolean)
@@ -108,7 +115,9 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
     })
   }
   const refs = (record.names ?? []).flatMap((n) =>
-    (n.sourceRefs ?? []).filter((x) => x.type === 'city_registration').map((x) => ({ name: n.name, ref: x }))
+    (n.sourceRefs ?? [])
+      .filter((x) => x.type === 'city_registration')
+      .map((x) => ({ name: n.name, ref: x }))
   )
   const seen = new Set<string>()
   return refs.flatMap(({ name, ref }) => {
@@ -122,9 +131,14 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
         label: m.state === 'DC' ? `${m.city}, DC` : m.city,
         title: m.state === 'DC' ? `${m.city}, DC` : m.city,
         badge: m.status ? (
-          <StatusTag label={m.status} tone={/^active$/i.test(m.status) ? toneOfStatus('active', null) : 'neutral'} />
+          <StatusTag
+            label={m.status}
+            tone={/^active$/i.test(m.status) ? toneOfStatus('active', null) : 'neutral'}
+          />
         ) : undefined,
-        snippet: [`Registered to ${name}`, m.status && `Status: ${m.status}`].filter(Boolean).join(' · '),
+        snippet: [`Registered to ${name}`, m.status && `Status: ${m.status}`]
+          .filter(Boolean)
+          .join(' · '),
         annotation: 'City Registration'
       }
     ]

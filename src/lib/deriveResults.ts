@@ -20,7 +20,12 @@ import {
   ownDbas,
   tradeNamesStatement
 } from './businessNames'
-import { convertedFormationOf, domesticOf, formationFilingOf, notPublished } from './registrationStatus'
+import {
+  convertedFormationOf,
+  domesticOf,
+  formationFilingOf,
+  notPublished
+} from './registrationStatus'
 import { domesticFilingOf } from './linkedFormation'
 import { entityTypeStatement, statementFor } from './statements'
 
@@ -241,7 +246,12 @@ export type BusinessRecord = {
       sources?: Array<{
         id?: string
         type: string
-        metadata?: { state?: string; file_number?: string; jurisdiction?: string; status?: string } | null
+        metadata?: {
+          state?: string
+          file_number?: string
+          jurisdiction?: string
+          status?: string
+        } | null
       }>
     }>
     /** A business named on the other's filing, under the title it gives. */
@@ -264,7 +274,7 @@ export type BusinessRecord = {
     domainCreated: string | null
     domainExpires?: string | null
     registrar?: string | null
-    pages?: Array<{ url: string | null; category: string | null }>
+    pages?: Array<{ url: string | null; category: string | null; screenshotUrl?: string | null }>
     emails?: Array<{
       email: string
       submitted?: boolean
@@ -461,7 +471,21 @@ export type Bankruptcy = {
 
 /** DBA filings are not supported in these states (source doc 01). */
 const DBA_UNSUPPORTED = new Set([
-  'IN', 'MD', 'SC', 'UT', 'AL', 'AR', 'CO', 'DE', 'IA', 'MT', 'NC', 'NJ', 'NM', 'VA', 'WA'
+  'IN',
+  'MD',
+  'SC',
+  'UT',
+  'AL',
+  'AR',
+  'CO',
+  'DE',
+  'IA',
+  'MT',
+  'NC',
+  'NJ',
+  'NM',
+  'VA',
+  'WA'
 ])
 
 /** Composites. Not insights — a grade over facts that are themselves insights. */
@@ -518,7 +542,10 @@ const derive = (task: ReviewTask, record: BusinessRecord): Derived[] => {
    * when every Unknown filing is one the state does not publish. An Unknown
    * anywhere else is still a question.
    */
-  if ((task.key === 'sos_domestic' || task.key === 'sos_unknown') && /Unknown/i.test(task.subLabel)) {
+  if (
+    (task.key === 'sos_domestic' || task.key === 'sos_unknown') &&
+    /Unknown/i.test(task.subLabel)
+  ) {
     const noStatus = record.registrations.filter((r) => !r.status || /unknown/i.test(r.status))
     const silentStates = [...new Set(noStatus.map((r) => r.state))]
     const domestic = domesticOf(record)
@@ -684,7 +711,12 @@ const licenseInsights = (record: BusinessRecord): Derived[] => {
   const submittedAddresses = record.addresses.filter((a) => a.submitted)
 
   /** Words, upper case, punctuation dropped. */
-  const words = (s: string) => s.toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(Boolean)
+  const words = (s: string) =>
+    s
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
   /**
    * The street line and the ZIP5. A floor or suite is the same address, so the
    * designator AND the number after it both go — keeping the number left
@@ -717,7 +749,12 @@ const licenseInsights = (record: BusinessRecord): Derived[] => {
     const office = l.address
       ? submittedAddresses.find((a) => {
           const sub = place(a.fullAddress)
-          return Boolean(sub.street) && sub.street === lic.street && Boolean(sub.zip) && sub.zip === lic.zip
+          return (
+            Boolean(sub.street) &&
+            sub.street === lic.street &&
+            Boolean(sub.zip) &&
+            sub.zip === lic.zip
+          )
         })
       : undefined
 
@@ -799,8 +836,15 @@ const nameInsights = (record: BusinessRecord): Derived[] => {
   const statement = nameStatement(n)
   const evidence = [
     `Submitted: ${n.submitted}`,
-    ...n.legal.map((r) => `Legal name on the ${r.state} ${(r.jurisdiction ?? '').toLowerCase()} filing: ${r.name}`),
-    ...(n.matchedDba ? [`Doing business as ${n.matchedDba.name}${n.matchedDba.owner ? `, owner ${n.matchedDba.owner}` : ''} — ${n.matchedDba.source}`] : [])
+    ...n.legal.map(
+      (r) =>
+        `Legal name on the ${r.state} ${(r.jurisdiction ?? '').toLowerCase()} filing: ${r.name}`
+    ),
+    ...(n.matchedDba
+      ? [
+          `Doing business as ${n.matchedDba.name}${n.matchedDba.owner ? `, owner ${n.matchedDba.owner}` : ''} — ${n.matchedDba.source}`
+        ]
+      : [])
   ]
   // The legal name is the API's own `name` check — "Match identified to the
   // submitted business name" — and saying it again is a second row for one
@@ -809,8 +853,23 @@ const nameInsights = (record: BusinessRecord): Derived[] => {
   if (n.category !== 'MATCHES_LEGAL_NAME')
     out.push(
       n.category === 'NOT_FOUND'
-        ? { insightId: 'submitted_name', statement, group: '', state: 'no_result', reason: 'should_exist_not_found', because: statement, evidence }
-        : { insightId: 'submitted_name', statement, group: '', state: 'result', value: n.category, evidence }
+        ? {
+            insightId: 'submitted_name',
+            statement,
+            group: '',
+            state: 'no_result',
+            reason: 'should_exist_not_found',
+            because: statement,
+            evidence
+          }
+        : {
+            insightId: 'submitted_name',
+            statement,
+            group: '',
+            state: 'result',
+            value: n.category,
+            evidence
+          }
     )
 
   const own = ownDbas(n, record)
@@ -821,7 +880,9 @@ const nameInsights = (record: BusinessRecord): Derived[] => {
       group: '',
       state: 'result',
       value: own.map((d) => d.name).join(', '),
-      evidence: own.map((d) => `Doing business as ${d.name}${d.owner ? `, owner ${d.owner}` : ''} — ${d.source}`)
+      evidence: own.map(
+        (d) => `Doing business as ${d.name}${d.owner ? `, owner ${d.owner}` : ''} — ${d.source}`
+      )
     })
 
   const other = dbaOfAnotherOf(n)
@@ -847,9 +908,19 @@ const nameInsights = (record: BusinessRecord): Derived[] => {
             group: '',
             state: 'result',
             value: f.name ?? owner.owner,
-            evidence: [`${owner.owner}'s legal name on the ${f.state} ${(f.jurisdiction ?? '').toLowerCase()} filing: ${f.name}`]
+            evidence: [
+              `${owner.owner}'s legal name on the ${f.state} ${(f.jurisdiction ?? '').toLowerCase()} filing: ${f.name}`
+            ]
           }
-        : { insightId: 'dba_owner_filing', statement: text, group: '', state: 'no_result', reason: 'should_exist_not_found', because: text, evidence: [] }
+        : {
+            insightId: 'dba_owner_filing',
+            statement: text,
+            group: '',
+            state: 'no_result',
+            reason: 'should_exist_not_found',
+            because: text,
+            evidence: []
+          }
     )
   }
   return out
@@ -920,7 +991,10 @@ const SUFFIX: Array<[RegExp, string]> = [
   [/\b(L\.?L\.?C\.?|LIMITED LIABILITY COMPANY)$/i, 'LLC'],
   [/\bL\.?L\.?P\.?$/i, 'LLP'],
   [/\bL\.?P\.?$/i, 'LP'],
-  [/\b(INC\.?|INCORPORATED|CORP\.?|CORPORATION|CO\.?|COMPANY|LTD\.?|LIMITED|PBC|P\.?C\.?)$/i, 'Corporation']
+  [
+    /\b(INC\.?|INCORPORATED|CORP\.?|CORPORATION|CO\.?|COMPANY|LTD\.?|LIMITED|PBC|P\.?C\.?)$/i,
+    'Corporation'
+  ]
 ]
 const formOf = (raw: string | null | undefined): string | undefined => {
   const t = (raw ?? '').toUpperCase()
@@ -933,9 +1007,17 @@ const formOf = (raw: string | null | undefined): string | undefined => {
   return undefined
 }
 export const nameEntityTypeOf = (record: BusinessRecord) => {
-  const name = ((record.names ?? []).find((n) => n.submitted)?.name ?? record.name).replace(/,/g, ' ').trim()
+  const name = ((record.names ?? []).find((n) => n.submitted)?.name ?? record.name)
+    .replace(/,/g, ' ')
+    .trim()
   const suffix = SUFFIX.find(([re]) => re.test(name))?.[1]
-  const filed = record.formation ? formOf(trueEntityType(record) ?? formationFilingOf(record)?.entityType ?? record.formation.entityType) : undefined
+  const filed = record.formation
+    ? formOf(
+        trueEntityType(record) ??
+          formationFilingOf(record)?.entityType ??
+          record.formation.entityType
+      )
+    : undefined
   return suffix && filed ? { suffix, filed, match: suffix === filed } : undefined
 }
 
@@ -979,7 +1061,6 @@ const derived = (record: BusinessRecord): Derived[] => [
   ...formerFormationInsight(record),
   ...nameEntityTypeInsight(record)
 ]
-
 
 /**
  * Every check the catalog defines, including the ones this record did not report.
@@ -1076,7 +1157,9 @@ const RISK_GRADE = /\b(low|moderate|high) risk\b/i
  */
 export const presented = (record: BusinessRecord, results: Derived[]): Derived[] => {
   const domestic = domesticOf(record)
-  const noStatus = record.registrations.filter((r) => (r.status || 'unknown').toLowerCase() === 'unknown')
+  const noStatus = record.registrations.filter(
+    (r) => (r.status || 'unknown').toLowerCase() === 'unknown'
+  )
   const onlyDomesticUnknown =
     Boolean(domestic) && noStatus.length > 0 && noStatus.every((r) => r === domestic)
 
@@ -1085,7 +1168,8 @@ export const presented = (record: BusinessRecord, results: Derived[]): Derived[]
     .filter((d) => !(d.insightId === 'sos_unknown' && onlyDomesticUnknown))
     .map((d) => {
       // The entity type in today's words: sentence case, and likely unless a filing states it.
-      if (d.insightId === 'entity_type' && !d.notReported) return { ...d, statement: entityTypeStatement(record) }
+      if (d.insightId === 'entity_type' && !d.notReported)
+        return { ...d, statement: entityTypeStatement(record) }
       if (d.insightId !== 'adverse_media') return d
       const found = (record.adverseMedia?.results ?? []).length > 0
       // The platform's sentence stands; only the grade lines leave the evidence.
@@ -1099,5 +1183,5 @@ export const categoriesOf = (record: BusinessRecord): Map<string, string> =>
   new Map<string, string>([
     ...record.reviewTasks
       .filter((t) => t.category)
-      .map((t) => [t.key, t.category as string] as [string, string]),
+      .map((t) => [t.key, t.category as string] as [string, string])
   ])

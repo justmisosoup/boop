@@ -1,40 +1,25 @@
 import { useMemo, type ReactNode } from 'react'
-import { ArrowUpRight, Check, MapPin, TriangleAlert, X } from 'lucide-react'
+import { ArrowUpRight, Check, TriangleAlert, X } from 'lucide-react'
 
-import { ChatSourceChip, HoverCard, HoverCardContent, HoverCardTrigger, MetaChip } from '@/core'
+import { ChatSourceChip, MetaChip } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { filingsListing, provenanceList } from '../../lib/attributes'
 import { sameName } from '../../lib/registrationStatus'
 import { docCard } from '../../lib/sourceCards'
 import {
-  licencesAt,
-  locationBand,
   operationsOf,
   type FmcsaRegistration,
-  type Location,
   type Operations,
   type StateLicence
 } from '../../lib/operations'
-import { cn } from '../../utils/twUtils'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { IndustryTable } from '../IndustryTable'
 import { AttributeSources, SubmittedChip } from '../Provenance'
+import { AddressTable } from './AddressTable'
 import { Strip } from './Strip'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
-/** USPS's city abbreviations, written out so one city is one tile. */
-const CITY_ABBR: Record<string, string> = { cty: 'City', hts: 'Heights', mt: 'Mount', ft: 'Fort', spgs: 'Springs', jct: 'Junction', vlg: 'Village', twp: 'Township' }
-/** "San Francisco, CA" from a full address — "Salt Lake Cty" read as Salt Lake City. */
-const placeOf = (a: Location) => {
-  const parts = a.fullAddress.split(',').map((x) => x.trim())
-  const raw = parts.length >= 3 ? parts[parts.length - 2] : parts[1]
-  const city = raw
-    ?.split(/\s+/)
-    .map((w) => CITY_ABBR[w.toLowerCase()] ?? w)
-    .join(' ')
-  return city ? `${city}, ${a.state}` : (a.state ?? '')
-}
 const titleCase = (n: string) => n.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 const absent = (text: string) => <span className="text-text-secondary">{text}</span>
 
@@ -44,49 +29,22 @@ const absent = (text: string) => <span className="text-text-secondary">{text}</s
  * businesses share it. Our readings, under the value rather than in it, and
  * ungraded — the report does not colour an address.
  */
-/** The role the filing gave the address — mailing, physical, primary — read
- *  from the registration references that carry it. It is the cell's label:
- *  "Physical address", or plain "Address" where no filing says. */
-const addressRoles = (a: Location): string[] =>
-  [...new Set((a.sourceRefs ?? []).flatMap((r) => (r.metadata as { labels?: string[] } | undefined)?.labels ?? []))]
-    .filter((x) => x !== 'registered_agent')
-    .map((x) => `${x.replace(/^./, (c) => c.toUpperCase())} address`)
-
-const addressLabel = (a: Location): string => addressRoles(a).join(' · ') || 'Address'
-
-const addressLine = (a: Location): ReactNode => {
-  const band = locationBand(a.locationCount)
-  // Deliverable · Residential · how many businesses share it. No "USPS ·"
-  // prefix: the readings are the line, not their source. An address the
-  // post cannot reach is the one reading drawn red. The filing's role for
-  // the address is the cell's label, not repeated here.
-  const rest = [
-    a.propertyType && a.propertyType.toLowerCase().replace(/^./, (c) => c.toUpperCase()),
-    a.cmra && 'Commercial mail receiving agency',
-    (a.isRegisteredAgent || a.labels.includes('registered_agent')) && 'Registered agent address',
-    band?.label
-  ].filter(Boolean) as string[]
-  const delivery =
-    a.deliverable === true ? (
-      'Deliverable'
-    ) : a.deliverable === false ? (
-      <span className="inline-flex items-center gap-1 text-[var(--core-color-text-danger)]">
-        <X {...icon} />
-        Not deliverable
-      </span>
-    ) : null
-  if (!delivery && rest.length === 0) return null
-  return (
-    <>
-      {delivery}
-      {delivery && rest.length > 0 && ' · '}
-      {rest.join(' · ')}
-    </>
-  )
-}
-
 /** A registry record as its source chip: the register, opening its page. */
-const RegistryChip = ({ id, label, title, url, annotation, onSelect }: { id: string; label: string; title: string; url?: string | null; annotation: string; onSelect?: () => void }) => (
+const RegistryChip = ({
+  id,
+  label,
+  title,
+  url,
+  annotation,
+  onSelect
+}: {
+  id: string
+  label: string
+  title: string
+  url?: string | null
+  annotation: string
+  onSelect?: () => void
+}) => (
   <ChatSourceChip
     sources={[
       {
@@ -100,7 +58,15 @@ const RegistryChip = ({ id, label, title, url, annotation, onSelect }: { id: str
         url: onSelect ? undefined : (url ?? undefined),
         onSelect,
         annotation,
-        badge: !onSelect && url ? <ArrowUpRight aria-label="Opens in a new tab" size={12} strokeWidth={2} className="text-text-secondary" /> : undefined
+        badge:
+          !onSelect && url ? (
+            <ArrowUpRight
+              aria-label="Opens in a new tab"
+              size={12}
+              strokeWidth={2}
+              className="text-text-secondary"
+            />
+          ) : undefined
       }
     ]}
   />
@@ -108,9 +74,13 @@ const RegistryChip = ({ id, label, title, url, annotation, onSelect }: { id: str
 
 /** The licence the industry requires, and what the register holds. */
 /** A source label that is the FMCSA's own, or the registry chip's. */
-const NOT_CORROBORATING = /^(state registration|registration|submitted by the customer|submitted|fmcsa registration|fmcsa)$/i
+const NOT_CORROBORATING =
+  /^(state registration|registration|submitted by the customer|submitted|fmcsa registration|fmcsa)$/i
 const streetZip = (a: string) =>
-  `${(a.split(',')[0] ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()}|${(a.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] ?? ''}`
+  `${(a.split(',')[0] ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim()}|${(a.match(/\b(\d{5})(?:-\d{4})?\b/) ?? [])[1] ?? ''}`
 
 /**
  * What else on the record states a value the FMCSA states — the submitted
@@ -119,14 +89,22 @@ const streetZip = (a: string) =>
  * source agrees), then the sources.
  */
 const corroboration = (
-  held: Array<{ submitted?: boolean; sources?: string[]; sourceRefs?: BusinessRecord['addresses'][number]['sourceRefs'] }>,
+  held: Array<{
+    submitted?: boolean
+    sources?: string[]
+    sourceRefs?: BusinessRecord['addresses'][number]['sourceRefs']
+  }>,
   filings: BusinessRecord['registrations'],
   record: BusinessRecord,
   onJumpToSource?: (cardId: string) => void
 ): ReactNode => {
   const submitted = held.some((h) => h.submitted)
-  const others = [...new Set(held.flatMap((h) => provenanceList(h)))].filter((n) => !NOT_CORROBORATING.test(n))
-  const refs = held.flatMap((h) => h.sourceRefs ?? []).filter((r) => r.type !== 'registration' && !/fmcsa/i.test(r.type))
+  const others = [...new Set(held.flatMap((h) => provenanceList(h)))].filter(
+    (n) => !NOT_CORROBORATING.test(n)
+  )
+  const refs = held
+    .flatMap((h) => h.sourceRefs ?? [])
+    .filter((r) => r.type !== 'registration' && !/fmcsa/i.test(r.type))
   if (!submitted && filings.length === 0 && others.length === 0) return undefined
   // One chip: the customer's claim, where it is theirs, with the filings and
   // records that verify it under it.
@@ -149,7 +127,11 @@ const corroboration = (
  * where the record link is. The name and each address carry what else on the
  * record states them: the submission, the filings, any other record.
  */
-const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => {
+const fmcsaCells = (
+  f: FmcsaRegistration,
+  record: BusinessRecord,
+  onJumpToSource?: (cardId: string) => void
+): AttributeCell[] => {
   const names = (record.names ?? []).filter((n) => sameName(n.name, f.legalName))
   const nameFilings = record.registrations.filter((g) => sameName(g.name, f.legalName))
   return [
@@ -159,7 +141,9 @@ const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource
       badge: f.legalName ? corroboration(names, nameFilings, record, onJumpToSource) : undefined,
       values: [{ value: f.legalName ?? absent('Not provided') }]
     },
-    ...(f.dbaName ? [{ key: `${f.id}-dba`, label: 'DBA name', values: [{ value: f.dbaName }] }] : []),
+    ...(f.dbaName
+      ? [{ key: `${f.id}-dba`, label: 'DBA name', values: [{ value: f.dbaName }] }]
+      : []),
     {
       key: `${f.id}-dot`,
       label: 'USDOT number',
@@ -177,7 +161,9 @@ const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource
     },
     ...f.addresses.map((addr, i) => {
       const held = record.addresses.filter((x) => streetZip(x.fullAddress) === streetZip(addr))
-      const filings = [...new Set(held.flatMap((x) => filingsListing(record, x.fullAddress, 'addresses')))]
+      const filings = [
+        ...new Set(held.flatMap((x) => filingsListing(record, x.fullAddress, 'addresses')))
+      ]
       return {
         key: `${f.id}-addr-${i}`,
         label: 'Address',
@@ -189,16 +175,35 @@ const fmcsaCells = (f: FmcsaRegistration, record: BusinessRecord, onJumpToSource
   ]
 }
 
-const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void): AttributeCell | undefined => {
+const licenceCell = (
+  ops: Operations,
+  onJumpToSource?: (cardId: string) => void
+): AttributeCell | undefined => {
   const l = ops.licence
   if (!l.required) return undefined
   // Under its own strip, so the cell names the record, not the strip again.
-  const base = { key: 'licence', label: l.registry === 'FMCSA' ? 'FMCSA record' : 'NPI Registry record', span: 'full' as const }
-  if (l.registry === 'none') return { ...base, values: [{ value: absent(`Required for ${l.profession}; no public register checked`) }] }
+  const base = {
+    key: 'licence',
+    label: l.registry === 'FMCSA' ? 'FMCSA record' : 'NPI Registry record',
+    span: 'full' as const
+  }
+  if (l.registry === 'none')
+    return {
+      ...base,
+      values: [{ value: absent(`Required for ${l.profession}; no public register checked`) }]
+    }
   if (l.found.length === 0)
     return {
       ...base,
-      values: [{ value: absent(l.registry === 'NPI' ? 'None found in the NPI Registry for the people submitted' : 'No FMCSA registration on the record') }]
+      values: [
+        {
+          value: absent(
+            l.registry === 'NPI'
+              ? 'None found in the NPI Registry for the people submitted'
+              : 'No FMCSA registration on the record'
+          )
+        }
+      ]
     }
   if (l.registry === 'FMCSA')
     return {
@@ -266,7 +271,8 @@ const licenceCell = (ops: Operations, onJumpToSource?: (cardId: string) => void)
 }
 
 /** The app's licence-type text: `general_contractor` as General Contractor. */
-const licenceTypeText = (t?: string) => (t ?? '').split('_').filter(Boolean).map(titleCase).join(' ')
+const licenceTypeText = (t?: string) =>
+  (t ?? '').split('_').filter(Boolean).map(titleCase).join(' ')
 
 /** Whether a source's status reads active. */
 const isActive = (s?: string) => /active/i.test(s ?? '') && !/inactive/i.test(s ?? '')
@@ -289,12 +295,20 @@ const licenceSource = (l: StateLicence, onJumpToSource?: (cardId: string) => voi
   onSelect: onJumpToSource ? () => onJumpToSource(docCard(l.id)) : undefined
 })
 
-const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSource?: (cardId: string) => void): AttributeCell[] => [
+const stateLicenceCells = (
+  l: StateLicence,
+  record: BusinessRecord,
+  onJumpToSource?: (cardId: string) => void
+): AttributeCell[] => [
   ...l.names.map((n, i) => ({
     key: `${l.id}-name-${i}`,
     label: 'Business name',
     badge: record.names?.some((x) => x.submitted && sameName(x.name, n)) ? (
-      <SubmittedChip verified sources={[licenceSource(l, onJumpToSource)]} onJumpToSource={onJumpToSource} />
+      <SubmittedChip
+        verified
+        sources={[licenceSource(l, onJumpToSource)]}
+        onJumpToSource={onJumpToSource}
+      />
     ) : undefined,
     values: [{ value: n }]
   })),
@@ -312,85 +326,31 @@ const stateLicenceCells = (l: StateLicence, record: BusinessRecord, onJumpToSour
     ),
     values: [{ value: l.number ?? absent('Not provided') }]
   },
-  ...(l.status ? [{ key: `${l.id}-status`, label: 'Status', values: [{ value: titleCase(l.status) }] }] : []),
+  ...(l.status
+    ? [{ key: `${l.id}-status`, label: 'Status', values: [{ value: titleCase(l.status) }] }]
+    : []),
   ...l.addresses.map((a, i) => ({
     key: `${l.id}-addr-${i}`,
     label: 'Address',
     span: 'full' as const,
     badge: record.addresses.some((x) => x.submitted && x.fullAddress === a) ? (
-      <SubmittedChip verified sources={[licenceSource(l, onJumpToSource)]} onJumpToSource={onJumpToSource} />
+      <SubmittedChip
+        verified
+        sources={[licenceSource(l, onJumpToSource)]}
+        onJumpToSource={onJumpToSource}
+      />
     ) : undefined,
     values: [{ value: a }]
   }))
 ]
 
 /** A source label the registry chip already names. */
-const REGISTRY_LABELS = new Set(['State registration', 'registration'])
-
-/**
- * One location, as the Formation grid states a fact: the label, the chips
- * that attest it — Submitted, the filings that list it, every other record
- * that carries it, and the licence practised from it — then the address, with
- * whether the business is registered in its state and what USPS says of it.
- */
-const locationCell = (
-  a: Location,
-  key: string,
-  label: string,
-  ops: Operations,
-  record: BusinessRecord,
-  onJumpToSource?: (cardId: string) => void
-): AttributeCell => {
-  const filings = filingsListing(record, a.fullAddress, 'addresses')
-  /* The website, where the web address check found the submitted office on
-     it: the check is the association — "Match identified to the submitted
-     Office Address" — so the site is a source of the address it matched. */
-  const webSaid = record.reviewTasks.find((t) => t.key === 'web_address_verification')?.subLabel ?? ''
-  const onSite = a.submitted && /verified|match/i.test(webSaid) && !/unverified|mismatch/i.test(webSaid)
-  const others = [...a.sourceNames.filter((n) => !REGISTRY_LABELS.has(n)), ...(onSite && record.website?.url ? ['Website'] : [])]
-  const licences = licencesAt(ops.licence, a.fullAddress)
-  const line = addressLine(a)
-  return {
-    key,
-    label,
-    span: 'full',
-    badge: (
-      <span className="flex flex-wrap items-center gap-1">
-        {(a.submitted || filings.length > 0 || others.length > 0 || licences.length > 0) && (
-          <AttributeSources
-            submitted={a.submitted ? { verified: filings.length > 0 || others.length > 0 } : undefined}
-            sources={others}
-            registrations={filings}
-            domesticState={record.formation?.state}
-            refs={a.sourceRefs?.filter((r) => r.type !== 'registration')}
-            href={onSite ? (record.website?.url ?? undefined) : undefined}
-            // The licence practised from this address, in the same chip as
-            // the filings that list it.
-            extra={licences.map((l) => ({
-              id: `${key}-${l.id}`,
-              label: l.registry,
-              domain: l.registry,
-              title: `NPI ${l.number}`,
-              onSelect: onJumpToSource ? () => onJumpToSource(docCard(l.id)) : undefined,
-              annotation: titleCase(l.holder)
-            }))}
-            onJumpToSource={onJumpToSource}
-          />
-        )}
-      </span>
-    ),
-    values: [
-      {
-        value: a.fullAddress,
-        note: line ? <span className="text-caption text-text-secondary">{line}</span> : undefined
-      }
-    ]
-  }
-}
 
 /** Whether each strip has anything to draw, so a card can be left out rather than empty. */
-export const industryDrawn = (ops: Operations) => ops.industry.table.length > 0 && ops.industry.prohibited !== 'unknown'
-export const licencesDrawn = (ops: Operations) => ops.licence.required || ops.stateLicences.length > 0
+export const industryDrawn = (ops: Operations) =>
+  ops.industry.table.length > 0 && ops.industry.prohibited !== 'unknown'
+export const licencesDrawn = (ops: Operations) =>
+  ops.licence.required || ops.stateLicences.length > 0
 export const locationsDrawn = (ops: Operations) => ops.locations.length > 0
 
 /**
@@ -404,6 +364,7 @@ export const IndustryStrip = ({ ops }: { ops: Operations }) => {
   return (
     <Strip
       label="Industry"
+      hideLabel
       aside={industry.lead?.name}
       tiles={[
         industry.prohibited === 'flagged'
@@ -413,7 +374,9 @@ export const IndustryStrip = ({ ops }: { ops: Operations }) => {
                 <MetaChip tone="danger" size="compact">
                   <TriangleAlert {...icon} />
                   Prohibited
-                  {industry.flagged.length > 1 && <span className="tabular-nums">{industry.flagged.length}</span>}
+                  {industry.flagged.length > 1 && (
+                    <span className="tabular-nums">{industry.flagged.length}</span>
+                  )}
                 </MetaChip>
               )
             }
@@ -452,7 +415,17 @@ export const LicenceStrip = ({
     !lic.required || !licence
       ? []
       : lic.registry === 'none'
-        ? [{ key: 'none', static: true, chip: <MetaChip tone="neutral" size="compact">Required · no public register checked</MetaChip> }]
+        ? [
+            {
+              key: 'none',
+              static: true,
+              chip: (
+                <MetaChip tone="neutral" size="compact">
+                  Required · no public register checked
+                </MetaChip>
+              )
+            }
+          ]
         : lic.found.length === 0
           ? [
               {
@@ -461,7 +434,9 @@ export const LicenceStrip = ({
                 chip: (
                   <MetaChip tone="danger" size="compact">
                     <X {...icon} />
-                    {lic.registry === 'NPI' ? 'None found in the NPI Registry' : 'No FMCSA registration'}
+                    {lic.registry === 'NPI'
+                      ? 'None found in the NPI Registry'
+                      : 'No FMCSA registration'}
                   </MetaChip>
                 )
               }
@@ -504,138 +479,41 @@ export const LicenceStrip = ({
       tiles={tiles}
       detail={(key) => {
         const state = ops.stateLicences.find((l) => `state-licence:${l.id}` === key)
-        if (state) return <AttributeCells items={stateLicenceCells(state, record, onJumpToSource)} className="-mb-px" />
-        const f = lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
-        return <AttributeCells items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []} className="-mb-px" />
+        if (state)
+          return (
+            <AttributeCells
+              items={stateLicenceCells(state, record, onJumpToSource)}
+              className="-mb-px"
+            />
+          )
+        const f =
+          lic.required && lic.registry === 'FMCSA' ? lic.found.find((x) => x.id === key) : undefined
+        return (
+          <AttributeCells
+            items={f ? fmcsaCells(f, record, onJumpToSource) : licence ? [licence] : []}
+            className="-mb-px"
+          />
+        )
       }}
     />
   )
 }
 
-/**
- * Every place the record puts the business — the submitted office first,
- * with its mark — each opening its addresses as the Formation grid states a
- * fact: Submitted, the filings that list it, the licence practised from it,
- * then the address.
- */
-/** How many street lines a place's hover lists before "+ N more". */
-const SHOWN_ADDRESSES = 4
-
-export const LocationsStrip = ({
-  ops,
-  record,
-  onJumpToSource
-}: {
-  ops: Operations
-  record: BusinessRecord
-  onJumpToSource?: (cardId: string) => void
-}) => {
-  const { locations } = ops
-  // One tile per place, the submitted office's marked and first; closed until picked.
-  const places = [...new Set(locations.map(placeOf))]
-  const at = (p: string) => locations.filter((a) => placeOf(a) === p)
-  const officePlace = places.find((p) => at(p).some((a) => a.submitted))
-  if (places.length === 0) return null
-  return (
-    <Strip
-      label="Locations"
-      tiles={[...(officePlace ? [officePlace] : []), ...places.filter((p) => p !== officePlace)].map((p) => {
-        const here = at(p)
-        const submitted = here.some((a) => a.submitted)
-        // The mark is the post's: a check where it delivers, an X where
-        // it cannot. The colour is the office's — green for the submitted
-        // one, grey for the rest — and red only where the post reaches none
-        // of the addresses at the place: one bad suite among a city's
-        // offices is that address's problem, shown on its row, not the
-        // city's.
-        const undeliverable = here.length > 0 && here.every((a) => a.deliverable === false)
-        const deliverable = here.some((a) => a.deliverable === true)
-        return {
-          key: p,
-          // Pointed at, the chip says what is there: how many addresses, the
-          // submitted office among them, what the post says of them, and the
-          // first few street lines.
-          chip: (
-            <HoverCard openDelay={300}>
-              <HoverCardTrigger asChild>
-                <span className="flex">
-                  <MetaChip tone={undeliverable ? 'danger' : submitted ? 'success' : 'neutral'} size="compact">
-                    {undeliverable ? <X {...icon} /> : deliverable || submitted ? <Check {...icon} /> : null}
-                    {p}
-                    {here.length > 1 && <span className="tabular-nums text-text-secondary">{here.length}</span>}
-                  </MetaChip>
-                </span>
-              </HoverCardTrigger>
-              <HoverCardContent side="top" className="w-72 p-3">
-                {/* As the people preview reads: the office's Submitted chip
-                    over the place, verified as its cell decides — a filing or
-                    another record lists it. */}
-                {submitted && (
-                  <span className="mb-1.5 flex">
-                    <SubmittedChip
-                      verified={here.some((a) => a.submitted && (filingsListing(record, a.fullAddress, 'addresses').length > 0 || a.sourceNames.some((n) => !REGISTRY_LABELS.has(n))))}
-                      by={[...new Set(here.filter((a) => a.submitted).flatMap((a) => [...filingsListing(record, a.fullAddress, 'addresses').map((f) => `SOS · ${f.state}`), ...a.sourceNames.filter((n) => !REGISTRY_LABELS.has(n))]))]}
-                      onJumpToSource={onJumpToSource}
-                    />
-                  </span>
-                )}
-                {/* The place, and how many addresses it holds — as the filing
-                    preview counts a state's filings. */}
-                <span className="flex items-baseline justify-between gap-4">
-                  <span className="text-sm font-medium text-foreground">{p}</span>
-                  <span className="text-caption text-text-secondary">
-                    {here.length} address{here.length === 1 ? '' : 'es'}
-                  </span>
-                </span>
-                {/* The addresses, under a hairline, each with its mark: commercial
-                    or residential, then whether the post reaches it, then whether
-                    it is an agent's. */}
-                <ul className="mt-1.5 flex flex-col gap-0.5 border-t border-[var(--core-color-border-divider)] pt-1.5 text-caption text-foreground">
-                  {here.slice(0, SHOWN_ADDRESSES).map((a, i) => (
-                    <li key={`${a.fullAddress}-${i}`} className="flex items-start gap-1.5">
-                      <MapPin aria-hidden="true" size={12} strokeWidth={1.5} className="mt-0.5 shrink-0 text-text-secondary" />
-                      <span className="min-w-0">
-                        {a.fullAddress.split(',')[0]}
-                        {[
-                          a.propertyType && a.propertyType.toLowerCase().replace(/^./, (c) => c.toUpperCase()),
-                          a.deliverable === true ? 'Deliverable' : a.deliverable === false ? 'Not deliverable' : undefined,
-                          (a.isRegisteredAgent || a.labels.includes('registered_agent')) && 'Registered agent'
-                        ]
-                          .filter((x): x is string => Boolean(x))
-                          .map((x) => (
-                            <span key={x} className="text-text-secondary">
-                              {' · '}
-                              {x}
-                            </span>
-                          ))}
-                      </span>
-                    </li>
-                  ))}
-                  {here.length > SHOWN_ADDRESSES && (
-                    <li className="text-text-secondary">+ {here.length - SHOWN_ADDRESSES} more</li>
-                  )}
-                </ul>
-              </HoverCardContent>
-            </HoverCard>
-          )
-        }
-      })}
-      detail={(p) => (
-        <AttributeCells
-          className="-mb-px"
-          items={at(p).map((a, i) => locationCell(a, `${p}-${i}`, addressLabel(a), ops, record, onJumpToSource))}
-        />
-      )}
-    />
-  )
-}
+/** Every address on the record, as a table — the Addresses card's body. */
+export const LocationsStrip = AddressTable
 
 /**
  * What the business does, where, and whether it is allowed to — the three
  * strips together, for anything that still wants them as one body. The
  * grouped report draws each on its own card.
  */
-export const OperationsBody = ({ record, onJumpToSource }: { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }) => {
+export const OperationsBody = ({
+  record,
+  onJumpToSource
+}: {
+  record: BusinessRecord
+  onJumpToSource?: (cardId: string) => void
+}) => {
   const ops = useMemo(() => operationsOf(record), [record])
   return (
     <div className="border-b border-[var(--core-color-border-divider)]">

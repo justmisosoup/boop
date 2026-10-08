@@ -1,7 +1,17 @@
-import { useContext, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  Fragment,
+  useContext,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode
+} from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import {
-  Building2,
   Check,
   CircleOff,
   FilePenLine,
@@ -10,11 +20,18 @@ import {
   MapPin,
   Minus,
   ShieldCheck,
-  X
+  X,
+  List,
+  Map as MapIcon,
+  Landmark,
+  Table2,
+  LayoutGrid,
+  ChevronDown
 } from 'lucide-react'
 
 import {
   ActionButton,
+  IconActionButton,
   Menu,
   MenuContent,
   MenuItem,
@@ -22,7 +39,9 @@ import {
   MetaChip,
   MutedText,
   Text,
-  type MetaChipTone
+  type MetaChipTone,
+  SegmentedControl,
+  SegmentedControlItem
 } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
@@ -36,18 +55,34 @@ import {
   type Registration
 } from '../../lib/registrationStatus'
 import { stateName } from '../../lib/states'
+import { cityLngLat } from '../../lib/cityCoordinates'
 import { cn } from '../../utils/twUtils'
 import { StripExpand } from './Strip'
 import { canonicalRole, nameKey } from '../../lib/attributes'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { Collapsible } from '../Collapsible'
+import { FormationIcon } from './FormationIcon'
+import { StateFilingsMap } from './StateFilingsMap'
 import { SubmittedChip } from '../Provenance'
+import {
+  CityRegistrationCell,
+  CityRegistrationDetail,
+  CityRegistrationRow,
+  CityTooltip,
+  cityName,
+  isOpen,
+  registrationsOf
+} from './CityStrip'
 
 type Kind = 'active' | 'inactive' | 'none'
 
 /** Active, inactive, or nothing published — the three a filing can say. */
 const kindOf = (reg: Registration): Kind =>
-  /^active$/i.test(reg.status ?? '') ? 'active' : /^inactive$/i.test(reg.status ?? '') ? 'inactive' : 'none'
+  /^active$/i.test(reg.status ?? '')
+    ? 'active'
+    : /^inactive$/i.test(reg.status ?? '')
+      ? 'inactive'
+      : 'none'
 
 const WORD: Record<Kind, string> = {
   active: 'Active',
@@ -84,7 +119,8 @@ export const selectedStyle = (tone: MetaChipTone) =>
 /** Absence is not a chip (PARITY.md): a state that publishes no status keeps
  *  the chip's geometry but drops its fill for a dashed outline — the
  *  `StateMark` ring's grammar, one level up. */
-const ABSENT = '!bg-transparent !border-dashed !border-[var(--core-color-border-strong)] !text-text-secondary'
+const ABSENT =
+  '!bg-transparent !border-dashed !border-[var(--core-color-border-strong)] !text-text-secondary'
 
 /** The sub status, as an icon where there is one to say; else the status's. */
 const Icon = ({ reg, kind }: { reg?: Registration; kind: Kind }) => {
@@ -164,7 +200,12 @@ const groupOf = (state: string, all: Registration[]): StateGroup => {
  * publishes neither keeps the dashed outline and the dash — it is said, not
  * dropped. The status details stay text: they are the registry's own words.
  */
-const chipIcon = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
+const chipIcon = {
+  'aria-hidden': true,
+  size: 12,
+  strokeWidth: 2,
+  className: 'shrink-0'
+} as const
 export const StatusChip = ({ reg }: { reg: Registration }) => {
   const kind = kindOf(reg)
   const st = registrationState(reg)
@@ -184,7 +225,13 @@ export const StatusChip = ({ reg }: { reg: Registration }) => {
 export const SubStatusChip = ({ reg }: { reg: Registration }) => {
   const sub = registrationState(reg).subStatus
   const good = Boolean(sub && /good standing/i.test(sub) && !/not/i.test(sub))
-  const tone: MetaChipTone = !sub ? 'neutral' : good ? 'success' : /pending/i.test(sub) ? 'warning' : 'danger'
+  const tone: MetaChipTone = !sub
+    ? 'neutral'
+    : good
+      ? 'success'
+      : /pending/i.test(sub)
+        ? 'warning'
+        : 'danger'
   return (
     <MetaChip tone={tone} size="compact" className={cn(!sub && ABSENT)}>
       {!sub ? (
@@ -224,7 +271,9 @@ const officersOf = (f: Registration, submittedPeople: Set<string>): ListItem[] =
   // One person is one line, their roles together under the name.
   const byName = new Map<string, { name: string; roles: string[] }>()
   const rows =
-    (f.officerRoles ?? []).length > 0 ? (f.officerRoles ?? []) : (f.officers ?? []).map((name) => ({ name, roles: [] }))
+    (f.officerRoles ?? []).length > 0
+      ? (f.officerRoles ?? [])
+      : (f.officers ?? []).map((name) => ({ name, roles: [] }))
   for (const o of rows) {
     const k = nameKey(o.name)
     const entry = byName.get(k) ?? { name: o.name, roles: [] }
@@ -272,7 +321,15 @@ const CellList = ({ items }: { items: ListItem[] }) => {
  * Built on the Radix primitive with the popover's tokens, as `MenuContent`
  * is: core's `Tooltip` still draws its colours from the legacy palette.
  */
-export const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLead: boolean; office: boolean }) => {
+export const TileTooltip = ({
+  group,
+  isLead,
+  office
+}: {
+  group: StateGroup
+  isLead: boolean
+  office: boolean
+}) => {
   const st = registrationState(group.current)
   const sub = st.subStatus
   const subLine = sub
@@ -284,9 +341,20 @@ export const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLe
   // Each line carries the mark it explains on the tile, where it has one:
   // the status its check, cross or dash; the sub status its shield, clock or
   // circle.
-  const mark = { 'aria-hidden': true, size: 12, strokeWidth: 2, className: 'shrink-0' } as const
+  const mark = {
+    'aria-hidden': true,
+    size: 12,
+    strokeWidth: 2,
+    className: 'shrink-0'
+  } as const
   const statusIcon =
-    group.kind === 'active' ? <Check {...mark} /> : group.kind === 'inactive' ? <X {...mark} /> : <Minus {...mark} />
+    group.kind === 'active' ? (
+      <Check {...mark} />
+    ) : group.kind === 'inactive' ? (
+      <X {...mark} />
+    ) : (
+      <Minus {...mark} />
+    )
   const code = (sub ?? '').toUpperCase()
   const subIcon =
     code === 'GOOD_STANDING' || (/good standing/i.test(sub ?? '') && !/not/i.test(sub ?? '')) ? (
@@ -310,7 +378,7 @@ export const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLe
     </span>
   )
   const notes: Array<{ text: string; icon?: ReactNode }> = [
-    ...(isLead ? [{ text: 'Formation filing', icon: <Building2 {...mark} /> }] : []),
+    ...(isLead ? [{ text: 'Formation filing', icon: <FormationIcon {...mark} /> }] : []),
     ...(office ? [{ text: 'Submitted address state', icon: <MapPin {...mark} /> }] : [])
   ]
   return (
@@ -326,7 +394,8 @@ export const TileTooltip = ({ group, isLead, office }: { group: StateGroup; isLe
       {line(statusIcon, WORD[group.kind])}
       {line(subIcon, subLine)}
       {/* The registry's own words: a page and a pen. */}
-      {details && line(<FilePenLine {...mark} />, details.charAt(0).toUpperCase() + details.slice(1))}
+      {details &&
+        line(<FilePenLine {...mark} />, details.charAt(0).toUpperCase() + details.slice(1))}
       {notes.length > 0 && (
         <div className="mt-1.5 flex flex-col border-t border-[var(--core-color-border-divider)] pt-1.5 text-text-secondary">
           {notes.map((n) => (
@@ -352,7 +421,8 @@ export const otherStateStandings = (
 ): Record<Kind, number> & { total: number } => {
   const byState = new Map<string, Registration[]>()
   for (const r of record.registrations)
-    if (r.state && r.state !== formationState) byState.set(r.state, [...(byState.get(r.state) ?? []), r])
+    if (r.state && r.state !== formationState)
+      byState.set(r.state, [...(byState.get(r.state) ?? []), r])
   const out = { active: 0, inactive: 0, none: 0, total: byState.size }
   for (const [state, filings] of byState) out[groupOf(state, filings).kind] += 1
   return out
@@ -377,6 +447,80 @@ export const stateGroupsOf = (record: BusinessRecord, lead?: Registration): Stat
     .sort((a, b) => rank(a) - rank(b) || a.state.localeCompare(b.state))
 }
 
+/** Under a filing's state: whether it is domestic or foreign, and when it was filed. */
+const filedLine = (r: Registration) => {
+  const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
+  return [
+    jurisdiction === 'domestic' ? 'Domestic' : jurisdiction === 'foreign' ? 'Foreign' : null,
+    r.registrationDate
+      ? `Filed ${new Date(`${r.registrationDate.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+      : null
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+export type FilingsLayout = 'strip' | 'list' | 'map'
+
+/** A state filing's row and cell name the register, not just the state: "Utah Secretary of State". */
+const registryName = (state: string) => `${stateName(state)} Secretary of State`
+
+/** Each state's square on a tile map of the country: [state, column, row]. */
+const TILE_MAP: ReadonlyArray<readonly [string, number, number]> = [
+  ['AK', 0, 0],
+  ['ME', 10, 0],
+  ['VT', 9, 1],
+  ['NH', 10, 1],
+  ['WA', 0, 2],
+  ['ID', 1, 2],
+  ['MT', 2, 2],
+  ['ND', 3, 2],
+  ['MN', 4, 2],
+  ['IL', 5, 2],
+  ['WI', 6, 2],
+  ['MI', 7, 2],
+  ['NY', 8, 2],
+  ['RI', 9, 2],
+  ['MA', 10, 2],
+  ['OR', 0, 3],
+  ['NV', 1, 3],
+  ['WY', 2, 3],
+  ['SD', 3, 3],
+  ['IA', 4, 3],
+  ['IN', 5, 3],
+  ['OH', 6, 3],
+  ['PA', 7, 3],
+  ['NJ', 8, 3],
+  ['CT', 9, 3],
+  ['CA', 0, 4],
+  ['UT', 1, 4],
+  ['CO', 2, 4],
+  ['NE', 3, 4],
+  ['MO', 4, 4],
+  ['KY', 5, 4],
+  ['WV', 6, 4],
+  ['VA', 7, 4],
+  ['MD', 8, 4],
+  ['DE', 9, 4],
+  ['AZ', 1, 5],
+  ['NM', 2, 5],
+  ['KS', 3, 5],
+  ['AR', 4, 5],
+  ['TN', 5, 5],
+  ['NC', 6, 5],
+  ['SC', 7, 5],
+  ['DC', 8, 5],
+  ['OK', 3, 6],
+  ['LA', 4, 6],
+  ['MS', 5, 6],
+  ['AL', 6, 6],
+  ['GA', 7, 6],
+  ['HI', 0, 7],
+  ['TX', 3, 7],
+  ['FL', 8, 7]
+]
+const TILE_STATES = new Set(TILE_MAP.map(([state]) => state))
+
 /**
  * Every state filing, as a strip: a bar of how they stand, then one tile per
  * state, then the selected state's filings.
@@ -398,11 +542,24 @@ export const FilingStrip = ({
   record,
   lead,
   legalName: cardLegalName,
-  className
+  className,
+  layout = 'strip',
+  leadCells,
+  city
 }: {
   record: BusinessRecord
   /** The formation filing the card is about. It leads the strip. */
   lead?: Registration
+  /** `map`: the states in their shapes; `list`: a row per state. Each opens
+   *  on the formation filing, its details beside it.
+   *  `strip`: a wrapping row of tiles, closed until one is picked. */
+  layout?: FilingsLayout
+  /** The formation facts the card states — entity type, formation state and
+   *  date, with their sources — to lead the formation filing's details. */
+  leadCells?: AttributeCell[]
+  /** The business's city registrations: rows of the list, under the state
+   *  filings, each opening to its own details. */
+  city?: NonNullable<BusinessRecord['cityRegistrations']>
   /** The legal name the card states, where it is not the lead filing's —
    *  Sprig's own, over Mixboard Inc.'s linked Delaware filing. */
   legalName?: string
@@ -422,7 +579,12 @@ export const FilingStrip = ({
   // details are on demand. Clicking the open state again closes them.
   // Led here from the Assistant, the lead filing is open from the start.
   // The one strip that does not open on its first result — Sara, 2026-10-05.
-  const [collapsed, setCollapsed] = useState(!useContext(StripExpand))
+  const expandedByLink = useContext(StripExpand)
+  // The inactive registrations, folded away under the active ones.
+  const [showInactive, setShowInactive] = useState(false)
+  // The city registration open under its row, by its key.
+  const [openCity, setOpenCity] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState(!expandedByLink)
   const selected = picked ?? lead?.state ?? groups[0]?.state
   // Which of a state's filings is open, where it holds more than one. None
   // picked is its current filing.
@@ -435,19 +597,82 @@ export const FilingStrip = ({
 
   if (groups.length === 0) return null
 
-  // Every state, always: no status filter. The tiles' tones and order, the
-  // card's title and note, and each tile's tooltip already say how they stand.
-  const visible = groups
+  // Every state, always: no status filter. In the order a reviewer looks:
+  // the formation filing, the states the customer submitted, the active
+  // filings, then the rest, newest first — not the alphabet.
+  const submittedStates = new Set(
+    record.addresses.filter((a) => a.submitted && a.state).map((a) => a.state as string)
+  )
+  const rank = (g: StateGroup) =>
+    lead && g.state === lead.state
+      ? 0
+      : submittedStates.has(g.state)
+        ? 1
+        : g.kind === 'active'
+          ? 2
+          : 3
+  const visible = [...groups].sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (b.current.registrationDate ?? '').localeCompare(a.current.registrationDate ?? '')
+  )
   const current = groups.find((g) => g.state === selected) ?? groups[0]
+
+  /* Active first; the inactive fold under "Show N inactive registrations" —
+     unless nothing is active, when they are all there is and all show. The
+     formation filing is never folded: it is what the card is about. No status
+     published (Delaware, New Jersey) is not inactive. */
+  const cities = registrationsOf(city ?? [])
+  const isLeadState = (g: StateGroup) => Boolean(lead && g.state === lead.state)
+  const inactiveState = (g: StateGroup) => g.kind === 'inactive' && !isLeadState(g)
+  const allInactive =
+    visible.every((g) => g.kind === 'inactive') && cities.every(([, here]) => !here.some(isOpen))
+  const fold = (inactive: boolean) => inactive && !allInactive && !showInactive
+  const listStates = [
+    ...visible.filter((g) => !inactiveState(g)),
+    ...visible.filter(inactiveState).filter(() => !fold(true))
+  ]
+  const listCities = [
+    ...cities.filter(([, here]) => here.some(isOpen)),
+    ...cities.filter(([, here]) => !here.some(isOpen)).filter(() => !fold(true))
+  ]
+  const tileStates = listStates
+  // The grid's cells: the state filings, then the city registrations.
+  const gridItems: Array<{
+    key: string
+    state?: StateGroup
+    city?: (typeof cities)[number]
+  }> = [
+    ...tileStates.map((g) => ({ key: g.state, state: g })),
+    ...listCities.map((c) => ({ key: `city-${c[0]}`, city: c }))
+  ]
+  const inactiveCount = allInactive
+    ? 0
+    : visible.filter(inactiveState).length +
+      (layout === 'list' || layout === 'strip' ? cities.filter(([, here]) => !here.some(isOpen)).length : 0)
+  const inactiveToggle =
+    inactiveCount > 0 ? (
+      <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+        <ActionButton variant="quiet" size="compact" onClick={() => setShowInactive(!showInactive)}>
+          {showInactive
+            ? `Hide inactive ${inactiveCount === 1 ? 'registration' : 'registrations'}`
+            : `Show ${inactiveCount} inactive ${inactiveCount === 1 ? 'registration' : 'registrations'}`}
+        </ActionButton>
+      </div>
+    ) : null
 
   /** Arrow keys walk the strip, as a radio group does. */
   const onKey = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
     const step =
-      e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+      e.key === 'ArrowRight' || e.key === 'ArrowDown'
+        ? 1
+        : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+          ? -1
+          : 0
     if (!step) return
     e.preventDefault()
-    const next = (i + step + visible.length) % visible.length
-    setSelected(visible[next].state)
+    const next = (i + step + tileStates.length) % tileStates.length
+    setSelected(tileStates[next].state)
     setCollapsed(false)
     tiles.current[next]?.focus()
   }
@@ -479,18 +704,25 @@ export const FilingStrip = ({
     if (filings.filter((g) => monthOf(g) === month).length < 2 || !f.registrationDate) return month
     const day = formatDate(f.registrationDate)
     const sameDay = filings.filter((g) => g.registrationDate === f.registrationDate).length > 1
-    return sameDay ? `${day} · ${/^domestic$/i.test(f.jurisdiction ?? '') ? 'Domestic' : 'Foreign'}` : day
+    return sameDay
+      ? `${day} · ${/^domestic$/i.test(f.jurisdiction ?? '') ? 'Domestic' : 'Foreign'}`
+      : day
   }
   // Every state opens on the filing we read as standing now — the active
   // one, else the newest — the formation state included: Alliance Transfer's
   // New York opens on its active 2007 filing, and the 1976 formation filing
   // is one pick away in the menu, labelled Formation when shown.
-  const chosenKey = filingPick && filingPick.state === current.state ? filingPick.key : keyOf(filings[0], 0)
+  const chosenKey =
+    filingPick && filingPick.state === current.state ? filingPick.key : keyOf(filings[0], 0)
   const shownFiling = filings.find((f, i) => keyOf(f, i) === chosenKey) ?? filings[0]
   // The people the customer submitted, to mark where a filing names one.
-  const submittedPeople = new Set(record.people.filter((p) => p.submitted).map((p) => nameKey(p.name)))
+  const submittedPeople = new Set(
+    record.people.filter((p) => p.submitted).map((p) => nameKey(p.name))
+  )
   // The addresses the customer submitted, to mark where a filing lists one.
-  const submitted = new Set(record.addresses.filter((a) => a.submitted).map((a) => addressKey(a.fullAddress)))
+  const submitted = new Set(
+    record.addresses.filter((a) => a.submitted).map((a) => addressKey(a.fullAddress))
+  )
   // What the record knows about each address, read under it the way an
   // officer's roles are: a registered agent's, the property type, a mail drop.
   // Every filing address is on the record; the filing itself types none.
@@ -498,9 +730,13 @@ export const FilingStrip = ({
     record.addresses.map((a) => [
       addressKey(a.fullAddress),
       [
-        a.isRegisteredAgent || (a.labels ?? []).includes('registered_agent') ? 'Registered agent' : undefined,
+        a.isRegisteredAgent || (a.labels ?? []).includes('registered_agent')
+          ? 'Registered agent'
+          : undefined,
         a.cmra ? 'Mail drop (CMRA)' : undefined,
-        a.propertyType ? a.propertyType.charAt(0) + a.propertyType.slice(1).toLowerCase() : undefined
+        a.propertyType
+          ? a.propertyType.charAt(0) + a.propertyType.slice(1).toLowerCase()
+          : undefined
       ]
         .filter(Boolean)
         .join(' · ') || undefined
@@ -515,7 +751,22 @@ export const FilingStrip = ({
     // name the registry holds. The same name, however punctuated, is not
     // repeated.
     const variant = f.name && nameKey(f.name) !== nameKey(legalName) ? f.name : undefined
+    // The formation filing leads with the card's formation facts; its status
+    // cells are the filing's own, below. Any other filing, its entity type.
+    const facts: AttributeCell[] =
+      f === lead && leadCells?.length
+        ? leadCells.filter((c) => !/^formation (sub )?status/i.test(c.label ?? ''))
+        : f.entityType
+          ? [
+              {
+                key: `${f.fileNumber}-e`,
+                label: 'Entity type',
+                values: [{ value: f.entityType }]
+              }
+            ]
+          : []
     return [
+      ...facts,
       ...(variant
         ? [
             {
@@ -567,7 +818,9 @@ export const FilingStrip = ({
         span: 'full' as const,
         // Meroxa's agent is DeVaris Brown, the person the customer submitted.
         badge:
-          f.registeredAgent && submittedPeople.has(nameKey(f.registeredAgent)) ? <SubmittedChip verified /> : undefined,
+          f.registeredAgent && submittedPeople.has(nameKey(f.registeredAgent)) ? (
+            <SubmittedChip verified />
+          ) : undefined,
         values: [{ value: f.registeredAgent || NONE_LISTED }]
       },
       // Who and where the filing lists, each closed to a count in its cell.
@@ -578,7 +831,10 @@ export const FilingStrip = ({
           {
             value:
               officersOf(f, submittedPeople).length > 0 ? (
-                <CellList key={`${f.state}-${f.fileNumber}-o`} items={officersOf(f, submittedPeople)} />
+                <CellList
+                  key={`${f.state}-${f.fileNumber}-o`}
+                  items={officersOf(f, submittedPeople)}
+                />
               ) : (
                 NONE_LISTED
               )
@@ -634,174 +890,528 @@ export const FilingStrip = ({
     ]
   })
 
+  /** Picks a state, or closes its details when it is the open one. */
+  // With the map or list, the details fly out in a side panel that lists
+  // every filing, so the reader can step through them there.
+  const pick = (state: string) => {
+    if (state === current.state && !collapsed) return setCollapsed(true)
+    setSelected(state)
+    setCollapsed(false)
+  }
+  const labelFor = (g: (typeof visible)[number]) => {
+    const standing = [
+      WORD[g.kind],
+      g.current.subStatus ? subStatusLabel(g.current).toLowerCase() : null
+    ]
+      .filter(Boolean)
+      .join(', ')
+    const label = `${stateName(g.state)}${g.state === officeState ? ' (submitted office state)' : ''}: ${standing}${
+      g.others.length ? `; ${g.others.length + 1} filings` : ''
+    }`
+    return lead && g.state === lead.state ? `Formation filing, ${label}` : label
+  }
+
+  const tileFor = (g: (typeof visible)[number], i: number, square = false) => {
+    const isLead = Boolean(lead && g.state === lead.state)
+    const isCurrent = g.state === current.state
+    const on = isCurrent && !collapsed
+    const standing = [
+      WORD[g.kind],
+      g.current.subStatus ? subStatusLabel(g.current).toLowerCase() : null
+    ]
+      .filter(Boolean)
+      .join(', ')
+    const label = `${stateName(g.state)}${g.state === officeState ? ' (submitted office state)' : ''}: ${standing}${
+      g.others.length ? `; ${g.others.length + 1} filings` : ''
+    }`
+    return (
+      <RadixTooltip.Root key={g.state} delayDuration={200}>
+        <RadixTooltip.Trigger asChild>
+          <button
+            ref={(el) => {
+              tiles.current[i] = el
+            }}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-controls={detailId}
+            aria-label={isLead ? `Formation filing, ${label}` : label}
+            tabIndex={isCurrent ? 0 : -1}
+            onClick={() => {
+              if (on) return setCollapsed(true)
+              setSelected(g.state)
+              setCollapsed(false)
+            }}
+            onKeyDown={(e) => onKey(e, i)}
+            className={cn(
+              'flex rounded-control transition-shadow duration-fast motion-reduce:transition-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              square ? 'aspect-square w-full' : 'min-w-14'
+            )}
+          >
+            <MetaChip
+              tone={toneOf(g.current)}
+              size="compact"
+              className={cn(
+                'w-full justify-center font-mono',
+                square && 'h-full flex-col gap-0.5 !rounded-control px-0',
+                g.kind === 'none' && !on && ABSENT
+              )}
+              style={on ? selectedStyle(toneOf(g.current)) : undefined}
+            >
+              {isLead ? (
+                <FormationIcon aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+              ) : (
+                <Icon reg={g.current} kind={g.kind} />
+              )}
+              {g.state}
+              {g.state === officeState && (
+                <MapPin aria-hidden="true" size={11} strokeWidth={2} className="shrink-0" />
+              )}
+              {/* A state with history keeps its count: the other filings are
+              in its dropdown. */}
+              {g.others.length > 0 && (
+                <sup className="text-[9px] leading-none">{g.others.length + 1}</sup>
+              )}
+            </MetaChip>
+          </button>
+        </RadixTooltip.Trigger>
+        <RadixTooltip.Portal>
+          <RadixTooltip.Content
+            side="top"
+            sideOffset={6}
+            collisionPadding={10}
+            className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+          >
+            <TileTooltip group={g} isLead={isLead} office={g.state === officeState} />
+          </RadixTooltip.Content>
+        </RadixTooltip.Portal>
+      </RadixTooltip.Root>
+    )
+  }
+
+  // The map's hover preview, on the table rows and grid cards too.
+  const withStateTip = (g: (typeof visible)[number], element: ReactElement) => (
+    <RadixTooltip.Root key={g.state} delayDuration={200}>
+      <RadixTooltip.Trigger asChild>{element}</RadixTooltip.Trigger>
+      <RadixTooltip.Portal>
+        <RadixTooltip.Content
+          side="top"
+          sideOffset={6}
+          collisionPadding={10}
+          className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+        >
+          <TileTooltip
+            group={g}
+            isLead={Boolean(lead && g.state === lead.state)}
+            office={g.state === officeState}
+          />
+        </RadixTooltip.Content>
+      </RadixTooltip.Portal>
+    </RadixTooltip.Root>
+  )
+
+  // A state's filings, in the report's cells: under the picked row in the table,
+  // under the strip or the map otherwise.
+  const detailPanel = (
+    <Collapsible open={!collapsed}>
+      <div id={detailId} className={cn('border-t border-[var(--core-color-border-divider)]')}>
+        {/* Sized to the filings button, so a state without one keeps the same
+      header height and the grid below does not jump. Ruled off from the
+      cells by the grid's own dashed rule (`--dash-rule-x`). */}
+        <div
+          className="flex min-h-12 items-center gap-2 bg-bottom bg-no-repeat px-4 py-2"
+          style={{
+            backgroundImage: 'var(--dash-rule-x)',
+            backgroundSize: '100% 1px'
+          }}
+        >
+          {/* The state at the default size: it names the filing below. */}
+          <Text className="font-semibold">{stateName(current.state)}</Text>
+          {/* Only the formation filing is labelled, with the formation tile's
+        own building mark. Which of a state's filings is open is the
+        filings menu's to say. */}
+          {shownFiling === lead && (
+            <span className="flex items-center gap-1 text-text-secondary">
+              <FormationIcon aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+              <MutedText className="text-caption">Formation</MutedText>
+            </span>
+          )}
+          {/* The current filing leads; every other version is one pick away,
+        at the header's far edge, behind the history button. A light check
+        marks the one shown. */}
+          {/* Only where there is more than one version to pick from. */}
+          {filings.length > 1 && (
+            <div className="ml-auto">
+              <Menu>
+                <MenuTrigger asChild>
+                  {/* A history button, as a repository counts its commits: the
+                count of every version, not the one open — the header
+                says which that is. */}
+                  <ActionButton
+                    aria-label={`${stateName(current.state)}: ${filings.length} filing${filings.length === 1 ? '' : 's'}`}
+                    variant="quiet"
+                    size="compact"
+                    leadingIcon={<History aria-hidden="true" className="size-4" />}
+                  >
+                    {filings.length} filing
+                    {filings.length === 1 ? '' : 's'}
+                  </ActionButton>
+                </MenuTrigger>
+                <MenuContent align="end" className="z-popover min-w-48">
+                  {filings.map((f, i) => (
+                    <MenuItem
+                      key={keyOf(f, i)}
+                      aria-current={keyOf(f, i) === chosenKey ? 'true' : undefined}
+                      onSelect={() =>
+                        setFilingPick({
+                          state: current.state,
+                          key: keyOf(f, i)
+                        })
+                      }
+                    >
+                      <span className="flex w-full items-center gap-1.5">
+                        {versionLabel(f)}
+                        <VersionTag latest={keyOf(f, i) === latestKey} />
+                        {/* The one shown: a light check, not a checkbox. */}
+                        {keyOf(f, i) === chosenKey && (
+                          <Check
+                            aria-hidden="true"
+                            size={14}
+                            strokeWidth={2}
+                            className="ml-auto shrink-0 text-text-secondary"
+                          />
+                        )}
+                      </span>
+                    </MenuItem>
+                  ))}
+                </MenuContent>
+              </Menu>
+            </div>
+          )}
+          {/* Closes the details; in the table the row itself toggles them. */}
+          {layout !== 'list' && (
+            <IconActionButton
+              aria-label="Close filing details"
+              className={filings.length > 1 ? undefined : 'ml-auto'}
+              onClick={() => setCollapsed(true)}
+              variant="quiet"
+            >
+              <X aria-hidden="true" />
+            </IconActionButton>
+          )}
+        </div>
+        {/* Its last rule hangs under the next band's solid one (`AttributeCells`). */}
+        <AttributeCells items={cells} columns={undefined} className="-mb-px" />
+      </div>
+    </Collapsible>
+  )
+
   return (
     // Over the grid's last dashed rule above it: the line between is solid.
-    <div className={cn('relative -mt-px border-t border-[var(--core-color-border-divider)] bg-card', className)}>
-      <div className="px-4 pt-3">
-        {/* A label, as the grid's cells are labelled: the section is named,
-            not headed. */}
-        <Text tone="secondary" size="sm" className="leading-snug">
-          State filings
-        </Text>
-      </div>
-
-      <RadixTooltip.Provider>
-        <div
-          role="radiogroup"
-          aria-label="State filings"
-          // A wrapping row, not a grid of fixed columns: a tile carrying the
-          // formation mark, the office pin and a filing count is wider than
-          // one column, and a column clipped it. Each tile is at least 56px.
-          className="flex flex-wrap gap-1.5 px-4 py-3"
-        >
-          {visible.map((g, i) => {
-            const isLead = Boolean(lead && g.state === lead.state)
-            const isCurrent = g.state === current.state
-            const on = isCurrent && !collapsed
-            const standing = [WORD[g.kind], g.current.subStatus ? subStatusLabel(g.current).toLowerCase() : null]
-              .filter(Boolean)
-              .join(', ')
-            const label = `${stateName(g.state)}${g.state === officeState ? ' (submitted office state)' : ''}: ${standing}${
-              g.others.length ? `; ${g.others.length + 1} filings` : ''
-            }`
-            return (
-              <RadixTooltip.Root key={g.state} delayDuration={200}>
-                <RadixTooltip.Trigger asChild>
-                  <button
-                    ref={(el) => {
-                      tiles.current[i] = el
-                    }}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    aria-controls={detailId}
-                    aria-label={isLead ? `Formation filing, ${label}` : label}
-                    tabIndex={isCurrent ? 0 : -1}
-                    onClick={() => {
-                      if (on) return setCollapsed(true)
-                      setSelected(g.state)
-                      setCollapsed(false)
-                    }}
-                    onKeyDown={(e) => onKey(e, i)}
-                    className={cn(
-                      'flex min-w-14 rounded-control transition-shadow duration-fast motion-reduce:transition-none',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                    )}
-                  >
-                    <MetaChip
-                      tone={toneOf(g.current)}
-                      size="compact"
-                      className={cn('w-full justify-center font-mono', g.kind === 'none' && !on && ABSENT)}
-                      style={on ? selectedStyle(toneOf(g.current)) : undefined}
-                    >
-                      {isLead ? (
-                        <Building2 aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
-                      ) : (
-                        <Icon reg={g.current} kind={g.kind} />
-                      )}
-                      {g.state}
-                      {g.state === officeState && (
-                        <MapPin aria-hidden="true" size={11} strokeWidth={2} className="shrink-0" />
-                      )}
-                      {/* A state with history keeps its count: the other filings are
-                      in its dropdown. */}
-                      {g.others.length > 0 && <sup className="text-[9px] leading-none">{g.others.length + 1}</sup>}
-                    </MetaChip>
-                  </button>
-                </RadixTooltip.Trigger>
-                <RadixTooltip.Portal>
-                  <RadixTooltip.Content
-                    side="top"
-                    sideOffset={6}
-                    collisionPadding={10}
-                    className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
-                  >
-                    <TileTooltip group={g} isLead={isLead} office={g.state === officeState} />
-                  </RadixTooltip.Content>
-                </RadixTooltip.Portal>
-              </RadixTooltip.Root>
-            )
-          })}
-        </div>
-      </RadixTooltip.Provider>
-
-      {/* The selected state's filings, one block each, in the report's cells. */}
-      <Collapsible open={!collapsed}>
-        <div id={detailId} className="border-t border-[var(--core-color-border-divider)]">
-          {/* Sized to the filings button, so a state without one keeps the same
-            header height and the grid below does not jump. Ruled off from the
-            cells by the grid's own dashed rule (`--dash-rule-x`). */}
-          <div
-            className="flex min-h-12 items-center gap-2 bg-bottom bg-no-repeat px-4 py-2"
-            style={{ backgroundImage: 'var(--dash-rule-x)', backgroundSize: '100% 1px' }}
-          >
-            {/* The state at the default size: it names the filing below. */}
-            <Text className="font-semibold">{stateName(current.state)}</Text>
-            {/* Only the formation filing is labelled, with the formation tile's
-              own building mark. Which of a state's filings is open is the
-              filings menu's to say. */}
-            {shownFiling === lead && (
-              <span className="flex items-center gap-1 text-text-secondary">
-                <Building2 aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
-                <MutedText className="text-caption">Formation</MutedText>
-              </span>
-            )}
-            {/* The current filing leads; every other version is one pick away,
-              at the header's far edge, behind the history button. A light check
-              marks the one shown. */}
-            {/* Only where there is more than one version to pick from. */}
-            {filings.length > 1 && (
-              <div className="ml-auto">
-                <Menu>
-                  <MenuTrigger asChild>
-                    {/* A history button, as a repository counts its commits: the
-                      count of every version, not the one open — the header
-                      says which that is. */}
-                    <ActionButton
-                      aria-label={`${stateName(current.state)}: ${filings.length} filing${filings.length === 1 ? '' : 's'}`}
-                      variant="quiet"
-                      size="compact"
-                      leadingIcon={<History aria-hidden="true" className="size-4" />}
-                    >
-                      {filings.length} filing{filings.length === 1 ? '' : 's'}
-                    </ActionButton>
-                  </MenuTrigger>
-                  <MenuContent align="end" className="z-popover min-w-48">
-                    {filings.map((f, i) => (
-                      <MenuItem
-                        key={keyOf(f, i)}
-                        aria-current={keyOf(f, i) === chosenKey ? 'true' : undefined}
-                        onSelect={() =>
-                          setFilingPick({
-                            state: current.state,
-                            key: keyOf(f, i)
-                          })
-                        }
-                      >
-                        <span className="flex w-full items-center gap-1.5">
-                          {versionLabel(f)}
-                          <VersionTag latest={keyOf(f, i) === latestKey} />
-                          {/* The one shown: a light check, not a checkbox. */}
-                          {keyOf(f, i) === chosenKey && (
-                            <Check
-                              aria-hidden="true"
-                              size={14}
-                              strokeWidth={2}
-                              className="ml-auto shrink-0 text-text-secondary"
+    <div
+      className={cn(
+        'relative -mt-px border-t border-[var(--core-color-border-divider)] bg-card',
+        className
+      )}
+    >
+      <div>
+        <div className="min-w-0">
+          <RadixTooltip.Provider>
+            {layout === 'map' ? (
+              <div className="flex flex-col items-center px-4 py-3">
+                <StateFilingsMap
+                  filings={visible.map((g) => ({
+                    state: g.state,
+                    tone: toneOf(g.current),
+                    label: labelFor(g),
+                    tooltip: (
+                      <TileTooltip
+                        group={g}
+                        isLead={Boolean(lead && g.state === lead.state)}
+                        office={g.state === officeState}
+                      />
+                    )
+                  }))}
+                  selected={current.state}
+                  open={!collapsed}
+                  onPick={(state) => {
+                    setOpenCity(null)
+                    pick(state)
+                  }}
+                  cities={cities.map(([k, here]) => {
+                    const active = here.some(isOpen)
+                    return {
+                      key: k,
+                      state: here[0].state,
+                      lngLat: cityLngLat(here[0].city, here[0].state),
+                      tone: active ? 'success' : 'neutral',
+                      label: `City registration, ${cityName(here[0])}: ${active ? 'open' : 'closed'}`,
+                      tooltip: <CityTooltip here={here} />,
+                      open: openCity === k,
+                      onPick: () => {
+                        setCollapsed(true)
+                        setOpenCity(openCity === k ? null : k)
+                      }
+                    }
+                  })}
+                />
+                {/* Filings outside the fifty states and DC, after the map. */}
+                {visible.some((g) => !TILE_STATES.has(g.state)) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {visible.map((g, i) => (TILE_STATES.has(g.state) ? null : tileFor(g, i)))}
+                  </div>
+                )}
+              </div>
+            ) : layout === 'strip' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                {/* The state filings, then the city registrations, two to a row;
+                    a picked cell's details open under its row. */}
+                {gridItems
+                  .reduce<(typeof gridItems)[]>(
+                    (rows, item, i) =>
+                      i % 2 === 0
+                        ? [...rows, [item]]
+                        : [...rows.slice(0, -1), [...rows[rows.length - 1], item]],
+                    []
+                  )
+                  .map((pair) => (
+                    <Fragment key={pair[0].key}>
+                      {pair.map((item, i) => {
+                        if (item.city) {
+                          const [k, here] = item.city
+                          return (
+                            <CityRegistrationCell
+                              key={item.key}
+                              here={here}
+                              open={openCity === k}
+                              // An orphaned cell takes the whole row, as the Addresses grid's does.
+                              className={cn(i === 1 && 'md:border-l', pair.length === 1 && 'md:col-span-2')}
+                              onToggle={() => {
+                                setCollapsed(true)
+                                setOpenCity(openCity === k ? null : k)
+                              }}
                             />
+                          )
+                        }
+                        const g = item.state!
+                        const on = g.state === current.state && !collapsed
+                        return withStateTip(
+                          g,
+                          <button
+                            key={g.state}
+                            type="button"
+                            aria-expanded={on}
+                            aria-controls={detailId}
+                            onClick={() => {
+                              setOpenCity(null)
+                              if (on) setCollapsed(true)
+                              else pick(g.state)
+                            }}
+                            className={cn(
+                              'grid gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                              i === 1 && 'md:border-l',
+                              pair.length === 1 && 'md:col-span-2',
+                              on && 'bg-[var(--core-color-surface-subtle)]'
+                            )}
+                          >
+                            <span className="text-caption text-text-secondary">
+                              {filedLine(g.current) || stateName(g.state)}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                              {registryName(g.state)}
+                              {/* The submitted office's state, marked as the table marks it. */}
+                              {g.state === officeState && (
+                                <MapPin
+                                  aria-label="Submitted office state"
+                                  size={12}
+                                  strokeWidth={2}
+                                  className="shrink-0 text-text-secondary"
+                                />
+                              )}
+                            </span>
+                            <span className="flex flex-wrap items-center gap-1.5">
+                              <MetaChip tone={toneOf(g.current)} size="compact">
+                                <Icon reg={g.current} kind={g.kind} />
+                                {WORD[g.kind]}
+                              </MetaChip>
+                              <SubStatusChip reg={g.current} />
+                            </span>
+                          </button>
+                        )
+                      })}
+                      {/* The picked cell's details, under its row. */}
+                      {pair.some((item) => item.state && item.state.state === current.state) && (
+                        <div className="md:col-span-2">{detailPanel}</div>
+                      )}
+                      {pair.map(
+                        (item) =>
+                          item.city &&
+                          openCity === item.city[0] && (
+                            <div key={`${item.key}-detail`} className="md:col-span-2">
+                              <CityRegistrationDetail here={item.city[1]} />
+                            </div>
+                          )
+                      )}
+                    </Fragment>
+                  ))}
+              </div>
+            ) : layout === 'list' ? (
+              <div role="radiogroup" aria-label="State filings">
+                <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid">
+                  {[cities.length > 0 ? 'Registration' : 'State', 'Status'].map((h) => (
+                    <span
+                      key={h}
+                      className="text-caption font-medium uppercase tracking-wide text-text-secondary"
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
+                {listStates.map((g) => {
+                  const on = g.state === current.state && !collapsed
+                  const isLead = Boolean(lead && g.state === lead.state)
+                  const RowIcon = isLead ? FormationIcon : Landmark
+                  const filed = filedLine(g.current)
+                  return (
+                    <Fragment key={g.state}>
+                      {withStateTip(
+                        g,
+                        <button
+                          key={g.state}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          aria-controls={detailId}
+                          aria-label={labelFor(g)}
+                          onClick={() => (on ? setCollapsed(true) : pick(g.state))}
+                          className={cn(
+                            'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
+                            on && 'bg-[var(--core-color-surface-subtle)]'
                           )}
-                        </span>
-                      </MenuItem>
-                    ))}
-                  </MenuContent>
-                </Menu>
+                        >
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="min-w-0">
+                              {filed && (
+                                <span className="block text-caption text-text-secondary">
+                                  {filed}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                                {registryName(g.state)}
+                                {g.others.length > 0 && (
+                                  <span
+                                    role="img"
+                                    aria-label={`${g.others.length + 1} filings`}
+                                    className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-[var(--core-color-chip-bg)] text-[10px] font-semibold leading-none text-text-secondary"
+                                  >
+                                    {g.others.length + 1}
+                                  </span>
+                                )}
+                                {g.state === officeState && (
+                                  <MapPin
+                                    aria-label="Submitted office state"
+                                    size={12}
+                                    strokeWidth={2}
+                                    className="shrink-0 text-text-secondary"
+                                  />
+                                )}
+                              </span>
+                            </span>
+                          </span>
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <MetaChip tone={toneOf(g.current)} size="compact">
+                              <Icon reg={g.current} kind={g.kind} />
+                              {WORD[g.kind]}
+                            </MetaChip>
+                            <SubStatusChip reg={g.current} />
+                            <ChevronDown
+                              aria-hidden="true"
+                              size={16}
+                              strokeWidth={1.75}
+                              className={cn(
+                                'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
+                                on && 'rotate-180'
+                              )}
+                            />
+                          </span>
+                        </button>
+                      )}
+                      {/* In the table, a state's details open right under its row. */}
+                      {on && detailPanel}
+                    </Fragment>
+                  )
+                })}
+                {/* The city registrations, under the state filings, as rows of their own. */}
+                {listCities.map(([k, here]) => (
+                  <CityRegistrationRow
+                    key={k}
+                    here={here}
+                    open={openCity === k}
+                    onToggle={() => setOpenCity(openCity === k ? null : k)}
+                  />
+                ))}
+                {inactiveToggle}
+              </div>
+            ) : (
+              <div
+                role="radiogroup"
+                aria-label="State filings"
+                // A wrapping row, not a grid of fixed columns: a tile carrying the
+                // formation mark, the office pin and a filing count is wider than
+                // one column, and a column clipped it. Each tile is at least 56px.
+                className="flex flex-wrap gap-1.5 px-4 py-3"
+              >
+                {tileStates.map((g, i) => tileFor(g, i))}
               </div>
             )}
-          </div>
-          {/* Its last rule hangs under the next band's solid one (`AttributeCells`). */}
-          <AttributeCells items={cells} className="-mb-px" />
+            {layout === 'strip' && inactiveToggle}
+          </RadixTooltip.Provider>
         </div>
-      </Collapsible>
+
+        {/* The selected state's filings, one block each, in the report's cells. */}
+        {layout === 'map' && detailPanel}
+        {/* A pinned city registration's details, under the map. */}
+        {layout === 'map' &&
+          cities
+            .filter(([k]) => k === openCity)
+            .map(([k, here]) => <CityRegistrationDetail key={k} here={here} titled />)}
+      </div>
     </div>
   )
 }
+
+/** The Registrations card's display switch: the state filings as a list or a map. */
+export const FilingsViewToggle = ({
+  value,
+  onChange
+}: {
+  value: FilingsLayout
+  onChange: (view: FilingsLayout) => void
+}) => (
+  <SegmentedControl
+    size="sm"
+    value={value}
+    onValueChange={(v) => v && onChange(v as FilingsLayout)}
+    aria-label="State filings display"
+  >
+    <SegmentedControlItem
+      value="list"
+      aria-label="Table"
+      className="!px-2"
+      icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="strip"
+      aria-label="Grid"
+      className="!px-2"
+      icon={<LayoutGrid aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="map"
+      aria-label="Map"
+      className="!px-2"
+      icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+  </SegmentedControl>
+)

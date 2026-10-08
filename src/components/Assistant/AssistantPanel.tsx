@@ -3,8 +3,10 @@ import { ArrowLeft, Ellipsis, FileText, History, MessageSquare, Plus, X } from '
 
 import {
   ChatLog,
+  ChatMessage,
   ChatMarker,
   ChatSuggestions,
+  ChatThinking,
   Dialog,
   FloatingPanel,
   FloatingPanelBody,
@@ -19,6 +21,7 @@ import {
   MenuTrigger,
   MutedText,
   Text,
+  type ChatThinkingStep,
   type FloatingPanelPresentation,
   type FloatingPanelState
 } from '@/core'
@@ -36,9 +39,8 @@ import { cn } from '../../utils/twUtils'
 import { MiddeskMark } from '../MiddeskMark'
 import { AssistantComposer, type Send } from './AssistantComposer'
 import { AssistantEmpty } from './AssistantEmpty'
-import { AnswerTurn, BriefTurn, DecisionTurn, DismissedTurn, ErrorTurn, PendingTurn, UserTurn } from './AssistantTurn'
+import { AnswerTurn, AssistantWho, BriefTurn, CardCitations, DecisionTurn, DismissedTurn, ErrorTurn, Meta, PendingTurn, UserTurn } from './AssistantTurn'
 import { RecommendationCard, restoreRecommendation, useAnsweredCall, useRecommendationRemoval } from './RecommendationCard'
-import { AssessmentSteps } from './AssessmentSteps'
 import { Conversations, conversationTitle, pastConversations, type AssessmentEntry } from './Conversations'
 import { suggestionsFor } from './starters'
 
@@ -59,6 +61,13 @@ const RECENT_CONVERSATIONS = 5
  * The page owns the state and presentation: they decide the column's width
  * and the rail, which are the page's to lay out.
  */
+/** What the Assistant reads before it recommends a step. */
+const RECOMMEND_STEPS: ChatThinkingStep[] = [
+  { id: 'evidence', label: 'Reading the evidence', status: 'complete' },
+  { id: 'policy', label: 'Checking it against your policy', status: 'complete' },
+  { id: 'step', label: 'Choosing the next step', status: 'active' }
+]
+
 export const AssistantPanel = ({
   record,
   results,
@@ -79,6 +88,10 @@ export const AssistantPanel = ({
   revision,
   assessmentInHeader = false,
   reviewStepsRequest = 0,
+  reviewStepIndex,
+  summaryRequest = 0,
+  briefGenerated = false,
+  recommendRequest,
   onJumpToCard,
   className
 }: {
@@ -109,6 +122,15 @@ export const AssistantPanel = ({
   revision?: RevisedRecommendation & { at: string }
   assessmentInHeader?: boolean
   reviewStepsRequest?: number
+  /** The step the request opens on; none opens the recommendation itself. */
+  reviewStepIndex?: number
+  /** Counts the page's asks to show the summary: the thread opens on it. */
+  summaryRequest?: number
+  /** This business's full assessment has been written this session: the thread shows it. */
+  briefGenerated?: boolean
+  /** Counts an area's asks for next steps: the Assistant reads the area, then
+   *  recommends the step and opens the decision on it. */
+  recommendRequest?: { area: string; index: number; request: number }
   /** A brief card's title scrolls the report to that card. */
   onJumpToCard?: (anchor: string) => void
   className?: string
@@ -144,7 +166,6 @@ export const AssistantPanel = ({
    */
   const [fresh, setFresh] = useState(false)
   const [decisionRequest, setDecisionRequest] = useState<{ index?: number; request: number } | null>(null)
-  const stepsRef = useRef<HTMLDivElement>(null)
   /** The conversation the record opened on — the assessment's. A new
    *  conversation can always go back to it. */
   const [assessmentThread] = useState(analysis.activeThreadId)
@@ -157,11 +178,48 @@ export const AssistantPanel = ({
     analysis.openThread(assessmentThread)
     setFresh(false)
     setView('thread')
-    setDecisionRequest(null)
-    const frame = window.requestAnimationFrame(() => stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-    return () => window.cancelAnimationFrame(frame)
+    // The steps live on the page now; a request opens the recommendation
+    // card on the step asked for.
+    if (analysis.selected) restoreRecommendation(analysis.selected.id)
+    setDecisionRequest((current) => ({ index: reviewStepIndex, request: (current?.request ?? 0) + 1 }))
   }, [reviewStepsRequest])
-  const lead = fresh ? undefined : brief
+  const briefRef = useRef<HTMLDivElement>(null)
+  /* The assessment's text is the page's now — each area's card says it. The
+     thread holds it back until "Generate full assessment" asks for it. */
+  useEffect(() => {
+    if (!summaryRequest) return
+    analysis.openThread(assessmentThread)
+    setFresh(false)
+    setView('thread')
+    setDecisionRequest(null)
+    const frame = window.requestAnimationFrame(() => briefRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [summaryRequest])
+  /**
+   * An area's "Recommend next steps", as a turn: the ask, the Assistant
+   * reading the area's evidence for a moment, then the step it recommends —
+   * and, once said, the decision on that step, where the reviewer answers it.
+   */
+  const [askedStep, setAskedStep] = useState<{ area: string; index: number; at: string; phase: 'thinking' | 'done' } | null>(null)
+  const recommendRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!recommendRequest?.request) return
+    analysis.openThread(assessmentThread)
+    setFresh(false)
+    setView('thread')
+    setDecisionRequest(null)
+    setAskedStep({ area: recommendRequest.area, index: recommendRequest.index, at: new Date().toISOString(), phase: 'thinking' })
+    const scroll = () => window.requestAnimationFrame(() => recommendRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }))
+    scroll()
+    const t = window.setTimeout(() => {
+      setAskedStep((r) => (r ? { ...r, phase: 'done' } : r))
+      if (analysis.selected) restoreRecommendation(analysis.selected.id)
+      setDecisionRequest((current) => ({ index: recommendRequest.index, request: (current?.request ?? 0) + 1 }))
+      scroll()
+    }, 1800)
+    return () => window.clearTimeout(t)
+  }, [recommendRequest?.request])
+  const lead = fresh || !briefGenerated ? undefined : brief
   const suggestions = useMemo(
     () =>
       // Under the assessment, only what an answer offered itself; the
@@ -170,7 +228,7 @@ export const AssistantPanel = ({
     [last, asked, lead]
   )
   // A conversation the assessment leads has already started: the report opened it.
-  const empty = turns.length === 0 && !waiting && !analysis.error && !lead
+  const empty = turns.length === 0 && !waiting && !analysis.error && !lead && !askedStep
 
   const report = analysis.selected
     ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
@@ -528,6 +586,7 @@ export const AssistantPanel = ({
               )}
 
               {lead && analysis.selected && (
+                <div ref={briefRef} className="scroll-mt-4">
                 <BriefTurn
                   brief={lead}
                   at={analysis.selected.at}
@@ -539,22 +598,6 @@ export const AssistantPanel = ({
                   onJumpToCard={onJumpToCard}
                   onJumpToGroup={onJumpToGroup}
                 />
-              )}
-
-              {lead && assessmentInHeader && call.d && (
-                <div ref={stepsRef}>
-                  <AssessmentSteps
-                    recommendation={call.d}
-                    resolved={revision?.resolved}
-                    results={results}
-                    groupFor={groupFor}
-                    reviewable={!call.answer}
-                    onJumpToGroup={onJumpToGroup}
-                    onReview={(index) => {
-                      if (analysis.selected) restoreRecommendation(analysis.selected.id)
-                      setDecisionRequest((current) => ({ index, request: (current?.request ?? 0) + 1 }))
-                    }}
-                  />
                 </div>
               )}
 
@@ -592,6 +635,34 @@ export const AssistantPanel = ({
                     {e.node}
                   </div>
                 ))}
+
+              {askedStep && !fresh && (() => {
+                const step = brief?.determination?.steps[askedStep.index]
+                return (
+                  <div ref={recommendRef} className="mt-2 flex flex-col gap-4 scroll-mb-4">
+                    <UserTurn typed={`What will it take to resolve ${askedStep.area}?`} skills={[]} at={askedStep.at} />
+                    {askedStep.phase === 'thinking' ? (
+                      <ChatThinking active label={`Assessing ${askedStep.area}…`} steps={RECOMMEND_STEPS} />
+                    ) : (
+                      step && (
+                        <ChatMessage role="assistant" header={<Meta align="start" at={askedStep.at} who={<AssistantWho />} />}>
+                          <div className="flex flex-col gap-2">
+                            <Text>I recommend this next step:</Text>
+                            <Text className="font-medium">{step.instruction}</Text>
+                            {step.why && <Text tone="secondary">{step.why}</Text>}
+                            {(step.cites ?? []).length > 0 && (
+                              <span className="flex flex-wrap gap-1">
+                                <CardCitations cites={step.cites} results={results} groupFor={groupFor} onSelect={onJumpToGroup} />
+                              </span>
+                            )}
+                            <Text tone="secondary">Choose how to handle it below.</Text>
+                          </div>
+                        </ChatMessage>
+                      )
+                    )}
+                  </div>
+                )
+              })()}
 
               {waiting && (
                 <div className="mt-2 flex flex-col gap-4">

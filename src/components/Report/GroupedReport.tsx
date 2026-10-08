@@ -1,44 +1,92 @@
-import { useMemo, type ReactNode } from 'react'
-import { Check, Globe, ListFilter, Users, X } from 'lucide-react'
+import {
+  cloneElement,
+  Fragment,
+  isValidElement,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode
+} from 'react'
+import { ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
 
-import { ActionButton, MetaChip, Surface, Tag, Toolbar, ToolbarCount, ToolbarSection, ToolbarSeparator, ToolbarSpacer } from '@/core'
+import {
+  ActionButton,
+  CopyButton,
+  MetaChip,
+  SegmentedControl,
+  SegmentedControlItem,
+  Tag,
+  Toolbar,
+  ToolbarCount,
+  ToolbarSection,
+  ToolbarSeparator,
+  ToolbarSpacer
+} from '@/core'
 
-import { attributesFor, peopleByPerson, peopleRows } from '../../lib/attributes'
+import {
+  maskTin,
+  peopleByPerson,
+  peopleRows,
+  profileFields
+} from '../../lib/attributes'
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { operationsOf } from '../../lib/operations'
 import { REPORT_CARDS, cardFor } from '../../lib/reportCards'
 import { dismissalOf, screenedOf } from '../../lib/screening'
-import { screenshotFor } from '../../lib/sourceScreenshots'
+import { capturedLabel, screenshotFor } from '../../lib/sourceScreenshots'
 import { sameName } from '../../lib/registrationStatus'
 import type { Kind } from '../../lib/timeline/types'
+import { StatusDot } from '../StatusDot'
+
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { attributeRowsByGroup } from '../AttributesTab'
 import { cellsFromRows } from '../attributeCells'
 import { Collapsible } from '../Collapsible'
 import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
-import { Para } from '../ReportBody'
 import { OtherFilings } from './OtherFilings'
-import { KindStrip } from './ClaimsStrips'
-import { BankruptcyBlock } from './BankruptcyBlock'
-import { LienBlock } from './LienBlock'
-import { LitigationBlock } from './LitigationBlock'
-import { FilingStrip } from './FilingStrip'
+import { FilingStrip, FilingsViewToggle, type FilingsLayout } from './FilingStrip'
 import { GroupCard } from './GroupCard'
-import { IndustryStrip, LicenceStrip, LocationsStrip, industryDrawn, licencesDrawn, locationsDrawn } from './OperationsCard'
-import { PeopleStrips } from './PeopleStrip'
+import { AddressViewToggle, type AddressView } from './AddressTable'
+import {
+  IndustryStrip,
+  LicenceStrip,
+  LocationsStrip,
+  industryDrawn,
+  licencesDrawn,
+  locationsDrawn
+} from './OperationsCard'
+import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
+import { BankruptcyTable, LienTable, LitigationTable } from './ClaimTables'
 import { WebsiteDetails } from './WebsiteDetails'
+import { useScreenshotViewer } from '../ScreenshotViewer'
 import { relatedBusinessesOf } from '../../lib/relatedBusinesses'
-import { Strip, StripExpand } from './Strip'
+import { StripExpand } from './Strip'
 import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
 
 /** The order packages a public-record search ran under, by card. */
-const SEARCHES: Record<'liens' | 'litigation' | 'bankruptcy', { packages: Record<string, string>; people: RegExp }> = {
-  liens: { packages: { tax_liens: 'tax liens', ucc_liens: 'UCC liens', liens: 'liens' }, people: /^people_liens|^individual_liens/ },
-  litigation: { packages: { litigations: 'litigations' }, people: /^people_litigations|^individual_litigations/ },
-  bankruptcy: { packages: { bankruptcies: 'bankruptcies' }, people: /^people_bankruptcies|^individual_bankruptcies/ }
+const SEARCHES: Record<
+  'liens' | 'litigation' | 'bankruptcy',
+  { packages: Record<string, string>; people: RegExp }
+> = {
+  liens: {
+    packages: {
+      tax_liens: 'tax liens',
+      ucc_liens: 'UCC liens',
+      liens: 'liens'
+    },
+    people: /^people_liens|^individual_liens/
+  },
+  litigation: {
+    packages: { litigations: 'litigations' },
+    people: /^people_litigations|^individual_litigations/
+  },
+  bankruptcy: {
+    packages: { bankruptcies: 'bankruptcies' },
+    people: /^people_bankruptcies|^individual_bankruptcies/
+  }
 }
 
 /** What a public-record search ran on, as the order placed it: the business
@@ -48,7 +96,9 @@ const searchedOn = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
   const { packages, people } = SEARCHES[kind]
   const ran = [...new Set(orders.map((o) => packages[o.package]).filter(Boolean))]
   const onPeople = orders.some((o) => people.test(o.package))
-  const names = onPeople ? record.people.filter((p) => p.submitted && p.name).map((p) => p.name) : []
+  const names = onPeople
+    ? record.people.filter((p) => p.submitted && p.name).map((p) => p.name)
+    : []
   return { ran, names }
 }
 
@@ -67,41 +117,38 @@ const emptySearches = (
   const { ran, names } = searchedOn(record, kind)
   const sentence = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
   return [
-    ...ran.filter((r) => !found(r)).map((r, i) => ({ key: `run-${i}`, label: 'Search', values: [{ value: sentence(r) }] })),
-    ...names.filter((n) => !named(n)).map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] }))
+    ...ran
+      .filter((r) => !found(r))
+      .map((r, i) => ({
+        key: `run-${i}`,
+        label: 'Search',
+        values: [{ value: sentence(r) }]
+      })),
+    ...names
+      .filter((n) => !named(n))
+      .map((n, i) => ({
+        key: `person-${i}`,
+        label: 'Person',
+        values: [{ value: n }]
+      }))
   ]
 }
 
-/** A public record with nothing on file, as a screen that came back clean is
- *  drawn: "No results", counting the names searched, opening to them — the
- *  business name, and the people where the order searched people too. */
-const NoneOnFile = ({ record, kind }: { record: BusinessRecord; kind: keyof typeof SEARCHES }) => {
-  const { names } = searchedOn(record, kind)
-  const searched = [
-    { key: 'business', label: 'Business name', values: [{ value: record.name }] },
-    ...names.map((n, i) => ({ key: `person-${i}`, label: 'Person', values: [{ value: n }] }))
-  ]
-  return (
-    <div>
-      <Strip
-        label="Results"
-        tiles={[
-          {
-            key: 'none',
-            empty: true,
-            chip: (
-              <MetaChip tone="neutral" size="compact">
-                <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
-                No results · Screened
-                <span className="tabular-nums text-text-secondary">{1 + names.length}</span>
-              </MetaChip>
-            )
-          }
-        ]}
-        detail={() => <AttributeCells items={searched} columns={3} className="-mb-px" />}
-      />
-    </div>
-  )
+/** Under "None found": what the search ran on — the business name, and the
+ *  people where the order searched people too. */
+const searchedNames = (record: BusinessRecord, kind: keyof typeof SEARCHES) => [
+  record.name,
+  ...searchedOn(record, kind).names
+]
+const searchedLine = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
+  const n = searchedNames(record, kind).length
+  return `Searched ${n} ${n === 1 ? 'name' : 'names'}`
+}
+
+/** After the records: the searches that found none of their kind. */
+const notFoundLine = (cells: AttributeCell[]) => {
+  const said = cells.flatMap((c) => c.values.map((v) => String(v.value)))
+  return said.length > 0 ? `No results for ${said.join(', ')}` : undefined
 }
 
 /** A grid rules itself off at the top, as a strip does. */
@@ -115,14 +162,401 @@ const cellsOf = (
   group: GroupId,
   record: BusinessRecord,
   onJumpToSource?: (cardId: string) => void
-) => cellsFromRows([...(byGroup.get(group)?.values() ?? [])], { domesticState: record.formation?.state, onJumpToSource })
+) =>
+  cellsFromRows([...(byGroup.get(group)?.values() ?? [])], {
+    domesticState: record.formation?.state,
+    onJumpToSource
+  })
 
 /** A result reads before an unknown, an unknown before a no-result. */
-const STATE_RANK: Record<string, number> = { result: 0, unknown: 1, no_result: 2 }
+export const STATE_RANK: Record<string, number> = {
+  result: 0,
+  unknown: 1,
+  no_result: 2
+}
 
 /** The assessment the report is narrowed to, as the filter bar names it:
  *  the workflow's name, and the way back. */
-export type ReportFocusBanner = { id: string; name: string; onClear: () => void }
+export type ReportFocusBanner = {
+  id: string
+  name: string
+  onClear: () => void
+}
+
+/** A name's kind, over the name — "Legal name", "Former name · Changed Apr 2022". */
+const NameLabel = ({ cell, qualifier }: { cell: AttributeCell; qualifier?: string }) => (
+  <span className="block text-xs text-text-secondary">
+    {[cell.label, qualifier].filter(Boolean).join(' · ')}
+  </span>
+)
+
+/** Under the name, the grey source chip: Submitted, or where it was found — "San Francisco". */
+const NameSource = ({ cell }: { cell: AttributeCell }) =>
+  cell.badge ? (
+    <span className="flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
+      {/* Only a component takes `plainClaim`; a plain element would put it on the DOM. */}
+      {isValidElement(cell.badge) && typeof cell.badge.type !== 'string'
+        ? cloneElement(cell.badge as ReactElement<{ plainClaim?: boolean }>, { plainClaim: true })
+        : cell.badge}
+    </span>
+  ) : null
+
+/** The name, marked as an address is: verified, or submitted with nothing to back it. */
+const NameValue = ({ cell, value }: { cell: AttributeCell; value: ReactNode }) => (
+  <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+    {value}
+    {cell.submitted && (
+      <span
+        role="img"
+        aria-label={cell.verified ? 'Verified' : 'Unverified'}
+        className="flex shrink-0"
+      >
+        <StatusDot intent={cell.verified ? 'success' : 'warning'} />
+      </span>
+    )}
+  </span>
+)
+
+/** The business's names as a list, as the state filings are: one row per name.
+ *  The status column only appears when the customer submitted a name. */
+const NamesList = ({ cells }: { cells: AttributeCell[] }) => {
+  return (
+    <div
+      role="table"
+      aria-label="Names"
+      className="border-t border-[var(--core-color-border-divider)]"
+    >
+      {cells.flatMap((cell, c) =>
+        cell.values.map((v, i) => (
+          <div
+            key={`${cell.key ?? cell.label ?? c}-${v.key ?? i}`}
+            role="row"
+            className={cn(
+              'grid grid-cols-1 items-center gap-x-4 gap-y-1 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 last:bg-none'
+            )}
+          >
+            <span role="cell" className="grid min-w-0 gap-1">
+              <NameLabel cell={cell} qualifier={v.qualifier} />
+              <NameValue cell={cell} value={v.value} />
+              <NameSource cell={cell} />
+              {(v.note ?? cell.note) && (
+                <span className="text-xs text-text-secondary">{v.note ?? cell.note}</span>
+              )}
+            </span>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
+type NamesView = 'table' | 'grid'
+
+const NamesViewToggle = ({
+  value,
+  onChange
+}: {
+  value: NamesView
+  onChange: (view: NamesView) => void
+}) => (
+  <SegmentedControl
+    size="sm"
+    value={value}
+    onValueChange={(v) => v && onChange(v as NamesView)}
+    aria-label="Names display"
+  >
+    <SegmentedControlItem
+      value="table"
+      aria-label="Table"
+      className="!px-2"
+      icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="grid"
+      aria-label="Grid"
+      className="!px-2"
+      icon={<LayoutGrid aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+  </SegmentedControl>
+)
+
+/** The TIN as a one-row table: the number, whom the IRS matched it to, and as what. */
+const TinTable = ({ record }: { record: BusinessRecord }) => {
+  const tin = record.tin as {
+    tin?: string
+    name?: string
+    verified_by?: string | null
+  } | null
+  if (!tin?.tin) return null
+  const matchedBy = tin.verified_by ?? null
+  const cols = 'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
+  return (
+    <div
+      role="table"
+      aria-label="Tax ID"
+      className="border-t border-[var(--core-color-border-divider)]"
+    >
+      <div
+        role="row"
+        className={cn(
+          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
+          cols
+        )}
+      >
+        {['TIN', 'Type'].map((h) => (
+          <span
+            key={h}
+            role="columnheader"
+            className="text-caption font-medium uppercase tracking-wide text-text-secondary"
+          >
+            {h}
+          </span>
+        ))}
+      </div>
+      <div
+        role="row"
+        className={cn('grid grid-cols-1 items-center gap-x-4 gap-y-1 px-4 py-3', cols)}
+      >
+        <span role="cell" className="grid min-w-0 gap-1">
+          <span className="text-sm font-medium text-text-primary">{maskTin(tin.tin)}</span>
+          <span className="text-xs text-text-secondary">
+            {matchedBy ? (tin.name ?? '—') : 'No match on the IRS record'}
+          </span>
+        </span>
+        <span role="cell">
+          {matchedBy ? (
+            <MetaChip size="compact">
+              {/business/i.test(matchedBy) ? 'Business' : 'Individual'}
+            </MetaChip>
+          ) : (
+            <span className="text-sm text-text-secondary">—</span>
+          )}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+type WebRow = { label: string; value?: ReactNode; href?: string }
+
+const COLS = 'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
+
+const WebLink = ({ row }: { row: WebRow }) =>
+  row.href ? (
+    <span className="flex min-w-0 items-center gap-1">
+      <a
+        href={row.href}
+        target="_blank"
+        rel="noreferrer"
+        className="truncate text-sm font-medium text-text-primary underline-offset-2 hover:underline"
+      >
+        {row.href.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+      </a>
+      <CopyButton value={row.href} label="Copy link" variant="quiet" />
+    </span>
+  ) : (
+    <span className="truncate text-sm font-medium text-text-primary">{row.value}</span>
+  )
+
+type Profile = NonNullable<BusinessRecord['profiles']>[number]
+
+const PLATFORMS: Record<string, string> = {
+  bbb: 'BBB',
+  facebook: 'Facebook',
+  google: 'Google',
+  instagram: 'Instagram',
+  linkedin: 'LinkedIn',
+  tiktok: 'TikTok',
+  trustpilot: 'Trustpilot',
+  x: 'X',
+  yelp: 'Yelp'
+}
+const platformOf = (p: Profile) => PLATFORMS[(p.type ?? '').toLowerCase()] ?? p.type ?? 'Profile'
+const titleCase = (v: string) =>
+  v.charAt(0).toUpperCase() + v.slice(1).toLowerCase().replace(/_/g, ' ')
+
+const StatusChips = ({ status }: { status?: string | null }) => (
+  <span className="flex flex-wrap items-center gap-1.5">
+    <MetaChip size="compact">Found</MetaChip>
+    {status && (
+      <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'warning'}>
+        {titleCase(status)}
+      </MetaChip>
+    )}
+  </span>
+)
+
+const DetailList = ({ items }: { items: Array<[string, ReactNode]> }) => (
+  <dl className="m-0 grid gap-3">
+    {items.map(([label, value]) => (
+      <div key={label} className="grid gap-0.5">
+        <dt className="text-xs text-text-secondary">{label}</dt>
+        <dd className="m-0 break-words text-sm text-text-primary">{value}</dd>
+      </div>
+    ))}
+  </dl>
+)
+
+/** One third-party profile in full, as a state's filing opens on the Registrations
+ *  card: the platform's name, then what it says about the business, in cells. */
+const ProfileDetails = ({ profile }: { profile: Profile }) => {
+  const { open } = useScreenshotViewer()
+  const shot = screenshotFor(profile.url ?? undefined, platformOf(profile))
+  const cell = (label: string, value: ReactNode, note?: ReactNode): AttributeCell => ({
+    key: label,
+    label,
+    values: [{ value, note }]
+  })
+  // The platform's id and the handle (already in the link) are plumbing.
+  const meta = Object.entries(profile.metadata ?? {}).filter(
+    ([k, v]) =>
+      !['external_id', 'handle'].includes(k) &&
+      v !== null &&
+      v !== '' &&
+      (typeof v !== 'object' || Array.isArray(v))
+  )
+  const items: AttributeCell[] = [
+    ...(profile.url ? [cell('Link', <WebLink row={{ label: 'Link', href: profile.url }} />)] : []),
+    ...(profile.name ? [cell('Name on profile', profile.name)] : []),
+    ...profileFields(profile).map((f) => cell(f.label ?? 'Detail', f.value)),
+    ...((profile.categories ?? []).length > 0
+      ? [cell('Categories', (profile.categories ?? []).join(', '))]
+      : []),
+    cell(
+      'Screenshot',
+      shot ? (
+        <button
+          type="button"
+          aria-label={`View screenshot: ${shot.alt}`}
+          onClick={() => open(shot)}
+          className="block h-24 w-36 overflow-hidden rounded-control border border-border transition-opacity duration-fast hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <img src={shot.src} alt="" className="block h-full w-full object-cover object-top" />
+        </button>
+      ) : (
+        <span className="text-text-secondary">No image</span>
+      ),
+      shot ? capturedLabel(shot.capturedAt) : undefined
+    ),
+    ...meta.map(([k, v]) => cell(titleCase(k), Array.isArray(v) ? v.join(', ') : String(v)))
+  ]
+  return (
+    <div className="min-w-0 border-t border-[var(--core-color-border-divider)]">
+      <div
+        className="flex min-h-12 items-center gap-2 bg-bottom bg-no-repeat px-4 py-2"
+        style={{ backgroundImage: 'var(--dash-rule-x)', backgroundSize: '100% 1px' }}
+      >
+        <span className="text-sm font-semibold text-text-primary">{platformOf(profile)}</span>
+      </div>
+      <AttributeCells items={items} className="-mb-px" />
+    </div>
+  )
+}
+
+// The registrations table's row, so the cards' tables read and behave alike.
+const rowClass = (on: boolean) =>
+  cn(
+    'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+    COLS,
+    on && 'bg-[var(--core-color-surface-subtle)]'
+  )
+const hostOf = (href?: string | null) =>
+  (href ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+
+/** Web presence as a table — the site, then each third-party profile — by platform and status.
+ *  Clicking a row opens its details beside the report: the site's full web analysis, or the profile's. */
+const WebsiteSummary = ({
+  url,
+  status,
+  profiles,
+  analysis
+}: {
+  url?: string | null
+  status?: string | null
+  profiles: Profile[]
+  analysis: ReactNode
+}) => {
+  // One row open at a time; it expands in place, under itself.
+  const [open, setOpen] = useState<'site' | number | null>(null)
+  const toggle = (key: 'site' | number) => setOpen((current) => (current === key ? null : key))
+  const expanded = (body: ReactNode) => body
+  const chevron = (on: boolean) => (
+    <ChevronDown
+      aria-hidden="true"
+      size={16}
+      strokeWidth={1.75}
+      className={cn(
+        'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
+        on && 'rotate-180'
+      )}
+    />
+  )
+  return (
+    <div aria-label="Web presence" className="border-t border-[var(--core-color-border-divider)]">
+      <div
+        className={cn(
+          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
+          COLS
+        )}
+      >
+        {['Platform', 'Status'].map((h) => (
+          <span
+            key={h}
+            className="text-caption font-medium uppercase tracking-wide text-text-secondary"
+          >
+            {h}
+          </span>
+        ))}
+      </div>
+      {url ? (
+        <>
+          <button
+            type="button"
+            aria-expanded={open === 'site'}
+            className={rowClass(open === 'site')}
+            onClick={() => toggle('site')}
+          >
+            <span className="min-w-0">
+              <span className="block text-caption text-text-secondary">Website</span>
+              <span className="block truncate text-sm font-medium text-text-primary">
+                {hostOf(url)}
+              </span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <StatusChips status={status} />
+              {chevron(open === 'site')}
+            </span>
+          </button>
+          {open === 'site' && expanded(analysis)}
+        </>
+      ) : (
+        <div className="px-4 py-3 text-sm text-text-secondary">No website submitted</div>
+      )}
+      {profiles.map((p, i) => (
+        <Fragment key={p.id ?? `${p.type}-${i}`}>
+          <button
+            type="button"
+            aria-expanded={open === i}
+            className={rowClass(open === i)}
+            onClick={() => toggle(i)}
+          >
+            <span className="min-w-0">
+              <span className="block text-caption text-text-secondary">{platformOf(p)}</span>
+              <span className="block truncate text-sm font-medium text-text-primary">
+                {hostOf(p.url) || p.name}
+              </span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <StatusChips status={p.status} />
+              {chevron(open === i)}
+            </span>
+          </button>
+          {open === i && expanded(<ProfileDetails profile={p} />)}
+        </Fragment>
+      ))}
+    </div>
+  )
+}
 
 /**
  * The report, by card.
@@ -146,7 +580,8 @@ export const GroupedReport = ({
   pinned = false,
   expand,
   onJumpToSource,
-  onJumpToTimeline
+  onJumpToTimeline,
+  hideInsights = false
 }: {
   record: BusinessRecord
   results: Derived[]
@@ -164,23 +599,45 @@ export const GroupedReport = ({
   expand?: { card: string; n: number }
   onJumpToSource?: (cardId: string) => void
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
+  /** Narrowed to an area: its insights are listed under the area, not in the cards. */
+  hideInsights?: boolean
 }) => {
+  // The Addresses card's display — table, grid or map — chosen in its header.
+  const [addressView, setAddressView] = useState<AddressView>('table')
+  const [peopleView, setPeopleView] = useState<PeopleViewMode>('list')
+  const [filingsView, setFilingsView] = useState<FilingsLayout>('list')
+  const [namesView, setNamesView] = useState<NamesView>('table')
+  // The Names card's former names, folded away until asked for.
+  const [showFormer, setShowFormer] = useState(false)
   const parts = useMemo(
     () => formationParts(record, results, groupFor, onJumpToSource, onJumpToTimeline),
     [record, results, groupFor, onJumpToSource, onJumpToTimeline]
   )
+  // The former names, counted for the card's fold; with none, it has no fold.
+  const formerCount = parts.names.find((cell) => cell.key === 'former')?.values.length ?? 0
+  const namesShown = showFormer ? parts.names : parts.names.filter((cell) => cell.key !== 'former')
+  // The Registrations card holds the city registrations in every view: rows, cells, map pins.
+  const cityInTable = Boolean(parts.strip)
   const ops = useMemo(() => operationsOf(record), [record])
-  const byGroup = useMemo(() => attributeRowsByGroup(record, results, groupFor), [record, results, groupFor])
+  const byGroup = useMemo(
+    () => attributeRowsByGroup(record, results, groupFor),
+    [record, results, groupFor]
+  )
   const screens = useMemo(() => screenedOf(record), [record])
 
   /* The card's rows, as the Insights tab files them: flagged first — the
      record came back adverse, or the score read it against the identity —
      then a result before an unknown before a no-result. */
-  const isFlagged = (r: Derived) => r.reason === 'should_exist_not_found' || Boolean(negatives?.has(r.insightId))
+  const isFlagged = (r: Derived) =>
+    r.reason === 'should_exist_not_found' || Boolean(negatives?.has(r.insightId))
   const rowsOf = (cardId: string) =>
     results
       .filter((r) => !r.notReported && cardFor(r.insightId, groupFor) === cardId)
-      .sort((a, b) => Number(isFlagged(b)) - Number(isFlagged(a)) || (STATE_RANK[a.state] ?? 3) - (STATE_RANK[b.state] ?? 3))
+      .sort(
+        (a, b) =>
+          Number(isFlagged(b)) - Number(isFlagged(a)) ||
+          (STATE_RANK[a.state] ?? 3) - (STATE_RANK[b.state] ?? 3)
+      )
 
   /* Every person on the record — officers and agents the filings name,
      licence holders, the people submitted — one cell each: their roles
@@ -196,11 +653,31 @@ export const GroupedReport = ({
     ) : undefined
   }
 
-  const siteShot = screenshotFor(record.website?.url ?? undefined, 'Website')
+  // The web analysis's own capture of the home page; the samples only stand in without one.
+  const crawled =
+    (record.website?.pages ?? []).find((pg) => pg.screenshotUrl && pg.category === 'home') ??
+    (record.website?.pages ?? []).find((pg) => pg.screenshotUrl)
+  const capturedEpoch = crawled?.screenshotUrl?.match(/--(\d{10})\./)?.[1]
+  const siteShot = crawled?.screenshotUrl
+    ? {
+        src: crawled.screenshotUrl,
+        alt: `${record.website?.url ?? 'Website'} home page`,
+        capturedAt: capturedEpoch ? new Date(Number(capturedEpoch) * 1000).toISOString() : ''
+      }
+    : screenshotFor(record.website?.url ?? undefined, 'Website')
+  // What the crawl read off the site that other cards also show — names,
+  // addresses, people — so the web analysis holds everything it found.
+  const foundOnSite = cellsFromRows(
+    [...byGroup.entries()]
+      .filter(([group]) => group !== 'website')
+      .flatMap(([, rows]) => [...rows.values()])
+      .filter((row) => (row.sources ?? []).some((source) => /website/i.test(source))),
+    { domesticState: record.formation?.state, onJumpToSource }
+  )
   const websiteCells = cellsFromRows(
     [...(byGroup.get('website')?.values() ?? [])]
-      .filter((row) => row.label !== 'Site status')
-      .map((row) => row.label === 'Website' ? { ...row, trailing: undefined } : row),
+      .filter((row) => !['Site status', 'Title', 'Parked', 'Coming soon'].includes(row.label))
+      .map((row) => (row.label === 'Website' ? { ...row, trailing: undefined } : row)),
     { domesticState: record.formation?.state, onJumpToSource }
   )
 
@@ -210,11 +687,18 @@ export const GroupedReport = ({
      Instagram and Facebook profiles, the website — each linking to it. */
   const contactCells = cellsFromRows(
     [...(byGroup.get('website')?.values() ?? [])]
-      .filter((r) => /^(email address|phone number)$/i.test(r.label) && (r.refs ?? []).some((x) => x.type === 'profile'))
+      .filter(
+        (r) =>
+          /^(email address|phone number)$/i.test(r.label) &&
+          (r.refs ?? []).some((x) => x.type === 'profile')
+      )
       .filter((r, i, all) => all.findIndex((x) => x.label === r.label && x.value === r.value) === i)
       .map((r) => ({
         ...r,
-        sources: [...(r.sources ?? []), ...(r.sourceUrls?.Website && !(r.sources ?? []).includes('Website') ? ['Website'] : [])]
+        sources: [
+          ...(r.sources ?? []),
+          ...(r.sourceUrls?.Website && !(r.sources ?? []).includes('Website') ? ['Website'] : [])
+        ]
       })),
     { domesticState: record.formation?.state, onJumpToSource }
   )
@@ -224,7 +708,9 @@ export const GroupedReport = ({
     ) : undefined
   const siteHost = (() => {
     try {
-      return record.website?.url ? new URL(record.website.url).host.replace(/^www\./, '') : undefined
+      return record.website?.url
+        ? new URL(record.website.url).host.replace(/^www\./, '')
+        : undefined
     } catch {
       return record.website?.url ?? undefined
     }
@@ -254,106 +740,145 @@ export const GroupedReport = ({
 
   /** Each card's data view, where the record holds something to draw. */
   const visual: Partial<Record<string, ReactNode>> = {
-    // The formation and its registrations, one card: the formation grid, then
-    // the state filings strip.
-    // The names, the formation and its registrations, one card: Legal name,
-    // Doing business as and Former names leading the formation grid, then the
-    // state filings strip.
+    // The names, a card of their own: Legal name, Alternative names, Former names.
+    name: parts.names.some((cell) => cell.values.length > 0) ? (
+      <>
+      {namesView === 'table' || namesShown.reduce((n, cell) => n + cell.values.length, 0) < 2 ? (
+        <NamesList cells={namesShown} />
+      ) : (
+        <div className="overflow-hidden border-t border-[var(--core-color-border-divider)]">
+          <AttributeCells
+            className="-mb-px"
+            columns={2}
+            items={namesShown.flatMap((cell, c) =>
+              cell.values.map((v, i) => ({
+                key: `${cell.key ?? c}-${v.key ?? i}`,
+                label: [cell.label, v.qualifier].filter(Boolean).join(' · '),
+                labelNode: <NameLabel cell={cell} qualifier={v.qualifier} />,
+                values: [
+                  {
+                    value: (
+                      <span className="grid gap-1">
+                        <NameValue cell={cell} value={v.value} />
+                        <NameSource cell={cell} />
+                      </span>
+                    ),
+                    note: v.note ?? cell.note
+                  }
+                ]
+              }))
+            )}
+          />
+        </div>
+      )}
+      {/* The names it dropped, folded away under the current ones. */}
+      {formerCount > 0 && (
+        <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+          <ActionButton variant="quiet" size="compact" onClick={() => setShowFormer(!showFormer)}>
+            {showFormer
+              ? `Hide former ${formerCount === 1 ? 'name' : 'names'}`
+              : `Show ${formerCount} former ${formerCount === 1 ? 'name' : 'names'}`}
+          </ActionButton>
+        </div>
+      )}
+      </>
+    ) : undefined,
+    // The registrations: the state filings, open on the formation filing —
+    // whose details are the ones the grid above them repeated.
     formation:
-      parts.names.length > 0 || parts.formation.length > 0 || parts.city || parts.dbaRule || parts.strip ? (
+      parts.city || parts.dbaRule || parts.strip || parts.formation.length > 0 ? (
         <>
-          {parts.names.length + parts.formation.length > 0 && (
+          {!parts.strip && parts.formation.length > 0 && (
             <Grid>
-              <AttributeCells items={[...parts.names, ...parts.formation]} columns={3} className="-mb-px" />
+              <AttributeCells items={parts.formation} columns={3} className="-mb-px" />
             </Grid>
           )}
-          {parts.strip && <FilingStrip record={parts.strip.record} lead={parts.strip.lead} legalName={parts.strip.legalName} />}
+          {parts.strip && (
+            <FilingStrip
+              layout={filingsView}
+              leadCells={parts.formation}
+              record={parts.strip.record}
+              lead={parts.strip.lead}
+              legalName={parts.strip.legalName}
+              // In the table and the grid, the city registrations are entries of it.
+              city={cityInTable ? parts.city : undefined}
+            />
+          )}
           {/* The filings other than the state's, under them: city registrations
-              and a sole proprietor's DBA filing, as chips like the state filings'. */}
-          {((parts.city?.length ?? 0) > 0 || parts.dbaRule) && <OtherFilings city={parts.city} dbaRule={parts.dbaRule} />}
+              (where the table does not hold them) and a sole proprietor's DBA
+              filing, as chips like the state filings'. */}
+          {(((parts.city?.length ?? 0) > 0 && !cityInTable) || parts.dbaRule) && (
+            <OtherFilings city={cityInTable ? undefined : parts.city} dbaRule={parts.dbaRule} />
+          )}
         </>
       ) : undefined,
-    tin: parts.tin ? (
-      <Grid>
-        <AttributeCells items={[parts.tin]} columns={3} className="-mb-px" />
-      </Grid>
-    ) : undefined,
+    tin: parts.tin ? <TinTable record={record} /> : undefined,
     // As the Addresses card draws its places: a strip per kind, a chip per
     // person, their cell under the strip when picked.
     people:
       people.length > 0 ? (
-        <PeopleStrips people={people} ctx={{ domesticState: record.formation?.state, onJumpToSource }} />
-      ) : undefined,
-    address: locationsDrawn(ops) ? <LocationsStrip ops={ops} record={record} onJumpToSource={onJumpToSource} /> : undefined,
-    connections: (record.connections ?? []).length > 0 ? <RelatedBusinesses record={record} /> : undefined,
-    // No website on the record is itself the fact the card states. With a
-    // capture of the site, the Website row carries it as a thumbnail in its
-    // far corner; clicking it shows the whole page.
-    // Web presence: the site and the business's third-party profiles, as the
-    // Addresses card draws its places — a chip for the site, by its address,
-    // and one rolling up the profiles; each opens its cells. No website is
-    // itself a fact, stated as a chip that opens nothing.
-    website: (
-      <div>
-        <Strip
-          label="Online"
-          tiles={[
-            siteHost
-              ? {
-                  key: 'site',
-                  chip: (
-                    <MetaChip tone={record.website?.submitted ? 'success' : 'neutral'} size="compact">
-                      <Globe aria-hidden="true" size={12} strokeWidth={2} />
-                      {siteHost}
-                    </MetaChip>
-                  )
-                }
-              : {
-                  key: 'site',
-                  static: true,
-                  chip: (
-                    <MetaChip tone="neutral" size="compact">
-                      No website submitted
-                    </MetaChip>
-                  )
-                },
-            ...(profileCells.length > 0
-              ? [
-                  {
-                    key: 'profiles',
-                    chip: (
-                      <MetaChip tone="neutral" size="compact">
-                        <Users aria-hidden="true" size={12} strokeWidth={2} />
-                        Third-party profiles
-                        <span className="tabular-nums text-text-secondary">{profileCells.length}</span>
-                      </MetaChip>
-                    )
-                  }
-                ]
-              : [])
-          ]}
-          detail={(key) =>
-            key === 'site' ? <WebsiteDetails website={record.website} cells={websiteCells} screenshot={siteShot} /> : profilesGrid
-          }
+        <PeopleView
+          view={peopleView}
+          people={people}
+          ctx={{ domesticState: record.formation?.state, onJumpToSource }}
         />
-      </div>
+      ) : only?.has('people') ? (
+        // Asked for by name: an empty card says so, rather than an empty page.
+        <div className="border-t border-[var(--core-color-border-divider)] px-4 py-3 text-sm text-text-secondary">
+          No people found
+        </div>
+      ) : undefined,
+    address: locationsDrawn(ops) ? (
+      <LocationsStrip
+        view={addressView}
+        ops={ops}
+        record={record}
+        onJumpToSource={onJumpToSource}
+      />
+    ) : undefined,
+    connections:
+      (record.connections ?? []).length > 0 ? <RelatedBusinesses record={record} /> : undefined,
+    // No website on the record is itself the fact the card states. With a
+    website: (
+      <WebsiteSummary
+        url={record.website?.url}
+        status={record.website?.status}
+        profiles={record.profiles ?? []}
+        analysis={
+          <WebsiteDetails
+            website={record.website}
+            cells={[...websiteCells, ...foundOnSite]}
+            screenshot={siteShot}
+          />
+        }
+      />
     ),
     industry: industryDrawn(ops) ? <IndustryStrip ops={ops} /> : undefined,
-    licenses: licencesDrawn(ops) ? <LicenceStrip ops={ops} record={record} onJumpToSource={onJumpToSource} /> : undefined,
+    licenses: licencesDrawn(ops) ? (
+      <LicenceStrip ops={ops} record={record} onJumpToSource={onJumpToSource} />
+    ) : undefined,
     // Each screen its own card, as the financial records are: a search that
     // came back clear is still that search, run.
-    'screening-watchlist': screens.watchlist.ran ? <WatchlistScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
-    'screening-pep': screens.pep.ran ? <PepScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
-    'screening-media': screens.media.ran ? <MediaScreen record={record} onJumpToSource={onJumpToSource} /> : undefined,
-    // None on file is itself the fact, said in the strip's place.
-    liens:
-      liens.length > 0 ? (
-        <KindStrip
-          label="Results"
-          rows={attributesFor('liens', record)}
-          statusOf={(i) => liens[i]?.status}
-          block={(i) => <LienBlock lien={liens[i]} record={record} onJumpToSource={onJumpToSource} />}
-          empty={emptySearches(
+    'screening-watchlist': screens.watchlist.ran ? (
+      <WatchlistScreen record={record} onJumpToSource={onJumpToSource} />
+    ) : undefined,
+    'screening-pep': screens.pep.ran ? (
+      <PepScreen record={record} onJumpToSource={onJumpToSource} />
+    ) : undefined,
+    'screening-media': screens.media.ran ? (
+      <MediaScreen record={record} onJumpToSource={onJumpToSource} />
+    ) : undefined,
+    // As the Addresses card reads its places: a row per record, the closed
+    // folding under "None found" where nothing is open — and none on file is
+    // itself "None found", with what was searched under it.
+    liens: (
+      <LienTable
+        record={record}
+        onJumpToSource={onJumpToSource}
+        none={searchedLine(record, 'liens')}
+        searched={searchedNames(record, 'liens')}
+        footnote={notFoundLine(
+          emptySearches(
             record,
             'liens',
             (search) =>
@@ -364,42 +889,34 @@ export const GroupedReport = ({
                   ? liens.some((l) => /ucc/i.test(l.type ?? ''))
                   : true,
             (name) => liens.some((l) => (l.debtors ?? []).some((d) => sameName(d.name, name)))
-          )}
-          onJumpToSource={onJumpToSource}
-        />
-      ) : (
-        <NoneOnFile record={record} kind="liens" />
-      ),
-    litigation:
-      cases.length > 0 ? (
-        <KindStrip
-          label="Results"
-          rows={attributesFor('litigations', record)}
-          statusOf={(i) => cases[i]?.caseStatus}
-          block={(i) => <LitigationBlock litigation={cases[i]} record={record} onJumpToSource={onJumpToSource} />}
-          empty={emptySearches(
+          )
+        )}
+      />
+    ),
+    litigation: (
+      <LitigationTable
+        record={record}
+        onJumpToSource={onJumpToSource}
+        none={searchedLine(record, 'litigation')}
+        searched={searchedNames(record, 'litigation')}
+        footnote={notFoundLine(
+          emptySearches(
             record,
             'litigation',
             () => true,
             (name) => cases.some((c) => (c.parties ?? []).some((x) => sameName(x.name, name)))
-          )}
-          onJumpToSource={onJumpToSource}
-        />
-      ) : (
-        <NoneOnFile record={record} kind="litigation" />
-      ),
-    bankruptcy:
-      petitions.length > 0 ? (
-        <KindStrip
-          label="Results"
-          rows={attributesFor('bankruptcies', record)}
-          statusOf={(i) => petitions[i]?.status}
-          block={(i) => <BankruptcyBlock bankruptcy={petitions[i]} record={record} onJumpToSource={onJumpToSource} />}
-          onJumpToSource={onJumpToSource}
-        />
-      ) : (
-        <NoneOnFile record={record} kind="bankruptcy" />
-      )
+          )
+        )}
+      />
+    ),
+    bankruptcy: (
+      <BankruptcyTable
+        record={record}
+        onJumpToSource={onJumpToSource}
+        none={searchedLine(record, 'bankruptcy')}
+        searched={searchedNames(record, 'bankruptcy')}
+      />
+    )
   }
 
   /* A card the record came back empty for: nothing to draw — no liens, no
@@ -409,7 +926,9 @@ export const GroupedReport = ({
   // A screen counts the results still standing — every one not dismissed,
   // as its chips say (`dismissalOf`).
   const counts = (screen: 'watchlist' | 'pep' | 'media') =>
-    (screens[screen].hits as Array<Parameters<typeof dismissalOf>[1]>).some((h) => !dismissalOf(screen, h))
+    (screens[screen].hits as Array<Parameters<typeof dismissalOf>[1]>).some(
+      (h) => !dismissalOf(screen, h)
+    )
   const noResults = (id: string) =>
     id === 'screening-watchlist'
       ? !counts('watchlist')
@@ -425,23 +944,46 @@ export const GroupedReport = ({
                 ? cases.length === 0
                 : id === 'bankruptcy'
                   ? petitions.length === 0
-            : !visual[id]
+                  : !visual[id]
 
   // The cards the record draws at all, what was found first and the empty ones
   // after, each in the report's order; of those, the ones in view.
-  const all = REPORT_CARDS.map((c) => ({ card: c, rows: rowsOf(c.id) })).filter(({ card, rows }) => visual[card.id] || rows.length > 0)
-  const byResults = [...all.filter(({ card }) => !noResults(card.id)), ...all.filter(({ card }) => noResults(card.id))]
+  // With the insights hidden, a card with nothing but insight rows has nothing to draw.
+  const all = REPORT_CARDS.map((c) => ({ card: c, rows: rowsOf(c.id) })).filter(
+    ({ card, rows }) => visual[card.id] || (!hideInsights && rows.length > 0)
+  )
+  const byResults = [
+    ...all.filter(({ card }) => !noResults(card.id)),
+    ...all.filter(({ card }) => noResults(card.id))
+  ]
   /* The compliance checks read as one run, in a fixed order: Sanctions, PEP,
      Adverse media, then Liens, Litigation, Bankruptcy — the screens above the
      public record. The run sits with what was found where any of it found
      something, at the end where none did. */
-  const COMPLIANCE = ['screening-watchlist', 'screening-pep', 'screening-media', 'liens', 'litigation', 'bankruptcy']
+  const COMPLIANCE = [
+    'screening-watchlist',
+    'screening-pep',
+    'screening-media',
+    'liens',
+    'litigation',
+    'bankruptcy'
+  ]
   const inRun = ({ card }: (typeof byResults)[number]) => COMPLIANCE.includes(card.id)
-  const run = byResults.filter(inRun).sort((x, y) => COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id))
+  const run = byResults
+    .filter(inRun)
+    .sort((x, y) => COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id))
   const at = byResults.findIndex(inRun)
   const rest = byResults.filter((x) => !inRun(x))
   const drawn = at < 0 ? byResults : [...rest.slice(0, at), ...run, ...rest.slice(at)]
-  const shown = only ? drawn.filter(({ card }) => only.has(card.id)) : drawn
+  // Tax ID always reads before Registrations, whatever was found where.
+  const ordered = (() => {
+    const tin = drawn.findIndex(({ card }) => card.id === 'tin')
+    const formation = drawn.findIndex(({ card }) => card.id === 'formation')
+    if (tin < 0 || formation < 0 || tin < formation) return drawn
+    const rest = drawn.filter((_, i) => i !== tin)
+    return [...rest.slice(0, formation), drawn[tin], ...rest.slice(formation)]
+  })()
+  const shown = only ? ordered.filter(({ card }) => only.has(card.id)) : ordered
 
   const narrowed = Boolean(only && focus)
 
@@ -458,15 +1000,18 @@ export const GroupedReport = ({
       {/* The report's scroller (RecordPage's panel, from `wide`) pads its top
           by 54px, and a sticky box pins inside that padding, so the bar pins
           54px higher, directly under the sticky report head (whose height the
-          page publishes as `--report-head-h`). Its canvas and shadow are a
-          layer as wide as the scroll area (`--report-scroll-w`), so nothing
-          shows past the reading column as the cards slide under. */}
+          page publishes as `--report-head-h`). */}
       <div
         className={cn(
           'sticky top-[var(--report-head-h,0px)] z-[3] wide:top-[calc(var(--report-head-h,0px)-54px)]',
-          'before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none',
+          // The canvas behind the bar is the report column's own width, no
+          // wider: the score sits in the column beside it and must not be
+          // painted over.
+          'before:pointer-events-none before:absolute before:inset-x-0 before:inset-y-0 before:-z-10 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none',
           // The lowest pinned bar casts the shadow, its bottom edge only.
-          pinned && narrowed && 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]'
+          pinned &&
+            narrowed &&
+            'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]'
         )}
       >
         <Collapsible open={narrowed}>
@@ -481,7 +1026,12 @@ export const GroupedReport = ({
               className="h-10 flex-nowrap gap-2 rounded-card border border-border bg-card px-2"
             >
               <ToolbarSection className="min-w-0 gap-2">
-                <ListFilter aria-hidden="true" size={14} strokeWidth={1.5} className="ml-1 shrink-0 text-text-secondary" />
+                <ListFilter
+                  aria-hidden="true"
+                  size={14}
+                  strokeWidth={1.5}
+                  className="ml-1 shrink-0 text-text-secondary"
+                />
                 <span className="whitespace-nowrap text-sm text-text-secondary">Filtered to</span>
                 {focus && (
                   <Tag tone="default" onRemove={focus.onClear} removeLabel="Show full report">
@@ -490,7 +1040,7 @@ export const GroupedReport = ({
                 )}
                 <ToolbarSeparator />
                 <ToolbarCount>
-                  {shown.length} of {drawn.length} cards
+                  {shown.length} of {ordered.length} cards
                 </ToolbarCount>
               </ToolbarSection>
               <ToolbarSpacer />
@@ -507,27 +1057,46 @@ export const GroupedReport = ({
         </Collapsible>
       </div>
       <div className="flex flex-col gap-4">
-      {shown.map(({ card, rows }) => {
-        /* Led here from the Assistant — narrowed to an assessment, or the card
-           a chip landed on — its data opens: each strip on its first tile.
-           Keyed on it, so the card opens afresh each time it is led to. */
-        const open = Boolean(only) || expand?.card === card.id
-        return (
-          <StripExpand.Provider key={`${card.id}:${open ? `open-${focus?.id ?? ''}-${expand?.n ?? ''}` : ''}`} value={open}>
-            <GroupCard
-              id={card.id}
-              title={card.label}
-              count={tally[card.id]}
-              visual={visual[card.id]}
-              rows={rows}
-              record={record}
-              negatives={negatives}
-              revealed={revealed}
-              onJumpToSource={onJumpToSource}
-            />
-          </StripExpand.Provider>
-        )
-      })}
+        {shown.map(({ card, rows }) => {
+          /* The card a chip landed on opens: each strip on its first tile,
+           keyed so it opens afresh each time it is led to. Narrowed to an
+           area, the strips stay closed — the reader chose the area, not a
+           tile, and picks which to open. */
+          const open = expand?.card === card.id
+          return (
+            <StripExpand.Provider
+              key={`${card.id}:${open ? `open-${focus?.id ?? ''}-${expand?.n ?? ''}` : ''}`}
+              value={open}
+            >
+              <GroupCard
+                id={card.id}
+                title={card.label}
+                count={tally[card.id]}
+                visual={visual[card.id]}
+                rows={rows}
+                trailing={
+                  card.id === 'name' &&
+                  visual.name &&
+                  // One name has nothing to lay out side by side.
+                  namesShown.reduce((n, cell) => n + cell.values.length, 0) > 1 ? (
+                    <NamesViewToggle value={namesView} onChange={setNamesView} />
+                  ) : card.id === 'formation' && parts.strip ? (
+                    <FilingsViewToggle value={filingsView} onChange={setFilingsView} />
+                  ) : card.id === 'address' && visual.address ? (
+                    <AddressViewToggle value={addressView} onChange={setAddressView} />
+                  ) : card.id === 'people' && visual.people ? (
+                    <PeopleViewToggle value={peopleView} onChange={setPeopleView} />
+                  ) : undefined
+                }
+                record={record}
+                negatives={negatives}
+                revealed={revealed}
+                onJumpToSource={onJumpToSource}
+                hideInsights={hideInsights}
+              />
+            </StripExpand.Provider>
+          )
+        })}
       </div>
     </>
   )
