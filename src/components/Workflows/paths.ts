@@ -1,4 +1,4 @@
-export const WORKFLOWS_PATH = '/custom-orders'
+export const WORKFLOWS_PATH = '/assessments'
 export const NEW_WORKFLOW_PATH = `${WORKFLOWS_PATH}/new`
 
 export const workflowPath = (id: string) =>

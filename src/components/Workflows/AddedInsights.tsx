@@ -118,7 +118,7 @@ export const InsightsCard = ({
       <span className='text-muted-foreground text-sm'>
         {composer
           ? 'Pick insights yourself, or describe what you need and we’ll draft a first pass.'
-          : 'Add insights or a bundle to choose what this order checks.'}
+          : 'Add insights or a bundle to choose what this assessment checks.'}
       </span>
     </div>
   ) : (

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
-import { ArrowLeft, Check, Minus, Sparkles, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Check, Minus, RefreshCw, Sparkles, TriangleAlert, X } from 'lucide-react'
 
-import { ActionButton, Hint, HintContent, HintTrigger, IconActionButton, PageHeading, Surface, Text } from '@/core'
+import { ActionButton, DateTime, Hint, HintContent, HintTrigger, IconActionButton, PageHeading, Surface, Text } from '@/core'
 
 import { displayName } from '../../lib/businessNames'
 import type { BusinessRecord } from '../../lib/deriveResults'
@@ -88,8 +88,24 @@ export const ScoreCard = ({
   overall,
   status,
   onSelectInsight,
-  className
+  className,
+  back,
+  title,
+  summary,
+  onRegenerate,
+  regenerating = false,
+  transitionName
 }: {
+  /** Above the score: the way back to the business's assessments. */
+  back?: ReactNode
+  /** The assessment's name, over its score. */
+  title?: string
+  /** Its written summary and when; null when none has been written yet. */
+  summary?: { text: string; at?: string } | null
+  onRegenerate?: () => void
+  regenerating?: boolean
+  /** Shared with its card on the overview, so the card moves into place. */
+  transitionName?: string
   assessment: NonNullable<ReportBrief['determination']>
   /** The business in a sentence or two, under the ring. */
   blurb?: string
@@ -108,8 +124,15 @@ export const ScoreCard = ({
   className?: string
 }) => {
   return (
-    <Surface variant="card" padding="none" className={cn('flex flex-col overflow-hidden', className)}>
+    <Surface
+      variant="card"
+      padding="none"
+      className={cn('flex flex-col overflow-hidden', className)}
+      style={transitionName ? { viewTransitionName: transitionName } : undefined}
+    >
+      {back && <div className="border-b border-[var(--core-color-border-divider)] px-4 py-2">{back}</div>}
       <div className="flex flex-col items-start gap-3 px-4 py-4">
+        {title && <h2 className="m-0 text-base font-semibold">{title}</h2>}
         {/* The score as a number, the call it backs beside it, and how the
             report's insights read under both. */}
         <div className="flex w-full items-center justify-between gap-3">
@@ -120,6 +143,33 @@ export const ScoreCard = ({
         </div>
         {overall && <OutcomeSpark tally={overall} />}
         {blurb && <Text className="break-words leading-6">{blurb}</Text>}
+        {summary !== undefined && (
+          <div className="flex flex-col gap-1">
+            <Text className={cn('break-words leading-6', !summary && 'text-text-secondary')}>
+              {summary?.text ?? (regenerating ? 'Writing summary…' : 'No summary yet.')}
+            </Text>
+            {onRegenerate && (
+              <div className="flex items-center gap-1 text-text-secondary">
+                {summary?.at && (
+                  <>
+                    <span>Generated</span>
+                    <DateTime relative>{summary.at}</DateTime>
+                    <span aria-hidden="true">·</span>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[var(--core-color-text-link)] disabled:text-[var(--core-color-text-disabled)]"
+                  disabled={regenerating}
+                  onClick={onRegenerate}
+                >
+                  <RefreshCw aria-hidden="true" size={12} className={cn(regenerating && 'animate-spin')} />
+                  {regenerating ? 'Writing…' : summary ? 'Regenerate' : 'Generate'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {/* The full assessment is the Assistant's; this is the way to it. */}
         <ActionButton variant="secondary" size="compact" className="w-full" onClick={onShowSummary} leadingIcon={<Sparkles size={14} aria-hidden="true" />}>
           {summaryGenerated ? 'Show assessment' : 'Generate assessment'}

@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import {
+  ActionButton,
   ArrayField,
-  Button,
   Form,
   FormSelectField,
   FormTextField,
+  InlineAlert,
   Tooltip,
   useFormContext,
   useMiddeskForm,
@@ -20,6 +21,7 @@ import { CircleHelp } from 'lucide-react'
 import { combineConfigs, ORDER_CATALOG, requiredInputsFor } from '../../lib/customOrders/catalog'
 import { optionalInputs } from '../../lib/customOrders/model'
 import type { InputKey, InputRequirement } from '../../lib/customOrders/types'
+import type { BusinessRecord } from '../../lib/deriveResults'
 import { byId } from '../../lib/records'
 import { useSavedWorkflows } from '../../lib/savedWorkflows'
 import { STATE_NAMES } from '../../lib/states'
@@ -63,6 +65,41 @@ const emptyValues = (): Values => ({
   people_names: [{ id: uuid(), personName: '', dob: '' }],
   person_ssn: ''
 })
+
+/**
+ * What we already know about a business, as the form's values: its submitted
+ * name, addresses, TIN, website, DBA, formation and people. Ordering another
+ * assessment starts from these rather than a blank form; every one can be
+ * edited.
+ */
+const detailsOf = (record: BusinessRecord): Values => {
+  const empty = emptyValues()
+  const submittedAddresses = record.addresses.filter((a) => a.submitted)
+  const addresses = (submittedAddresses.length ? submittedAddresses : record.addresses.slice(0, 1)).map((a) => ({
+    id: uuid(),
+    address: a.fullAddress
+  }))
+  const people = (record.people ?? []).filter((p) => p.submitted)
+  return {
+    ...empty,
+    name: record.names.find((n) => n.type === 'legal' && n.submitted)?.name ?? record.name,
+    addresses: addresses.length ? addresses : empty.addresses,
+    url: (record.website as { url?: string } | null)?.url ?? '',
+    dba_name: record.names.find((n) => n.type === 'dba' && n.submitted)?.name ?? '',
+    tin: (record.tin as { tin?: string } | null)?.tin ?? '',
+    formation_state: record.formation?.state ?? '',
+    entity_type: record.formation?.entityType ?? '',
+    people_names: people.length ? people.map((p) => ({ id: uuid(), personName: p.name, dob: '' })) : empty.people_names
+  }
+}
+
+/** The fields the reader changed, as a PATCH body: only those. */
+const changedFields = (now: ReturnType<typeof toPayload>, was: ReturnType<typeof toPayload>) =>
+  Object.fromEntries(
+    (Object.keys(now) as Array<keyof typeof now>)
+      .filter((k) => JSON.stringify(now[k]) !== JSON.stringify(was[k]))
+      .map((k) => [k, now[k]])
+  )
 
 // The value each input key reads from the form's fields.
 const valueOf = (values: Values, key: InputKey): string => {
@@ -144,14 +181,13 @@ const toPayload = (values: Values) => {
 
 type ErrorState = { header: string; messages: string[] }
 
-export const OrderDetails = ({
-  selection,
-  onBack
-}: {
-  selection: OrderSelection
-  onBack: () => void
-}) => {
-  const navigate = useNavigate()
+/**
+ * The details step's state, for the order page and the business's Run
+ * assessment dialog alike: the assessments chosen, the fields they need and can
+ * use, the form (prefilled from the business when there is one), and placing
+ * the order.
+ */
+export const useOrderDetails = ({ selection, onPlaced }: { selection: OrderSelection; onPlaced: (count: number) => void }) => {
   const { showToast } = useToast()
   const saved = useSavedWorkflows()
   const workflows = saved.filter((w) => selection.workflowIds.includes(w.id))
@@ -160,36 +196,41 @@ export const OrderDetails = ({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<ErrorState>({ header: '', messages: [] })
 
-  const label = (key: InputKey) => ORDER_CATALOG.inputs.find((i) => i.key === key)?.label ?? key
-  // An existing business already has its details on file.
-  const required = existing ? [] : requiredInputsFor(config).required
-  const optional = existing ? [] : optionalInputs(ORDER_CATALOG, config, required)
+  // What the assessments need is required; what their insights can use is
+  // offered, named for what it is used for. The business's own details are
+  // prefilled from what we know, and every one can be edited.
+  const required = requiredInputsFor(config).required
+  const optional = optionalInputs(ORDER_CATALOG, config, required)
   const requiredKeys = required.flatMap((r) => (isAnyOf(r) ? r.any_of : [r]))
   const shown = new Set(
     ORDER_CATALOG.inputs
       .map((i) => i.key)
       .filter(
         (k) =>
-          (!existing && ORDER_CATALOG.context_inputs.includes(k)) ||
+          ORDER_CATALOG.context_inputs.includes(k) ||
           requiredKeys.includes(k) ||
           optional.some((o) => o.key === k)
       )
   )
   const isRequired = (key: InputKey) => required.includes(key)
+  const usedFor = (key: InputKey) => (isRequired(key) ? undefined : optional.find((o) => o.key === key)?.usedFor)
 
   const schema = useMemo(() => buildSchema(required), [required.map((r) => JSON.stringify(r)).join()])
+  const initial = useMemo(() => (existing ? detailsOf(existing) : emptyValues()), [existing])
   const form = useMiddeskForm<Values>({
-    defaultValues: emptyValues(),
+    defaultValues: initial,
     schema: schema as unknown as z.ZodType<Values, Values>
   })
   const { trigger } = form
 
-  // Validate on mount to reflect the empty form's validity in the submit gating.
+  // Validate on mount, so a required field we don't hold gates the submit.
   useEffect(() => {
     void trigger()
   }, [trigger])
 
-  const place = async (values: Values, dryRun: boolean) => {
+  const dryRun = new URLSearchParams(window.location.search).has('dryRun')
+
+  const place = async (values: Values) => {
     setSubmitting(true)
     setError({ header: '', messages: [] })
     try {
@@ -198,7 +239,9 @@ export const OrderDetails = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessId: existing?.id,
-          body: existing ? { name: existing.name } : toPayload(values),
+          body: toPayload(values),
+          // Only what the reader changed goes back to the business.
+          ...(existing && { patch: changedFields(toPayload(values), toPayload(initial)) }),
           workflows: workflows.map((w) => ({
             id: w.id,
             name: w.name,
@@ -215,12 +258,11 @@ export const OrderDetails = ({
         return
       }
       if (dryRun) {
-        console.info('Order (dry run)', body)
+        console.info('Run assessment (dry run)', body)
         showToast({ text: 'Dry run: request logged to the console', appearance: 'success' })
         return
       }
-      showToast({ text: 'Order placed', appearance: 'success' })
-      navigate('/businesses')
+      onPlaced(workflows.length)
     } catch {
       setError({ header: 'Couldn’t reach the order endpoint.', messages: [] })
     } finally {
@@ -228,52 +270,90 @@ export const OrderDetails = ({
     }
   }
 
-  const dryRun = new URLSearchParams(window.location.search).has('dryRun')
+  return { form, workflows, existing, shown, isRequired, usedFor, place, submitting, error, dryRun }
+}
+
+export type OrderDetailsState = ReturnType<typeof useOrderDetails>
+
+/** "Run 2 assessments" — the submit's label. */
+export const runLabel = (count: number, dryRun: boolean) =>
+  `Run ${count === 1 ? 'assessment' : `${count} assessments`}${dryRun ? ' (dry run)' : ''}`
+
+/** The fields, and any error placing the order, inside the form. */
+export const OrderDetailsForm = ({ state, children }: { state: OrderDetailsState; children?: ReactNode }) => (
+  <Form form={state.form} onSubmit={state.place}>
+    <WorkflowFields
+      isRequired={state.isRequired}
+      label={(key) => ORDER_CATALOG.inputs.find((i) => i.key === key)?.label ?? key}
+      shown={state.shown}
+      usedFor={state.usedFor}
+    />
+    {state.error.header && (
+      <InlineAlert className='mt-4' title={state.error.header} tone='danger'>
+        {state.error.messages.length > 0 && (
+          <ul className='m-0 list-disc pl-5'>
+            {state.error.messages.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        )}
+      </InlineAlert>
+    )}
+    {children}
+  </Form>
+)
+
+/** The order page's details step: the form, with its own Back and Run buttons. */
+export const OrderDetails = ({
+  selection,
+  onBack,
+  done = '/businesses'
+}: {
+  selection: OrderSelection
+  onBack: () => void
+  /** Where running lands: the business it was run on, or the list. */
+  done?: string
+}) => {
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+  const state = useOrderDetails({
+    selection,
+    onPlaced: (count) => {
+      showToast({ text: count === 1 ? 'Assessment started' : `${count} assessments started`, appearance: 'success' })
+      navigate(done)
+    }
+  })
 
   return (
-    <Form form={form} onSubmit={(values) => place(values, dryRun)}>
-      <Back onClick={onBack}>Back to custom order selection</Back>
-      <Title>Business Information</Title>
-      <div className='mb-6 text-base text-[var(--core-color-text-secondary)]'>
-        Ordering: {workflows.map((w) => w.name).join(', ')}
-        {existing && ` for ${existing.name}`}
-      </div>
-
-      <WorkflowFields isRequired={isRequired} label={label} shown={shown} />
-
-      {error.header && (
-        <div className='mt-3 text-sm text-[var(--core-color-text-danger)]' role='alert'>
-          {error.header}
-          {error.messages.length > 0 && (
-            <ul className='list-disc pl-5'>
-              {error.messages.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
-          )}
+    <>
+      <Back onClick={onBack}>Back to assessments</Back>
+      <Title>Business details</Title>
+      <p className='m-0 mb-6 text-text-secondary'>
+        Running: {state.workflows.map((w) => w.name).join(', ')}
+        {state.existing && ` on ${state.existing.name}`}
+      </p>
+      <OrderDetailsForm state={state}>
+        <div className='mt-6'>
+          <ButtonContainer>
+            <ActionButton onClick={onBack} type='button' variant='secondary'>
+              Back
+            </ActionButton>
+            <RunButton count={state.workflows.length} dryRun={state.dryRun} submitting={state.submitting} />
+          </ButtonContainer>
         </div>
-      )}
-
-      <div className='mt-6'>
-        <ButtonContainer>
-          <Button onClick={onBack} type='cancel'>
-            Back
-          </Button>
-          <PlaceOrderButton dryRun={dryRun} submitting={submitting} />
-        </ButtonContainer>
-      </div>
-    </Form>
+      </OrderDetailsForm>
+    </>
   )
 }
 
-const PlaceOrderButton = ({ submitting, dryRun }: { submitting: boolean; dryRun: boolean }) => {
+const RunButton = ({ submitting, dryRun, count }: { submitting: boolean; dryRun: boolean; count: number }) => {
   const {
     formState: { isValid }
   } = useFormContext<Values>()
   return (
-    <Button disabled={submitting || !isValid} type='submit' {...cya('PlaceCustomOrder')}>
-      {dryRun ? 'Place Order (dry run)' : 'Place Order'}
-    </Button>
+    <ActionButton disabled={submitting || !isValid} isLoading={submitting} type='submit' variant='primary' {...cya('PlaceCustomOrder')}>
+      {runLabel(count, dryRun)}
+    </ActionButton>
   )
 }
 
@@ -283,21 +363,35 @@ const STATE_OPTIONS = Object.entries(STATE_NAMES).map(([value, label]) => ({ lab
 const WorkflowFields = ({
   shown,
   isRequired,
-  label
+  label,
+  usedFor
 }: {
   shown: Set<InputKey>
   isRequired: (key: InputKey) => boolean
   label: (key: InputKey) => string
+  /** What an optional field sharpens; undefined for a required one. */
+  usedFor: (key: InputKey) => string[] | undefined
 }) => {
   const { trigger } = useFormContext<Values>()
   const revalidate = () => setTimeout(() => void trigger(), 100)
+  /** A field's label, and for an optional one, what it is used for. */
+  const L = (key: InputKey, text: ReactNode) => {
+    const uses = usedFor(key)
+    return uses?.length ? (
+      <span>
+        {text} <span className='font-normal text-text-secondary'>· Optional — {uses.join(', ')}</span>
+      </span>
+    ) : (
+      text
+    )
+  }
 
   return (
     <>
       {shown.has('name') && (
         <Row>
           <FormTextField<Values>
-            label='Business name'
+            label={L('name', 'Business name')}
             name='name'
             placeholder='Enter business name'
             required={isRequired('name')}
@@ -326,7 +420,7 @@ const WorkflowFields = ({
                   }}
                 >
                   <FormTextField<Values>
-                    label={i === 0 ? 'Office address' : ''}
+                    label={i === 0 ? L('address', 'Office address') : ''}
                     name={`addresses.${i}.address`}
                     placeholder='Enter an address'
                     required={i === 0 && isRequired('address')}
@@ -343,7 +437,7 @@ const WorkflowFields = ({
           <FormTextField<Values>
             label={
               <span className='flex items-center gap-1'>
-                DBA name
+                {L('dba_name', 'DBA name')}
                 <Tooltip
                   content='We collect DBA (Doing Business As) names to run against watchlists'
                   placement='right'
@@ -361,7 +455,7 @@ const WorkflowFields = ({
       {shown.has('tin') && (
         <Row>
           <FormTextField<Values>
-            label='Taxpayer Identification Number TIN/EIN'
+            label={L('tin', 'Taxpayer Identification Number TIN/EIN')}
             name='tin'
             placeholder='XX-XXXXXXX'
             required={isRequired('tin')}
@@ -393,13 +487,13 @@ const WorkflowFields = ({
                   {shown.has('person_dob') ? (
                     <div className='grid grid-cols-[2fr_1fr] items-end gap-x-2'>
                       <FormTextField<Values>
-                        label={i === 0 ? 'Associated person' : ''}
+                        label={i === 0 ? L('person', 'Associated person') : ''}
                         name={`people_names.${i}.personName`}
                         placeholder='Enter first and last name'
                         showError={false}
                       />
                       <FormTextField<Values>
-                        label={i === 0 ? 'Date of Birth' : ''}
+                        label={i === 0 ? L('person_dob', 'Date of Birth') : ''}
                         name={`people_names.${i}.dob`}
                         placeholder='MM/DD/YYYY'
                         showError={false}
@@ -408,7 +502,7 @@ const WorkflowFields = ({
                     </div>
                   ) : (
                     <FormTextField<Values>
-                      label={i === 0 ? 'Associated person' : ''}
+                      label={i === 0 ? L('person', 'Associated person') : ''}
                       name={`people_names.${i}.personName`}
                       placeholder='Enter first and last name'
                       showError={false}
@@ -423,7 +517,7 @@ const WorkflowFields = ({
       {shown.has('person_ssn') && (
         <Row>
           <FormTextField<Values>
-            label={label('person_ssn')}
+            label={L('person_ssn', label('person_ssn'))}
             name='person_ssn'
             placeholder='XXX-XX-XXXX'
             required={isRequired('person_ssn')}
@@ -435,7 +529,7 @@ const WorkflowFields = ({
         <Row>
           <FormSelectField<Values>
             isClearable
-            label='Formation state'
+            label={L('formation_state', 'Formation state')}
             name='formation_state'
             options={STATE_OPTIONS}
             placeholder='Select a formation state'
@@ -447,7 +541,7 @@ const WorkflowFields = ({
       {shown.has('entity_type') && (
         <Row>
           <FormTextField<Values>
-            label={label('entity_type')}
+            label={L('entity_type', label('entity_type'))}
             name='entity_type'
             placeholder='Enter entity type'
             required={isRequired('entity_type')}
@@ -458,7 +552,7 @@ const WorkflowFields = ({
       {shown.has('website_url') && (
         <Row>
           <FormTextField<Values>
-            label='Website'
+            label={L('website_url', 'Website')}
             name='url'
             placeholder='www.website.com'
             required={isRequired('website_url')}
@@ -487,7 +581,7 @@ const WorkflowFields = ({
                   }}
                 >
                   <FormTextField<Values>
-                    label={i === 0 ? 'Email address' : ''}
+                    label={i === 0 ? L('email', 'Email address') : ''}
                     name={`email_addresses.${i}.email`}
                     placeholder='Enter email'
                     required={i === 0 && isRequired('email')}
@@ -520,7 +614,7 @@ const WorkflowFields = ({
                   }}
                 >
                   <FormTextField<Values>
-                    label={i === 0 ? 'Phone number' : ''}
+                    label={i === 0 ? L('phone', 'Phone number') : ''}
                     name={`phone_numbers.${i}.phone_number`}
                     placeholder='(XXX) XXX-XXXX'
                     required={i === 0 && isRequired('phone')}

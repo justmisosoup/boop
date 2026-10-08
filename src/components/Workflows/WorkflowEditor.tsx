@@ -48,9 +48,9 @@ import { WorkflowTopbar } from './WorkflowTopbar'
 type Mode = 'new' | 'edit' | 'duplicate'
 
 const TITLES: Record<Mode, string> = {
-  new: 'New order',
-  edit: 'Edit order',
-  duplicate: 'Duplicate order'
+  new: 'New assessment',
+  edit: 'Edit assessment',
+  duplicate: 'Duplicate assessment'
 }
 
 const EditorForm = ({
@@ -163,7 +163,7 @@ const EditorForm = ({
                       nameError ? 'custom-order-name-error' : undefined
                     }
                     aria-invalid={nameError ? true : undefined}
-                    aria-label='Order name'
+                    aria-label='Assessment name'
                     className={cn(
                       '-mx-1.5 w-full min-w-0 rounded-md bg-transparent px-1.5 [font:inherit] [letter-spacing:inherit]',
                       'text-foreground placeholder:text-muted-foreground outline-none',
@@ -222,7 +222,7 @@ const EditorForm = ({
                   }
                   hint={suggestion}
                   onSubmit={suggest}
-                  placeholder='What do you want this order to check?'
+                  placeholder='What do you want this assessment to check?'
                   value={draft.description}
                 />
               }
@@ -259,7 +259,7 @@ export const WorkflowEditor = ({ mode }: { mode: Mode }) => {
     if (catalog.isError || (needsSaved && saved.isError)) {
       return (
         <ErrorState
-          description='Custom orders aren’t available right now.'
+          description='Assessments aren’t available right now.'
           onAction={() => {
             catalog.refetch()
             if (needsSaved) saved.refetch()
@@ -274,10 +274,10 @@ export const WorkflowEditor = ({ mode }: { mode: Mode }) => {
     if (needsSaved && !source) {
       return (
         <ErrorState
-          actionLabel='Back to custom orders'
+          actionLabel='Back to assessments'
           description='It may have been deleted.'
           onAction={() => navigate(WORKFLOWS_PATH)}
-          title='Couldn’t find that order'
+          title='Couldn’t find that assessment'
         />
       )
     }

@@ -753,10 +753,31 @@ export const negativesFor = (record: BusinessRecord, results: Derived[]): Set<st
  * number it was written beside. Returns null when the report has no assessments
  * to read: a ring over nothing is a number with no model behind it.
  */
+/**
+ * The insight keys behind each ceiling — the part of a `Derived.insightId`
+ * before `:`. An assessment scoped to some insights (a custom order) applies
+ * only the ceilings its own insights would raise: a Liens assessment is not
+ * capped by a watchlist hit it never looked at.
+ */
+const CEILING_KEYS: Record<string, string[]> = {
+  name_not_found: ['name'],
+  name_needs_review: ['name', 'dba_name'],
+  filing_not_active: ['sos_active', 'sos_inactive', 'sos_not_found', 'sos_unknown', 'sos_domestic', 'sos_domestic_sub_status'],
+  filing_standing_review: ['sos_active', 'sos_inactive', 'sos_not_found', 'sos_unknown', 'sos_domestic', 'sos_domestic_sub_status'],
+  tin_mismatch: ['tin', 'tin_error', 'tin_issued'],
+  watchlist_hit: ['watchlist'],
+  bankruptcy: ['bankruptcies'],
+  liens_high_risk: ['liens'],
+  adverse_media_match: ['adverse_media'],
+  pep_match: ['politically_exposed_persons']
+}
+
 export const identityScore = (
   record: BusinessRecord,
   results: Derived[],
-  areas: ScoreArea[] = []
+  areas: ScoreArea[] = [],
+  /** Insight keys an assessment is scoped to; absent, the whole record. */
+  scope?: ReadonlySet<string>
 ): IdentityScore | null => {
   if (areas.length === 0) return null
 
@@ -783,7 +804,9 @@ export const identityScore = (
   }))
 
   const weighted = applied.reduce((n, c) => n + (c.subScore ?? 0) * (c.appliedWeight / 100), 0)
-  const ceilings = ceilingsFor(record)
+  const ceilings = ceilingsFor(record).filter(
+    (c) => !scope || (CEILING_KEYS[c.id] ?? []).some((k) => scope.has(k))
+  )
   const value = Math.round(ceilings.reduce((n, c) => Math.min(n, c.at), weighted))
 
   return {
@@ -793,6 +816,9 @@ export const identityScore = (
     components: applied,
     ceilings: ceilings.filter((c) => c.at < Math.round(weighted)),
     coverage,
-    findings: negativesFor(record, results).size
+    findings: negativesFor(
+      record,
+      scope ? results.filter((r) => scope.has(r.insightId.split(':')[0])) : results
+    ).size
   }
 }

@@ -1,17 +1,15 @@
 import type { ReactNode } from 'react'
-import { Clock, Database, ListChecks, MessageSquare, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { Activity, Clock, Database, ListChecks, MessageSquare, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 import { AppShellNavItem, Hint, IconActionButton, Text } from '@/core'
 
 
 /** What the right-hand column can be showing. */
-export type PanelView = 'assistant' | 'timeline' | 'insights' | 'sources'
+export type PanelView = 'assistant' | 'timeline' | 'insights' | 'sources' | 'activity'
 
-export const PANEL_VIEWS: Array<{
-  id: PanelView
-  label: string
-  icon: ReactNode
-}> = [
+type PanelViewDef = { id: PanelView; label: string; icon: ReactNode }
+
+export const PANEL_VIEWS: PanelViewDef[] = [
   {
     id: 'assistant',
     label: 'Assistant',
@@ -38,6 +36,24 @@ export const PANEL_VIEWS: Array<{
 ]
 
 /**
+ * The business overview's column: what has happened to the business — its
+ * filings over time, and its own activity here. The report's rail, with the
+ * views a business (rather than one assessment) has.
+ */
+export const BUSINESS_PANEL_VIEWS: PanelViewDef[] = [
+  {
+    id: 'timeline',
+    label: 'Timeline',
+    icon: <Clock aria-hidden="true" size={16} strokeWidth={1.5} />
+  },
+  {
+    id: 'activity',
+    label: 'Activity',
+    icon: <Activity aria-hidden="true" size={16} strokeWidth={1.5} />
+  }
+]
+
+/**
  * The tab bar, continued past the seam.
  *
  * The report's tabs say which face of the report you are reading; this says
@@ -50,8 +66,8 @@ export const PANEL_VIEWS: Array<{
  * right of the bar — in the rail, past the panel's own edge, where the column
  * actually ends.
  */
-export const ChatPanelHeader = ({ view }: { view: PanelView }) => {
-  const current = PANEL_VIEWS.find((v) => v.id === view) ?? PANEL_VIEWS[0]
+export const ChatPanelHeader = ({ view, views = PANEL_VIEWS }: { view: PanelView; views?: PanelViewDef[] }) => {
+  const current = views.find((v) => v.id === view) ?? views[0]
 
   return (
     <div className="flex h-[49px] shrink-0 items-center gap-2 border-b border-solid border-border bg-card px-3">
@@ -78,8 +94,11 @@ export const ChatRail = ({
   view,
   open,
   onOpen,
-  onHide
+  onHide,
+  views = PANEL_VIEWS
 }: {
+  /** What the column can show; the report's four by default. */
+  views?: PanelViewDef[]
   view: PanelView
   /** The panel is showing `view` right now, rather than being put away. */
   open: boolean
@@ -124,7 +143,7 @@ export const ChatRail = ({
         one constant, applied by the same component. It carries its own tooltip
         on the collapsed form, so there is no `Hint` around it. */}
     <div className="flex flex-col gap-1 px-2 pt-3">
-      {PANEL_VIEWS.map((v) => (
+      {views.map((v) => (
         <AppShellNavItem
           key={v.id}
           // Nothing is current while the panel is shut: the rail is then a

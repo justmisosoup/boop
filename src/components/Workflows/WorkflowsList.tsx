@@ -65,14 +65,14 @@ const WorkflowActionsMenu = ({
       </MenuTrigger>
       <MenuContent align='end' themeMode='light'>
         <MenuItem onSelect={() => navigate(editWorkflowPath(order.id))}>
-          Edit order
+          Edit assessment
         </MenuItem>
         <MenuItem onSelect={() => navigate(duplicateWorkflowPath(order.id))}>
-          Duplicate order
+          Duplicate assessment
         </MenuItem>
         <MenuSeparator />
         <MenuItem onSelect={() => onDelete(order)} tone='destructive'>
-          Delete order
+          Delete assessment
         </MenuItem>
       </MenuContent>
     </Menu>
@@ -94,10 +94,10 @@ export const WorkflowsList = () => {
     if (!pendingDelete) return
     try {
       await deleteOrder(pendingDelete.id).unwrap()
-      showToast({ text: 'Order deleted', appearance: 'success' })
+      showToast({ text: 'Assessment deleted', appearance: 'success' })
     } catch {
       showToast({
-        text: 'Couldn’t delete the order',
+        text: 'Couldn’t delete the assessment',
         appearance: 'error'
       })
     }
@@ -108,7 +108,7 @@ export const WorkflowsList = () => {
     () => [
       {
         id: 'name',
-        header: 'Order',
+        header: 'Assessment',
         cell: ({ row }) => row.original.name,
         meta: { minWidth: 240 }
       },
@@ -148,7 +148,7 @@ export const WorkflowsList = () => {
 
   return (
     <PageContainer width='wide'>
-      <title>Custom orders • Middesk</title>
+      <title>Assessments • Middesk</title>
       <PageHeaderBand className='px-0'>
         <PageHeader>
           <PageHeaderBar>
@@ -157,16 +157,15 @@ export const WorkflowsList = () => {
                 count={saved.data ? saved.data.length : null}
                 weight='normal'
               >
-                Custom orders
+                Assessments
               </PageHeading>
               <PageDescription>
-                Saved selections of insights your team can order from Place
-                order.
+                Saved selections of insights your team can run on any business.
               </PageDescription>
             </PageHeaderTitles>
             <PageHeaderActions>
               <ActionButton onClick={create} {...cya('CreateCustomOrder')}>
-                Create order
+                Create assessment
               </ActionButton>
             </PageHeaderActions>
           </PageHeaderBar>
@@ -180,10 +179,10 @@ export const WorkflowsList = () => {
         density='compact'
         empty={
           <EmptyState
-            actionLabel='Create order'
+            actionLabel='Create assessment'
             description='Pick the insights you need once, then order them for any business.'
             onAction={create}
-            title='No custom orders yet'
+            title='No assessments yet'
           />
         }
         error={
@@ -191,7 +190,7 @@ export const WorkflowsList = () => {
             <ErrorState
               description='Try again in a moment.'
               onAction={() => saved.refetch()}
-              title='Couldn’t load custom orders'
+              title='Couldn’t load assessments'
             />
           ) : undefined
         }
@@ -206,7 +205,7 @@ export const WorkflowsList = () => {
 
       {saved.data && saved.data.length > 0 && (
         <Text className='mt-3' size='xs' tone='secondary'>
-          Editing an order never changes reports already placed with it.
+          Editing an assessment never changes reports already run with it.
         </Text>
       )}
 

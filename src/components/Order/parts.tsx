@@ -31,63 +31,25 @@ export const OrderPageFrame = ({
           onClick={() => navigate('/businesses')}
           type='button'
         >
-          <MiddeskMark className='h-[22px] w-10' />
+          <MiddeskMark className='h-6 w-10' />
         </button>
         <button aria-label='close' onClick={close} type='button'>
           <X aria-hidden='true' size={26} strokeWidth={1.5} />
         </button>
       </div>
       <div className='mt-4 flex flex-col items-center px-4'>
-        <div className='w-full max-w-[550px]'>{children}</div>
+        <div className='w-full max-w-xl'>{children}</div>
       </div>
     </div>
   )
 }
 
 export const Title = ({ children }: { children: ReactNode }) => (
-  <h1 className='mb-1 font-arizona text-[1.875rem] font-normal leading-tight'>{children}</h1>
+  <h1 className='m-0 mb-1 font-arizona text-3xl font-light leading-10 tracking-[-0.02em]'>{children}</h1>
 )
 
 export const SubTitle = ({ children }: { children: ReactNode }) => (
-  <div className='mb-4 text-base'>{children}</div>
-)
-
-/** A bordered card with a bold title, as the order flow's `StyledCard`. */
-export const OrderCard = ({
-  title,
-  children,
-  className
-}: {
-  title?: ReactNode
-  children?: ReactNode
-  className?: string
-}) => (
-  <div
-    className={cn(
-      'mb-4 grid gap-4 rounded-card border border-border bg-card px-6 py-5 [&_label]:text-base',
-      className
-    )}
-  >
-    {title && <b className='flex items-center justify-between gap-3'>{title}</b>}
-    {children}
-  </div>
-)
-
-export const OrderLabel = ({
-  children,
-  disabled
-}: {
-  children: ReactNode
-  disabled?: boolean
-}) => (
-  <div
-    className={cn(
-      'text-base font-normal leading-normal',
-      disabled ? 'text-[var(--core-color-text-disabled)]' : 'text-foreground'
-    )}
-  >
-    {children}
-  </div>
+  <p className='m-0 mb-4 text-text-secondary'>{children}</p>
 )
 
 export const LinkText = ({ children }: { children: ReactNode }) => (

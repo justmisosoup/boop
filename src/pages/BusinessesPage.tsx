@@ -25,6 +25,10 @@ import type { BusinessRecord } from '@/lib/deriveResults'
 import { ALL, assessmentOf, type Assessed } from '@/lib/records'
 import { displayName } from '@/lib/businessNames'
 import { isOrdering, ORDERED } from '@/lib/orderedWorkflows'
+import { readAssessments, type AssessmentRead } from '@/lib/assessments'
+import { useStoredStatus, type ReviewStatus } from '@/lib/review'
+import { polarityCounts } from '@/lib/identityScore'
+import { deriveResults } from '@/lib/deriveResults'
 
 import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
@@ -39,6 +43,7 @@ import { InsightCounts } from '../components/InsightCounts'
 const COLUMN_WIDTHS = {
   status: 132,
   name: 232,
+  assessments: 280,
   insights: 304,
   assessed: 148
 }
@@ -48,16 +53,57 @@ const COLUMN_WIDTHS = {
 type Row = {
   record: Pick<BusinessRecord, 'id' | 'name'>
   assessed: Assessed | null
+  /** Each of its assessments, read: one chip each in the row. */
+  reads?: AssessmentRead[]
+  /** Across its assessments, each insight once. */
+  counts?: { positive: number; negative: number; neutral: number }
   pending?: string[]
+}
+
+/** A business, as a row: its newest report for "Full Business KYB", or each of its
+ *  custom orders' assessments with their insights counted once. */
+const rowFor = (record: BusinessRecord): Row => {
+  const reads = readAssessments(record)
+  if (reads.every((r) => r.assessment.full)) {
+    const assessed = assessmentOf(record)
+    return { record, assessed, reads, counts: assessed?.counts }
+  }
+  const results = deriveResults(record)
+  const keys = new Set(reads.flatMap((r) => r.assessment.insights ?? []))
+  const ids = results.filter((r) => keys.has(r.insightId.split(':')[0])).map((r) => r.insightId)
+  return { record, assessed: null, reads, counts: polarityCounts(record, results, ids) }
 }
 
 /** Ordered from `/order` but not in records.json yet — the pull right after
  *  ordering failed, and the poll below retries it. */
 const pendingRows = (): Row[] =>
   Object.entries(ORDERED)
-    .filter(([id, o]) => !o.completedAt && !ALL.some((r) => r.id === id))
-    .sort(([, a], [, b]) => b.orderedAt.localeCompare(a.orderedAt))
-    .map(([id, o]) => ({ record: { id, name: o.name }, assessed: null, pending: o.workflows.map((w) => w.name) }))
+    .filter(([id, o]) => o.assessments.some((a) => !a.completedAt) && !ALL.some((r) => r.id === id))
+    .map(([id, o]) => ({ id, o, at: o.assessments.map((a) => a.orderedAt).sort().at(-1) ?? '' }))
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .map(({ id, o }) => ({ record: { id, name: o.name }, assessed: null, pending: o.assessments.map((a) => a.name) }))
+
+const STATUS_CHIP: Record<ReviewStatus, { label: string; tone: 'success' | 'warning' | 'danger' }> = {
+  approved: { label: 'Approve', tone: 'success' },
+  in_review: { label: 'Needs review', tone: 'warning' },
+  rejected: { label: 'Reject', tone: 'danger' }
+}
+
+/** The reviewer's status for the business; where nobody has set one, the
+ *  report's own call for "Full Business KYB", and "Not reviewed" for custom orders,
+ *  which have no roll-up. */
+const StatusCell = ({ row }: { row: Row }) => {
+  const stored = useStoredStatus(row.record.id)
+  if (row.pending || isOrdering(row.record.id)) return <MetaChip size="xs">Ordering</MetaChip>
+  if (stored)
+    return (
+      <MetaChip size="compact" tone={STATUS_CHIP[stored].tone}>
+        {STATUS_CHIP[stored].label}
+      </MetaChip>
+    )
+  if (row.assessed) return <DeterminationChip band={row.assessed.score.band} />
+  return <MetaChip size="compact">{row.reads?.length ? 'Not reviewed' : 'Not assessed'}</MetaChip>
+}
 
 /** Every business whose orders are still running, pulled or not. */
 const ORDERING = Object.keys(ORDERED).filter(isOrdering)
@@ -76,12 +122,7 @@ const columns: DataTableColumnDef<Row>[] = [
      * with no assessment reads Not assessed. It leads the row, ahead of the
      * name, so the list scans by outcome first.
      */
-    cell: ({ row }) =>
-      row.original.pending || isOrdering(row.original.record.id) ? (
-        <MetaChip size="xs">Ordering</MetaChip>
-      ) : (
-        <DeterminationChip band={row.original.assessed?.score.band ?? null} />
-      ),
+    cell: ({ row }) => <StatusCell row={row.original} />,
     meta: { width: COLUMN_WIDTHS.status }
   },
   {
@@ -92,6 +133,33 @@ const columns: DataTableColumnDef<Row>[] = [
     // shows the full name in a tooltip when it's actually clipped.
     cell: ({ row }) => <TruncatedText className="font-semibold">{displayName(row.original.record.name)}</TruncatedText>,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
+  },
+  {
+    id: 'assessments',
+    header: 'Assessments',
+    accessorFn: (row) => row.reads?.length ?? 0,
+    /** One chip per assessment: its name and its own call. */
+    cell: ({ row }) => {
+      const reads = row.original.reads
+      if (row.original.pending)
+        return <TruncatedText className="text-caption text-text-secondary">{row.original.pending.join(', ')}</TruncatedText>
+      if (!reads?.length) return <span className="text-caption text-text-disabled">—</span>
+      return (
+        <span className="flex flex-wrap gap-1">
+          {reads.map((r) => (
+            <MetaChip
+              key={r.assessment.id}
+              size="compact"
+              tone={r.ordering ? 'neutral' : r.score ? STATUS_CHIP[r.score.band.id === 'established' ? 'approved' : r.score.band.id === 'not_established' ? 'rejected' : 'in_review'].tone : 'neutral'}
+            >
+              {r.assessment.name}
+              {r.ordering ? ' · Ordering' : r.score ? ` · ${r.score.band.label}` : ''}
+            </MetaChip>
+          ))}
+        </span>
+      )
+    },
+    meta: { align: 'start', width: COLUMN_WIDTHS.assessments, grow: true }
   },
   {
     id: 'insights',
@@ -105,11 +173,9 @@ const columns: DataTableColumnDef<Row>[] = [
      * so it reads as a dash rather than as three zeros.
      */
     cell: ({ row }) => {
-      const assessed = row.original.assessed
-      if (row.original.pending)
-        return <TruncatedText className="text-caption text-text-secondary">{row.original.pending.join(', ')}</TruncatedText>
-      if (!assessed) return <span className="text-caption text-text-disabled">—</span>
-      return <InsightCounts counts={assessed.counts} />
+      const counts = row.original.counts
+      if (!counts) return <span className="text-caption text-text-disabled">—</span>
+      return <InsightCounts counts={counts} />
     },
     meta: { align: 'start', width: COLUMN_WIDTHS.insights, grow: true }
   },
@@ -202,7 +268,7 @@ export const BusinessesPage = () => {
   }, [])
 
   /** Every record, read once, with its newest assessment. */
-  const all = useMemo<Row[]>(() => ALL.map((record) => ({ record, assessed: assessmentOf(record) })), [])
+  const all = useMemo<Row[]>(() => ALL.map(rowFor), [])
   const pending = useMemo(pendingRows, [])
 
   /**
@@ -264,7 +330,7 @@ export const BusinessesPage = () => {
             </PageHeaderTitles>
             <PageHeaderActions>
               <ActionButton onClick={() => navigate('/order', { state: { origin: '/businesses' } })} variant="primary">
-                Place order
+                Run assessment
               </ActionButton>
             </PageHeaderActions>
           </PageHeaderBar>

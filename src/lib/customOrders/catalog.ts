@@ -234,7 +234,7 @@ export const availabilityOf = (
   return missing
     ? {
         orderable: false,
-        reason: 'Part of this order is no longer available.'
+        reason: 'Part of this assessment is no longer available.'
       }
     : { orderable: true }
 }

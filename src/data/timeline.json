@@ -56752,6 +56752,208 @@
         "created_at": "2026-09-17T17:04:03.095Z",
         "occurred_at": "2022-02-24T00:00:00.000Z"
       }
+    ],
+    "c1f0a700-5a83-4ad1-85a2-70afa34b0764": [
+      {
+        "object": "event",
+        "id": "dea33bee-7993-432a-91b8-d8ba5d251d7d",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "address.created",
+        "data": {
+          "object": {
+            "object": "address",
+            "id": null,
+            "address_line1": null,
+            "address_line2": null,
+            "city": null,
+            "state": null,
+            "postal_code": null,
+            "full_address": "801 Madison Ave Fl 3, New York, NY 10065-5930",
+            "submitted": false,
+            "latitude": null,
+            "longitude": null,
+            "property_type": null,
+            "deliverable": null,
+            "deliverability_analysis": null,
+            "street_view_available": null,
+            "labels": null,
+            "created_at": "2026-06-25T00:46:43.878Z",
+            "updated_at": "2026-06-25T00:46:43.878Z",
+            "registered_agent_name": null,
+            "cmra": false,
+            "business_id": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+            "location_count": null,
+            "is_registered_agent": false,
+            "country_code": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715",
+                  "state": "NY",
+                  "file_number": "6511786",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715"
+              }
+            ],
+            "rating": {
+              "risk_rating": "not_available"
+            }
+          }
+        },
+        "created_at": "2026-10-08T21:09:31.169Z",
+        "occurred_at": "2026-06-25T00:46:43.878Z"
+      },
+      {
+        "object": "event",
+        "id": "11170e47-9055-4bbc-8872-60e67522f93d",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "person.created",
+        "data": {
+          "object": {
+            "object": "person",
+            "name": "KAIROS PHYSICAL THERAPY PLLC",
+            "submitted": false,
+            "business_id": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+            "titles": [
+              {
+                "object": "person_title",
+                "title": "SERVICE OF PROCESS"
+              }
+            ],
+            "people_bankruptcies": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715",
+                  "state": "NY",
+                  "file_number": "6511786",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715"
+              }
+            ]
+          }
+        },
+        "created_at": "2026-10-08T21:09:31.169Z",
+        "occurred_at": "2026-06-22T14:35:32.813Z"
+      },
+      {
+        "object": "event",
+        "id": "cd662460-f687-4788-a3c2-4dd53cee28ae",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "address.created",
+        "data": {
+          "object": {
+            "object": "address",
+            "id": null,
+            "address_line1": null,
+            "address_line2": null,
+            "city": null,
+            "state": null,
+            "postal_code": null,
+            "full_address": "40 Little Neck Rd # 1B, Little Neck, NY 11363-1332",
+            "submitted": false,
+            "latitude": null,
+            "longitude": null,
+            "property_type": null,
+            "deliverable": null,
+            "deliverability_analysis": null,
+            "street_view_available": null,
+            "labels": null,
+            "created_at": "2026-02-25T01:14:25.486Z",
+            "updated_at": "2026-02-25T01:14:25.486Z",
+            "registered_agent_name": null,
+            "cmra": false,
+            "business_id": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+            "location_count": null,
+            "is_registered_agent": false,
+            "country_code": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715",
+                  "state": "NY",
+                  "file_number": "6511786",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715"
+              }
+            ],
+            "rating": {
+              "risk_rating": "not_available"
+            }
+          }
+        },
+        "created_at": "2026-10-08T21:09:31.169Z",
+        "occurred_at": "2026-02-25T01:14:25.486Z"
+      },
+      {
+        "object": "event",
+        "id": "6570a5cf-6b7c-49c5-8959-7250238c946e",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "person.deleted",
+        "data": {
+          "object": {
+            "object": "person",
+            "name": "THE LLC",
+            "submitted": false,
+            "business_id": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+            "titles": [
+              {
+                "object": "person_title",
+                "title": "OFFICER"
+              }
+            ],
+            "people_bankruptcies": null,
+            "sources": [
+              {
+                "type": "registration",
+                "metadata": {
+                  "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715",
+                  "state": "NY",
+                  "file_number": "6511786",
+                  "jurisdiction": "DOMESTIC"
+                },
+                "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715"
+              }
+            ]
+          }
+        },
+        "created_at": "2026-10-08T21:09:31.169Z",
+        "occurred_at": "2024-03-13T01:07:23.803Z"
+      },
+      {
+        "object": "event",
+        "id": "629b86e1-770c-4c78-8c0a-8b230ff90c40",
+        "account_id": "2ad19f65-ae87-4057-b1d2-cc7abae876cf",
+        "type": "registration.created",
+        "data": {
+          "object": {
+            "object": "registration",
+            "id": "0ae12946-dc60-49d9-8b66-080b2c2e1715",
+            "business_id": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+            "name": null,
+            "status": null,
+            "sub_status": null,
+            "status_details": null,
+            "jurisdiction": "DOMESTIC",
+            "entity_type": null,
+            "file_number": "6511786",
+            "addresses": null,
+            "officers": null,
+            "registered_agent": null,
+            "registration_date": "2022-06-13",
+            "state": "NY",
+            "source": null
+          }
+        },
+        "created_at": "2026-10-08T21:09:31.169Z",
+        "occurred_at": "2022-06-13T00:00:00.000Z"
+      }
     ]
   }
 }

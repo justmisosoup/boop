@@ -145,9 +145,9 @@ export const AppChromeSidebar = () => {
     {
       id: 'act-order',
       group: 'Actions',
-      label: 'Place an order',
+      label: 'Run an assessment',
       icon: glyph(Plus),
-      keywords: 'verify create new business',
+      keywords: 'verify create new business order place',
       onSelect: () => navigate('/order')
     },
     {

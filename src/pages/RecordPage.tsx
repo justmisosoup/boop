@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router'
 
 import {
   EmptyState,
   MutedText,
-  PageBreadcrumb,
-  PageBreadcrumbItem,
-  PageHeading,
   TabsContent,
   TabsRoot,
   type FloatingPanelPresentation,
@@ -23,19 +20,16 @@ import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPan
 import { useWide } from '../hooks/useWide'
 import { InsightStack } from '../components/InsightStack'
 
-import { AssigneeDropdown } from '../components/BusinessStatusBar/AssigneeDropdown'
-import { StatusDropdown } from '../components/BusinessStatusBar/StatusDropdown'
 import { statusForBand, useReview } from '../lib/review'
 import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
 import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
-import { ReportHero, ScoreCard } from '../components/Report/ReportHero'
+import { ScoreCard } from '../components/Report/ReportHero'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
 import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
 import { outcomeOf } from '../lib/insightOutcome'
 import { evidenceByCard } from '../components/Assistant/evidence'
 import { REVIEW_AREAS, areaOfAssessmentName, reviewGroups, type ReviewAreaId } from '../lib/reviewAreas'
-import { businessBlurb } from '../lib/businessBlurb'
 import { areaBrief } from '../lib/areaBriefs'
 import type { BriefCard, ReportFocus } from '../lib/reportBrief'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
@@ -46,7 +40,12 @@ import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { areaSummaries } from '../lib/areaSummaries'
 import { displayName } from '../lib/businessNames'
-import { orderedFor } from '../lib/orderedWorkflows'
+import { assessmentById, readAssessment, resultsIn, type Assessment } from '../lib/assessments'
+import { useSummaryRuns } from '../lib/useSummaryRuns'
+import { BusinessOverview } from './BusinessOverview'
+import { IdentityHeader } from '../components/Assessments/IdentityHeader'
+import { assessmentTransitionName } from '../components/Assessments/AssessmentCard'
+import { DeterminationChip } from '../components/DeterminationChip'
 import { byId } from '../lib/records'
 import { workflowByAssessmentId } from '../lib/workflows'
 import { GROUPS, makeGroupFor } from '../lib/groups'
@@ -151,14 +150,20 @@ const readAssistantPresentation = (): FloatingPanelPresentation =>
  * can be linked to. Finding a different one is the rail's ⌘K search.
  */
 export function RecordPage() {
-  const { businessId } = useParams()
+  const { businessId, assessmentId } = useParams()
   const selected = byId(businessId)
 
   // An id that isn't one of the ingested records: back to the list rather than
   // a half-rendered screen.
   if (!selected) return <Navigate replace to='/businesses' />
 
-  return <Record key={selected.id} record={selected} />
+  // The business itself: its identity and its assessments.
+  if (!assessmentId) return <BusinessOverview key={selected.id} record={selected} />
+
+  // One of its assessments, its report scoped to that assessment's insights.
+  const scope = assessmentById(selected, assessmentId)
+  if (!scope) return <Navigate replace to={`/businesses/${selected.id}`} />
+  return <Record key={`${selected.id}/${scope.id}`} record={selected} scope={scope} />
 }
 
 /**
@@ -169,14 +174,17 @@ export function RecordPage() {
  * under the other three. A business used to list several runs with a page
  * each; that has been set aside, see `heldReports.ts`.
  */
-function Record({ record: selected }: { record: BusinessRecord }) {
+function Record({ record: selected, scope }: { record: BusinessRecord; scope: Assessment }) {
+  /**
+   * The assessment being read. "Full Business KYB" — every business pulled before
+   * custom orders — reads the stored report, as the page always has. A custom
+   * order's assessment reads the live record, scoped to its own insights, and
+   * needs no report run to be read.
+   */
+  const scoped = !scope.full
   /** What the business is now. What a new report is run against. */
-  // An ordered business's report is run on its workflows' insights alone.
-  const live = useMemo(() => {
-    const all = deriveResults(selected)
-    const keys = orderedFor(selected.id)?.insights
-    return keys ? all.filter((r) => keys.includes(r.insightId.split(':')[0])) : all
-  }, [selected])
+  const liveAll = useMemo(() => deriveResults(selected), [selected])
+  const live = useMemo(() => resultsIn(scope, liveAll), [scope, liveAll])
 
   // The skill that runs on arrival. Not a special case: it is the same thing a
   // reader could have dropped into the composer themselves.
@@ -217,23 +225,24 @@ function Record({ record: selected }: { record: BusinessRecord }) {
    * record, which is what the page always did. No report at all is the empty
    * state: `view` is null and nothing downstream has anything to render.
    */
-  const view = analysis.selected
-    ? (analysis.selected.snapshot ?? { recordId: selected.id, record: selected, results: live })
-    : null
+  const view = scoped
+    ? { recordId: selected.id, record: selected, results: liveAll }
+    : analysis.selected
+      ? (analysis.selected.snapshot ?? { recordId: selected.id, record: selected, results: live })
+      : null
   const record = view?.record ?? selected
   const results: Derived[] = view?.results ?? []
   /**
-   * A business ordered from `/order` reads as its workflows: only the insights
-   * they include, on only the cards those insights belong to. Its sources stay
-   * whole, and the score still reads the whole report. A business never
-   * ordered here shows everything, as before.
+   * What this assessment shows: only its insights, on only the cards those
+   * insights belong to. The sources stay whole.
    */
-  const ordered = orderedFor(selected.id)
-  const shownResults: Derived[] = useMemo(() => {
-    if (!ordered) return results
-    const keys = new Set(ordered.insights)
-    return results.filter((r) => keys.has(r.insightId.split(':')[0]))
-  }, [results, ordered])
+  const shownResults: Derived[] = useMemo(() => resultsIn(scope, results), [scope, results])
+  /** A custom order's assessment, read on its own: score, counts, summary. */
+  const scopedRead = useMemo(
+    () => (scoped ? readAssessment(selected, scope, liveAll) : undefined),
+    [scoped, selected, scope, liveAll]
+  )
+  const summaryRuns = useSummaryRuns(selected)
 
   const [agentOpen, setAgentOpen] = useState<string | null>(null)
 
@@ -406,10 +415,10 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   // on it (00-MASTER-PLAN.md rule 3).
   const categories = useMemo(() => categoriesOf(record), [record])
   const groupFor = useMemo(() => makeGroupFor(categories), [categories])
-  /** The cards an ordered business's workflows cover; absent, every card. */
+  /** The cards this assessment's insights belong to; absent, every card. */
   const workflowCards = useMemo(
-    () => (ordered ? new Set(ordered.insights.map((k) => cardFor(k, groupFor))) : undefined),
-    [ordered, groupFor]
+    () => (scope.insights ? new Set(scope.insights.map((k) => cardFor(k, groupFor))) : undefined),
+    [scope, groupFor]
   )
 
   /** The open report as the Assistant's first message: the determination and
@@ -429,8 +438,23 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       }),
     [analysis.selected, record, results, groupFor, score, scoreAreas, summaries, policy, tiers]
   )
+  /** A custom order's assessment has no written recommendation: its call is
+   *  its score's band, and the business's status stays the reviewer's. */
+  const scopedCall = useMemo(() => {
+    const sc = scopedRead?.score
+    if (!sc) return undefined
+    return {
+      kind: (sc.band.id === 'established' ? 'approve' : sc.band.id === 'not_established' ? 'reject' : 'request') as 'approve' | 'reject' | 'request',
+      status: statusForBand(sc.band.id),
+      label: sc.band.label,
+      value: sc.value,
+      reason: scopedRead?.summary?.text,
+      score: sc,
+      steps: []
+    }
+  }, [scopedRead])
   /** A report on screen, so its hero heads the page. */
-  const hero = Boolean(view && brief)
+  const hero = scoped ? true : Boolean(view && brief)
   /**
    * What the newest document did to the recommendation: the latest answer on
    * this report, in any conversation, that wrote `revisedRecommendation`.
@@ -444,7 +468,7 @@ function Record({ record: selected }: { record: BusinessRecord }) {
       .at(-1)
     return latest ? { ...latest.result.revisedRecommendation!, at: latest.at } : undefined
   }, [analysis.threads])
-  const assessment = brief?.determination ? standingCall(brief.determination, revision) : undefined
+  const assessment = scoped ? scopedCall : brief?.determination ? standingCall(brief.determination, revision) : undefined
   const [reviewStepsRequest, setReviewStepsRequest] = useState(0)
   const [reviewStepIndex, setReviewStepIndex] = useState<number>()
   const [summaryRequest, setSummaryRequest] = useState(0)
@@ -699,15 +723,24 @@ function Record({ record: selected }: { record: BusinessRecord }) {
   const areaOfBriefCard = (c: BriefCard) => areaOfAssessmentName(workflowByAssessmentId(c.id)?.name ?? policy.find((p) => p.id === c.id)?.name, c.id)
   const shownArea = selectedArea
   /** Every insight on the report, the same reading: the spark under the score. */
+  /** Arrived from the overview's Regenerate on "Full Business KYB": run it once. */
+  const location = useLocation()
+  const navigate = useNavigate()
+  const regenerateAsked = useRef(Boolean((location.state as { regenerate?: boolean } | null)?.regenerate))
+  useEffect(() => {
+    if (!regenerateAsked.current || !standing) return
+    regenerateAsked.current = false
+    runStanding()
+  }, [standing])
   const overallTally = useMemo(() => {
-    const read = results.filter((r) => !r.notReported).map((r) => outcomeOf(r, record))
+    const read = shownResults.filter((r) => !r.notReported).map((r) => outcomeOf(r, record))
     return {
       good: read.filter((o) => o === 'pass').length,
       review: read.filter((o) => o === 'review').length,
       bad: read.filter((o) => o === 'fail').length,
       neutral: read.filter((o) => o === 'neutral').length
     }
-  }, [results, record])
+  }, [shownResults, record])
   /** Every insight on the report, grouped by the card it is about, in the
    *  report's order; within a group, failed first, then needs review, passed,
    *  context. The left column lists them in place of the areas. */
@@ -942,64 +975,64 @@ function Record({ record: selected }: { record: BusinessRecord }) {
             {/* The head sticks: at the scroller's true top from \`wide\` (its
                 54px padding lifted, as the filter bar's is), on the canvas so
                 the cards pass under it. */}
-            {!hero && (
-              <div ref={headRef} className={`sticky top-0 z-[4] pt-3 wide:top-[-54px] flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none ${pinned && !focus ? 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]' : ''}`}>
-                <div className="flex min-w-0 flex-col">
-                  <PageBreadcrumb className="mb-2">
-                  {/* The dashboard's crumb, as the workflow pages carry it: where
-                      you came from, then the business. It replaces a sticky bar
-                      with a back arrow over the same name. */}
-                  <PageBreadcrumbItem asChild>
-                    <Link to="/businesses" className="no-underline">
-                      Businesses
-                    </Link>
-                  </PageBreadcrumbItem>
-                  <PageBreadcrumbItem current>{displayName(selected.name)}</PageBreadcrumbItem>
-                </PageBreadcrumb>
-                  <PageHeading level={2} size="lg" weight="normal" className="font-arizona text-3xl font-light leading-10 tracking-[-0.02em]">
-                    {displayName(selected.name)}
-                  </PageHeading>
-                </div>
-                <AssigneeDropdown businessId={selected.id} />
-              </div>
-            )}
-            {hero && analysis.selected && brief && (
-              <div ref={headRef} className={`sticky top-0 z-[4] pt-3 wide:top-[-54px] pb-4 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-[var(--report-scroll-w,100%)] before:-translate-x-1/2 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none ${pinned && !focus ? 'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]' : ''}`}>
-                <PageBreadcrumb className={cn('mb-2', pinned && 'hidden')}>
-                {/* The dashboard's crumb, as the workflow pages carry it: where
-                    you came from, then the business. It replaces a sticky bar
-                    with a back arrow over the same name. */}
-                <PageBreadcrumbItem asChild>
-                  <Link to="/businesses" className="no-underline">
-                    Businesses
-                  </Link>
-                </PageBreadcrumbItem>
-                <PageBreadcrumbItem current>{displayName(selected.name)}</PageBreadcrumbItem>
-              </PageBreadcrumb>
-                <ReportHero
-                  record={record}
-                  assessment={assessment}
-                  summary={revision?.reason ?? brief.lede ?? assessment?.reason}
-                  compact={pinned}
-                  status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
-                  assignee={<AssigneeDropdown businessId={selected.id} />}
-                />
-              </div>
-            )}
+            {/* The business at the top, as on its overview: the crumb, the
+                name, the reviewer's status and the facts of its identity. */}
+            {/* The business's profile, pinned as the report scrolls under it —
+                the same band as on its overview, Run assessment included. */}
+            {/* At `wide` the report scrolls inside its own column, which pads
+                its top by 54px; the band pins at the column's true top by
+                lifting that padding, as the report's old head did. */}
+            <div ref={headRef} className="sticky top-0 z-[5] wide:top-[-54px]">
+              <IdentityHeader
+                record={selected}
+                defaultStatus={determined}
+                assessment={scope.name}
+                onOpenTimeline={() => navigate(`/businesses/${selected.id}/timeline`)}
+                onOpenActivity={() => navigate(`/businesses/${selected.id}/activity`)}
+                onRunAssessment={() =>
+                  navigate('/order', {
+                    state: { businessId: selected.id, origin: `/businesses/${selected.id}/assessments/${scope.id}` }
+                  })
+                }
+              />
+            </div>
             {/* Two columns under the head: the score and its steps at the
                 left; the report's cards at the right.
                 The left card scrolls with the page — pinned, it fought the
                 sticky head for the same strip of screen. */}
-            <div className={cn(!view && !running && 'mt-6', hero && assessment && 'flex items-start gap-4')}>
+            <div className={cn('pt-8', hero && 'flex items-start gap-4')}>
+              {hero && !assessment && (
+                // Nothing of this assessment could be read yet — its orders are
+                // still running.
+                <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
+                  <div className="rounded-card border border-border bg-card" style={{ viewTransitionName: assessmentTransitionName(scope.id) }}>
+                    <div className="flex flex-col gap-1 px-4 py-4">
+                      <h2 className="m-0 text-base font-semibold">{scope.name}</h2>
+                      <p className="m-0 text-[var(--core-color-text-secondary)]">
+                        {scopedRead?.ordering ? 'Its orders are still running.' : 'Nothing to read yet.'}
+                      </p>
+                    </div>
+                  </div>
+                </aside>
+              )}
               {hero && assessment && (
                 <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
                   <ScoreCard
                     assessment={assessment}
-                    blurb={businessBlurb(record)}
+                    title={scope.name}
+                    transitionName={assessmentTransitionName(scope.id)}
+                    summary={
+                      scoped
+                        ? (scopedRead?.summary ?? null)
+                        : brief?.lede
+                          ? { text: revision?.reason ?? brief.lede, at: analysis.selected?.at }
+                          : null
+                    }
+                    regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
                     summaryGenerated={generated.has(selected.id)}
                     insights={allInsights}
                     overall={overallTally}
-                    status={<StatusDropdown businessId={selected.id} defaultStatus={determined} />}
+                    status={<DeterminationChip band={assessment.score.band} />}
                     onSelectInsight={(id) => landOn(cardFor(id, groupFor))}
                     onShowSummary={() => {
                       GENERATED.add(selected.id)

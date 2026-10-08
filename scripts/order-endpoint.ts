@@ -31,11 +31,13 @@ import {
   type BusinessInputBody
 } from '../src/lib/customOrders/catalog'
 import type { CustomOrderConfig, CustomOrderError } from '../src/lib/customOrders/types'
+import type { OrderedAssessment, OrderedBusiness } from '../src/lib/orderedWorkflows'
 import { type Any, fetchFull, normalise } from './lib/business'
 
 const ROOT = process.cwd()
 const RECORDS = join(ROOT, 'src/data/records.json')
 const ORDERED = join(ROOT, 'src/data/orderedWorkflows.json')
+const TIMELINE = join(ROOT, 'src/data/timeline.json')
 
 const BASE = () => process.env.MIDDESK_API_URL ?? 'https://api.middesk.com/v1'
 
@@ -78,19 +80,7 @@ const call = async (path: string, init?: { method: string; body: unknown }) => {
   return res.json() as Promise<Any>
 }
 
-export type OrderedWorkflows = Record<
-  string,
-  {
-    name: string
-    workflows: { id: string; name: string }[]
-    insight_groups: string[]
-    insights: string[]
-    report_sections: string[]
-    orderedAt: string
-    /** Set once every order has finished and the record was pulled after. */
-    completedAt?: string
-  }
->
+export type OrderedWorkflows = Record<string, OrderedBusiness>
 
 const readJson = <T>(path: string, fallback: T): T => {
   try {
@@ -109,9 +99,11 @@ const readBody = async (req: Connect.IncomingMessage) => {
 }
 
 type OrderRequest = {
-  /** Add the workflows to a business already ingested, rather than create one. */
+  /** Add the custom orders to a business already ingested, rather than create one. */
   businessId?: string
   body: BusinessInputBody
+  /** For an existing business: the details the reader changed, sent as a PATCH first. */
+  patch?: BusinessInputBody
   workflows: { id: string; name: string; config: CustomOrderConfig }[]
 }
 
@@ -119,8 +111,13 @@ type OrderRequest = {
 const compose = (request: OrderRequest) => {
   const config = combineConfigs(request.workflows.map((w) => w.config))
   const expanded = expandConfig(config)
-  const orders = expanded.orders.map((o) => ({
-    package: o.package,
+  // `product`: the API's name for it; `package` is deprecated. An existing
+  // business has already been verified, so what the orders depend on is not
+  // ordered again.
+  const orders = expanded.orders
+    .filter((o) => !(request.businessId && expanded.dependencies.includes(o.package)))
+    .map((o) => ({
+    product: o.package,
     ...(o.subproducts.length > 0 && { subproducts: o.subproducts })
   }))
   return { config, expanded, orders }
@@ -143,16 +140,107 @@ const land = (record: Any) => {
   writeFileSync(RECORDS, JSON.stringify([record, ...records.filter((r) => r.id !== record.id)], null, 2))
 }
 
+/**
+ * The business's timeline, as `pull-timeline.ts` pulls every business's: its
+ * entry in timeline.json, nothing else rewritten, and only when it changed. A
+ * business ordered here has one from the start rather than waiting for the
+ * next full pull.
+ */
+const pullTimeline = async (id: string) => {
+  const PAGE_SIZE = 100
+  const page = (n: number) => call(`/businesses/${id}/timeline?page=${n}&per_page=${PAGE_SIZE}`)
+  const first = await page(1)
+  const events: Any[] = [...(first.data ?? [])]
+  const pages = Math.min(Math.ceil((first.total_count ?? events.length) / PAGE_SIZE), 10)
+  for (let n = 2; n <= pages; n++) events.push(...((await page(n)).data ?? []))
+  const file = readJson<{ _comment?: string; byBusiness: Record<string, Any[]> }>(TIMELINE, { byBusiness: {} })
+  if (JSON.stringify(file.byBusiness[id] ?? null) === JSON.stringify(events)) return
+  file.byBusiness[id] = events
+  writeFileSync(TIMELINE, JSON.stringify(file, null, 2))
+}
+
 /** Pull the business and put it in the list; true once its orders are done. */
 const pull = async (id: string) => {
   const business = await fetchFull(id, (path) => call(path))
   land(normalise(business))
-  return { status: String(business.status ?? 'pending'), complete: finished(business) }
+  try {
+    await pullTimeline(id)
+  } catch {
+    /* not entitled, or none yet: the record still lands */
+  }
+  return { business, status: String(business.status ?? 'pending'), complete: finished(business) }
 }
+
+/** An order the API still has running. */
+const RUNNING = /pending|progress|processing|queued|running/i
+/** Orders placed for an assessment land just before it is recorded. */
+const SLACK_MS = 10 * 60 * 1000
+
+/**
+ * One assessment's orders have finished: every product it needs has an order
+ * placed around when it was run, and none of those is still running. Read per
+ * assessment, so one waiting on Liens does not hold another whose verification
+ * is already back.
+ */
+const assessmentDone = (a: OrderedAssessment, business: Any) => {
+  const own = expandConfig(combineConfigs([{ packages: [], insight_groups: a.insight_groups, status_overrides: [] }]))
+  const products = own.orders.map((o) => o.package).filter((p) => !own.dependencies.includes(p))
+  const since = Date.parse(a.orderedAt) - SLACK_MS
+  const orders = ((business.orders ?? []) as Any[]).filter(
+    (o) => Date.parse(String(o.created_at ?? o.createdAt ?? '')) >= since
+  )
+  return products.every((p) => {
+    const mine = orders.filter((o) => (o.product ?? o.package) === p)
+    return mine.length > 0 && mine.every((o) => !RUNNING.test(String(o.status ?? '')))
+  })
+}
+
+/**
+ * Pull a business whose assessments are still running, and mark each one done
+ * as its own orders finish. The record is rewritten only when it changed, and
+ * each write reloads an open page with the cards filled in.
+ */
+const check = async (id: string) => {
+  const { business, status } = await pull(id)
+  const ordered = readJson<OrderedWorkflows>(ORDERED, {})
+  const open = ordered[id]?.assessments.filter((a) => !a.completedAt) ?? []
+  const done = open.filter((a) => assessmentDone(a, business))
+  if (done.length > 0) {
+    const at = new Date().toISOString()
+    done.forEach((a) => (a.completedAt = at))
+    writeOrdered(ordered)
+  }
+  return { status, complete: open.length === done.length }
+}
+
+/** How often the dev server checks on running assessments by itself. */
+const WATCH_MS = 20_000
 
 export const orderPlugin = (): Plugin => ({
   name: 'order-endpoint',
   configureServer(server) {
+    // Running assessments settle on their own, whether or not a page is open
+    // to ask: every 20s, each business with one still running is checked.
+    let busy = false
+    const timer = setInterval(async () => {
+      if (busy || !process.env.MIDDESK_API_KEY) return
+      busy = true
+      try {
+        const ordered = readJson<OrderedWorkflows>(ORDERED, {})
+        const running = Object.keys(ordered).filter((id) => ordered[id].assessments.some((a) => !a.completedAt))
+        for (const id of running) {
+          try {
+            await check(id)
+          } catch {
+            /* the next pass tries again */
+          }
+        }
+      } finally {
+        busy = false
+      }
+    }, WATCH_MS)
+    server.httpServer?.once('close', () => clearInterval(timer))
+
     server.middlewares.use(async (req, res, next) => {
       const url = new URL(req.url ?? '/', 'http://localhost')
       if (url.pathname !== '/api/order') return next()
@@ -165,7 +253,7 @@ export const orderPlugin = (): Plugin => ({
       try {
         if (req.method === 'POST') {
           const request = JSON.parse(await readBody(req)) as OrderRequest
-          if (!request.workflows?.length) return fail(422, [{ message: 'Choose at least one custom order.' }])
+          if (!request.workflows?.length) return fail(422, [{ message: 'Choose at least one assessment.' }])
           const { config, expanded, orders } = compose(request)
           const problems = [
             ...validateConfig(config),
@@ -175,7 +263,12 @@ export const orderPlugin = (): Plugin => ({
           if (problems.length) return fail(422, problems)
 
           const apiRequest = request.businessId
-            ? orders.map((order) => ({ method: 'POST', path: `/businesses/${request.businessId}/orders`, body: order }))
+            ? [
+                ...(request.patch && Object.keys(request.patch).length > 0
+                  ? [{ method: 'PATCH', path: `/businesses/${request.businessId}`, body: request.patch }]
+                  : []),
+                ...orders.map((order) => ({ method: 'POST', path: `/businesses/${request.businessId}/orders`, body: order }))
+              ]
             : [{ method: 'POST', path: '/businesses', body: { ...request.body, orders } }]
 
           if (url.searchParams.get('dryRun')) {
@@ -190,16 +283,24 @@ export const orderPlugin = (): Plugin => ({
           }
           if (!id) return fail(502, [{ message: 'The API did not return a business id.' }])
 
+          // One assessment per custom order: each reads its own insights.
+          const now = new Date().toISOString()
+          const stamp = Date.now().toString(36)
+          const added: OrderedAssessment[] = request.workflows.map((w, i) => {
+            const own = expandConfig(combineConfigs([w.config]))
+            return {
+              id: `a-${stamp}-${i}`,
+              customOrderId: w.id,
+              name: w.name,
+              insight_groups: w.config.insight_groups,
+              insights: own.insights,
+              orderedAt: now
+            }
+          })
           const ordered = readJson<OrderedWorkflows>(ORDERED, {})
-          const prior = ordered[id]
-          const workflows = [...(prior?.workflows ?? []), ...request.workflows.map(({ id, name }) => ({ id, name }))]
           ordered[id] = {
-            name: request.body.name ?? prior?.name ?? '',
-            workflows: workflows.filter((w, i) => workflows.findIndex((x) => x.id === w.id) === i),
-            insight_groups: [...new Set([...(prior?.insight_groups ?? []), ...config.insight_groups])],
-            insights: [...new Set([...(prior?.insights ?? []), ...expanded.insights])],
-            report_sections: [...new Set([...(prior?.report_sections ?? []), ...expanded.report_sections])],
-            orderedAt: new Date().toISOString()
+            name: ordered[id]?.name ?? request.body.name ?? '',
+            assessments: [...(ordered[id]?.assessments ?? []), ...added]
           }
           writeOrdered(ordered)
           // Into the list now, whatever the orders' state; the GETs fill it in.
@@ -215,13 +316,7 @@ export const orderPlugin = (): Plugin => ({
         if (req.method === 'GET') {
           const id = url.searchParams.get('id')
           if (!id) return fail(400, [{ message: 'An id is required.' }])
-          const { status, complete } = await pull(id)
-          const ordered = readJson<OrderedWorkflows>(ORDERED, {})
-          if (complete && ordered[id] && !ordered[id].completedAt) {
-            ordered[id].completedAt = new Date().toISOString()
-            writeOrdered(ordered)
-          }
-          res.end(JSON.stringify({ status, complete }))
+          res.end(JSON.stringify(await check(id)))
           return
         }
 

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from 'react-router'
+import { Navigate, Route, Routes } from 'react-router'
 
 import { Toaster } from '@/core'
 
@@ -6,16 +6,11 @@ import { Shell } from './Shell'
 import { WorkflowDetail } from './components/Workflows/WorkflowDetail'
 import { WorkflowEditor } from './components/Workflows/WorkflowEditor'
 import { WorkflowsList } from './components/Workflows/WorkflowsList'
+import { BusinessSectionPage } from './pages/BusinessSectionPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { OrderPage } from './pages/OrderPage'
 import { RecordPage } from './pages/RecordPage'
 import { StubPage } from './pages/StubPage'
-
-/** A link from when each assessment had a page of its own lands on the business. */
-const BusinessRedirect = () => {
-  const { businessId } = useParams()
-  return <Navigate replace to={`/businesses/${businessId}`} />
-}
 
 /**
  * Where the prototype goes.
@@ -35,14 +30,19 @@ export const AppRoutes = () => (
         <Route element={<Navigate replace to='/businesses' />} index />
         <Route element={<BusinessesPage />} path='businesses' />
         <Route element={<RecordPage />} path='businesses/:businessId' />
-        <Route element={<BusinessRedirect />} path='businesses/:businessId/assessments/*' />
-        <Route element={<WorkflowsList />} path='custom-orders' />
-        <Route element={<WorkflowEditor mode='new' />} path='custom-orders/new' />
-        <Route element={<WorkflowEditor mode='edit' />} path='custom-orders/:id/edit' />
-        <Route element={<WorkflowEditor mode='duplicate' />} path='custom-orders/:id/duplicate' />
-        <Route element={<WorkflowDetail />} path='custom-orders/:id' />
-        {/* Custom orders were called workflows; old links land on the list. */}
-        <Route element={<Navigate replace to='/custom-orders' />} path='workflows/*' />
+        {/* The business's overview, and each of its assessments. */}
+        <Route element={<RecordPage />} path='businesses/:businessId/assessments/:assessmentId' />
+        <Route element={<BusinessSectionPage section='timeline' />} path='businesses/:businessId/timeline' />
+        <Route element={<BusinessSectionPage section='activity' />} path='businesses/:businessId/activity' />
+        <Route element={<WorkflowsList />} path='assessments' />
+        <Route element={<WorkflowEditor mode='new' />} path='assessments/new' />
+        <Route element={<WorkflowEditor mode='edit' />} path='assessments/:id/edit' />
+        <Route element={<WorkflowEditor mode='duplicate' />} path='assessments/:id/duplicate' />
+        <Route element={<WorkflowDetail />} path='assessments/:id' />
+        {/* Assessments were called custom orders, and workflows before that;
+            old links land on the list. */}
+        <Route element={<Navigate replace to='/assessments' />} path='custom-orders/*' />
+        <Route element={<Navigate replace to='/assessments' />} path='workflows/*' />
         <Route element={<StubPage />} path='*' />
       </Route>
     </Routes>

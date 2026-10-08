@@ -47,13 +47,13 @@ export const WorkflowTopbar = ({
             <>
               <PageBreadcrumbItem asChild>
                 <Link className='no-underline' to={WORKFLOWS_PATH}>
-                  Custom orders
+                  Assessments
                 </Link>
               </PageBreadcrumbItem>
               <PageBreadcrumbItem current>{current}</PageBreadcrumbItem>
             </>
           ) : (
-            <PageBreadcrumbItem current>Custom orders</PageBreadcrumbItem>
+            <PageBreadcrumbItem current>Assessments</PageBreadcrumbItem>
           )}
         </PageBreadcrumb>
         <div className='flex-grow' />

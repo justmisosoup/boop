@@ -1,0 +1,24 @@
+{
+  "id": "1791493935631",
+  "requestedAt": "2026-10-08T21:12:15.631Z",
+  "businessId": "53ea6dad-3a0f-4e1f-a529-f18e629073e9",
+  "business": {
+    "name": "SORENSON COMMUNICATIONS, LLC"
+  },
+  "assessment": {
+    "id": "a-mv012kfp-1",
+    "name": "Identity basics",
+    "instructions": "Summarise what the Identity basics assessment found for SORENSON COMMUNICATIONS, LLC, from these insights only: Business name, TIN match.",
+    "insightIds": [
+      "name"
+    ]
+  },
+  "insights": [
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

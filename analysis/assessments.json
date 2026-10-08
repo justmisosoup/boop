@@ -1,0 +1,52 @@
+{
+  "c1f0a700-5a83-4ad1-85a2-70afa34b0764": {
+    "a-mv014v5q-1": {
+      "at": "2026-10-08T21:12:51.500Z",
+      "requestId": "1791493935433",
+      "section": {
+        "id": "a-mv014v5q-1",
+        "body": [
+          {
+            "text": "KAIROS PHYSICAL THERAPY PLLC matches the submitted business name, and the IRS holds a record for the submitted TIN under that name.",
+            "cites": [
+              "name",
+              "tin"
+            ]
+          }
+        ]
+      }
+    },
+    "a-mv014v5q-0": {
+      "at": "2026-10-08T21:14:23.544Z",
+      "requestId": "1791494045521nmpj",
+      "section": {
+        "id": "a-mv014v5q-0",
+        "body": [
+          {
+            "text": "No tax or UCC liens were found against KAIROS PHYSICAL THERAPY PLLC.",
+            "cites": [
+              "liens"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "53ea6dad-3a0f-4e1f-a529-f18e629073e9": {
+    "a-mv012kfp-1": {
+      "at": "2026-10-08T21:12:52.508Z",
+      "requestId": "1791493935631",
+      "section": {
+        "id": "a-mv012kfp-1",
+        "body": [
+          {
+            "text": "SORENSON COMMUNICATIONS, LLC matches the submitted business name. No TIN is on file for this business, so the TIN match had nothing to check.",
+            "cites": [
+              "name"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -70,7 +70,7 @@ export const useUpdateCustomOrderMutation = () =>
   useMutation(
     ({ id, ...body }: SavedCustomOrderInput & { id: string }): SavedCustomOrder => {
       const result = updateSaved(id, body)
-      if (!result) throw reject([{ message: 'This order no longer exists.' }])
+      if (!result) throw reject([{ message: 'This assessment no longer exists.' }])
       if (!result.ok) throw reject(result.errors)
       return result.value
     }
@@ -78,5 +78,5 @@ export const useUpdateCustomOrderMutation = () =>
 
 export const useDeleteCustomOrderMutation = () =>
   useMutation((id: string) => {
-    if (!deleteSaved(id)) throw reject([{ message: 'This order no longer exists.' }])
+    if (!deleteSaved(id)) throw reject([{ message: 'This assessment no longer exists.' }])
   })

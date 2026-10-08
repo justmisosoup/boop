@@ -125,12 +125,12 @@ export const WorkflowDetail = () => {
     if (catalog.isError || saved.isError) {
       return (
         <ErrorState
-          description='Custom orders aren’t available right now.'
+          description='Assessments aren’t available right now.'
           onAction={() => {
             catalog.refetch()
             saved.refetch()
           }}
-          title='Couldn’t load this order'
+          title='Couldn’t load this assessment'
         />
       )
     }
@@ -140,10 +140,10 @@ export const WorkflowDetail = () => {
     if (!order) {
       return (
         <ErrorState
-          actionLabel='Back to custom orders'
+          actionLabel='Back to assessments'
           description='It may have been deleted.'
           onAction={() => navigate(WORKFLOWS_PATH)}
-          title='Couldn’t find that order'
+          title='Couldn’t find that assessment'
         />
       )
     }
@@ -171,7 +171,7 @@ export const WorkflowDetail = () => {
                 variant='primary'
                 {...cya('PlaceWorkflowOrder')}
               >
-                Place order
+                Run assessment
               </ActionButton>
             </>
           }
@@ -206,12 +206,12 @@ export const WorkflowDetail = () => {
 
   return (
     <>
-      <title>{`${order?.name ?? 'Custom order'} • Middesk`}</title>
+      <title>{`${order?.name ?? 'Assessment'} • Middesk`}</title>
       {catalog.data && saved.data && order ? (
         body
       ) : (
         <>
-          <WorkflowTopbar current='Custom order' />
+          <WorkflowTopbar current='Assessment' />
           <PageContainer width='comfortable'>{body}</PageContainer>
         </>
       )}

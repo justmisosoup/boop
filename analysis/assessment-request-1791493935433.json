@@ -1,0 +1,30 @@
+{
+  "id": "1791493935433",
+  "requestedAt": "2026-10-08T21:12:15.433Z",
+  "businessId": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+  "business": {
+    "name": "KAIROS PHYSICAL THERAPY PLLC"
+  },
+  "assessment": {
+    "id": "a-mv014v5q-1",
+    "name": "Identity basics",
+    "instructions": "Summarise what the Identity basics assessment found for KAIROS PHYSICAL THERAPY PLLC, from these insights only: Business name, TIN match.",
+    "insightIds": [
+      "name",
+      "tin"
+    ]
+  },
+  "insights": [
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result"
+    },
+    {
+      "id": "tin",
+      "statement": "The IRS has a record for the submitted TIN and Business Name combination",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

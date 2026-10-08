@@ -1,0 +1,24 @@
+{
+  "id": "179149404492744cr",
+  "requestedAt": "2026-10-08T21:14:04.927Z",
+  "businessId": "c1f0a700-5a83-4ad1-85a2-70afa34b0764",
+  "business": {
+    "name": "KAIROS PHYSICAL THERAPY PLLC"
+  },
+  "assessment": {
+    "id": "a-mv014v5q-0",
+    "name": "Liens only",
+    "instructions": "Summarise what the Liens only assessment found for KAIROS PHYSICAL THERAPY PLLC, from these insights only: Liens. Business liens for credit decisions.",
+    "insightIds": [
+      "liens"
+    ]
+  },
+  "insights": [
+    {
+      "id": "liens",
+      "statement": "No Liens found",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

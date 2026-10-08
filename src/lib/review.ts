@@ -115,6 +115,9 @@ export const useReview = (businessId: string, fallback: ReviewStatus = 'in_revie
   }
 }
 
+/** The status a reviewer set for the business, or undefined if nobody has. */
+export const useStoredStatus = (businessId: string): ReviewStatus | undefined => store.useAll()[businessId]?.status
+
 /** A business's review outside React — what a question about the whole list reads. */
 export const reviewOf = (businessId: string, fallback: ReviewStatus = 'in_review'): Review => {
   const stored = store.get(businessId)
