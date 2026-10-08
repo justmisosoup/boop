@@ -245,6 +245,7 @@ export const ResultGrid = ({
     []
   )
   return (
+    <RadixTooltip.Provider>
     <div className="grid grid-cols-1 md:grid-cols-2">
       {pairs.map((pair) => (
         <Fragment key={pair[0].key}>
@@ -299,5 +300,6 @@ export const ResultGrid = ({
         </Fragment>
       ))}
     </div>
+    </RadixTooltip.Provider>
   )
 }
