@@ -31,12 +31,14 @@ type Props = {
   searched?: string[]
   /** After the records: the searches that came back with nothing. */
   footnote?: ReactNode
+  /** What the card says with nothing found: "No results for tax liens or UCC liens". */
+  noneTitle?: string
 }
 
 /** Every lien, as the Addresses card reads its places: the kind and filing
  *  over who holds it, open or closed beside; the closed fold under "None found"
  *  where nothing is open. */
-export const LienTable = ({ record, onJumpToSource, none, searched, footnote }: Props) => {
+export const LienTable = ({ record, onJumpToSource, none, searched, footnote, noneTitle }: Props) => {
   const rows = attributesFor('liens', record)
   const results: ResultRow[] = (record.liens ?? []).map((l, i) => {
     const row = rows.find((r) => r.docId === l.id)
@@ -57,12 +59,13 @@ export const LienTable = ({ record, onJumpToSource, none, searched, footnote }: 
       none={none}
       clean={results.length === 0 ? searched : []}
       footnote={footnote}
+      noneTitle={noneTitle}
       foldCleared={{ one: 'closed lien', many: 'closed liens', none: 'No open liens' }}
     />
 }
 
 /** Every court case: the business's part and the filing over the case's name. */
-export const LitigationTable = ({ record, onJumpToSource, none, searched, footnote }: Props) => {
+export const LitigationTable = ({ record, onJumpToSource, none, searched, footnote, noneTitle }: Props) => {
   const rows = attributesFor('litigations', record)
   const results: ResultRow[] = (record.litigations ?? []).map((c, i) => {
     const row = rows.find((r) => r.docId === c.id)
@@ -82,12 +85,13 @@ export const LitigationTable = ({ record, onJumpToSource, none, searched, footno
       none={none}
       clean={results.length === 0 ? searched : []}
       footnote={footnote}
+      noneTitle={noneTitle}
       foldCleared={{ one: 'closed case', many: 'closed cases', none: 'No open cases' }}
     />
 }
 
 /** Every bankruptcy petition: the court and filing over its chapter. */
-export const BankruptcyTable = ({ record, onJumpToSource, none, searched, footnote }: Props) => {
+export const BankruptcyTable = ({ record, onJumpToSource, none, searched, footnote, noneTitle }: Props) => {
   const rows = attributesFor('bankruptcies', record)
   const results: ResultRow[] = (record.bankruptcies ?? []).map((b, i) => {
     const row = rows.find((r) => r.docId === b.id)
@@ -101,5 +105,5 @@ export const BankruptcyTable = ({ record, onJumpToSource, none, searched, footno
       detail: <RecordSections sections={bankruptcySections(b)} />
     }
   })
-  return <ResultTable columns={['Petitions', 'Status']} rows={results} none={none} clean={results.length === 0 ? searched : []} footnote={footnote} />
+  return <ResultTable columns={['Petitions', 'Status']} rows={results} none={none} clean={results.length === 0 ? searched : []} footnote={footnote} noneTitle={noneTitle} />
 }

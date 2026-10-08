@@ -181,6 +181,14 @@ const TypeLine = ({ a }: { a: Location }) => {
   return type ? <span className="block text-caption text-text-secondary">{type}</span> : null
 }
 
+/** Under a submitted address that matched only in part: the address it matched. */
+const MatchedLine = ({ match, to }: { match?: string; to?: string }) =>
+  match && to ? (
+    <span className="mt-0.5 block text-caption text-text-secondary">
+      {match}: {to}
+    </span>
+  ) : null
+
 /** Under the address: the records that list it — "[Submitted +27]". */
 const SubLine = ({ chip }: { chip: ReactNode }) =>
   chip ? (
@@ -220,11 +228,38 @@ export const partialMatchOf = (record: BusinessRecord): string | undefined => {
   return /similar|approximate|incomplete/i.test(said) ? said.charAt(0).toUpperCase() + said.slice(1).toLowerCase() : undefined
 }
 
+/** Miles between two points, as the crow flies. */
+const miles = (a: [number, number], b: [number, number]) => {
+  const rad = (d: number) => (d * Math.PI) / 180
+  const dLat = rad(b[0] - a[0])
+  const dLng = rad(b[1] - a[1])
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2
+  return 3958.8 * 2 * Math.asin(Math.sqrt(h))
+}
+
+/**
+ * The address the submitted one matched only in part, where the check does not
+ * name it: the nearest other address on the record within half a mile — the
+ * approximate check reports "within 0.2 miles"; a similar match can sit a
+ * little further, 2775 Greene 707 Rd for a submitted 2755 — 2622 SE Clayton
+ * St for a submitted 2612.
+ */
+export const partialMatchAddressOf = (record: BusinessRecord, submitted: Location): string | undefined => {
+  if (!partialMatchOf(record) || !submitted.latitude || !submitted.longitude) return undefined
+  const at: [number, number] = [submitted.latitude, submitted.longitude]
+  const near = record.addresses
+    .filter((a) => !a.submitted && a.latitude && a.longitude && a.fullAddress !== submitted.fullAddress)
+    .map((a) => ({ a, d: miles(at, [a.latitude as number, a.longitude as number]) }))
+    .filter(({ d }) => d <= 0.5)
+    .sort((x, y) => x.d - y.d)[0]
+  return near?.a.fullAddress
+}
+
 /** Whether the post reaches it, what the property is, and how many businesses
  *  share it — each chip saying what it means when pointed at — and, flagged,
  *  what makes it less than an office: a mailbox, a registered agent, or a
  *  submitted address that matched only in part. */
-export const Relevance = ({ a, match }: { a: Location; match?: string }) => {
+export const Relevance = ({ a, match, matchedTo }: { a: Location; match?: string; matchedTo?: string }) => {
   const band = locationBand(a.locationCount)?.label.replace(/ uses? this location$/, '')
   return (
     <RadixTooltip.Provider>
@@ -248,7 +283,13 @@ export const Relevance = ({ a, match }: { a: Location; match?: string }) => {
           </Explained>
         )}
         {match && a.submitted && (
-          <Explained tip={`The submitted address is a ${match.toLowerCase()} to the address on record, not an exact one.`}>
+          <Explained
+            tip={
+              matchedTo
+                ? `The submitted address is a ${match.toLowerCase()} to ${matchedTo}, not an exact one.`
+                : `The submitted address is a ${match.toLowerCase()} to the address on record, not an exact one.`
+            }
+          >
             <MetaChip tone="warning" size="compact">
               {match}
             </MetaChip>
@@ -308,9 +349,14 @@ const AddressRow = ({
               <VerifiedIcon a={a} verified={verified} />
             </div>
             <SubLine chip={chip} />
+            {a.submitted && <MatchedLine match={partialMatchOf(record)} to={partialMatchAddressOf(record, a)} />}
           </div>
         </div>
-        <Relevance a={a} match={partialMatchOf(record)} />
+        <Relevance
+          a={a}
+          match={partialMatchOf(record)}
+          matchedTo={a.submitted ? partialMatchAddressOf(record, a) : undefined}
+        />
       </div>
     </div>
   )
@@ -401,9 +447,16 @@ const GridView = ({
                 <VerifiedIcon a={a} verified={verified} />
               </span>
               <SubLine chip={chip} />
+              {a.submitted && <MatchedLine match={partialMatchOf(record)} to={partialMatchAddressOf(record, a)} />}
             </span>
           ),
-          note: <Relevance a={a} match={partialMatchOf(record)} />
+          note: (
+            <Relevance
+              a={a}
+              match={partialMatchOf(record)}
+              matchedTo={a.submitted ? partialMatchAddressOf(record, a) : undefined}
+            />
+          )
         }
       ]
     }
@@ -447,8 +500,10 @@ export const AddressTable = ({
     ...locations.filter((a) => !a.submitted)
   ]
   if (rows.length === 0) return null
-  // With none submitted and verified and only one address at all, that one shows.
-  const lead = leads.length || (rows.length === 1 ? 1 : 0)
+  // Every submitted address shows — verified first, then one that matched only
+  // in part or not at all — and with none submitted, a lone address shows.
+  const submittedCount = locations.filter((a) => a.submitted).length
+  const lead = submittedCount || (rows.length === 1 ? 1 : 0)
   return (
     <div className="border-t border-[var(--core-color-border-divider)]">
       {view === 'grid' ? (

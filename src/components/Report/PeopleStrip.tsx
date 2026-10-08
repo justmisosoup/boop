@@ -205,12 +205,13 @@ export const PeopleViewToggle = ({
 
 /** What the person is to the business, as one chip. */
 const roleOf = (r: AttributeRow) =>
-  /owner/i.test(r.label)
-    ? 'Owner'
+  // Anyone holding an office on a filing is an officer, whatever else they are.
+  r.titles?.length || r.label === 'Officer'
+    ? 'Officer'
     : /registered agent/i.test(r.label)
       ? 'Registered agent'
-      : r.label === 'Officer'
-        ? 'Officer'
+      : /owner/i.test(r.label)
+        ? 'Owner'
         : r.label
 
 /** The people folded away under the submitted, verified ones: the ones found. */
@@ -245,8 +246,11 @@ const ShowFoundPeople = ({
 
 const PersonRow = ({ r, ctx }: { r: AttributeRow; ctx: CellContext }) => {
   const Icon = /registered agent/i.test(r.label) ? Landmark : UserRound
-  // Their titles as the filings give them; with none, what they are to the business.
-  const roles = r.titles?.length ? r.titles : [roleOf(r)]
+  // Their titles as the filings give them — an officer who also owns it with
+  // Owner among them; with none, what they are to the business.
+  const roles = r.titles?.length
+    ? [...(/owner/i.test(r.label) ? ['Owner'] : []), ...r.titles]
+    : [roleOf(r)]
   return (
     <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 last:bg-none md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 items-center gap-3">

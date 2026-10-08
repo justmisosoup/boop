@@ -59,6 +59,7 @@ import {
 } from './OperationsCard'
 import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
+import { ResultGrid, ResultTable, type ResultRow } from './ResultTable'
 import { BankruptcyTable, LienTable, LitigationTable } from './ClaimTables'
 import { WebsiteDetails } from './WebsiteDetails'
 import { useScreenshotViewer } from '../ScreenshotViewer'
@@ -102,38 +103,6 @@ const searchedOn = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
   return { ran, names }
 }
 
-/**
- * The searches on a card that has records which came back with nothing: each
- * search the order ran that found none of its kind — tax liens, where only UCC
- * liens were found — and each person searched that no record names. The
- * business name found the records, so it is never one of them.
- */
-const emptySearches = (
-  record: BusinessRecord,
-  kind: keyof typeof SEARCHES,
-  found: (search: string) => boolean,
-  named: (name: string) => boolean
-): AttributeCell[] => {
-  const { ran, names } = searchedOn(record, kind)
-  const sentence = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
-  return [
-    ...ran
-      .filter((r) => !found(r))
-      .map((r, i) => ({
-        key: `run-${i}`,
-        label: 'Search',
-        values: [{ value: sentence(r) }]
-      })),
-    ...names
-      .filter((n) => !named(n))
-      .map((n, i) => ({
-        key: `person-${i}`,
-        label: 'Person',
-        values: [{ value: n }]
-      }))
-  ]
-}
-
 /** Under "None found": what the search ran on — the business name, and the
  *  people where the order searched people too. */
 const searchedNames = (record: BusinessRecord, kind: keyof typeof SEARCHES) => [
@@ -145,10 +114,14 @@ const searchedLine = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
   return `Searched ${n} ${n === 1 ? 'name' : 'names'}`
 }
 
-/** After the records: the searches that found none of their kind. */
-const notFoundLine = (cells: AttributeCell[]) => {
-  const said = cells.flatMap((c) => c.values.map((v) => String(v.value)))
-  return said.length > 0 ? `No results for ${said.join(', ')}` : undefined
+/** With nothing found, what the card says it searched: "No results for tax
+ *  liens or UCC liens", from the searches the order ran. */
+const noneTitleFor = (record: BusinessRecord, kind: keyof typeof SEARCHES) => {
+  const all = searchedOn(record, kind).ran
+  // The general search says nothing the specific ones beside it do not.
+  const ran = all.length > 1 ? all.filter((r) => r !== { liens: 'liens', litigation: 'litigations', bankruptcy: 'bankruptcies' }[kind]) : all
+  const fallback = { liens: 'liens', litigation: 'litigations', bankruptcy: 'bankruptcies' }[kind]
+  return `No results for ${ran.length > 0 ? ran.join(' or ') : fallback}`
 }
 
 /** A grid rules itself off at the top, as a strip does. */
@@ -289,6 +262,9 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
   } | null
   if (!tin?.tin) return null
   const matchedBy = tin.verified_by ?? null
+  // The IRS has not issued it yet: said under the number, with why that is
+  // often so for a new business.
+  const notIssued = record.reviewTasks.some((t) => t.key === 'tin_issued' && /not issued/i.test(t.subLabel ?? ''))
   const cols = 'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
   return (
     <div
@@ -320,7 +296,11 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
         <span role="cell" className="grid min-w-0 gap-1">
           <span className="text-sm font-medium text-text-primary">{maskTin(tin.tin)}</span>
           <span className="text-xs text-text-secondary">
-            {matchedBy ? (tin.name ?? '—') : 'No match on the IRS record'}
+            {matchedBy
+              ? (tin.name ?? '—')
+              : notIssued
+                ? 'Not yet in the IRS database. Newly formed businesses can take several weeks to appear after their EIN is assigned.'
+                : 'No match on the IRS record'}
           </span>
         </span>
         <span role="cell">
@@ -372,6 +352,20 @@ const PLATFORMS: Record<string, string> = {
   yelp: 'Yelp'
 }
 const platformOf = (p: Profile) => PLATFORMS[(p.type ?? '').toLowerCase()] ?? p.type ?? 'Profile'
+/** A social profile's handle — "@Sorenson_Comm" — from the platform's own
+ *  field, or the link's path where the platform puts it there. */
+const SOCIAL = /^(x|twitter|instagram|tiktok|facebook|threads|youtube)$/i
+const handleOf = (p: Profile): string | undefined => {
+  const given = (p.metadata as { handle?: string } | null | undefined)?.handle
+  if (given) return `@${given.replace(/^@/, '')}`
+  if (!SOCIAL.test(p.type ?? '') || !p.url) return undefined
+  try {
+    const first = new URL(p.url).pathname.split('/').filter(Boolean)[0]
+    return first ? `@${first.replace(/^@/, '')}` : undefined
+  } catch {
+    return undefined
+  }
+}
 const titleCase = (v: string) =>
   v.charAt(0).toUpperCase() + v.slice(1).toLowerCase().replace(/_/g, ' ')
 
@@ -463,98 +457,83 @@ const rowClass = (on: boolean) =>
 const hostOf = (href?: string | null) =>
   (href ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 
-/** Web presence as a table — the site, then each third-party profile — by platform and status.
- *  Clicking a row opens its details beside the report: the site's full web analysis, or the profile's. */
+type WebView = 'table' | 'grid'
+
+/** The Web presence card's display switch: the site and profiles as a table or a grid. */
+const WebViewToggle = ({ value, onChange }: { value: WebView; onChange: (view: WebView) => void }) => (
+  <SegmentedControl
+    size="sm"
+    value={value}
+    onValueChange={(v) => v && onChange(v as WebView)}
+    aria-label="Web presence display"
+  >
+    <SegmentedControlItem
+      value="table"
+      aria-label="Table"
+      className="!px-2"
+      icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="grid"
+      aria-label="Grid"
+      className="!px-2"
+      icon={<LayoutGrid aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+  </SegmentedControl>
+)
+
+/**
+ * Web presence as the other cards read their records: the site, then each
+ * third-party profile, a row (or a cell) each — the platform over its link,
+ * found and its status beside — opening to the site's full web analysis or the
+ * profile's details. With neither, the card's "No results" display.
+ */
 const WebsiteSummary = ({
   url,
   status,
   profiles,
-  analysis
+  analysis,
+  view
 }: {
   url?: string | null
   status?: string | null
   profiles: Profile[]
   analysis: ReactNode
+  view: WebView
 }) => {
-  // One row open at a time; it expands in place, under itself.
-  const [open, setOpen] = useState<'site' | number | null>(null)
-  const toggle = (key: 'site' | number) => setOpen((current) => (current === key ? null : key))
-  const expanded = (body: ReactNode) => body
-  const chevron = (on: boolean) => (
-    <ChevronDown
-      aria-hidden="true"
-      size={16}
-      strokeWidth={1.75}
-      className={cn(
-        'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
-        on && 'rotate-180'
-      )}
-    />
-  )
-  return (
-    <div aria-label="Web presence" className="border-t border-[var(--core-color-border-divider)]">
-      <div
-        className={cn(
-          'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-2.5 md:grid',
-          COLS
-        )}
-      >
-        {['Platform', 'Status'].map((h) => (
-          <span
-            key={h}
-            className="text-caption font-medium uppercase tracking-wide text-text-secondary"
-          >
-            {h}
-          </span>
-        ))}
-      </div>
-      {url ? (
-        <>
-          <button
-            type="button"
-            aria-expanded={open === 'site'}
-            className={rowClass(open === 'site')}
-            onClick={() => toggle('site')}
-          >
-            <span className="min-w-0">
-              <span className="block text-caption text-text-secondary">Website</span>
-              <span className="block truncate text-sm font-medium text-text-primary">
-                {hostOf(url)}
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <StatusChips status={status} />
-              {chevron(open === 'site')}
-            </span>
-          </button>
-          {open === 'site' && expanded(analysis)}
-        </>
-      ) : (
-        <div className="px-4 py-3 text-sm text-text-secondary">No website submitted</div>
-      )}
-      {profiles.map((p, i) => (
-        <Fragment key={p.id ?? `${p.type}-${i}`}>
-          <button
-            type="button"
-            aria-expanded={open === i}
-            className={rowClass(open === i)}
-            onClick={() => toggle(i)}
-          >
-            <span className="min-w-0">
-              <span className="block text-caption text-text-secondary">{platformOf(p)}</span>
-              <span className="block truncate text-sm font-medium text-text-primary">
-                {hostOf(p.url) || p.name}
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <StatusChips status={p.status} />
-              {chevron(open === i)}
-            </span>
-          </button>
-          {open === i && expanded(<ProfileDetails profile={p} />)}
-        </Fragment>
-      ))}
+  const rows: ResultRow[] = [
+    ...(url
+      ? [{ key: 'site', caption: 'Website', title: hostOf(url), chips: <StatusChips status={status} />, cleared: false, detail: analysis }]
+      : profiles.length > 0
+        ? // Profiles without a site: the site's absence is still a fact the card states.
+          [
+            {
+              key: 'site',
+              caption: 'Website',
+              title: 'Not submitted',
+              cleared: false,
+              detail: <div className="px-4 py-3 text-sm text-text-secondary">No website was submitted.</div>
+            }
+          ]
+        : []),
+    ...profiles.map((p, i) => ({
+      key: p.id ?? `${p.type}-${i}`,
+      caption: platformOf(p),
+      // The page's own name, and on a social platform its handle — not the
+      // link, which is a click away in the details.
+      title: [p.name || platformOf(p), handleOf(p)].filter(Boolean).join(' · '),
+      chips: <StatusChips status={p.status} />,
+      cleared: false,
+      detail: <ProfileDetails profile={p} />
+    }))
+  ]
+  const noneTitle = 'No results for a website or third-party profiles'
+  return view === 'grid' ? (
+    <div className="border-t border-[var(--core-color-border-divider)]">
+      <ResultGrid rows={rows} noneTitle={noneTitle} />
     </div>
+  ) : (
+    <ResultTable columns={['Platform', 'Status']} rows={rows} noneTitle={noneTitle} />
   )
 }
 
@@ -607,6 +586,7 @@ export const GroupedReport = ({
   const [peopleView, setPeopleView] = useState<PeopleViewMode>('list')
   const [filingsView, setFilingsView] = useState<FilingsLayout>('list')
   const [namesView, setNamesView] = useState<NamesView>('table')
+  const [webView, setWebView] = useState<WebView>('table')
   // The Names card's former names, folded away until asked for.
   const [showFormer, setShowFormer] = useState(false)
   const parts = useMemo(
@@ -841,6 +821,7 @@ export const GroupedReport = ({
     // No website on the record is itself the fact the card states. With a
     website: (
       <WebsiteSummary
+        view={webView}
         url={record.website?.url}
         status={record.website?.status}
         profiles={record.profiles ?? []}
@@ -877,20 +858,7 @@ export const GroupedReport = ({
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'liens')}
         searched={searchedNames(record, 'liens')}
-        footnote={notFoundLine(
-          emptySearches(
-            record,
-            'liens',
-            (search) =>
-              // State and federal liens are what the tax lien search returns.
-              /tax/i.test(search)
-                ? liens.some((l) => /^(state|federal)$|tax/i.test(l.type ?? ''))
-                : /ucc/i.test(search)
-                  ? liens.some((l) => /ucc/i.test(l.type ?? ''))
-                  : true,
-            (name) => liens.some((l) => (l.debtors ?? []).some((d) => sameName(d.name, name)))
-          )
-        )}
+        noneTitle={noneTitleFor(record, 'liens')}
       />
     ),
     litigation: (
@@ -899,14 +867,7 @@ export const GroupedReport = ({
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'litigation')}
         searched={searchedNames(record, 'litigation')}
-        footnote={notFoundLine(
-          emptySearches(
-            record,
-            'litigation',
-            () => true,
-            (name) => cases.some((c) => (c.parties ?? []).some((x) => sameName(x.name, name)))
-          )
-        )}
+        noneTitle={noneTitleFor(record, 'litigation')}
       />
     ),
     bankruptcy: (
@@ -915,6 +876,7 @@ export const GroupedReport = ({
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'bankruptcy')}
         searched={searchedNames(record, 'bankruptcy')}
+        noneTitle={noneTitleFor(record, 'bankruptcy')}
       />
     )
   }
@@ -1084,6 +1046,8 @@ export const GroupedReport = ({
                     <FilingsViewToggle value={filingsView} onChange={setFilingsView} />
                   ) : card.id === 'address' && visual.address ? (
                     <AddressViewToggle value={addressView} onChange={setAddressView} />
+                  ) : card.id === 'website' && visual.website ? (
+                    <WebViewToggle value={webView} onChange={setWebView} />
                   ) : card.id === 'people' && visual.people ? (
                     <PeopleViewToggle value={peopleView} onChange={setPeopleView} />
                   ) : undefined

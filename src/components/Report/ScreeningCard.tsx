@@ -295,6 +295,13 @@ export const MediaBlock = ({ who, hit, ctx, bare = false }: { who: ScreenedName;
  * every result in that screen's own shape. Nothing is dismissed here; the
  * analyst dispositions.
  */
+/** What a screen says with nothing found. */
+const NONE_TITLE: Record<Screen, string> = {
+  watchlist: 'No results for sanctions or watchlists',
+  pep: 'No results for politically exposed persons',
+  media: 'No results for adverse media'
+}
+
 type ScreenProps = { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }
 
 /** A name as the screens compare it. */
@@ -393,6 +400,7 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
           .join(' · ')
       })()}
       clean={clean.map((c) => c.name)}
+      noneTitle={NONE_TITLE[screen]}
     />
   )
 }

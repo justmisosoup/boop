@@ -47,7 +47,8 @@ export const ResultTable = ({
   none,
   clean = [],
   footnote,
-  foldCleared
+  foldCleared,
+  noneTitle = 'None found'
 }: {
   columns: [string, string]
   rows: ResultRow[]
@@ -60,6 +61,8 @@ export const ResultTable = ({
   /** Fold the cleared away, as what they are — "closed lien(s)" — with
    *  `none` saying so where nothing stands: "No open liens". */
   foldCleared?: { one: string; many: string; none: string }
+  /** What the card says with nothing found: "No results for tax liens or UCC liens". */
+  noneTitle?: string
 }) => {
   const [open, setOpen] = useState<string | null>(null)
   const [showCleared, setShowCleared] = useState(false)
@@ -77,7 +80,7 @@ export const ResultTable = ({
   const noneFound = (
     <div className="px-4 py-3">
       <span className="block text-sm text-text-primary">
-        {foldCleared && cleared.length > 0 ? foldCleared.none : 'None found'}
+        {foldCleared && cleared.length > 0 ? foldCleared.none : noneTitle}
       </span>
       {searchedLine}
     </div>
@@ -211,5 +214,90 @@ export const ResultTable = ({
           )}
       </div>
     </RadixTooltip.Provider>
+  )
+}
+
+/**
+ * The same results as cells, two to a row, as the Registrations grid lays its
+ * filings: what it is over its name, its status under. A lone last cell takes
+ * the whole row; a picked cell's record opens under its row. With none, "None
+ * found".
+ */
+export const ResultGrid = ({
+  rows,
+  none,
+  noneTitle = 'None found'
+}: {
+  rows: ResultRow[]
+  none?: ReactNode
+  noneTitle?: string
+}) => {
+  const [open, setOpen] = useState<string | null>(null)
+  if (rows.length === 0)
+    return (
+      <div className="border-t border-[var(--core-color-border-divider)] px-4 py-3">
+        <span className="block text-sm text-text-primary">{noneTitle}</span>
+        {none && <span className="mt-0.5 block text-caption text-text-secondary">{none}</span>}
+      </div>
+    )
+  const pairs = rows.reduce<ResultRow[][]>(
+    (out, r, i) => (i % 2 === 0 ? [...out, [r]] : [...out.slice(0, -1), [...out[out.length - 1], r]]),
+    []
+  )
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2">
+      {pairs.map((pair) => (
+        <Fragment key={pair[0].key}>
+          {pair.map((r, i) => {
+            const on = open === r.key
+            return (
+              <div
+                key={r.key}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('button, a') !== null) return
+                  setOpen(on ? null : r.key)
+                }}
+                className={cn(
+                  'grid cursor-pointer gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)]',
+                  i === 1 && 'md:border-l',
+                  pair.length === 1 && 'md:col-span-2',
+                  on && 'bg-[var(--core-color-surface-subtle)]'
+                )}
+              >
+                {r.caption && <span className="text-caption text-text-secondary">{r.caption}</span>}
+                <span className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="min-w-0 truncate text-sm font-medium text-text-primary">{r.title}</span>
+                  <button
+                    type="button"
+                    aria-expanded={on}
+                    aria-label={on ? 'Hide details' : 'Show details'}
+                    onClick={() => setOpen(on ? null : r.key)}
+                    className="flex shrink-0 rounded-control text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronDown
+                      aria-hidden="true"
+                      size={16}
+                      strokeWidth={1.75}
+                      className={cn('transition-transform duration-fast motion-reduce:transition-none', on && 'rotate-180')}
+                    />
+                  </button>
+                </span>
+                {r.sub && <span className="flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">{r.sub}</span>}
+                {r.chips && <span className="flex flex-wrap items-center gap-1.5">{r.chips}</span>}
+              </div>
+            )
+          })}
+          {/* The picked cell's record, under its row. */}
+          {pair.map(
+            (r) =>
+              open === r.key && (
+                <div key={`${r.key}-detail`} className="border-t border-[var(--core-color-border-divider)] md:col-span-2">
+                  {r.detail}
+                </div>
+              )
+          )}
+        </Fragment>
+      ))}
+    </div>
   )
 }
