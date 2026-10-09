@@ -1,6 +1,7 @@
 import {
   Fragment,
   useContext,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -25,7 +26,6 @@ import {
   Map as MapIcon,
   Landmark,
   Table2,
-  LayoutGrid,
   ChevronDown
 } from 'lucide-react'
 
@@ -447,6 +447,22 @@ export const stateGroupsOf = (record: BusinessRecord, lead?: Registration): Stat
     .sort((a, b) => rank(a) - rank(b) || a.state.localeCompare(b.state))
 }
 
+/** Over a filing's state, in the table: the register it is filed with, then
+ *  domestic or foreign — "Secretary of State · Foreign". */
+const kindLine = (r: Registration) => {
+  const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
+  return jurisdiction === 'domestic'
+    ? 'Secretary of State · Domestic'
+    : jurisdiction === 'foreign'
+      ? 'Secretary of State · Foreign'
+      : 'Secretary of State'
+}
+/** Under it, when it was filed. */
+const filedDate = (r: Registration) =>
+  r.registrationDate
+    ? `Filed ${new Date(`${r.registrationDate.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+    : ''
+
 /** Under a filing's state: whether it is domestic or foreign, and when it was filed. */
 const filedLine = (r: Registration) => {
   const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
@@ -545,8 +561,16 @@ export const FilingStrip = ({
   className,
   layout = 'strip',
   leadCells,
-  city
+  city,
+  kindFilter = 'all',
+  onKindFilter,
+  showMap = true
 }: {
+  /** Which registrations the list shows — the header's control. */
+  kindFilter?: RegistrationFilter
+  onKindFilter?: (next: RegistrationFilter) => void
+  /** The map over the list — the header's switch. */
+  showMap?: boolean
   record: BusinessRecord
   /** The formation filing the card is about. It leads the strip. */
   lead?: Registration
@@ -580,8 +604,27 @@ export const FilingStrip = ({
   // Led here from the Assistant, the lead filing is open from the start.
   // The one strip that does not open on its first result — Sara, 2026-10-05.
   const expandedByLink = useContext(StripExpand)
-  // The inactive registrations, folded away under the active ones.
-  const [showInactive, setShowInactive] = useState(false)
+  // Past the top two registrations, the rest fold under "Show more".
+  const [showMore, setShowMore] = useState(false)
+  // A state picked on the map: the list is that state's registrations — its
+  // filings and its city registrations — none opened.
+  const [stateOnly, setStateOnly] = useState<string | null>(null)
+  // A city zoomed into on the map, `state|city`: the list is that city's registrations.
+  const [zoomCity, setZoomCity] = useState<string | null>(null)
+  // A city registration's pin, picked: the list is that registration alone, open.
+  const [pinOnly, setPinOnly] = useState<string | null>(null)
+  // The header's filter or map switch changed: the list starts over from the
+  // top two. A city zoomed into stays — the filter narrows its pins — unless
+  // the map is put away.
+  useEffect(() => {
+    setShowMore(false)
+    setPinOnly(null)
+    setStateOnly(null)
+    setOpenCity(null)
+  }, [kindFilter, showMap])
+  useEffect(() => {
+    if (!showMap) setZoomCity(null)
+  }, [showMap])
   // The city registration open under its row, by its key.
   const [openCity, setOpenCity] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(!expandedByLink)
@@ -618,45 +661,111 @@ export const FilingStrip = ({
   )
   const current = groups.find((g) => g.state === selected) ?? groups[0]
 
-  /* Active first; the inactive fold under "Show N inactive registrations" —
-     unless nothing is active, when they are all there is and all show. The
-     formation filing is never folded: it is what the card is about. No status
-     published (Delaware, New Jersey) is not inactive. */
+  /* State filings, then city registrations, as one list, inactive ones too:
+     each led by the formation filing — what the card is about — then those
+     that pertain to the submitted address (its state, or a city registration
+     at it), then the newest filed. The top two show; the rest fold under
+     "Show more". */
   const cities = registrationsOf(city ?? [])
-  const isLeadState = (g: StateGroup) => Boolean(lead && g.state === lead.state)
-  const inactiveState = (g: StateGroup) => g.kind === 'inactive' && !isLeadState(g)
-  const allInactive =
-    visible.every((g) => g.kind === 'inactive') && cities.every(([, here]) => !here.some(isOpen))
-  const fold = (inactive: boolean) => inactive && !allInactive && !showInactive
-  const listStates = [
-    ...visible.filter((g) => !inactiveState(g)),
-    ...visible.filter(inactiveState).filter(() => !fold(true))
+  const tileStates = visible
+  const streetKey = (a: string) => a.split(',')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  const submittedStreets = new Set(
+    record.addresses.filter((a) => a.submitted).map((a) => streetKey(a.fullAddress))
+  )
+  const cityStarted = (here: (typeof cities)[number][1]) =>
+    here.map((r) => r.businessStart ?? r.locationStart ?? '').sort().reverse()[0] ?? ''
+  /* A row per filing: a state that holds two — Checkr's Utah, its expired
+     domestic and the foreign filing made that day — shows both, side by side,
+     the standing one first. `state` is the filing as a group of one; `fkey`
+     is the key its state's details pick it by; `group` its whole state. */
+  type Item = { key: string; state?: StateGroup; fkey?: string; group?: StateGroup; city?: (typeof cities)[number] }
+  const items: Item[] = [
+    ...visible.flatMap((g) => {
+      const all = [g.current, ...g.others]
+      const keyed = all.map((f, i) => ({ f, fkey: f.fileNumber ?? `${g.state}-${i}` }))
+      // The formation filing leads its state's rows.
+      const ordered = [...keyed.filter(({ f }) => f === lead), ...keyed.filter(({ f }) => f !== lead)]
+      return ordered.map(({ f, fkey }) => ({
+        key: `${g.state}-${fkey}`,
+        state: { state: g.state, current: f, others: [], kind: kindOf(f) },
+        fkey,
+        group: g
+      }))
+    }),
+    ...cities.map((c) => ({ key: `city-${c[0]}`, city: c }))
   ]
-  const listCities = [
-    ...cities.filter(([, here]) => here.some(isOpen)),
-    ...cities.filter(([, here]) => !here.some(isOpen)).filter(() => !fold(true))
-  ]
-  const tileStates = listStates
-  // The grid's cells: the state filings, then the city registrations.
-  const gridItems: Array<{
-    key: string
-    state?: StateGroup
-    city?: (typeof cities)[number]
-  }> = [
-    ...tileStates.map((g) => ({ key: g.state, state: g })),
-    ...listCities.map((c) => ({ key: `city-${c[0]}`, city: c }))
-  ]
-  const inactiveCount = allInactive
-    ? 0
-    : visible.filter(inactiveState).length +
-      (layout === 'list' || layout === 'strip' ? cities.filter(([, here]) => !here.some(isOpen)).length : 0)
-  const inactiveToggle =
-    inactiveCount > 0 ? (
+  const ranked: Item[] = items
+    .map((item, at) => {
+      // Ranked by the state, so its filings stay together; `at` keeps their order.
+      const lead_ = Boolean(item.state && lead && item.state.state === lead.state)
+      const pertains = item.state
+        ? submittedStates.has(item.state.state)
+        : item.city![1].some((r) => submittedStreets.has(streetKey(r.address)))
+      const date = item.group ? (item.group.current.registrationDate ?? '') : cityStarted(item.city![1])
+      return { item, at, sos: item.state ? 0 : 1, rank: lead_ ? 0 : pertains ? 1 : 2, date, state: item.state?.state ?? '' }
+    })
+    // The Secretary of State filings over the city registrations; within each,
+    // the formation filing, then what pertains to the submitted address, then newest.
+    .sort(
+      (a, b) =>
+        a.sos - b.sos ||
+        a.rank - b.rank ||
+        b.date.localeCompare(a.date) ||
+        a.state.localeCompare(b.state) ||
+        a.at - b.at
+    )
+    .map(({ item }) => item)
+  /** A filing's row is open when its state's details show that filing. */
+  const rowOn = (item: Item) =>
+    !collapsed && item.state!.state === current.state && chosenKey === item.fkey
+  /** Opens a filing's details under its row, or closes them. */
+  const toggleRow = (item: Item) => {
+    setOpenCity(null)
+    if (rowOn(item)) return setCollapsed(true)
+    setSelected(item.state!.state)
+    setFilingPick({ state: item.state!.state, key: item.fkey! })
+    setCollapsed(false)
+  }
+  const TOP = 2
+  // A city registration counts with the filings: open is active, closed inactive.
+  const kindOfItem = (i: Item): Kind => (i.state ? i.state.kind : i.city![1].some(isOpen) ? 'active' : 'inactive')
+  const kindOk = (i: Item) => kindFilter === 'all' || kindOfItem(i) === kindFilter
+  // The header's filter holds everywhere — a state or city picked on the map too.
+  const filtered = ranked.filter(kindOk)
+  // Zoomed into a city: its registrations the filter keeps — none kept, the
+  // map is back on the country, and so is the list.
+  const cityKept = zoomCity
+    ? filtered.filter((i) => i.city && `${i.city[1][0].state}|${cityName(i.city[1][0])}` === zoomCity)
+    : []
+  const inCity = cityKept.length ? cityKept : undefined
+  const gridItems = pinOnly
+    ? ranked.filter((i) => i.key === pinOnly)
+    : stateOnly
+      ? // The state's registrations: its Secretary of State filings and its cities'.
+        filtered.filter((i) => i.state?.state === stateOnly || i.city?.[1][0].state === stateOnly)
+      : (inCity ?? (showMore ? filtered : filtered.slice(0, TOP)))
+  // Narrowed to a state, a city or a pin: the button backs out of it, map and
+  // list, to every registration — "Show more" from a state, "Show all" from a city.
+  const backOut = () => {
+    setPinOnly(null)
+    setStateOnly(null)
+    setZoomCity(null)
+    setOpenCity(null)
+    onKindFilter?.('all')
+    setShowMore(true)
+  }
+  const moreToggle =
+    pinOnly || stateOnly || inCity ? (
       <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
-        <ActionButton variant="quiet" size="compact" onClick={() => setShowInactive(!showInactive)}>
-          {showInactive
-            ? `Hide inactive ${inactiveCount === 1 ? 'registration' : 'registrations'}`
-            : `Show ${inactiveCount} inactive ${inactiveCount === 1 ? 'registration' : 'registrations'}`}
+        <ActionButton variant="quiet" size="compact" onClick={backOut}>
+          {/* How many more the full list holds. */}
+          {stateOnly ? `Show ${ranked.length - gridItems.length} more` : 'Show all'}
+        </ActionButton>
+      </div>
+    ) : filtered.length > TOP ? (
+      <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+        <ActionButton variant="quiet" size="compact" onClick={() => setShowMore(!showMore)}>
+          {showMore ? 'Show less' : `Show ${filtered.length - TOP} more`}
         </ActionButton>
       </div>
     ) : null
@@ -991,8 +1100,8 @@ export const FilingStrip = ({
   }
 
   // The map's hover preview, on the table rows and grid cards too.
-  const withStateTip = (g: (typeof visible)[number], element: ReactElement) => (
-    <RadixTooltip.Root key={g.state} delayDuration={200}>
+  const withStateTip = (g: (typeof visible)[number], element: ReactElement, key: string = g.state) => (
+    <RadixTooltip.Root key={key} delayDuration={200}>
       <RadixTooltip.Trigger asChild>{element}</RadixTooltip.Trigger>
       <RadixTooltip.Portal>
         <RadixTooltip.Content
@@ -1041,7 +1150,8 @@ export const FilingStrip = ({
         at the header's far edge, behind the history button. A light check
         marks the one shown. */}
           {/* Only where there is more than one version to pick from. */}
-          {filings.length > 1 && (
+          {/* In the table each filing is its own row; elsewhere, a menu. */}
+          {filings.length > 1 && layout !== 'list' && (
             <div className="ml-auto">
               <Menu>
                 <MenuTrigger asChild>
@@ -1107,6 +1217,95 @@ export const FilingStrip = ({
     </Collapsible>
   )
 
+  /** The country, every state filed in and every city registered in. Picked
+   *  from here, a registration leads the list, open; zoomed into a city, the
+   *  list is that city's registrations. */
+  // A filter, or the map switched off, backs out of what the map narrowed to.
+  const clearMapNarrowing = () => {
+    setPinOnly(null)
+    setStateOnly(null)
+    setZoomCity(null)
+    setOpenCity(null)
+  }
+  const mapView = (
+    // A rule under the map, between it and the list's header.
+    <div className="flex flex-col items-center gap-2 border-b border-[var(--core-color-border-divider)] px-4 py-3">
+      <StateFilingsMap
+        // The map follows the header's filter: only the states and cities it keeps.
+        filings={visible.filter((g) => kindFilter === 'all' || g.kind === kindFilter).map((g) => ({
+          state: g.state,
+          tone: toneOf(g.current),
+          label: labelFor(g),
+          tooltip: (
+            <TileTooltip
+              group={g}
+              isLead={Boolean(lead && g.state === lead.state)}
+              office={g.state === officeState}
+            />
+          )
+        }))}
+        // A state picked on the map is a filter, drawn selected; nothing opens.
+        selected={stateOnly ?? current.state}
+        open={Boolean(stateOnly) || !collapsed}
+        onPick={(state) => {
+          setOpenCity(null)
+          setPinOnly(null)
+          setZoomCity(null)
+          setCollapsed(true)
+          // Picked again, the filter comes off.
+          setStateOnly(stateOnly === state ? null : state)
+          setSelected(state)
+        }}
+        zoom={zoomCity}
+        onZoom={(c) => {
+          setZoomCity(c)
+          setPinOnly(null)
+          setStateOnly(null)
+          setOpenCity(null)
+        }}
+        cities={cities
+          .filter(([, here]) => kindFilter === 'all' || (here.some(isOpen) ? 'active' : 'inactive') === kindFilter)
+          .map(([k, here]) => {
+          const active = here.some(isOpen)
+          return {
+            key: k,
+            state: here[0].state,
+            city: cityName(here[0]),
+            address: here[0].address?.replace(/,\s*[^,]+,\s*[A-Z]{2}\s*\d{5}.*$/, '') ?? undefined,
+            active,
+            // Each address it covers, open if any of its rows there is.
+            places: [...new Set(here.map((r) => r.address))].map((addr) => {
+              const at = here.filter((r) => r.address === addr)
+              return {
+                address: addr.replace(/,\s*[^,]+,\s*[A-Z]{2}\s*\d{5}.*$/, ''),
+                point: at.find((r) => r.lngLat)?.lngLat,
+                active: at.some(isOpen)
+              }
+            }),
+            lngLat: cityLngLat(here[0].city, here[0].state),
+            tone: active ? 'success' : 'danger',
+            label: `City registration, ${cityName(here[0])}: ${active ? 'active' : 'inactive'}`,
+            tooltip: <CityTooltip here={here} />,
+            open: openCity === k,
+            onPick: () => {
+              // The pin's registration alone, open; "Show all" backs out.
+              setCollapsed(true)
+              setStateOnly(null)
+              setPinOnly(`city-${k}`)
+              setOpenCity(k)
+            }
+          }
+        })}
+      />
+      {/* Filings outside the fifty states and DC, after the map. */}
+      {visible.some((g) => !TILE_STATES.has(g.state)) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {visible.map((g, i) => (TILE_STATES.has(g.state) ? null : tileFor(g, i)))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     // Over the grid's last dashed rule above it: the line between is solid.
     <div
@@ -1119,50 +1318,7 @@ export const FilingStrip = ({
         <div className="min-w-0">
           <RadixTooltip.Provider>
             {layout === 'map' ? (
-              <div className="flex flex-col items-center px-4 py-3">
-                <StateFilingsMap
-                  filings={visible.map((g) => ({
-                    state: g.state,
-                    tone: toneOf(g.current),
-                    label: labelFor(g),
-                    tooltip: (
-                      <TileTooltip
-                        group={g}
-                        isLead={Boolean(lead && g.state === lead.state)}
-                        office={g.state === officeState}
-                      />
-                    )
-                  }))}
-                  selected={current.state}
-                  open={!collapsed}
-                  onPick={(state) => {
-                    setOpenCity(null)
-                    pick(state)
-                  }}
-                  cities={cities.map(([k, here]) => {
-                    const active = here.some(isOpen)
-                    return {
-                      key: k,
-                      state: here[0].state,
-                      lngLat: cityLngLat(here[0].city, here[0].state),
-                      tone: active ? 'success' : 'neutral',
-                      label: `City registration, ${cityName(here[0])}: ${active ? 'open' : 'closed'}`,
-                      tooltip: <CityTooltip here={here} />,
-                      open: openCity === k,
-                      onPick: () => {
-                        setCollapsed(true)
-                        setOpenCity(openCity === k ? null : k)
-                      }
-                    }
-                  })}
-                />
-                {/* Filings outside the fifty states and DC, after the map. */}
-                {visible.some((g) => !TILE_STATES.has(g.state)) && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {visible.map((g, i) => (TILE_STATES.has(g.state) ? null : tileFor(g, i)))}
-                  </div>
-                )}
-              </div>
+              mapView
             ) : layout === 'strip' ? (
               <div className="grid grid-cols-1 md:grid-cols-2">
                 {/* The state filings, then the city registrations, two to a row;
@@ -1195,19 +1351,15 @@ export const FilingStrip = ({
                           )
                         }
                         const g = item.state!
-                        const on = g.state === current.state && !collapsed
+                        const on = rowOn(item)
                         return withStateTip(
                           g,
                           <button
-                            key={g.state}
+                            key={item.key}
                             type="button"
                             aria-expanded={on}
                             aria-controls={detailId}
-                            onClick={() => {
-                              setOpenCity(null)
-                              if (on) setCollapsed(true)
-                              else pick(g.state)
-                            }}
+                            onClick={() => toggleRow(item)}
                             className={cn(
                               'grid gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                               i === 1 && 'md:border-l',
@@ -1257,6 +1409,9 @@ export const FilingStrip = ({
                   ))}
               </div>
             ) : layout === 'list' ? (
+              <>
+              {/* The map over the list, unless switched off in the card's header. */}
+              {showMap && mapView}
               <div role="radiogroup" aria-label="State filings">
                 <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid">
                   {[cities.length > 0 ? 'Registration' : 'State', 'Status'].map((h) => (
@@ -1268,23 +1423,39 @@ export const FilingStrip = ({
                     </span>
                   ))}
                 </div>
-                {listStates.map((g) => {
-                  const on = g.state === current.state && !collapsed
+                {gridItems.map((item) => {
+                  // A city registration, as a row of its own.
+                  if (item.city) {
+                    const [k, here] = item.city
+                    return (
+                      <CityRegistrationRow
+                        key={k}
+                        here={here}
+                        open={openCity === k}
+                        onToggle={() => setOpenCity(openCity === k ? null : k)}
+                      />
+                    )
+                  }
+                  const g = item.state!
+                  const on = rowOn(item)
                   const isLead = Boolean(lead && g.state === lead.state)
                   const RowIcon = isLead ? FormationIcon : Landmark
-                  const filed = filedLine(g.current)
+                  // The register it is filed with over its state — "Domestic Secretary of
+                  // State" over "Delaware" — and when it was filed under it.
+                  const kind = kindLine(g.current)
+                  const filed = filedDate(g.current)
                   return (
-                    <Fragment key={g.state}>
+                    <Fragment key={item.key}>
                       {withStateTip(
                         g,
                         <button
-                          key={g.state}
+                          key={item.key}
                           type="button"
                           role="radio"
                           aria-checked={on}
                           aria-controls={detailId}
                           aria-label={labelFor(g)}
-                          onClick={() => (on ? setCollapsed(true) : pick(g.state))}
+                          onClick={() => toggleRow(item)}
                           className={cn(
                             'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
                             on && 'bg-[var(--core-color-surface-subtle)]'
@@ -1292,13 +1463,9 @@ export const FilingStrip = ({
                         >
                           <span className="flex min-w-0 items-center gap-3">
                             <span className="min-w-0">
-                              {filed && (
-                                <span className="block text-caption text-text-secondary">
-                                  {filed}
-                                </span>
-                              )}
+                              <span className="block text-caption text-text-secondary">{kind}</span>
                               <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-                                {registryName(g.state)}
+                                {stateName(g.state)}
                                 {g.others.length > 0 && (
                                   <span
                                     role="img"
@@ -1317,6 +1484,7 @@ export const FilingStrip = ({
                                   />
                                 )}
                               </span>
+                              {filed && <span className="block text-caption text-text-secondary">{filed}</span>}
                             </span>
                           </span>
                           <span className="flex flex-wrap items-center gap-1.5">
@@ -1342,17 +1510,9 @@ export const FilingStrip = ({
                     </Fragment>
                   )
                 })}
-                {/* The city registrations, under the state filings, as rows of their own. */}
-                {listCities.map(([k, here]) => (
-                  <CityRegistrationRow
-                    key={k}
-                    here={here}
-                    open={openCity === k}
-                    onToggle={() => setOpenCity(openCity === k ? null : k)}
-                  />
-                ))}
-                {inactiveToggle}
+                {moreToggle}
               </div>
+              </>
             ) : (
               <div
                 role="radiogroup"
@@ -1365,7 +1525,7 @@ export const FilingStrip = ({
                 {tileStates.map((g, i) => tileFor(g, i))}
               </div>
             )}
-            {layout === 'strip' && inactiveToggle}
+            {layout === 'strip' && moreToggle}
           </RadixTooltip.Provider>
         </div>
 
@@ -1382,6 +1542,91 @@ export const FilingStrip = ({
 }
 
 /** The Registrations card's display switch: the state filings as a list or a map. */
+export type RegistrationFilter = 'all' | Kind
+
+/** How a business's registrations stand, for the header's filter: the state
+ *  filings by kind, and the city registrations with them — open is active,
+ *  closed inactive. */
+export const registrationCounts = (
+  record: BusinessRecord,
+  lead: Registration | undefined,
+  city: NonNullable<BusinessRecord['cityRegistrations']> | undefined
+): Record<RegistrationFilter, number> => {
+  // Every filing, as the table lists them: a state holding two counts two.
+  const filings = stateGroupsOf(record, lead).flatMap((g) => [g.current, ...g.others])
+  const cities = registrationsOf(city ?? [])
+  const openCities = cities.filter(([, here]) => here.some(isOpen)).length
+  const of = (k: Kind) => filings.filter((f) => kindOf(f) === k).length
+  return {
+    all: filings.length + cities.length,
+    active: of('active') + openCities,
+    inactive: of('inactive') + cities.length - openCities,
+    none: of('none')
+  }
+}
+
+/** The Registrations card's header: the filter — All, Active, Inactive, No
+ *  status, each counted — and the view: the map over the list, or the list alone. */
+export const RegistrationControls = ({
+  counts,
+  value,
+  onChange,
+  showMap,
+  onShowMap
+}: {
+  counts: Record<RegistrationFilter, number>
+  value: RegistrationFilter
+  onChange: (next: RegistrationFilter) => void
+  showMap: boolean
+  onShowMap: (on: boolean) => void
+}) => (
+  <span className="flex flex-wrap items-center justify-end gap-3">
+    <SegmentedControl
+      size="sm"
+      aria-label="Filter registrations"
+      value={value}
+      onValueChange={(v) => v && onChange(v as RegistrationFilter)}
+    >
+      {(
+        [
+          ['all', 'All'],
+          ['active', 'Active'],
+          ['inactive', 'Inactive'],
+          ['none', 'No status']
+        ] as const
+      )
+        // All four, always — a count of 0 says as much as any other.
+        .map(([v, label]) => (
+          <SegmentedControlItem key={v} value={v}>
+            {label}
+            <span className="ml-1 tabular-nums text-text-secondary">{counts[v]}</span>
+          </SegmentedControlItem>
+        ))}
+    </SegmentedControl>
+    {/* The view, as the other cards' headers switch theirs: the map over the
+        list, or the list alone. */}
+    <SegmentedControl
+      size="sm"
+      aria-label="Registrations display"
+      value={showMap ? 'map' : 'list'}
+      onValueChange={(v) => v && onShowMap(v === 'map')}
+    >
+      <SegmentedControlItem
+        value="map"
+        aria-label="Map and list"
+        className="!px-2"
+        icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
+      />
+      <SegmentedControlItem
+        value="list"
+        aria-label="List only"
+        className="!px-2"
+        icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+      />
+    </SegmentedControl>
+  </span>
+)
+
 export const FilingsViewToggle = ({
   value,
   onChange
@@ -1400,12 +1645,6 @@ export const FilingsViewToggle = ({
       aria-label="Table"
       className="!px-2"
       icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
-    />
-    <SegmentedControlItem
-      value="strip"
-      aria-label="Grid"
-      className="!px-2"
-      icon={<LayoutGrid aria-hidden="true" size={14} strokeWidth={1.75} />}
     />
     <SegmentedControlItem
       value="map"

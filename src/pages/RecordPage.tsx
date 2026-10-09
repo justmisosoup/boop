@@ -22,13 +22,19 @@ import { InsightStack } from '../components/InsightStack'
 
 import { statusForBand, useReview } from '../lib/review'
 import { heldReportFor } from '../lib/heldReports'
+import { sameName } from '../lib/registrationStatus'
+import { BriefTurn } from '../components/Assistant/AssistantTurn'
+import { NextStepsTurn, type RequestPayload } from '../components/Assistant/NextStepsTurn'
+import { documentsWithheld, recordRun, runsFor, useAssessmentRuns } from '../lib/assessmentRuns'
+import { DOC_LABEL, documentsOnRecord, nextStepsFor, sosGaps, type NextStep } from '../lib/nextSteps'
+import { requestInformation } from '../lib/review'
 import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
 import { BackTab, GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
 import { AssessmentPanel, type PanelGroup } from '../components/Report/AssessmentPanel'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
 import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
-import { outcomeOf } from '../lib/insightOutcome'
+import { outcomeOf, statementOf } from '../lib/insightOutcome'
 import { evidenceByCard } from '../components/Assistant/evidence'
 import { REVIEW_AREAS, areaOfAssessmentName, reviewGroups, type ReviewAreaId } from '../lib/reviewAreas'
 import { areaBrief } from '../lib/areaBriefs'
@@ -151,6 +157,8 @@ const readAssistantPresentation = (): FloatingPanelPresentation =>
  */
 export function RecordPage() {
   const { businessId, assessmentId } = useParams()
+  // A next step that ran widens its assessment's scope: read again on any run.
+  useAssessmentRuns()
   const selected = byId(businessId)
 
   // An id that isn't one of the ingested records: back to the list rather than
@@ -243,6 +251,67 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     [scoped, selected, scope, liveAll]
   )
   const summaryRuns = useSummaryRuns(selected)
+
+  /**
+   * The assessment's next steps: chosen by rule from the record the page is
+   * reading, each one something the product can do. Run, they reveal what is
+   * already on the record — the scope widens, documents appear — and the
+   * Assistant, which lists them, shows what each came to.
+   */
+  const allRuns = useAssessmentRuns()
+  const runs = useMemo(() => runsFor(selected.id, scope.id), [allRuns, selected.id, scope.id])
+  // A demo switch: the record's documents held back until the agent retrieves them.
+  const withheld = useMemo(() => documentsWithheld(selected.id), [allRuns, selected.id])
+  const stepRecord = scoped ? selected : record
+  const stepResults = scoped ? liveAll : results
+  const nextSteps = useMemo(() => {
+    // The session's wording of each step's why, where it has written one.
+    const whys = scopedRead?.summary?.stepWhys
+    return nextStepsFor(stepRecord, scope, stepResults, runs, withheld).map((st) => (whys?.[st.id] ? { ...st, why: whys[st.id] } : st))
+  }, [stepRecord, scope, stepResults, runs, scopedRead, withheld])
+  const [runningStep, setRunningStep] = useState<string>()
+  const runStep = (step: NextStep) => {
+    setRunningStep(step.id)
+    window.setTimeout(() => {
+      const at = new Date().toISOString()
+      if (step.kind === 'documents') {
+        const on = documentsOnRecord(stepRecord, step.state ?? sosGaps(stepRecord)?.state ?? '')
+        const found = [...(step.docs ?? [])].flatMap((d) => on[d].map((x) => x.id))
+        const missing = (step.docs ?? []).filter((d) => on[d].length === 0)
+        recordRun(selected.id, scope.id, { stepId: step.id, label: step.label, why: step.why, at, found, missing })
+      } else {
+        recordRun(selected.id, scope.id, { stepId: step.id, label: step.label, why: step.why, at, adds: step.adds })
+      }
+      setRunningStep(undefined)
+    }, 1100)
+  }
+  const requestStep = (step: NextStep, payload: RequestPayload) => {
+    const at = new Date().toISOString()
+    requestInformation(selected.id, (step.docs ?? []).map((d) => DOC_LABEL[d]), payload.message)
+    recordRun(selected.id, scope.id, { stepId: step.id, label: step.label, why: step.why, at, requested: { email: payload.email, message: payload.message } })
+  }
+  /** The analyst's own files: kept by the dev server, then the report's documents. */
+  const uploadStep = async (step: NextStep, files: File[]) => {
+    setRunningStep(step.id)
+    const uploads = await Promise.all(
+      files.map(async (f) => {
+        const res = await fetch('/api/document-upload', { method: 'POST', body: f })
+        const { id } = (await res.json()) as { id: string }
+        return { id, name: f.name, from: 'analyst' as const }
+      })
+    )
+    recordRun(selected.id, scope.id, { stepId: step.id, label: step.label, why: step.why, at: new Date().toISOString(), uploads })
+    setRunningStep(undefined)
+  }
+  /** What next steps brought to the report's Documents card: retrieved ids, uploaded names. */
+  const retrieved = useMemo(
+    () => ({
+      retrieved: new Set(runs.flatMap((r) => r.found ?? [])),
+      withheld,
+      uploads: runs.flatMap((r) => (r.uploads ?? []).map((u) => ({ ...u, at: r.at, email: r.requested?.email })))
+    }),
+    [runs, withheld]
+  )
 
   const [agentOpen, setAgentOpen] = useState<string | null>(null)
 
@@ -468,6 +537,29 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       .at(-1)
     return latest ? { ...latest.result.revisedRecommendation!, at: latest.at } : undefined
   }, [analysis.threads])
+  /** The assessment's short read: the panel's, and the Assistant's turn's. */
+  const panelRead = scoped
+    ? scopedRead?.summary?.text
+    : // A fresh run's reason; else the report's summary of the business; else its headline.
+      brief?.lede
+      ? (revision?.reason ?? heldReportFor(selected.name)?.report?.summary ?? brief.lede)
+      : undefined
+  /** The brief the Assistant leads the assessment's turn with: the full
+   *  report's, or — for an assessment — its own read, call and cards. */
+  const assessmentBrief = useMemo(
+    () =>
+      !brief
+        ? undefined
+        : scoped
+          ? {
+              ...brief,
+              lede: panelRead,
+              determination: scopedCall,
+              cards: brief.cards.filter((c) => !workflowCards || c.cards.some((x) => workflowCards.has(x)))
+            }
+          : { ...brief, lede: panelRead ?? brief.lede },
+    [brief, scoped, panelRead, scopedCall, workflowCards]
+  )
   const assessment = scoped ? scopedCall : brief?.determination ? standingCall(brief.determination, revision) : undefined
   const [reviewStepsRequest, setReviewStepsRequest] = useState(0)
   const [reviewStepIndex, setReviewStepIndex] = useState<number>()
@@ -763,9 +855,36 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
       .forEach(({ r, card, outcome }) => {
         const g = byCard.get(card) ?? { cardId: card, label: cardById(card)?.label ?? card, insights: [] }
-        g.insights.push({ id: r.insightId, intent: INTENT[outcome], verdict: r.value || r.statement, statement: r.statement })
+        // The finding in its own words: a bare value — "match", "Mixboard
+        // Inc." — doesn't say what matched or what the name is.
+        const statement = statementOf(r, record)
+        const verdict = r.insightId === 'submitted_name_dba' && r.value ? `Listed as a DBA of ${r.value}` : statement
+        g.insights.push({ id: r.insightId, intent: INTENT[outcome], verdict, statement })
         byCard.set(card, g)
       })
+    // Names: led by the business's own name, and saying what else was found —
+    // a DBA held by another entity, the record's other names.
+    const names = byCard.get('name')
+    if (names) {
+      const submitted = record.names?.find((n) => (n as { submitted?: boolean }).submitted)?.name ?? record.name
+      const others = (record.names ?? []).filter((n) => !(n as { submitted?: boolean }).submitted && !sameName(n.name, submitted))
+      const head = names.insights[0]
+      names.insights = [
+        { id: 'name:head', intent: head.intent, verdict: displayName(submitted), statement: head.statement, synthetic: true },
+        ...names.insights,
+        ...(others.length
+          ? [
+              {
+                id: 'name:others',
+                intent: 'unknown' as const,
+                verdict: `${others.length} other name${others.length > 1 ? 's' : ''} found`,
+                statement: `Also on the record: ${others.map((n) => n.name).join(', ')}.`,
+                synthetic: true
+              }
+            ]
+          : [])
+      ]
+    }
     // Worst rows first, as the source orders its panel; the report's order within a kind.
     const worst = (g: PanelGroup) => ['failure', 'warning', 'success', 'unknown'].indexOf(g.insights[0].intent)
     return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
@@ -1053,14 +1172,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                     regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
                     score={assessment.score.value}
                     selectedCard={focus?.id.startsWith('card-') ? focus.id.slice(5) : undefined}
-                    summary={
-                      scoped
-                        ? (scopedRead?.summary ?? null)
-                        : brief?.lede
-                          ? // A fresh run's reason; else the report's summary of the business; else its headline.
-                            { text: revision?.reason ?? heldReportFor(selected.name)?.report?.summary ?? brief.lede }
-                          : null
-                    }
+                    summary={panelRead ? { text: panelRead } : null}
                     summaryGenerated={generated.has(selected.id)}
                     tally={overallTally}
                     title={scope.name}
@@ -1068,11 +1180,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                     onShowSummary={() => {
                       GENERATED.add(selected.id)
                       setGenerated(new Set(GENERATED))
-                      // The assessment opens out of the pill, expanded over the
-                      // report — this time only; the docked preference stands.
+                      // The assessment opens out of the pill as its floating
+                      // window, beside the report rather than over it — this
+                      // time only; the docked preference stands.
                       setPanelView('assistant')
                       setAssistantPresentationRaw('floating')
-                      setAssistantStateRaw('expanded')
+                      setAssistantStateRaw('window')
                       setSummaryRequest((request) => request + 1)
                     }}
                   />
@@ -1114,6 +1227,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 </div>
               )}
               <GroupedReport
+                documents={retrieved}
                 record={record}
                 results={shownResults}
                 groupFor={groupFor}
@@ -1242,6 +1356,45 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
           summaryRequest={summaryRequest}
           briefGenerated={generated.has(selected.id)}
           recommendRequest={recommendRequest}
+          // The assessment's read and its next steps, opened from the panel.
+          assessmentTurn={
+            <NextStepsTurn
+              // The fuller picture first: the sectioned brief — for an
+              // assessment, its read and only its own cards' sections.
+              assessment={
+                assessmentBrief && (
+                  <BriefTurn
+                    at={scopedRead?.summary?.at || analysis.selected?.at || new Date().toISOString()}
+                    brief={assessmentBrief}
+                    focus={focus}
+                    groupFor={groupFor}
+                    onFocusAssessment={focusAssessment}
+                    onJumpToCard={(anchor) =>
+                      panelRef.current
+                        ?.querySelector<HTMLElement>(`[id="${anchor}"]`)
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                    onJumpToGroup={jumpToCard}
+                    record={record}
+                    results={results}
+                  />
+                )
+              }
+              at={scopedRead?.summary?.at || analysis.selected?.at || new Date().toISOString()}
+              businessName={displayName(selected.name)}
+              onRequest={requestStep}
+              onRun={runStep}
+              onUpload={(step, files) => void uploadStep(step, files)}
+              onViewResults={(step) =>
+                step.kind === 'expand' && step.adds?.length ? jumpToCard(cardFor(step.adds[0], groupFor)) : landOn('documents')
+              }
+              read={panelRead}
+              record={stepRecord}
+              running={runningStep}
+              steps={nextSteps}
+              title={scope.name}
+            />
+          }
           // A brief card's title: the report scrolls to that card.
           onJumpToCard={(anchor) =>
             panelRef.current

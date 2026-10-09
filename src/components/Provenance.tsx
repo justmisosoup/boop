@@ -1,5 +1,6 @@
 import { CircleAlert, CircleCheck } from 'lucide-react'
 
+import { cn } from '../utils/twUtils'
 import { ChatSourceChip, type ChatSourceData } from '@/core'
 
 import type { AttributeRow } from '../lib/attributes'
@@ -13,7 +14,7 @@ import {
   registrationCard,
   sourceChipCards
 } from '../lib/sourceCards'
-import { WEBSITE_METADATA, faviconFor, readableUrl, sourceLabel } from '../lib/sourceLabels'
+import { WEBSITE_METADATA, faviconFor, readableUrl, sosDocumentLabel, sourceLabel } from '../lib/sourceLabels'
 import { screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
 import { CHIP_CLAIM, CHIP_NO_GLYPH, CHIP_UNVERIFIED } from './chipStyles'
@@ -62,17 +63,20 @@ const submittedSource = ({
   verified,
   by,
   listed = 0,
-  onJumpToSource
+  onJumpToSource,
+  label = 'Submitted'
 }: {
   verified?: boolean
   by?: string[]
   listed?: number
   onJumpToSource?: (cardId: string) => void
+  /** The chip's word: "Submitted" everywhere but where a card says "Verified". */
+  label?: string
 }): ChatSourceData => {
   return {
     id: 'submitted',
     // No domain: the chip reads "Submitted", and the list row is one line.
-    label: 'Submitted',
+    label,
     title: verified ? 'Submitted · Verified' : 'Submitted · Not verified',
     // Which ones, where they are not listed under it: the filings and records
     // that state the value.
@@ -93,8 +97,14 @@ export const SubmittedChip = ({
   by,
   sources = [],
   plain,
-  onJumpToSource
+  onJumpToSource,
+  label,
+  hideCount
 }: {
+  /** The chip's word, in place of "Submitted". */
+  label?: string
+  /** No "+28" on the chip: the sources are its preview's alone. */
+  hideCount?: boolean
   verified?: boolean
   /** Grey and without the mark, as the source chips beside it — where the
    *  verdict is stated next to the chip rather than on it. */
@@ -106,22 +116,31 @@ export const SubmittedChip = ({
    *  in this one chip — "Submitted +2" — rather than as a second chip beside it. */
   sources?: ChatSourceData[]
   onJumpToSource?: (cardId: string) => void
-}) => (
+}) => {
+  // Verified, the chip says so — "Verified" — and its sources are the
+  // preview's alone, with no "+28" on the chip.
+  label ??= verified ? 'Verified' : undefined
+  hideCount ??= Boolean(verified)
+  // Verified is never plain: the chip carries the check itself, so no mark
+  // sits beside the value as well.
+  if (verified) plain = false
+  return (
   <ChatSourceChip
     // Not verified: the warning tone, with the exclamation mark.
-    className={plain ? CHIP_NO_GLYPH : verified ? CHIP_CLAIM : CHIP_UNVERIFIED}
+    className={cn(plain ? CHIP_NO_GLYPH : verified ? CHIP_CLAIM : CHIP_UNVERIFIED, hideCount && '[&>span.ml-1]:hidden')}
     // Under the claim, each source as the place it is from over what it is —
     // "San Francisco" over "City Registration", "firebirdyarns.com" over
     // "Website" — with no host repeated on the second line.
     sources={[
       {
-        ...submittedSource({ verified, by, listed: sources.length, onJumpToSource }),
+        ...submittedSource({ verified, by, listed: sources.length, onJumpToSource, label }),
         ...(plain ? { icon: undefined } : {})
       },
       ...sources.map((x) => (x.url ? x : { ...x, domain: undefined }))
     ]}
   />
-)
+  )
+}
 
 /**
  * What stands at the address, from Google.
@@ -242,12 +261,12 @@ const appEntries = (name: string, refs: SourceRef[], sourceNames?: Record<string
   // with no place — an SEC or EPA record — leads with the business name it
   // carries, as the record states it, over what kind of record it is.
   const entity = sourceNames?.[sourceLabel(name)]
-  const entry = (subtitle: string | undefined, target: string) =>
+  const entry = (subtitle: string | undefined, target: string, state?: string) =>
     card.place && subtitle
-      ? { title: subtitle, subtitle: card.title, target }
+      ? { title: subtitle, subtitle: card.title, target, state }
       : !card.subtitle && entity
-        ? { title: entity, subtitle: card.title, target }
-        : { title: card.title, subtitle, target }
+        ? { title: entity, subtitle: card.title, target, state }
+        : { title: card.title, subtitle, target, state }
   // One entry per record, each following to its own card: two tax permits in
   // one state are two permits, and the chip lists both.
   const mine = refs.filter((ref) => sourceLabel(ref.type) === sourceLabel(name))
@@ -259,7 +278,8 @@ const appEntries = (name: string, refs: SourceRef[], sourceNames?: Record<string
       const m = (ref.metadata ?? {}) as { city?: string; state?: string }
       return entry(
         card.subtitle?.({ city: m.city, state: m.state?.toUpperCase() }),
-        docCard(ref.id)
+        docCard(ref.id),
+        m.state?.toUpperCase()
       )
     })
 }
@@ -279,8 +299,14 @@ export const AttributeSources = ({
   submitted,
   plainClaim,
   urls,
-  onJumpToSource
+  onJumpToSource,
+  claimLabel,
+  hideCount
 }: {
+  /** The Submitted chip's word, where a card says "Verified" instead. */
+  claimLabel?: string
+  /** The chip without its "+N"; the sources stay in its preview. */
+  hideCount?: boolean
   sources: string[]
   /** Draw the Submitted chip grey and unmarked, as the source chips are. */
   plainClaim?: boolean
@@ -402,12 +428,9 @@ export const AttributeSources = ({
         return cards.map(
           (c, i): ChatSourceData => ({
             id: `${name}:${c.target}:${i}`,
-            // A city registration's chip is its city — "San Francisco" — as a
-            // filing's is its state.
-            label:
-              sourceLabel(name) === 'City registration' && c.subtitle === 'City Registration'
-                ? c.title
-                : sourceLabel(name),
+            // What the document is and the state it is from — "Tax permit · CA",
+            // "City registration · CA" — as a filing's is "SOS · CA".
+            label: c.state ? `${sourceLabel(name)} · ${c.state}` : sourceLabel(name),
             title: c.title,
             annotation: c.subtitle,
             onSelect: onJumpToSource ? () => onJumpToSource(c.target) : undefined
@@ -435,6 +458,19 @@ export const AttributeSources = ({
             ? () =>
                 onJumpToSource(sourceChipCards(name, refs ?? [])[0] ?? namedCard(sourceLabel(name)))
             : undefined
+        }
+
+      // A Secretary of State document: what it is and its state — "SOS AOI · CA".
+      const sosDoc =
+        sourceLabel(name) === 'SOS document' ? (refs ?? []).find((r) => r.type === 'parsed_sos_document') : undefined
+      const docMeta = sosDoc?.metadata as { document_type?: string; state?: string } | undefined
+      if (sosDoc)
+        return {
+          id: `${name}:${sosDoc.id}`,
+          label: sosDocumentLabel(docMeta?.document_type, docMeta?.state),
+          title: docMeta?.state ? stateName(docMeta.state.toUpperCase()) : 'Secretary of State',
+          annotation: 'Secretary of State document',
+          onSelect: onJumpToSource ? () => onJumpToSource(docCard(sosDoc.id)) : undefined
         }
 
       // A record source with no page of its own is named by what it carries —
@@ -492,6 +528,8 @@ export const AttributeSources = ({
         by={submitted.by}
         sources={all}
         plain={plainClaim}
+        label={claimLabel}
+        hideCount={hideCount}
         onJumpToSource={onJumpToSource}
       />
     )

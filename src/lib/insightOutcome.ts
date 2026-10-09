@@ -1,4 +1,6 @@
 import { nameStandingOf } from './businessNames'
+import { convertedFormationOf, notPublished } from './registrationStatus'
+import { stateName } from './states'
 import type { BusinessRecord, Derived } from './deriveResults'
 import { dismissalOf, screenedOf } from './screening'
 
@@ -48,7 +50,9 @@ const TABLE: Record<string, Record<string, Outcome>> = {
   tin: { found: P, 'not found': F },
   tin_issued: { issued: P, 'not issued': R },
   web_address_verification: { verified: P, 'approximate match': R, mismatch: R, unverified: N },
-  web_business_name_verification: { verified: P, 'similar match': P, mismatch: R, unverified: N },
+  // A site that names the business otherwise — a trade name, a brand — is
+  // context for the reader, not a flag.
+  web_business_name_verification: { verified: P, 'similar match': P, mismatch: N, unverified: N },
   web_email_address_verification: { verified: P, mismatch: R, unverified: N },
   web_person_verification: { verified: P, mismatch: R, unverified: N },
   web_phone_number_verification: { verified: P, mismatch: R, unverified: N },
@@ -63,7 +67,8 @@ const DERIVED: Record<string, (r: Derived, record: BusinessRecord) => Outcome> =
   // suffix against the type: each a question for the reviewer, not a failure.
   submitted_name_dba: (r) => (r.state === 'result' ? R : N),
   dba_owner_filing: (r) => (r.state === 'result' ? P : R),
-  name_entity_type: (r) => (r.state === 'result' ? R : N),
+  // The suffix against the type: a match passes; only a mismatch is a question.
+  name_entity_type: (r) => (r.state !== 'result' ? N : /mismatch/i.test(r.value ?? '') ? R : r.value === 'match' ? P : R),
   submitted_name: (_r, record) => {
     const { assessment } = nameStandingOf(record)
     return assessment === 'CLEAR' ? P : assessment === 'NOTE' || assessment === 'REVIEW' ? R : F
@@ -74,6 +79,34 @@ const DERIVED: Record<string, (r: Derived, record: BusinessRecord) => Outcome> =
 }
 
 const keyOf = (insightId: string) => insightId.split(':')[0]
+
+/** The domestic checks read through a conversion: what they come to, and how
+ *  to say it, where the only inactive domestic filing is the one converted out. */
+const conversionReading = (key: string, record: BusinessRecord): { outcome: Outcome; statement: string } | undefined => {
+  if (key !== 'sos_domestic' && key !== 'sos_inactive') return undefined
+  const c = convertedFormationOf(record)
+  if (!c) return undefined
+  const from = stateName(c.formed.state)
+  const to = stateName(c.now.state)
+  const silent = notPublished(c.now) || !c.now.status || /unknown/i.test(c.now.status)
+  const active = /^active$/i.test(c.now.status ?? '')
+  if (key === 'sos_domestic' && (active || silent))
+    return {
+      outcome: active ? P : N,
+      statement: active
+        ? `Converted from ${from}; the ${to} domestic filing is active`
+        : `Converted from ${from}; ${to} publishes no status for its domestic filing`
+    }
+  if (key === 'sos_inactive') {
+    const lapsed = record.registrations.filter((x) => !/^active$/i.test(x.status ?? '') && !notPublished(x) && !/unknown/i.test(x.status ?? ''))
+    if (lapsed.every((x) => x === c.formed))
+      return { outcome: N, statement: `The only inactive filing is the ${from} filing it converted out of` }
+  }
+  return undefined
+}
+
+/** The insight's sentence, restated where the record reads it differently than the check did. */
+export const statementOf = (r: Derived, record: BusinessRecord) => conversionReading(keyOf(r.insightId), record)?.statement ?? r.statement
 
 export const outcomeOf = (r: Derived, record: BusinessRecord): Outcome => {
   const key = keyOf(r.insightId)
@@ -92,6 +125,13 @@ export const outcomeOf = (r: Derived, record: BusinessRecord): Outcome => {
     if (standing === 0) return P
     return key === 'watchlist' ? F : R
   }
+
+  // A formation filing that converted out (Andytown: California → Delaware)
+  // is the business moving, not lapsing. Its current domestic filing decides
+  // the domestic check — and one that publishes no status (Delaware) is not
+  // inactive; the converted filing is not an inactive filing to flag.
+  const moved = conversionReading(key, record)
+  if (moved) return moved.outcome
 
   if (DERIVED[key]) return DERIVED[key](r, record)
   const word = (record.reviewTasks.find((t) => t.key === key)?.subLabel ?? '').toLowerCase()

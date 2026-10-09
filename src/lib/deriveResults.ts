@@ -156,6 +156,8 @@ export type BusinessRecord = {
     activity?: string | null
     dataAsOf: string | null
     sourceUrl: string | null
+    /** The location's point, [longitude, latitude], where the register gives one. */
+    lngLat?: [number, number]
   }>
   /**
    * Professional licences held by the people behind the business.

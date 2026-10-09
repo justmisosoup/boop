@@ -47,6 +47,8 @@ type Row = {
   open: boolean
   dataAsOf: string | null
   sourceUrl: string
+  /** The location's point, [longitude, latitude], where the register gives one. */
+  lngLat?: [number, number] | null
 }
 
 type Registry = {
@@ -121,7 +123,9 @@ const REGISTRIES: Registry[] = [
         activity: null,
         open: !x.dba_end_date && !x.location_end_date,
         dataAsOf: day(x.data_as_of),
-        sourceUrl: `${SF}?ttxid=${encodeURIComponent(x.ttxid ?? '')}`
+        sourceUrl: `${SF}?ttxid=${encodeURIComponent(x.ttxid ?? '')}`,
+        // The register's own point for the location, for the city map.
+        lngLat: Array.isArray(x.location?.coordinates) ? (x.location.coordinates as [number, number]) : null
       }))
   },
   {
@@ -292,12 +296,36 @@ for (const r of records) {
         ...(x.licenseType ? { licenseType: x.licenseType } : {}),
         ...(x.activity ? { activity: x.activity } : {}),
         dataAsOf: x.dataAsOf,
-        sourceUrl: x.sourceUrl
+        sourceUrl: x.sourceUrl,
+        ...(x.lngLat && { lngLat: x.lngLat })
       })
     }
     console.log(`${r.name} · ${reg.city}: ${matched.length} registration(s)`)
   }
 }
+
+/**
+ * A point for every location the register gave none (Los Angeles, Seattle, DC,
+ * and some San Francisco rows): the US Census geocoder, by address — public,
+ * no key — so the Registrations map can zoom to each location.
+ */
+const geocoded = new Map<string, [number, number] | null>()
+for (const list of Object.values(out))
+  for (const row of list as Array<{ address: string; lngLat?: [number, number] }>) {
+    if (row.lngLat || !row.address) continue
+    if (!geocoded.has(row.address)) {
+      const q = new URLSearchParams({ address: row.address, benchmark: 'Public_AR_Current', format: 'json' })
+      try {
+        const res = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?${q}`)
+        const m = ((await res.json()) as Any).result?.addressMatches?.[0]?.coordinates
+        geocoded.set(row.address, m ? [Number(m.x.toFixed(6)), Number(m.y.toFixed(6))] : null)
+      } catch {
+        geocoded.set(row.address, null)
+      }
+    }
+    const point = geocoded.get(row.address)
+    if (point) row.lngLat = point
+  }
 
 writeFileSync(
   'src/data/cityRegistrations.json',

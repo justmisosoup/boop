@@ -401,10 +401,14 @@ export const registerTail = (id: string, url: string | null | undefined, registe
   ]
 }
 
-/** A cell with the Submitted tag under its value, where the customer submitted it. */
+/** A cell the customer submitted: the Verified chip beside its label. A cell
+ *  with a chip of its own there already keeps it, and takes this under its value. */
 export const submittedUnder = (c: AttributeCell, submitted?: boolean): AttributeCell =>
-  submitted
-    ? {
+  !submitted
+    ? c
+    : !c.badge
+      ? { ...c, badge: <SubmittedChip verified /> }
+      : {
         ...c,
         values: c.values.map((v, i) =>
           i === 0
@@ -412,14 +416,13 @@ export const submittedUnder = (c: AttributeCell, submitted?: boolean): Attribute
                 ...v,
                 note: (
                   <span className="mt-0.5 flex">
-                    <SubmittedChip verified plain />
+                    <SubmittedChip verified />
                   </span>
                 )
               }
             : v
         )
       }
-    : c
 
 /**
  * Every licence the business holds or is required to, as the other cards read

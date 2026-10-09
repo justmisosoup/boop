@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { Building2, ClipboardCheck, Crosshair, Paperclip, Plus, X } from 'lucide-react'
+import { ClipboardCheck, Crosshair, Paperclip, Plus, X } from 'lucide-react'
 
 import {
   ChatComposer,
@@ -199,7 +199,7 @@ export const AssistantComposer = ({
         // On the inverse surface, the midnight the tooltip sits on, with inverse
         // text: the context reads as set apart from the conversation above it.
         <div className="mb-1.5 flex min-w-0 items-center gap-1.5 rounded-card border border-solid border-[var(--core-color-surface-inverse)] bg-[var(--core-color-surface-inverse)] px-2.5 py-1 text-caption leading-4 text-[var(--core-color-text-inverse)]">
-          <Building2 aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0" />
+          <Crosshair aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{businessName}</span>
           {report && (
             <button
@@ -220,7 +220,9 @@ export const AssistantComposer = ({
         // kit has no slot by send, so this reaches into its markup, as
         // `chipStyles.ts` does: one selector rather than a fork of the vendored
         // composer.
-        className="[&_div.pb-2.justify-between>div:first-child]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:overflow-visible"
+        // Its square buttons — send, and stop while answering — are circles, as
+        // the + and the crosshairs beside them are.
+        className="[&_div.pb-2.justify-between>div:first-child]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:flex-1 [&_div.pb-2.justify-between>div:first-child>span]:overflow-visible [&_div.pb-2.justify-between>button]:!rounded-full [&_button[aria-label='Send_message']]:!rounded-full [&_button[aria-label^='Stop']]:!rounded-full"
         chips={chips}
         inputRef={inputRef}
         isStreaming={busy}
@@ -239,7 +241,7 @@ export const AssistantComposer = ({
                 type="button"
                 aria-label="Add to the conversation"
                 title="Add"
-                className="flex size-6 items-center justify-center rounded-control border border-solid border-border text-text-secondary hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex size-6 items-center justify-center rounded-full border border-solid border-border text-text-secondary hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Plus aria-hidden="true" size={14} strokeWidth={2} />
               </button>
@@ -275,7 +277,7 @@ export const AssistantComposer = ({
               title={withReport ? 'The report is in context' : 'Put the report in context'}
               onClick={() => setWithReport((v) => !v)}
               className={cn(
-                'flex size-6 items-center justify-center rounded-control border border-solid border-border hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'flex size-6 items-center justify-center rounded-full border border-solid border-border hover:bg-[var(--core-color-state-hover-bg)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 withReport ? 'text-foreground' : 'text-text-secondary'
               )}
             >

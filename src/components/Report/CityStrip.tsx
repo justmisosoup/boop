@@ -59,11 +59,10 @@ export const cityRegistrationCells = (regs: CityRegistration[], city: string): A
       values: [
         {
           value: (
-            // Closed is grey, not red: a city registration that closed is history,
-            // not a problem.
-            <MetaChip tone={open ? 'success' : 'neutral'} size="compact">
+            // Read as a state filing's standing is: Active, or Inactive in red.
+            <MetaChip tone={open ? 'success' : 'danger'} size="compact">
               {open ? <Check {...icon} /> : <X {...icon} />}
-              {open ? 'Open' : 'Closed'}
+              {open ? 'Active' : 'Inactive'}
             </MetaChip>
           )
         }
@@ -188,8 +187,8 @@ export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; class
           {registrations.map(([k, here]) => {
             const first = here[0]
             const open = here.some(isOpen)
-            // Closed is grey: a closed city registration is history, not a finding.
-            const tone = open ? 'success' : 'neutral'
+            // Active, or Inactive in red, as a state filing reads.
+            const tone = open ? 'success' : 'danger'
             const on = k === selected && !collapsed
             return (
               <RadixTooltip.Root key={k} delayDuration={200}>
@@ -199,7 +198,7 @@ export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; class
                     role="radio"
                     aria-checked={on}
                     aria-controls={detailId}
-                    aria-label={`City registration, ${cityName(first)}: ${open ? 'open' : 'closed'}`}
+                    aria-label={`City registration, ${cityName(first)}: ${open ? 'active' : 'inactive'}`}
                     onClick={() => {
                       if (on) return setCollapsed(true)
                       setSelected(k)
@@ -264,7 +263,7 @@ export const CityRegistrationRow = ({
 }) => {
   const detailId = useId()
   const first = here[0]
-  const { active, caption, chip } = cityRegistrationSummary(here)
+  const { active, kind, registered, chip } = cityRegistrationSummary(here)
   return (
     <>
       {withCityTip(
@@ -273,7 +272,7 @@ export const CityRegistrationRow = ({
         type="button"
         aria-expanded={open}
         aria-controls={detailId}
-        aria-label={`City registration, ${cityName(first)}: ${active ? 'open' : 'closed'}`}
+        aria-label={`City registration, ${cityName(first)}: ${active ? 'active' : 'inactive'}`}
         onClick={onToggle}
         className={cn(
           'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
@@ -281,8 +280,10 @@ export const CityRegistrationRow = ({
         )}
       >
         <span className="min-w-0">
-          <span className="block text-caption text-text-secondary">{caption}</span>
-          <span className="block text-sm font-medium text-text-primary">{cityName(first)} City Registration</span>
+          {/* The caption names the register; the title is just the city. */}
+          <span className="block text-caption text-text-secondary">{kind}</span>
+          <span className="block text-sm font-medium text-text-primary">{cityName(first)}</span>
+          {registered && <span className="block text-caption text-text-secondary">{registered}</span>}
         </span>
         <span className="flex flex-wrap items-center gap-1.5">
           {chip}
@@ -320,11 +321,14 @@ const cityRegistrationSummary = (here: CityRegistration[]) => {
   return {
     active,
     caption: ['City registration', registered].filter(Boolean).join(' · '),
-    // Closed is grey: a closed city registration is history, not a finding.
+    // The table's row: the kind over the name, the date under it.
+    kind: 'City registration',
+    registered,
+    // Active, or Inactive in red, as a state filing reads.
     chip: (
-      <MetaChip tone={active ? 'success' : 'neutral'} size="compact">
+      <MetaChip tone={active ? 'success' : 'danger'} size="compact">
         {active ? <Check {...icon} /> : <X {...icon} />}
-        {active ? 'Open' : 'Closed'}
+        {active ? 'Active' : 'Inactive'}
       </MetaChip>
     )
   }
@@ -352,7 +356,7 @@ export const CityRegistrationCell = ({
     <button
       type="button"
       aria-expanded={open}
-      aria-label={`City registration, ${cityName(here[0])}: ${active ? 'open' : 'closed'}`}
+      aria-label={`City registration, ${cityName(here[0])}: ${active ? 'active' : 'inactive'}`}
       onClick={onToggle}
       className={cn(
         'grid gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -413,7 +417,7 @@ export const CityTooltip = ({ here }: { here: CityRegistration[] }) => {
           {here.length} location{here.length === 1 ? '' : 's'}
         </span>
       </span>
-      {line(active ? 'Open' : 'Closed', active ? <Check {...mark} /> : <X {...mark} />)}
+      {line(active ? 'Active' : 'Inactive', active ? <Check {...mark} /> : <X {...mark} />)}
       {since && line(`Registered ${formatDate(since)}`)}
       {dbas.length > 0 && line(`DBA: ${dbas.join(', ')}`)}
       {owners.length > 0 && line(`Owner: ${owners.join(', ')}`)}

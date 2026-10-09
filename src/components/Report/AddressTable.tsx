@@ -169,16 +169,23 @@ const PropertyIcon = ({ a }: { a: Location }) => {
 /** The submitted address, after it: the insights sidebar's own mark — a green
  *  check where a record lists it, the alert where none does. */
 const VerifiedIcon = ({ a, verified }: { a: Location; verified: boolean }) =>
-  a.submitted ? (
-    <span role="img" aria-label={verified ? 'Verified' : 'Unverified'} className="flex shrink-0">
-      <StatusDot intent={verified ? 'success' : 'warning'} />
+  // Verified, the Verified chip under it says so; only the amber mark stays.
+  a.submitted && !verified ? (
+    <span role="img" aria-label="Unverified" className="flex shrink-0">
+      <StatusDot intent="warning" />
     </span>
   ) : null
 
 /** Over the address: what the records list it as — "Mailing, Primary, Physical". */
-const TypeLine = ({ a }: { a: Location }) => {
+const TypeLine = ({ a, chip }: { a: Location; chip?: ReactNode }) => {
   const type = addressType(a)
-  return type ? <span className="block text-caption text-text-secondary">{type}</span> : null
+  // Its chip beside the label — Verified, or where a found address is from.
+  return type || chip ? (
+    <span className="flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
+      {type}
+      {chip}
+    </span>
+  ) : null
 }
 
 /** Under a submitted address that matched only in part: the address it matched. */
@@ -341,14 +348,14 @@ const AddressRow = ({
       <div className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-3', COLUMNS)}>
         <div className="flex min-w-0 items-center gap-3">
           <div className="min-w-0">
-            <TypeLine a={a} />
+            <TypeLine a={a} chip={!a.submitted || verified ? chip : undefined} />
             <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-text-primary">
               <span className="truncate" title={a.fullAddress}>
                 {a.fullAddress}
               </span>
               <VerifiedIcon a={a} verified={verified} />
             </div>
-            <SubLine chip={chip} />
+            {a.submitted && !verified && <SubLine chip={chip} />}
             {a.submitted && <MatchedLine match={partialMatchOf(record)} to={partialMatchAddressOf(record, a)} />}
           </div>
         </div>
@@ -437,7 +444,7 @@ const GridView = ({
       key: `${a.fullAddress}-${i}`,
       label: a.fullAddress,
       // What the records list it as, over the address; who attests it, under.
-      labelNode: <TypeLine a={a} />,
+      labelNode: <TypeLine a={a} chip={!a.submitted || verified ? chip : undefined} />,
       values: [
         {
           value: (
@@ -446,7 +453,7 @@ const GridView = ({
                 {a.fullAddress}
                 <VerifiedIcon a={a} verified={verified} />
               </span>
-              <SubLine chip={chip} />
+              {a.submitted && !verified && <SubLine chip={chip} />}
               {a.submitted && <MatchedLine match={partialMatchOf(record)} to={partialMatchAddressOf(record, a)} />}
             </span>
           ),

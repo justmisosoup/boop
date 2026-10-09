@@ -33,7 +33,9 @@ const DIR = join(process.cwd(), 'analysis')
 const STORE = join(DIR, 'assessments.json')
 
 type Paragraph = { text: string; cites?: string[] }
-export type KeptSummary = { at: string; requestId: string; section: { id: string; body: Paragraph[] } }
+/** `steps`: the next steps' why, as the session words them — the steps themselves are chosen by rule. */
+type StepWhy = { id: string; why: string }
+export type KeptSummary = { at: string; requestId: string; section: { id: string; body: Paragraph[] }; steps?: StepWhy[] }
 export type SummaryStore = Record<string, Record<string, KeptSummary>>
 
 type SummaryRequest = {
@@ -43,6 +45,10 @@ type SummaryRequest = {
   business: { name: string }
   assessment: { id: string; name: string; instructions: string; insightIds: string[] }
   insights: Array<{ id: string; statement: string; state: string; reason?: string }>
+  /** The next steps the rules chose (`src/lib/nextSteps.ts`), each with its
+   *  deterministic why. The session may reword a why; it may not add a step
+   *  or drop one. */
+  steps?: Array<{ id: string; label: string; why: string }>
 }
 
 const readJson = <T>(path: string, fallback: T): T => {
@@ -65,7 +71,9 @@ const readBody = async (req: Connect.IncomingMessage) => {
  * Deterministic: the same insights give the same sentences, and every
  * sentence cites the insight it came from.
  */
-const draftSummary = (request: SummaryRequest): { assessmentId: string; section: { id: string; body: Paragraph[] } } => {
+const draftSummary = (
+  request: SummaryRequest
+): { assessmentId: string; section: { id: string; body: Paragraph[] }; steps: StepWhy[] } => {
   const RANK: Record<string, number> = { result: 0, no_result: 1, unknown: 2 }
   const sentence = (text: string) => {
     const t = text.trim().replace(/\s+/g, ' ')
@@ -74,18 +82,30 @@ const draftSummary = (request: SummaryRequest): { assessmentId: string; section:
   const read = [...request.insights]
     .filter((i) => i.statement?.trim())
     .sort((a, b) => (RANK[a.state] ?? 3) - (RANK[b.state] ?? 3))
-  const lead = read.slice(0, 3)
+  // Every check the assessment asked for that came back — findings first —
+  // so a check it asked for (people verification) is never left out.
+  const lead = read.filter((i) => i.state === 'result').length ? read.filter((i) => i.state === 'result') : read.slice(0, 3)
   const body: Paragraph[] = lead.length
     ? [{ text: lead.map((i) => sentence(i.statement)).join(' '), cites: lead.map((i) => i.id) }]
     : [{ text: `Nothing ${request.assessment.name} reads could be found for ${request.business.name} yet.`, cites: [] }]
-  return { assessmentId: request.assessment.id, section: { id: request.assessment.id, body } }
+  // The steps' whys as the rules wrote them, until the session rewords them.
+  const steps = (request.steps ?? []).map(({ id, why }) => ({ id, why }))
+  return { assessmentId: request.assessment.id, section: { id: request.assessment.id, body }, steps }
 }
 
 const requestPath = (id: string) => join(DIR, `assessment-request-${id}.json`)
 const resultPath = (id: string) => join(DIR, `assessment-result-${id}.json`)
 
 /** What is wrong with a result, or null. */
-const problemWith = (result: { assessmentId?: string; section?: { id?: string; body?: Paragraph[] } }, request: SummaryRequest) => {
+const problemWith = (
+  result: { assessmentId?: string; section?: { id?: string; body?: Paragraph[] }; steps?: StepWhy[] },
+  request: SummaryRequest
+) => {
+  // The steps are the rules'; only their whys are the session's to write.
+  const asked = new Set((request.steps ?? []).map((st) => st.id))
+  const invented = (result.steps ?? []).filter((st) => !asked.has(st.id)).map((st) => st.id)
+  if (invented.length) return `Steps ${invented.join(', ')} weren't asked for: only the given steps' whys can be written.`
+  if ((result.steps ?? []).some((st) => typeof st.why !== 'string' || !st.why.trim())) return 'Each step needs a `why`.'
   if (result.assessmentId !== request.assessment.id) return '`assessmentId` must be the request\'s assessment id.'
   if (result.section?.id !== request.assessment.id) return '`section.id` must be the request\'s assessment id.'
   const body = result.section?.body ?? []
@@ -130,7 +150,7 @@ export const assessmentPlugin = (): Plugin => ({
           if (asked) writeFileSync(resultPath(id), JSON.stringify(draftSummary(asked), null, 2))
         }
         const request = readJson<SummaryRequest>(requestPath(id), null as unknown as SummaryRequest)
-        const result = readJson<{ assessmentId?: string; section?: { id: string; body: Paragraph[] } } | null>(resultPath(id), null)
+        const result = readJson<{ assessmentId?: string; section?: { id: string; body: Paragraph[] }; steps?: StepWhy[] } | null>(resultPath(id), null)
         // Half-written: the session is still on it.
         if (!result) {
           res.end(JSON.stringify({ pending: true }))
@@ -148,7 +168,12 @@ export const assessmentPlugin = (): Plugin => ({
         if (kept?.requestId !== id) {
           store[request.businessId] = {
             ...(store[request.businessId] ?? {}),
-            [request.assessment.id]: { at: new Date().toISOString(), requestId: id, section: result.section! }
+            [request.assessment.id]: {
+              at: new Date().toISOString(),
+              requestId: id,
+              section: result.section!,
+              ...(result.steps?.length ? { steps: result.steps } : {})
+            }
           }
           writeFileSync(STORE, `${JSON.stringify(store, null, 2)}\n`)
         }

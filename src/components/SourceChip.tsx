@@ -91,14 +91,15 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
       const licences = same.some((x) => x.licenseType)
       return {
         id: `city-${k}`,
-        // The chip is the city of the registration, as a filing's is its state.
-        label: name,
+        // The chip is what it is and its state — "City registration · CA" —
+        // as a filing's is "SOS · CA"; the city leads its preview.
+        label: `City registration · ${r.state}`,
         title: name,
-        // Closed is grey, as the City registrations strip draws it.
+        // Active, or Inactive in red, as a state filing reads.
         badge: (
           <StatusTag
-            label={open ? 'Active' : 'Closed'}
-            tone={open ? toneOfStatus('active', null) : 'neutral'}
+            label={open ? 'Active' : 'Inactive'}
+            tone={open ? toneOfStatus('active', null) : 'danger'}
           />
         ),
         snippet: [
@@ -128,7 +129,7 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
     return [
       {
         id: `city-${k}`,
-        label: m.state === 'DC' ? `${m.city}, DC` : m.city,
+        label: m.state ? `City registration · ${m.state.toUpperCase()}` : 'City registration',
         title: m.state === 'DC' ? `${m.city}, DC` : m.city,
         badge: m.status ? (
           <StatusTag

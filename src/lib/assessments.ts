@@ -1,4 +1,5 @@
 import summaryStore from '../../analysis/assessments.json'
+import { addedKeys } from './assessmentRuns'
 import { ORDER_CATALOG } from './customOrders/catalog'
 import { deriveResults, type BusinessRecord, type Derived } from './deriveResults'
 import { heldReportFor } from './heldReports'
@@ -39,7 +40,8 @@ export const assessmentsOf = (record: Pick<BusinessRecord, 'id' | 'name'>): Asse
   return [...full, ...ordered.map((a) => ({
     id: a.id,
     name: a.name,
-    insights: a.insights,
+    // Its own insights, and any a next step it ran added (`assessmentRuns`).
+    insights: a.insights ? [...new Set([...a.insights, ...addedKeys(record.id, a.id)])] : a.insights,
     customOrderId: a.customOrderId,
     orderedAt: a.orderedAt,
     completedAt: a.completedAt,
@@ -67,7 +69,7 @@ export const groupLabelsOf = (a: Assessment) =>
     .map((g) => g.label)
 
 type Paragraph = { text: string; cites?: string[] }
-type KeptSummary = { at: string; section: { id: string; body: Paragraph[] } }
+type KeptSummary = { at: string; section: { id: string; body: Paragraph[] }; steps?: Array<{ id: string; why: string }> }
 const SUMMARIES = summaryStore as Record<string, Record<string, KeptSummary>>
 
 export type AssessmentRead = {
@@ -77,7 +79,8 @@ export type AssessmentRead = {
   /** Its insights as the report's score card reads them: the bar under the score. */
   tally: { good: number; review: number; bad: number; neutral: number }
   /** The written summary and when; absent until one is generated. */
-  summary?: { text: string; at: string; body: Paragraph[] }
+  /** `stepWhys`: the session's wording of each next step's why, by step id. */
+  summary?: { text: string; at: string; body: Paragraph[]; stepWhys?: Record<string, string> }
   /** Its orders are still running. */
   ordering: boolean
 }
@@ -156,7 +159,14 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
       outcomeScore(tally),
     counts: polarityCounts(record, live, ids),
     tally,
-    summary: kept ? { text: kept.section.body[0]?.text ?? '', at: kept.at, body: kept.section.body } : undefined,
+    summary: kept
+      ? {
+          text: kept.section.body[0]?.text ?? '',
+          at: kept.at,
+          body: kept.section.body,
+          stepWhys: kept.steps ? Object.fromEntries(kept.steps.map((x) => [x.id, x.why])) : undefined
+        }
+      : undefined,
     ordering: a.orderedAt ? stillOrdering({ orderedAt: a.orderedAt, completedAt: a.completedAt }) : false
   }
 }

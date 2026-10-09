@@ -5,6 +5,9 @@ import { groupLabelsOf, resultsIn, type Assessment } from './assessments'
 import { deriveResults, type BusinessRecord } from './deriveResults'
 import { ORDER_CATALOG } from './customOrders/catalog'
 import { useSavedWorkflows } from './savedWorkflows'
+import { runsFor } from './assessmentRuns'
+import { nextStepsFor } from './nextSteps'
+import { statementOf } from './insightOutcome'
 
 /**
  * Generate / Regenerate for an Assessment card's summary.
@@ -79,7 +82,10 @@ export const useSummaryRuns = (record: BusinessRecord) => {
               .join(' '),
             insightIds: results.map((r) => r.insightId)
           },
-          insights: results.map((r) => ({ id: r.insightId, statement: r.statement, state: r.state, reason: r.reason })),
+          // Each insight as the panel says it (a conversion is not an inactive filing).
+          insights: results.map((r) => ({ id: r.insightId, statement: statementOf(r, record), state: r.state, reason: r.reason })),
+          // The rules' next steps: the session may reword their whys, not choose them.
+          steps: nextStepsFor(record, a, deriveResults(record), runsFor(record.id, a.id)).map(({ id, label, why }) => ({ id, label, why })),
           catalogVersion: ORDER_CATALOG.version
         })
       })

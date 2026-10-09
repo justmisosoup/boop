@@ -1,0 +1,67 @@
+{
+  "id": "1791579059227bsor",
+  "requestedAt": "2026-10-09T20:50:59.227Z",
+  "businessId": "5bd35cee-6af5-4a22-954c-d21bee355c3b",
+  "business": {
+    "name": "ANDYTOWN LLC"
+  },
+  "assessment": {
+    "id": "a-mv1fpu8e-0",
+    "name": "Demo",
+    "instructions": "Summarise what the Demo assessment found for ANDYTOWN LLC, from these insights only: Business name, Domestic registration standing, Entity type, Office address, People verification.",
+    "insightIds": [
+      "sos_domestic",
+      "sos_domestic_sub_status",
+      "name",
+      "address_verification",
+      "person_verification",
+      "entity_type"
+    ]
+  },
+  "insights": [
+    {
+      "id": "sos_domestic",
+      "statement": "Converted from California; Delaware publishes no status for its domestic filing",
+      "state": "result"
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "The domestic sub-status is Not Provided by State.",
+      "state": "no_result",
+      "reason": "not_published"
+    },
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result"
+    },
+    {
+      "id": "address_verification",
+      "statement": "Match identified to the submitted Office Address",
+      "state": "result"
+    },
+    {
+      "id": "person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result"
+    },
+    {
+      "id": "entity_type",
+      "statement": "Entity type is a limited liability company (LLC)",
+      "state": "result"
+    }
+  ],
+  "steps": [
+    {
+      "id": "business-verification",
+      "label": "Run Business Verification",
+      "why": "Demo reads business name, domestic registration standing, entity type, office address, people verification. Business Verification adds the checks it doesn't: secretary of state status, registered in submitted state, mail deliverability, property type, watchlist screening and 2 more."
+    },
+    {
+      "id": "full-kyb",
+      "label": "Run Full Business KYB",
+      "why": "Covers the rest of what Middesk holds on this business — 14 more insights, including politically exposed persons, adverse media, liens."
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

@@ -251,34 +251,40 @@ const PersonRow = ({ r, ctx }: { r: AttributeRow; ctx: CellContext }) => {
   const roles = r.titles?.length
     ? [...(/owner/i.test(r.label) ? ['Owner'] : []), ...r.titles]
     : [roleOf(r)]
+  // Who attests them: Submitted, and the records that name them.
+  const provenance = (
+    <RowProvenance
+      row={r}
+      domesticState={ctx.domesticState}
+      submitted={r.submitted ? { verified: corroborated(r), by: verifiedBy(r) } : undefined}
+      plainClaim
+      onJumpToSource={ctx.onJumpToSource}
+    />
+  )
   return (
     <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 last:bg-none md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0">
-          {/* What they are to the business, over the name. */}
-          <span className="block text-caption text-text-secondary">{roleOf(r)}</span>
+          {/* What they are to the business, over the name, with its chip beside it: Verified, or where they were found. */}
+          <span className="flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
+            {roleOf(r)}
+            {(!r.submitted || corroborated(r)) && provenance}
+          </span>
           <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-text-primary">
             <span className="truncate">{filedName(r.value)}</span>
-            {r.submitted && (
-              <span
-                role="img"
-                aria-label={corroborated(r) ? 'Verified' : 'Unverified'}
-                className="flex shrink-0"
-              >
-                <StatusDot intent={corroborated(r) ? 'success' : 'warning'} />
+            {/* Verified, the Verified chip under it says so; only the amber mark stays. */}
+            {r.submitted && !corroborated(r) && (
+              <span role="img" aria-label="Unverified" className="flex shrink-0">
+                <StatusDot intent="warning" />
               </span>
             )}
           </div>
-          {/* Who attests them, under the name: Submitted, and the records that name them. */}
-          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
-            <RowProvenance
-              row={r}
-              domesticState={ctx.domesticState}
-              submitted={r.submitted ? { verified: corroborated(r), by: verifiedBy(r) } : undefined}
-              plainClaim
-              onJumpToSource={ctx.onJumpToSource}
-            />
-          </span>
+          {/* Otherwise under the name. */}
+          {r.submitted && !corroborated(r) && (
+            <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
+              {provenance}
+            </span>
+          )}
         </div>
       </div>
       {/* Every title the records give them, one chip each. */}

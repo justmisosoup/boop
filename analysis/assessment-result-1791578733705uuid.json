@@ -1,0 +1,26 @@
+{
+  "assessmentId": "a-mv1fpu8e-0",
+  "section": {
+    "id": "a-mv1fpu8e-0",
+    "body": [
+      {
+        "text": "Inactive domestic filing found. Match identified to the submitted Business Name. Match identified to the submitted Office Address.",
+        "cites": [
+          "sos_domestic",
+          "name",
+          "address_verification"
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "business-verification",
+      "why": "Demo reads business name, domestic registration standing, entity type, office address, people verification, so who this business is hasn't been checked. Business Verification adds 8 insights already on this business: its name, registrations, addresses, TIN and watchlist."
+    },
+    {
+      "id": "full-kyb",
+      "why": "Covers the rest of what Middesk holds on this business — 14 more insights, including politically exposed persons, adverse media, liens."
+    }
+  ]
+}

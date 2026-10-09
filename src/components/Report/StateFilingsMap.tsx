@@ -1,10 +1,10 @@
-import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { AlbersUsa } from '@visx/geo'
 import { feature } from 'topojson-client'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 
-import type { MetaChipTone } from '@/core'
+import { ActionButton, type MetaChipTone } from '@/core'
 
 import { STATE_NAMES } from '../../lib/states'
 import { cn } from '../../utils/twUtils'
@@ -49,6 +49,14 @@ const fillOf = (tone: MetaChipTone, on: boolean) =>
 export type CityPin = {
   key: string
   state: string
+  /** The city, and the location's own address: several locations in one city share a pin. */
+  city: string
+  address?: string
+  /** Open (a live registration) rather than closed. */
+  active: boolean
+  /** Each distinct address the registration covers — one registration can
+   *  span several — with its point, where there is one, and whether it is open. */
+  places?: Array<{ address: string; point?: [number, number]; active: boolean }>
   /** The city, [longitude, latitude]; without it the pin stands on the state's centre. */
   lngLat?: [number, number]
   tone: MetaChipTone
@@ -72,8 +80,14 @@ export const StateFilingsMap = ({
   selected,
   open,
   onPick,
+  zoom: zoomProp,
+  onZoom,
   cities = []
 }: {
+  /** The city zoomed into, by `state|city`, or none — held by the caller, so
+   *  the list beside can follow it and back it out. */
+  zoom?: string | null
+  onZoom?: (city: string | null) => void
   filings: MappedFiling[]
   selected?: string
   open: boolean
@@ -82,6 +96,13 @@ export const StateFilingsMap = ({
   cities?: CityPin[]
 }) => {
   const [states, setStates] = useState(cachedStates)
+  /** A city zoomed into, by `state|city`: its locations on a street map. */
+  const [zoomState, setZoomRaw] = useState<string | null>(null)
+  const zoom = zoomProp !== undefined ? zoomProp : zoomState
+  const setZoom = (next: string | null) => {
+    setZoomRaw(next)
+    onZoom?.(next)
+  }
 
   useEffect(() => {
     if (cachedStates) return
@@ -99,6 +120,9 @@ export const StateFilingsMap = ({
       active = false
     }
   }, [])
+
+  const zoomed = zoom ? cities.filter((c) => `${c.state}|${c.city}` === zoom) : []
+  if (zoomed.length) return <CityZoom locations={zoomed} onBack={() => setZoom(null)} />
 
   if (!states)
     return (
@@ -155,6 +179,9 @@ export const StateFilingsMap = ({
       >
         {({ features, projection }) => {
           const small: Array<{ f: MappedFiling; centroid: [number, number] }> = []
+          // A filed state big enough to hold its code carries it on its shape;
+          // the small ones have it on their pin off the coast.
+          const codes: Array<{ code: string; at: [number, number]; tone: MetaChipTone; on: boolean }> = []
           const centroids = new Map<string, [number, number]>()
           const shapes = features.map(({ feature: shape, path, centroid }) => {
             const code = CODE_BY_NAME.get(shape.properties?.name ?? '') ?? ''
@@ -173,6 +200,7 @@ export const StateFilingsMap = ({
                 />
               )
             const on = open && selected === code
+            if (!SMALL.includes(code)) codes.push({ code, at: centroid, tone: filing.tone, on })
             return withTooltip(
               filing,
               <path
@@ -240,51 +268,134 @@ export const StateFilingsMap = ({
                 </g>
               )
             })
-          /* Each city registration, a pin standing on its city — or, for a
-             city with no coordinates, on its state's centre, side by side where
-             one state holds several. */
-          const cityPins = cities.map((c) => {
+          /* Each city's registrations, one pin standing on the city — or, for
+             a city with no coordinates, on its state's centre, side by side where
+             one state holds several. A city with several locations (Andytown's
+             fourteen in San Francisco) is one pin, counted, with how many are
+             open and how many closed beside it: every location stacked on one
+             point showed only the last drawn, and one closed pin said the
+             business was closed there. Its list of locations is the click. */
+          const byCity = new Map<string, CityPin[]>()
+          for (const c of cities) byCity.set(`${c.state}|${c.city}`, [...(byCity.get(`${c.state}|${c.city}`) ?? []), c])
+          const cityGroups = [...byCity.values()]
+          const cityPins = cityGroups.map((group) => {
+            const c = group[0]
             const onCity = c.lngLat ? (projection(c.lngLat) as [number, number] | null) : null
             const at = onCity ?? centroids.get(c.state)
             if (!at) return null
-            const same = cities.filter((x) => x.state === c.state && !x.lngLat)
-            const nudge = onCity ? 0 : (same.indexOf(c) - (same.length - 1) / 2) * 16
-            const fg = `var(--core-color-status-${c.tone}-fg)`
+            const same = cityGroups.filter((g) => g[0].state === c.state && !g[0].lngLat)
+            const nudge = onCity ? 0 : (same.indexOf(group) - (same.length - 1) / 2) * 16
+            // Counted by address: a registration can cover several locations,
+            // and several registrations can share one.
+            const placesOf = (pins: CityPin[]) => {
+              const by = new Map<string, boolean>()
+              for (const x of pins)
+                for (const pl of x.places ?? [{ address: x.address ?? x.key, active: x.active }])
+                  by.set(pl.address, (by.get(pl.address) ?? false) || pl.active)
+              return [...by.values()]
+            }
+            const places = placesOf(group)
+            const opened = places.filter(Boolean).length
+            const closed = places.length - opened
+            const tone: MetaChipTone = opened ? 'success' : 'danger'
+            const fg = `var(--core-color-status-${tone}-fg)`
+            const picked = group.some((x) => x.open)
+            const x = at[0] + nudge - 12
+            const y = at[1] - 22
+            if (group.length === 1 && places.length <= 1)
+              return withTooltip(
+                c,
+                <g
+                  role="button"
+                  aria-label={c.label}
+                  aria-pressed={c.open}
+                  tabIndex={0}
+                  onClick={c.onPick}
+                  onKeyDown={(e: KeyboardEvent) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    c.onPick()
+                  }}
+                  className="cursor-pointer outline-none focus-visible:[stroke-width:2.5]"
+                  transform={`translate(${x} ${y})`}
+                >
+                  {/* A white halo, so the pin reads on a state filled in its own tone. */}
+                  <path d={PIN_PATH} fill="none" stroke="var(--core-color-surface-card)" strokeWidth={5} />
+                  <path d={PIN_PATH} fill={c.open ? fg : 'var(--core-color-surface-card)'} stroke={fg} strokeWidth={2} />
+                  <circle cx={12} cy={10} r={3} fill={c.open ? 'var(--core-color-surface-card)' : fg} />
+                </g>,
+                `city-${c.key}`
+              )
+            const split = [opened && `${opened} active`, closed && `${closed} inactive`].filter(Boolean).join(' · ')
+            const zoomTo = () => setZoom(`${c.state}|${c.city}`)
+            const onSelected = open && selected === c.state
+            // Several locations: one pin, counted; the split is its hover, and
+            // a click zooms into the city to show each location.
             return withTooltip(
-              c,
+              {
+                state: c.state,
+                tooltip: (
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-semibold">
+                      {c.city} · {places.length} locations
+                    </span>
+                    <span>{split}</span>
+                    <span className="text-text-secondary">Click to see each location</span>
+                  </span>
+                )
+              },
               <g
                 role="button"
-                aria-label={c.label}
-                aria-pressed={c.open}
+                aria-label={`City registrations, ${c.city}: ${split}. Zoom in to see each location.`}
+                aria-pressed={picked}
                 tabIndex={0}
-                onClick={c.onPick}
+                onClick={zoomTo}
                 onKeyDown={(e: KeyboardEvent) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return
                   e.preventDefault()
-                  c.onPick()
+                  zoomTo()
                 }}
                 className="cursor-pointer outline-none focus-visible:[stroke-width:2.5]"
-                transform={`translate(${at[0] + nudge - 12} ${at[1] - 22})`}
+                transform={`translate(${x} ${y})`}
               >
-                <path
-                  d={PIN_PATH}
-                  fill={c.open ? fg : 'var(--core-color-surface-card)'}
-                  stroke={fg}
-                  strokeWidth={2}
-                />
-                <circle
-                  cx={12}
-                  cy={10}
-                  r={3}
-                  fill={c.open ? 'var(--core-color-surface-card)' : fg}
-                />
+                <path d={PIN_PATH} fill="none" stroke="var(--core-color-surface-card)" strokeWidth={5} />
+                {/* On the selected state, which is filled solid, the pin turns
+                    over — white with its tone's outline — so the two stay apart. */}
+                <path d={PIN_PATH} fill={onSelected ? 'var(--core-color-surface-card)' : fg} stroke={fg} strokeWidth={2} />
+                <text
+                  x={12}
+                  y={14}
+                  textAnchor="middle"
+                  className={cn(
+                    'text-[11px] font-semibold tabular-nums',
+                    onSelected ? 'fill-[var(--core-color-text-primary)]' : 'fill-[var(--core-color-surface-card)]'
+                  )}
+                >
+                  {places.length}
+                </text>
               </g>,
-              `city-${c.key}`
+              `city-${c.state}-${c.city}`
             )
           })
           return (
             <g>
               {shapes}
+              <g aria-hidden="true" className="pointer-events-none">
+                {codes.map(({ code, at, tone, on }) => (
+                  <text
+                    key={`code-${code}`}
+                    x={at[0]}
+                    y={at[1]}
+                    dy="0.35em"
+                    textAnchor="middle"
+                    fontSize={11}
+                    fontWeight={600}
+                    fill={on ? 'var(--core-color-surface-card)' : `var(--core-color-status-${tone}-fg)`}
+                  >
+                    {code}
+                  </text>
+                ))}
+              </g>
               {pins}
               {cityPins}
             </g>
@@ -292,5 +403,157 @@ export const StateFilingsMap = ({
         }}
       </AlbersUsa>
     </svg>
+  )
+}
+
+/* ---- A city, zoomed: its locations on a street map ---------------------- */
+
+const TILE = 256
+const ZOOM_W = 720
+const ZOOM_H = 420
+/** Web Mercator, in pixels of the whole world at zoom `z`. */
+const worldPx = (lng: number, lat: number, z: number): [number, number] => {
+  const size = TILE * 2 ** z
+  const s = Math.sin((lat * Math.PI) / 180)
+  return [((lng + 180) / 360) * size, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * size]
+}
+
+/**
+ * One city's registrations, each location a pin where the register puts it,
+ * on Esri's light grey canvas tiles (to zoom 16), zoomed to fit them: streets
+ * without OpenStreetMap's place icons. CARTO's light basemap now wants an API key.
+ * Each pin is the location's details, as its row in the list is; "Show all states"
+ * goes back to the country.
+ */
+const CityZoom = ({ locations, onBack }: { locations: CityPin[]; onBack: () => void }) => {
+  // One pin per address: a registration can cover several, and registrations
+  // can share one. The pin opens the registration it belongs to.
+  const byAddress = new Map<string, { address: string; point?: [number, number]; active: boolean; pin: CityPin }>()
+  for (const l of locations)
+    for (const pl of l.places ?? [{ address: l.address ?? l.city, active: l.active }]) {
+      const had = byAddress.get(pl.address)
+      if (!had || (!had.active && pl.active)) byAddress.set(pl.address, { ...pl, point: pl.point ?? had?.point, pin: l })
+    }
+  const all = [...byAddress.values()]
+  const placed = all.filter((l) => l.point)
+  const unplaced = all.filter((l) => !l.point)
+  // The zoom that fits every location, with room around them; a lone one at street level.
+  // The band across the top kept clear for "Show all states", in map units:
+  // the button is a fixed size on screen, so the narrower the map is drawn, the
+  // more of it the button covers. No pin stands in that band.
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [drawnW, setDrawnW] = useState(ZOOM_W)
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setDrawnW(e.contentRect.width || ZOOM_W))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const band = (56 * ZOOM_W) / Math.max(drawnW, 1)
+  // A pin's point is its tip: the pin stands 24 units above it, 10 either side.
+  const areaTop = band + 26
+  const areaBottom = ZOOM_H - 24
+  const areaW = ZOOM_W - 60
+  const fits = (z: number) => {
+    const px = placed.map((l) => worldPx(l.point![0], l.point![1], z))
+    const xs = px.map((p) => p[0])
+    const ys = px.map((p) => p[1])
+    return Math.max(...xs) - Math.min(...xs) <= areaW && Math.max(...ys) - Math.min(...ys) <= areaBottom - areaTop
+  }
+  let z = 16
+  while (z > 9 && placed.length > 1 && !fits(z)) z--
+  const pts = placed.map((l) => worldPx(l.point![0], l.point![1], z))
+  const cx = pts.length ? (Math.min(...pts.map((p) => p[0])) + Math.max(...pts.map((p) => p[0]))) / 2 : 0
+  const cy = pts.length ? (Math.min(...pts.map((p) => p[1])) + Math.max(...pts.map((p) => p[1]))) / 2 : 0
+  // Centred in the area under the band, not the whole map.
+  const left = cx - ZOOM_W / 2
+  const top = cy - (areaTop + areaBottom) / 2
+  const tiles: Array<{ x: number; y: number }> = []
+  for (let tx = Math.floor(left / TILE); tx <= Math.floor((left + ZOOM_W) / TILE); tx++)
+    for (let ty = Math.floor(top / TILE); ty <= Math.floor((top + ZOOM_H) / TILE); ty++) tiles.push({ x: tx, y: ty })
+  const city = locations[0].city
+
+  return (
+    <div className="relative flex w-full max-w-[720px] flex-col gap-2">
+      {/* The way back, over the map's top-left corner. */}
+      <ActionButton
+        className="absolute left-3 top-3 shadow-elevation-card"
+        onClick={onBack}
+        size="compact"
+        type="button"
+        variant="secondary"
+      >
+        Show all states
+      </ActionButton>
+      <svg
+        ref={svgRef}
+        aria-label={`${city} registration locations`}
+        className="block h-auto w-full overflow-hidden rounded-control border border-border bg-[var(--core-color-surface-subtle)]"
+        role="group"
+        viewBox={`0 0 ${ZOOM_W} ${ZOOM_H}`}
+      >
+        {/* Esri's light grey canvas: streets and their names, no places of
+            worship, theatres or shops drawn on it — the pins carry the colour. */}
+        <g>
+          {tiles.map(({ x, y }) => (
+            <image
+              key={`${x}-${y}`}
+              height={TILE}
+              href={`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${z}/${y}/${x}`}
+              width={TILE}
+              x={x * TILE - left}
+              y={y * TILE - top}
+            />
+          ))}
+        </g>
+        {placed.map((l, i) => {
+          const tone: MetaChipTone = l.active ? 'success' : 'danger'
+          const fg = `var(--core-color-status-${tone}-fg)`
+          const [px, py] = pts[i]
+          return (
+            <RadixTooltip.Root key={l.address} delayDuration={150}>
+              <RadixTooltip.Trigger asChild>
+                <g
+                  aria-label={`${l.address}: ${l.active ? 'active' : 'inactive'}`}
+                  aria-pressed={l.pin.open}
+                  className="cursor-pointer outline-none focus-visible:[stroke-width:2.5]"
+                  onClick={l.pin.onPick}
+                  onKeyDown={(e: KeyboardEvent) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    l.pin.onPick()
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  transform={`translate(${px - left - 12} ${py - top - 22})`}
+                >
+                  <path d={PIN_PATH} fill={l.pin.open ? fg : 'var(--core-color-surface-card)'} stroke={fg} strokeWidth={2} />
+                  <circle cx={12} cy={10} fill={l.pin.open ? 'var(--core-color-surface-card)' : fg} r={3} />
+                </g>
+              </RadixTooltip.Trigger>
+              <RadixTooltip.Portal>
+                <RadixTooltip.Content
+                  className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+                  side="top"
+                  sideOffset={6}
+                >
+                  <span className="block font-semibold">{l.address}</span>
+                  <span>{l.active ? 'Active' : 'Inactive'}</span>
+                </RadixTooltip.Content>
+              </RadixTooltip.Portal>
+            </RadixTooltip.Root>
+          )
+        })}
+        <text className="fill-[var(--core-color-text-secondary)] text-[10px]" textAnchor="end" x={ZOOM_W - 6} y={ZOOM_H - 6}>
+          © Esri, HERE, Garmin, OpenStreetMap contributors
+        </text>
+      </svg>
+      {unplaced.length > 0 && (
+        <span className="text-caption text-text-secondary">
+          {unplaced.length} location{unplaced.length > 1 ? 's have' : ' has'} no point on the register.
+        </span>
+      )}
+    </div>
   )
 }

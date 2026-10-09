@@ -99,3 +99,20 @@ export const faviconFor = (href: string) => {
  * would claim the page had stated it, so these say what they are instead.
  */
 export const WEBSITE_METADATA = new Set(['Title', 'Domain', 'Platform'])
+
+/**
+ * A Secretary of State document as its chip names it: what it is, then the
+ * state — "SOS AOI · CA", "SOS COGS · DE". A document whose type the record
+ * doesn't give is "SOS document · VA".
+ */
+export const sosDocumentLabel = (documentType: string | null | undefined, state: string | null | undefined) => {
+  const t = (documentType ?? '').replace(/_/g, ' ')
+  const what = /initial filing|articles/i.test(t)
+    ? 'SOS AOI'
+    : /good standing/i.test(t)
+      ? 'SOS COGS'
+      : /amendment/i.test(t)
+        ? 'SOS amendment'
+        : 'SOS document'
+  return state ? `${what} · ${state.toUpperCase()}` : what
+}

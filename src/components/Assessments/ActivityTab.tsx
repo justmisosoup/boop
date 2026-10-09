@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Building2, CircleCheck, Flag, Play, Sparkles } from 'lucide-react'
+import { Building2, CircleCheck, Flag, ListChecks, Play, Sparkles } from 'lucide-react'
 
 import { ActionLink, DateTime, PageHeadingCount, Surface, Text } from '@/core'
 import { cn } from '@/utils/twUtils'
@@ -8,6 +8,7 @@ import { cn } from '@/utils/twUtils'
 import { businessHref } from './BusinessFrame'
 import { SectionTitle } from './SectionTitle'
 import { CURRENT_USER } from '../../lib/user'
+import { runsOnBusiness, useAssessmentRuns } from '../../lib/assessmentRuns'
 
 import type { AssessmentRead } from '../../lib/assessments'
 import type { BusinessRecord } from '../../lib/deriveResults'
@@ -19,7 +20,7 @@ const STATUS_LABEL: Record<ReviewStatus, string> = {
   rejected: 'Reject'
 }
 
-type Kind = 'created' | 'run' | 'completed' | 'summary' | 'status'
+type Kind = 'created' | 'run' | 'completed' | 'summary' | 'status' | 'step'
 /** Where it came from — the dashboard or the API — and who. */
 type Event = {
   at: string
@@ -44,7 +45,8 @@ const ICON: Record<Kind, ReactNode> = {
   run: <Play aria-hidden="true" size={14} strokeWidth={1.75} />,
   completed: <CircleCheck aria-hidden="true" size={14} strokeWidth={1.75} />,
   summary: <Sparkles aria-hidden="true" size={14} strokeWidth={1.75} />,
-  status: <Flag aria-hidden="true" size={14} strokeWidth={1.75} />
+  status: <Flag aria-hidden="true" size={14} strokeWidth={1.75} />,
+  step: <ListChecks aria-hidden="true" size={14} strokeWidth={1.75} />
 }
 
 /**
@@ -55,7 +57,26 @@ const ICON: Record<Kind, ReactNode> = {
  */
 export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Event[] => {
   const review = useReview(record.id)
+  useAssessmentRuns()
+  // The next steps run on each assessment, from the Assistant.
+  const stepRuns = runsOnBusiness(record.id)
+  const nameOf = (id: string) => reads.find((r) => r.assessment.id === id)?.assessment.name ?? 'Assessment'
+  const stepEvents: Event[] = Object.entries(stepRuns).flatMap(([assessmentId, runs]) =>
+    runs.map((r) => {
+      const action = r.requested ? `requested from ${r.requested.email}` : r.uploads?.length ? 'documents uploaded' : r.label.toLowerCase()
+      return {
+        at: r.at,
+        text: `${nameOf(assessmentId)}: ${r.label}`,
+        subject: nameOf(assessmentId),
+        action,
+        kind: 'step' as const,
+        by: CURRENT_USER,
+        via: DASHBOARD
+      }
+    })
+  )
   const events: Event[] = [
+    ...stepEvents,
     // Who did it: the reader for what a person does — creating, running,
     // changing the status — and Middesk for what follows on its own.
     ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),

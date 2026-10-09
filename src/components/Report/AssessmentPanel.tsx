@@ -33,6 +33,9 @@ export type PanelInsight = {
   verdict: string
   /** The full sentence, for the hover. */
   statement: string
+  /** Not an insight of its own — the row's lead (the business's name), or a
+   *  tally of what else was found — so not counted. */
+  synthetic?: boolean
 }
 
 export type PanelGroup = {
@@ -295,7 +298,9 @@ export const AssessmentPanel = ({
   summary: { text: string } | null
   regenerating?: boolean
   summaryGenerated: boolean
-  onShowSummary: () => void
+  /** Opens the assessment in the Assistant. Absent — the copy shown there —
+   *  the panel has no button. */
+  onShowSummary?: () => void
   groups: PanelGroup[]
   /** The card the report is narrowed to, if any. */
   selectedCard?: string
@@ -327,22 +332,25 @@ export const AssessmentPanel = ({
             <Skeleton className="w-11/12" />
           </div>
         ) : null}
-        {/* The full assessment is the Assistant's; this is the way to it. */}
-        <ActionButton
-          className="w-full"
-          leadingIcon={<Sparkles aria-hidden="true" size={14} />}
-          onClick={onShowSummary}
-          size="compact"
-          variant="secondary"
-        >
-          {summaryGenerated ? "Show assessment" : "Generate assessment"}
-        </ActionButton>
+        {/* The assessment, in full, and its recommendations are the Assistant's;
+            this is the way to them. The panel never lists the steps. */}
+        {onShowSummary && (
+          <ActionButton
+            className="w-full"
+            leadingIcon={<Sparkles aria-hidden="true" size={14} />}
+            onClick={onShowSummary}
+            size="compact"
+            variant="secondary"
+          >
+            Run assessment
+          </ActionButton>
+        )}
       </div>
 
       <div className="border-t border-border px-4 pb-1 pt-3">
         <h3 className="m-0 flex items-center gap-2 font-arizona text-base font-light">
           Insights
-          <PageHeadingCount>{groups.reduce((n, g) => n + g.insights.length, 0)}</PageHeadingCount>
+          <PageHeadingCount>{groups.reduce((n, g) => n + g.insights.filter((i) => !i.synthetic).length, 0)}</PageHeadingCount>
         </h3>
       </div>
       {groups.length === 0 ? (

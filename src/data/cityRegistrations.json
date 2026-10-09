@@ -42,7 +42,11 @@
         "licenseType": "Contractor and Construction Services",
         "activity": "Home Improvement Contractor",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'71101164'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'71101164'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       },
       {
         "refId": "d4fabb65-6a78-4753-b3d2-e6a6931823e2",
@@ -62,7 +66,11 @@
         "licenseType": "Employee/Salesperson",
         "activity": "Home Improvement Salesperson",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'71101165'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'71101165'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       },
       {
         "refId": "3c85ad6e-9c20-437d-96f0-ca643399583a",
@@ -82,7 +90,11 @@
         "licenseType": "Employee/Salesperson",
         "activity": "Home Improvement Salesperson",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'67000785'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'67000785'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       },
       {
         "refId": "d1dc0a37-46bb-44ca-a150-f8744ea726a5",
@@ -102,7 +114,11 @@
         "licenseType": "Contractor and Construction Services",
         "activity": "General Contractor/Construction Manager (A, B, C,",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'410522000295'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'410522000295'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       },
       {
         "refId": "37d95e65-1109-412b-90a7-0b532a08a27c",
@@ -122,7 +138,11 @@
         "licenseType": "Employee/Salesperson",
         "activity": "Home Improvement Salesperson",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'66007534'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'66007534'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       },
       {
         "refId": "12c66eda-6207-4e18-bad8-36769fb19d81",
@@ -142,7 +162,11 @@
         "licenseType": "Contractor and Construction Services",
         "activity": "Home Improvement Contractor",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'66007533'&outFields=*&f=json"
+        "sourceUrl": "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/DCRA/FeatureServer/0/query?where=CUSTOMERNUMBER%3D'66007533'&outFields=*&f=json",
+        "lngLat": [
+          -77.140765,
+          38.798533
+        ]
       }
     ],
     "douglas g brown": [
@@ -162,7 +186,11 @@
         "locationEnd": null,
         "naics": "451110",
         "dataAsOf": null,
-        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0000492465-0001-0"
+        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0000492465-0001-0",
+        "lngLat": [
+          -118.447547,
+          33.953685
+        ]
       }
     ],
     "jc swimming pool & spa service": [
@@ -182,7 +210,11 @@
         "locationEnd": null,
         "naics": "541990",
         "dataAsOf": null,
-        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0003369382-0001-5"
+        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0003369382-0001-5",
+        "lngLat": [
+          -118.305368,
+          33.819077
+        ]
       }
     ],
     "mixboard inc.": [
@@ -202,7 +234,11 @@
         "locationEnd": "2021-08-25",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "4295afda-5024-4781-9617-2a5177ddc928",
@@ -220,7 +256,11 @@
         "locationEnd": "2020-04-27",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "92985248-83b2-4525-abd2-090b3d84ee8e",
@@ -238,7 +278,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "92985248-83b2-4525-abd2-090b3d84ee8e",
@@ -256,7 +300,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251",
+        "lngLat": [
+          -122.400075,
+          37.789317
+        ]
       }
     ],
     "userleap inc": [
@@ -276,7 +324,11 @@
         "locationEnd": "2021-08-25",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "488a59da-7c81-4462-a231-29b727359fa9",
@@ -294,7 +346,11 @@
         "locationEnd": "2020-04-27",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "488a59da-7c81-4462-a231-29b727359fa9",
@@ -312,7 +368,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "488a59da-7c81-4462-a231-29b727359fa9",
@@ -330,7 +390,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251",
+        "lngLat": [
+          -122.400075,
+          37.789317
+        ]
       }
     ],
     "andytown llc": [
@@ -350,7 +414,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1331501-05-231"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1331501-05-231",
+        "lngLat": [
+          -122.499486,
+          37.74186
+        ]
       },
       {
         "refId": "f4192d45-f33b-4984-94e8-b37bb5108c2b",
@@ -368,7 +436,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0477174-01-001"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0477174-01-001",
+        "lngLat": [
+          -122.50224,
+          37.756674
+        ]
       },
       {
         "refId": "4f82d64d-a385-46ae-b3bc-0d7bca7c1257",
@@ -386,7 +458,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1363415-06-241"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1363415-06-241",
+        "lngLat": [
+          -122.4128205,
+          37.764
+        ]
       },
       {
         "refId": "402c9d58-a99f-4dde-bddd-549efa2a60ab",
@@ -404,7 +480,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1204368-10-181"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1204368-10-181",
+        "lngLat": [
+          -122.395459609,
+          37.789514239
+        ]
       },
       {
         "refId": "bf368832-a0b7-458b-ac0b-c7537a51c4ce",
@@ -422,7 +502,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1313693-09-221"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1313693-09-221",
+        "lngLat": [
+          -122.5106775,
+          37.772775
+        ]
       },
       {
         "refId": "f4192d45-f33b-4984-94e8-b37bb5108c2b",
@@ -440,7 +524,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1135168-02-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1135168-02-171",
+        "lngLat": [
+          -122.49870496,
+          37.74228671
+        ]
       },
       {
         "refId": "0cd083f2-7674-49db-9571-872969ae324e",
@@ -458,7 +546,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1414956-03-261"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1414956-03-261",
+        "lngLat": [
+          -122.4034965,
+          37.788678
+        ]
       },
       {
         "refId": "6d29ba67-5c52-436b-be7d-57d6a9c18d0a",
@@ -476,7 +568,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1135169-02-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1135169-02-171",
+        "lngLat": [
+          -122.504986861,
+          37.741728156
+        ]
       },
       {
         "refId": "0db0b1b5-6ef6-413f-9cb8-d77909e1909e",
@@ -494,7 +590,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1428081-07-261"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1428081-07-261",
+        "lngLat": [
+          -122.4476415,
+          37.77021
+        ]
       },
       {
         "refId": "f4192d45-f33b-4984-94e8-b37bb5108c2b",
@@ -512,7 +612,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0477174-02-001"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0477174-02-001",
+        "lngLat": [
+          -122.50224,
+          37.756674
+        ]
       },
       {
         "refId": "73b2808c-45ec-4b47-93d6-cf0273cbd5c7",
@@ -530,7 +634,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1367735-08-241"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1367735-08-241",
+        "lngLat": [
+          -122.399949377,
+          37.798427733
+        ]
       },
       {
         "refId": "f4192d45-f33b-4984-94e8-b37bb5108c2b",
@@ -548,7 +656,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1284091-08-211"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1284091-08-211",
+        "lngLat": [
+          -122.50224,
+          37.756674
+        ]
       },
       {
         "refId": "e08d0695-974e-458d-9842-479b8fdf84f1",
@@ -566,7 +678,11 @@
         "locationEnd": "2024-08-01",
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1361545-05-241"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1361545-05-241",
+        "lngLat": [
+          -122.4126225,
+          37.763811
+        ]
       },
       {
         "refId": "45a129b7-b797-4d44-9b3c-9a1112d2a48e",
@@ -584,7 +700,11 @@
         "locationEnd": null,
         "naics": "477174",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1391698-06-251"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1391698-06-251",
+        "lngLat": [
+          -122.4336375,
+          37.733985
+        ]
       }
     ],
     "woo young lee dds inc": [
@@ -604,7 +724,11 @@
         "locationEnd": "2024-06-10",
         "naics": "621210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0421598-01-001"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0421598-01-001",
+        "lngLat": [
+          -122.432337,
+          37.782864
+        ]
       },
       {
         "refId": "deb198c9-b06b-402f-8350-8b99957f84e0",
@@ -622,7 +746,11 @@
         "locationEnd": null,
         "naics": "621210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1366902-07-241"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1366902-07-241",
+        "lngLat": [
+          -122.4370575,
+          37.772919
+        ]
       }
     ],
     "sorenson communications, llc": [
@@ -642,7 +770,11 @@
         "locationEnd": null,
         "naics": "541930",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1322783-01-231"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1322783-01-231",
+        "lngLat": [
+          -111.917400198,
+          40.679251771
+        ]
       }
     ],
     "firebird yarns": [
@@ -662,7 +794,11 @@
         "locationEnd": null,
         "naics": "459130",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1194503-07-181"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1194503-07-181",
+        "lngLat": [
+          -122.4439695,
+          37.770561
+        ]
       }
     ],
     "supabase, inc.": [
@@ -682,7 +818,11 @@
         "locationEnd": null,
         "naics": "518210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1404388-11-251"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1404388-11-251",
+        "lngLat": [
+          -75.539145393,
+          39.110799538
+        ]
       }
     ],
     "change.org, pbc": [
@@ -702,7 +842,11 @@
         "locationEnd": "2024-10-30",
         "naics": "51005",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1341784-08-231"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1341784-08-231",
+        "lngLat": [
+          -122.3995725,
+          37.786968
+        ]
       },
       {
         "refId": "c85758ca-1cda-4d93-a67b-30136fcc5f02",
@@ -720,7 +864,11 @@
         "locationEnd": "2022-11-30",
         "naics": "51005",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0478667-01-001"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0478667-01-001",
+        "lngLat": [
+          -122.4022905,
+          37.765026
+        ]
       },
       {
         "refId": "c2c744f0-4dc2-478e-aed9-f2625f59e4c4",
@@ -738,7 +886,11 @@
         "locationEnd": null,
         "naics": "541100",
         "dataAsOf": null,
-        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0003297478-0001-6"
+        "sourceUrl": "https://data.lacity.org/resource/r4uk-afju.json?location_account=0003297478-0001-6",
+        "lngLat": [
+          -122.402514,
+          37.765035
+        ]
       }
     ],
     "checkr, inc.": [
@@ -758,7 +910,11 @@
         "locationEnd": null,
         "naics": "519190",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1150504-06-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1150504-06-171",
+        "lngLat": [
+          -122.40243,
+          37.789254
+        ]
       },
       {
         "refId": "2049277e-ca63-42f4-964d-23cfe3dc398e",
@@ -776,7 +932,11 @@
         "locationEnd": null,
         "naics": "519190",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1034591-07-151"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1034591-07-151",
+        "lngLat": [
+          -122.408703,
+          37.762893
+        ]
       },
       {
         "refId": "1670a79a-fce7-44b2-9d55-f7bc7a87ebea",
@@ -794,7 +954,11 @@
         "locationEnd": "2015-03-27",
         "naics": "519190",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1010837-10-141"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1010837-10-141",
+        "lngLat": [
+          -122.406228,
+          37.76742
+        ]
       }
     ],
     "zendesk, inc.": [
@@ -814,7 +978,11 @@
         "locationEnd": null,
         "naics": "513210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1370795-09-241"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1370795-09-241",
+        "lngLat": [
+          -122.395459609,
+          37.789514239
+        ]
       },
       {
         "refId": "ccf91ddc-7a3f-4589-a358-56064d1b472a",
@@ -832,7 +1000,11 @@
         "locationEnd": "2024-10-30",
         "naics": "513210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0444588-02-001"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=0444588-02-001",
+        "lngLat": [
+          -122.4095445,
+          37.782288
+        ]
       },
       {
         "refId": "f51cb90a-987e-4751-9b38-a783c3b444e1",
@@ -850,7 +1022,11 @@
         "locationEnd": "2021-04-01",
         "naics": "513210",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1030446-06-151"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1030446-06-151",
+        "lngLat": [
+          -122.410431,
+          37.781568
+        ]
       },
       {
         "refId": "3d9c5edc-4e37-46a8-8b83-894c986b7a49",
@@ -869,7 +1045,11 @@
         "naics": "541511",
         "activity": "Custom Computer Programming Services",
         "dataAsOf": null,
-        "sourceUrl": "https://data.seattle.gov/resource/wnbq-64tb.json?city_account_number=0008759580792661"
+        "sourceUrl": "https://data.seattle.gov/resource/wnbq-64tb.json?city_account_number=0008759580792661",
+        "lngLat": [
+          -122.395306,
+          37.78944
+        ]
       }
     ],
     "meroxa, inc.": [
@@ -889,7 +1069,11 @@
         "locationEnd": null,
         "naics": null,
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1269340-02-211"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1269340-02-211",
+        "lngLat": [
+          -122.4319545,
+          37.764693
+        ]
       }
     ],
     "sprig technologies inc.": [
@@ -909,7 +1093,11 @@
         "locationEnd": "2021-08-25",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1251167-04-201",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "53854e43-4695-45f8-af03-c48fbb4069a2",
@@ -927,7 +1115,11 @@
         "locationEnd": "2020-04-27",
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1171213-12-171",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "53854e43-4695-45f8-af03-c48fbb4069a2",
@@ -945,7 +1137,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1285678-08-211",
+        "lngLat": [
+          -122.432193,
+          37.80108
+        ]
       },
       {
         "refId": "3b60f7f3-2626-420a-b888-01598802a3df",
@@ -963,7 +1159,11 @@
         "locationEnd": null,
         "naics": "541511",
         "dataAsOf": "2026-10-02",
-        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251"
+        "sourceUrl": "https://data.sf.gov/resource/g8m3-pdis.json?ttxid=1381807-02-251",
+        "lngLat": [
+          -122.400075,
+          37.789317
+        ]
       }
     ]
   }

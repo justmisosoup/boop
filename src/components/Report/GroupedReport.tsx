@@ -9,15 +9,22 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { ArrowLeft, Check, ChevronDown, LayoutGrid, ListFilter, Table2, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, ListFilter, Table2, X } from 'lucide-react'
 
 import {
   ActionButton,
+  ActionLink,
   ChatSourceChip,
   CopyButton,
+  Dialog,
+  Text,
+  IconActionButton,
+  Heading,
   MetaChip,
   SegmentedControl,
   SegmentedControlItem,
+  Skeleton,
+  Surface,
   Tag,
   Toolbar,
   ToolbarCount,
@@ -27,6 +34,7 @@ import {
 } from '@/core'
 
 import {
+  longDate,
   maskTin,
   peopleByPerson,
   peopleRows,
@@ -35,10 +43,14 @@ import {
 import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { operationsOf } from '../../lib/operations'
-import { REPORT_CARDS, cardFor } from '../../lib/reportCards'
+import { REPORT_CARDS, cardAnchor, cardFor } from '../../lib/reportCards'
 import { dismissalOf, screenedOf } from '../../lib/screening'
 import { capturedLabel, screenshotFor } from '../../lib/sourceScreenshots'
-import { sameName } from '../../lib/registrationStatus'
+import { faviconFor } from '../../lib/sourceLabels'
+import { registrationState, sameName } from '../../lib/registrationStatus'
+import { stateName } from '../../lib/states'
+import { CURRENT_USER } from '../../lib/user'
+import { formatDate } from '../../lib/reportLabels'
 import type { Kind } from '../../lib/timeline/types'
 import { StatusDot } from '../StatusDot'
 
@@ -49,8 +61,10 @@ import { Collapsible } from '../Collapsible'
 import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
 import { OtherFilings } from './OtherFilings'
-import { FilingStrip, FilingsViewToggle, type FilingsLayout } from './FilingStrip'
+import { FilingStrip, RegistrationControls, registrationCounts, type FilingsLayout, type RegistrationFilter } from './FilingStrip'
+import { BusinessDetailsCard } from './BusinessDetailsCard'
 import { GroupCard } from './GroupCard'
+import { CardHeader } from '../CardHeader'
 import { AddressViewToggle, Explained, type AddressView } from './AddressTable'
 import {
   IndustryStrip,
@@ -179,17 +193,23 @@ const NameSource = ({ cell }: { cell: AttributeCell }) =>
     </span>
   ) : null
 
+/** Over the name, its kind, with its chip beside it: Verified, or where a
+ *  found name is from. A submitted name not verified keeps its chip under. */
+const NameHead = ({ cell, qualifier }: { cell: AttributeCell; qualifier?: string }) => (
+  <span className="flex flex-wrap items-center gap-1.5">
+    <NameLabel cell={cell} qualifier={qualifier} />
+    {(!cell.submitted || cell.verified) && <NameSource cell={cell} />}
+  </span>
+)
+
 /** The name, marked as an address is: verified, or submitted with nothing to back it. */
 const NameValue = ({ cell, value }: { cell: AttributeCell; value: ReactNode }) => (
   <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
     {value}
-    {cell.submitted && (
-      <span
-        role="img"
-        aria-label={cell.verified ? 'Verified' : 'Unverified'}
-        className="flex shrink-0"
-      >
-        <StatusDot intent={cell.verified ? 'success' : 'warning'} />
+    {/* Verified, the Verified chip under it says so; only the amber mark stays. */}
+    {cell.submitted && !cell.verified && (
+      <span role="img" aria-label="Unverified" className="flex shrink-0">
+        <StatusDot intent="warning" />
       </span>
     )}
   </span>
@@ -214,9 +234,9 @@ const NamesList = ({ cells }: { cells: AttributeCell[] }) => {
             )}
           >
             <span role="cell" className="grid min-w-0 gap-1">
-              <NameLabel cell={cell} qualifier={v.qualifier} />
+              <NameHead cell={cell} qualifier={v.qualifier} />
               <NameValue cell={cell} value={v.value} />
-              <NameSource cell={cell} />
+              {cell.submitted && !cell.verified && <NameSource cell={cell} />}
               {(v.note ?? cell.note) && (
                 <span className="text-xs text-text-secondary">{v.note ?? cell.note}</span>
               )}
@@ -301,21 +321,27 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
         <span role="cell" className="min-w-0">
           {/* Over the number: the business name the IRS matched it to — or,
               unmatched, why: not yet issued, or no match. */}
-          <span className="block text-caption text-text-secondary">
+          {/* Matched, the Verified chip beside it. */}
+          <span className="flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
             {matchedBy ? (tin.name ?? '') : notIssued ? 'Not yet in the IRS database' : 'No match on the IRS record'}
+            {matchedBy && <SubmittedChip verified />}
           </span>
           {/* The number, with the mark a verified value carries: green where the
               IRS matched it, amber where it did not. */}
           <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
             {maskTin(tin.tin)}
-            <span role="img" aria-label={matchedBy ? 'Verified' : 'Unverified'} className="flex shrink-0">
-              <StatusDot intent={matchedBy ? 'success' : 'warning'} />
+            {!matchedBy && (
+              <span role="img" aria-label="Unverified" className="flex shrink-0">
+                <StatusDot intent="warning" />
+              </span>
+            )}
+          </span>
+          {/* The customer's number, unmatched: Submitted. */}
+          {!matchedBy && (
+            <span className="mt-0.5 flex">
+              <SubmittedChip plain />
             </span>
-          </span>
-          {/* The customer's number: Submitted. */}
-          <span className="mt-0.5 flex">
-            <SubmittedChip verified={Boolean(matchedBy)} plain />
-          </span>
+          )}
         </span>
         <span role="cell">
           {matchedBy ? (
@@ -450,14 +476,66 @@ const Origin = ({ submitted, verified = true }: { submitted: boolean; verified?:
     />
   )
 
+/** The submitted website as a profile's source: the profile is the site's
+ *  own — it names the site's domain as its website — so the site is where it
+ *  came from, and the chip goes to it. */
+const SiteSource = ({ url }: { url: string }) => (
+  <ChatSourceChip
+    sources={[
+      {
+        id: `site:${url}`,
+        label: hostOf(url),
+        domain: hostOf(url),
+        title: hostOf(url),
+        annotation: 'Submitted website',
+        url,
+        icon: (
+          <img
+            src={faviconFor(url)}
+            alt=""
+            className="size-3 rounded-xxs"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.visibility = 'hidden'
+            }}
+          />
+        )
+      }
+    ]}
+  />
+)
+
+/** Does the profile name this site as its website? The record keeps no list of
+ *  the profiles a site links to, so the profile's own link back is the tie. */
+const namesSite = (p: Profile, url: string) => {
+  const m = (p.metadata ?? {}) as { website?: string; website_urls?: string[] }
+  const domain = (u: string) => hostOf(u).split('/')[0].toLowerCase()
+  return [m.website, ...(m.website_urls ?? [])].some((u) => Boolean(u) && domain(u!) === domain(url))
+}
+
+/** Over a site or profile, its kind, with where it came from beside it:
+ *  Verified, the submitted site it hangs off, or Found. A submitted value not
+ *  verified keeps its Submitted chip under the name. */
+const WebCaption = ({ text, chip }: { text: ReactNode; chip?: ReactNode }) =>
+  chip ? (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      {text}
+      {chip}
+    </span>
+  ) : (
+    text
+  )
+
+const FoundChip = () => <Origin submitted={false} />
+
 /** A site or profile's name, with the mark a submitted value carries after it:
  *  green where verified, amber where not. Found ones carry none. */
 const WebTitle = ({ text, submitted, verified }: { text: ReactNode; submitted: boolean; verified: boolean }) => (
   <span className="inline-flex items-center gap-1.5">
     {text}
-    {submitted && (
-      <span role="img" aria-label={verified ? 'Verified' : 'Unverified'} className="flex shrink-0">
-        <StatusDot intent={verified ? 'success' : 'warning'} />
+    {submitted && !verified && (
+      <span role="img" aria-label="Unverified" className="flex shrink-0">
+        <StatusDot intent="warning" />
       </span>
     )}
   </span>
@@ -655,10 +733,15 @@ const WebsiteSummary = ({
       ? [
           {
             key: 'site',
-            caption: 'Website',
+            caption: (
+              <WebCaption
+                text="Website"
+                chip={!siteSubmitted ? <FoundChip /> : siteVerified ? <SubmittedChip verified /> : undefined}
+              />
+            ),
             title: <WebTitle text={hostOf(url)} submitted={siteSubmitted} verified={siteVerified} />,
-            // Where it came from, under it: submitted by the customer, or found.
-            sub: <Origin submitted={siteSubmitted} verified={siteVerified} />,
+            // Submitted and not verified: the Submitted chip, under it.
+            sub: siteSubmitted && !siteVerified ? <Origin submitted verified={false} /> : undefined,
             // Verified where the submitted site is shown to be the business's.
             chips: (
               <StatusChips
@@ -686,7 +769,22 @@ const WebsiteSummary = ({
         : []),
     ...profiles.map((p, i) => ({
       key: p.id ?? `${p.type}-${i}`,
-      caption: platformOf(p),
+      // Beside it, where it came from: Verified; the submitted site that names
+      // it; or Found, where nothing it can be linked to does.
+      caption: (
+        <WebCaption
+          text={platformOf(p)}
+          chip={
+            (p as { submitted?: boolean }).submitted ? (
+              /online|active/i.test(p.status ?? '') ? <SubmittedChip verified /> : undefined
+            ) : url && siteSubmitted && namesSite(p, url) ? (
+              <SiteSource url={url} />
+            ) : (
+              <FoundChip />
+            )
+          }
+        />
+      ),
       // The page's own name, and on a social platform its handle — not the
       // link, which is a click away in the details.
       title: (
@@ -697,12 +795,10 @@ const WebsiteSummary = ({
           verified={/online|active/i.test(p.status ?? '')}
         />
       ),
-      sub: (
-        <Origin
-          submitted={Boolean((p as { submitted?: boolean }).submitted)}
-          verified={/online|active/i.test(p.status ?? '')}
-        />
-      ),
+      sub:
+        (p as { submitted?: boolean }).submitted && !/online|active/i.test(p.status ?? '') ? (
+          <Origin submitted verified={false} />
+        ) : undefined,
       // Verified where the platform marks the account so — a social account's
       // badge — or where the customer submitted it and it was found online.
       chips: (
@@ -792,6 +888,259 @@ export const BackTab = ({ onClick }: { onClick: () => void }) => {
   )
 }
 
+type RegistrationDocument = NonNullable<BusinessRecord['documents']>[number]
+
+/** "Domestic · California · Converted out": the filing a document came from,
+ *  found by its state and name and the status the API gave the source. */
+const filingCaption = (record: BusinessRecord, meta?: { state?: string; status?: string; name?: string }) => {
+  if (!meta?.state) return ''
+  const inState = record.registrations.filter((r) => r.state === meta.state)
+  const reg =
+    inState.find((r) => (r.status ?? '').toLowerCase() === (meta.status ?? '').toLowerCase() && (!meta.name || sameName(r.name, meta.name))) ??
+    inState.find((r) => !meta.name || sameName(r.name, meta.name)) ??
+    inState[0]
+  if (!reg) return stateName(meta.state)
+  const kind = /domestic/i.test(reg.jurisdiction ?? '') ? 'Domestic' : /foreign/i.test(reg.jurisdiction ?? '') ? 'Foreign' : ''
+  const st = registrationState(reg)
+  const standing = st.statusDetails && st.statusDetails !== st.status ? st.statusDetails : st.status
+  return [kind, stateName(meta.state), standing].filter(Boolean).join(' · ')
+}
+
+/** A document's file, through the dev server's document endpoint. */
+const docFile = (businessId: string, id: string, ext: 'pdf' | 'png') => `/documents/${id}.${ext}?b=${businessId}`
+
+/**
+ * A document, read in full: every page as an image, one under another, in a
+ * dialog over the report — the in-app browser has no PDF viewer, and a link
+ * to the PDF only downloads it. The file itself is the header's, top right.
+ */
+const DocumentViewer = ({
+  businessId,
+  doc,
+  titleOf,
+  onClose
+}: {
+  businessId: string
+  doc: RegistrationDocument | null
+  titleOf: (d: RegistrationDocument) => string
+  onClose: () => void
+}) => {
+  const [pages, setPages] = useState<number | null>(null)
+  const [failed, setFailed] = useState(false)
+  // The document being closed stays drawn while the dialog animates out:
+  // cleared at once, its pages had no document to draw from, and the page
+  // threw — blacking out the screen.
+  const [shown, setShown] = useState(doc)
+  useEffect(() => {
+    if (doc) setShown(doc)
+  }, [doc])
+  const title = shown ? titleOf(shown) : ''
+  useEffect(() => {
+    if (!doc) return
+    setPages(null)
+    setFailed(false)
+    fetch(`/documents/${doc.id}.json?b=${businessId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((m: { pages: number }) => setPages(m.pages))
+      .catch(() => setFailed(true))
+  }, [doc, businessId])
+  return (
+    <Dialog isOpen={Boolean(doc)} onClose={onClose} showHeader={false} size="lg" title={title}>
+      {/* The dialog's own header, with the file at the top right beside the
+          close: the core header's title area doesn't stretch to hold it. */}
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <div className="grid min-w-0 gap-1">
+          <Heading className="text-lg leading-7" level={2}>
+            {title}
+          </Heading>
+          {shown?.filingDate && <Text tone="secondary">Filed {longDate(shown.filingDate.slice(0, 10))}</Text>}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {shown && (
+            <ActionLink download={shown.filename ?? undefined} href={docFile(businessId, shown.id, 'pdf')} leadingIcon={<Download aria-hidden="true" size={14} />} size="compact" variant="secondary">
+              Download PDF
+            </ActionLink>
+          )}
+          <IconActionButton aria-label="Close" onClick={onClose} type="button" variant="quiet">
+            <X aria-hidden="true" size={16} strokeWidth={1.75} />
+          </IconActionButton>
+        </div>
+      </div>
+      <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto bg-[var(--core-color-surface-subtle)] p-4">
+        {failed ? (
+          <p className="m-0 text-sm text-text-secondary">This document couldn't be shown. Download it to read it.</p>
+        ) : pages === null ? (
+          <Skeleton className="h-[640px] w-full" />
+        ) : (
+          shown &&
+          Array.from({ length: pages }, (_, i) => (
+            <img
+              key={i}
+              alt={`Page ${i + 1} of ${pages}`}
+              className="block w-full rounded-control border border-border bg-card shadow-elevation-card"
+              src={`/documents/${shown.id}-p${i + 1}.png`}
+            />
+          ))
+        )}
+      </div>
+    </Dialog>
+  )
+}
+
+/** A document's first page, and the way to the file. Fetched once through the
+ *  dev server's document endpoint (`scripts/document-endpoint.ts`), then kept. */
+const DocumentPreview = ({ businessId, doc, onView }: { businessId: string; doc: RegistrationDocument; onView: () => void }) => {
+  const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  const file = (ext: 'pdf' | 'png') => docFile(businessId, doc.id, ext)
+  return (
+    <div className="flex flex-col gap-3 px-4 py-3">
+      {/* The file first, then its first page. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionLink download={doc.filename ?? undefined} href={file('pdf')} leadingIcon={<Download aria-hidden="true" size={14} />} size="compact" variant="secondary">
+          Download PDF
+        </ActionLink>
+        <ActionButton leadingIcon={<Maximize2 aria-hidden="true" size={14} />} onClick={onView} size="compact" type="button" variant="quiet">
+          View
+        </ActionButton>
+      </div>
+      {state !== 'failed' ? (
+        <button
+          aria-label="View the document"
+          className="relative block max-h-[420px] w-full overflow-hidden rounded-control border border-border bg-card text-left"
+          onClick={onView}
+          type="button"
+        >
+          {state === 'loading' && <Skeleton className="h-[320px] w-full rounded-none" />}
+          <img
+            alt={`First page of ${doc.filename ?? 'the document'}`}
+            className={cn('block w-full', state === 'loading' && 'hidden')}
+            onError={() => setState('failed')}
+            onLoad={() => setState('ready')}
+            src={file('png')}
+          />
+          {/* The page runs on below the fold; the file has it all. */}
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--core-color-surface-card)] to-transparent" />
+        </button>
+      ) : (
+        <span className="text-sm text-text-secondary">No preview could be made for this document.</span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The Secretary of State documents on the record — the Articles (initial
+ * filing), a Certificate of Good Standing, amendments: what document
+ * retrieval finds. A lien's own filings stay with the Liens card. The other
+ * table cards' table: what it is, the filing it came from above, when it was
+ * filed under; a row opens to its first page and the download.
+ * The analyst's own uploads follow, kept by the dev server like the rest.
+ */
+const DocumentsCard = ({
+  record,
+  retrieved,
+  uploads,
+  withheld = false
+}: {
+  record: BusinessRecord
+  retrieved: ReadonlySet<string>
+  /** Held back until retrieved: only the ones a step brought are shown. */
+  withheld?: boolean
+  uploads: Array<{ id: string; name: string; from?: 'analyst' | 'applicant'; at?: string; email?: string }>
+}) => {
+  const [viewing, setViewing] = useState<RegistrationDocument | null>(null)
+  const typeOf = (d: RegistrationDocument) => {
+    const t = (d.documentType ?? 'Document').replace(/_/g, ' ')
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+  }
+  const docs = (record.documents ?? [])
+    .filter((d) => d.source?.type === 'registration' && (!withheld || retrieved.has(d.id)))
+    .sort((a, b) => (b.filingDate ?? '').localeCompare(a.filingDate ?? ''))
+  const rows: ResultRow[] = [
+    ...docs.map((d) => {
+      const meta = (d.source as { metadata?: { state?: string; status?: string } } | null)?.metadata
+      return {
+        key: d.id,
+        // The filing it came from, as the Registrations card names it — which
+        // California filing, and its standing in the registry's own words.
+        caption: filingCaption(record, meta),
+        title: typeOf(d),
+        // Under its name, when it was filed — not the file's name.
+        sub: (
+          <>
+            {d.filingDate ? `Filed ${longDate(d.filingDate.slice(0, 10))}` : 'Filing date not stated'}
+            {retrieved.has(d.id) && <span>· Retrieved by the document agent</span>}
+          </>
+        ),
+        // Where a status chip sits on the other tables: what to do with it.
+        chips: (
+          <span className="flex items-center gap-1">
+            <ActionButton onClick={() => setViewing(d)} size="compact" type="button" variant="quiet">
+              View
+            </ActionButton>
+            <ActionLink download={d.filename ?? undefined} href={docFile(record.id, d.id, 'pdf')} size="compact" variant="quiet">
+              Download
+            </ActionLink>
+          </span>
+        ),
+        cleared: false,
+        detail: <DocumentPreview businessId={record.id} doc={d} onView={() => setViewing(d)} />
+      }
+    }),
+    // The analyst's own: kept files, viewed and downloaded like any other.
+    ...uploads.map((u) => {
+      const doc: RegistrationDocument = {
+        id: u.id,
+        documentType: u.name.replace(/\.pdf$/i, ''),
+        filename: u.name,
+        contentType: 'application/pdf',
+        filingDate: null,
+        source: null,
+        createdAt: null
+      }
+      return {
+        key: u.id,
+        caption: u.from === 'applicant' ? 'Provided by applicant' : 'Uploaded',
+        title: u.name,
+        sub: (
+          <>
+            {u.from === 'applicant'
+              ? `Provided${u.at ? ` ${formatDate(u.at)}` : ''} by ${u.email ?? 'the applicant'}`
+              : `Uploaded${u.at ? ` ${formatDate(u.at)}` : ''} by ${CURRENT_USER}`}
+          </>
+        ),
+        chips: (
+          <span className="flex items-center gap-1">
+            <ActionButton onClick={() => setViewing(doc)} size="compact" type="button" variant="quiet">
+              View
+            </ActionButton>
+            <ActionLink download={u.name} href={docFile(record.id, u.id, 'pdf')} size="compact" variant="quiet">
+              Download
+            </ActionLink>
+          </span>
+        ),
+        cleared: false,
+        detail: <DocumentPreview businessId={record.id} doc={doc} onView={() => setViewing(doc)} />
+      }
+    })
+  ]
+  if (rows.length === 0) return null
+  return (
+    <Surface id={cardAnchor('documents')} variant="card" padding="none" className="scroll-mt-6 overflow-hidden" role="region" aria-label={`Documents, ${rows.length}`}>
+      <CardHeader
+        className="border-b-0"
+        title={
+          <>
+            Documents <span className="tabular-nums text-text-secondary">{rows.length}</span>
+          </>
+        }
+      />
+      <ResultTable columns={['Document', '']} rows={rows} />
+      <DocumentViewer businessId={record.id} doc={viewing} onClose={() => setViewing(null)} titleOf={typeOf} />
+    </Surface>
+  )
+}
+
 /**
  * The report, by card.
  *
@@ -815,6 +1164,7 @@ export const GroupedReport = ({
   expand,
   onJumpToSource,
   onJumpToTimeline,
+  documents,
   hideInsights = false
 }: {
   record: BusinessRecord
@@ -835,11 +1185,16 @@ export const GroupedReport = ({
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
   /** Narrowed to an area: its insights are listed under the area, not in the cards. */
   hideInsights?: boolean
+  /** Documents a next step retrieved (by id), and the analyst's uploads. */
+  documents?: { retrieved: ReadonlySet<string>; withheld?: boolean; uploads: Array<{ id: string; name: string; from?: 'analyst' | 'applicant'; at?: string; email?: string }> }
 }) => {
   // The Addresses card's display — table, grid or map — chosen in its header.
   const [addressView, setAddressView] = useState<AddressView>('table')
   const [peopleView, setPeopleView] = useState<PeopleViewMode>('list')
-  const [filingsView, setFilingsView] = useState<FilingsLayout>('list')
+  // The map over the list: one view. The header filters it and switches the map.
+  const filingsView: FilingsLayout = 'list'
+  const [regFilter, setRegFilter] = useState<RegistrationFilter>('all')
+  const [regMap, setRegMap] = useState(true)
   const [namesView, setNamesView] = useState<NamesView>('table')
   const [webView, setWebView] = useState<WebView>('table')
   // The Names card's former names, folded away until asked for.
@@ -990,13 +1345,13 @@ export const GroupedReport = ({
               cell.values.map((v, i) => ({
                 key: `${cell.key ?? c}-${v.key ?? i}`,
                 label: [cell.label, v.qualifier].filter(Boolean).join(' · '),
-                labelNode: <NameLabel cell={cell} qualifier={v.qualifier} />,
+                labelNode: <NameHead cell={cell} qualifier={v.qualifier} />,
                 values: [
                   {
                     value: (
                       <span className="grid gap-1">
                         <NameValue cell={cell} value={v.value} />
-                        <NameSource cell={cell} />
+                        {cell.submitted && !cell.verified && <NameSource cell={cell} />}
                       </span>
                     ),
                     note: v.note ?? cell.note
@@ -1038,6 +1393,9 @@ export const GroupedReport = ({
               legalName={parts.strip.legalName}
               // In the table and the grid, the city registrations are entries of it.
               city={cityInTable ? parts.city : undefined}
+              kindFilter={regFilter}
+              onKindFilter={setRegFilter}
+              showMap={regMap}
             />
           )}
           {/* The filings other than the state's, under them: city registrations
@@ -1233,6 +1591,9 @@ export const GroupedReport = ({
   const shown = only ? ordered.filter(({ card }) => only.has(card.id)) : ordered
 
   const narrowed = Boolean(only && focus)
+  const docsCard = (
+    <DocumentsCard record={record} retrieved={documents?.retrieved ?? new Set()} uploads={documents?.uploads ?? []} withheld={documents?.withheld} />
+  )
 
   return (
     <>
@@ -1304,6 +1665,10 @@ export const GroupedReport = ({
         </Collapsible>
       </div>
       <div className="flex flex-col gap-4">
+        {/* The business at a glance, over the cards — as the dashboard's
+            Business details card heads its page. Only on the whole report and
+            on an assessment that reads the business's identity. */}
+        {(!only || only.has('name') || only.has('formation')) && <BusinessDetailsCard onJumpToSource={onJumpToSource} record={record} results={results} />}
         {shown.map(({ card, rows }) => {
           /* The card a chip landed on opens: each strip on its first tile,
            keyed so it opens afresh each time it is led to. Narrowed to an
@@ -1311,6 +1676,7 @@ export const GroupedReport = ({
            tile, and picks which to open. */
           const open = expand?.card === card.id
           return (
+            <Fragment key={card.id}>
             <StripExpand.Provider
               key={`${card.id}:${open ? `open-${focus?.id ?? ''}-${expand?.n ?? ''}` : ''}`}
               value={open}
@@ -1328,7 +1694,13 @@ export const GroupedReport = ({
                   namesShown.reduce((n, cell) => n + cell.values.length, 0) > 1 ? (
                     <NamesViewToggle value={namesView} onChange={setNamesView} />
                   ) : card.id === 'formation' && parts.strip ? (
-                    <FilingsViewToggle value={filingsView} onChange={setFilingsView} />
+                    <RegistrationControls
+                      counts={registrationCounts(parts.strip.record, parts.strip.lead, parts.city)}
+                      value={regFilter}
+                      onChange={setRegFilter}
+                      showMap={regMap}
+                      onShowMap={setRegMap}
+                    />
                   ) : card.id === 'address' && visual.address ? (
                     <AddressViewToggle value={addressView} onChange={setAddressView} />
                   ) : card.id === 'website' && visual.website ? (
@@ -1344,8 +1716,13 @@ export const GroupedReport = ({
                 hideInsights={hideInsights}
               />
             </StripExpand.Provider>
+            {/* Documents a next step retrieved or the analyst added, under the filings they settle. */}
+            {card.id === 'formation' && docsCard}
+            </Fragment>
           )
         })}
+        {/* No Registrations card in this assessment: shown only once a step brought documents. */}
+        {!shown.some(({ card }) => card.id === 'formation') && (documents?.retrieved.size || documents?.uploads.length) ? docsCard : null}
       </div>
     </>
   )

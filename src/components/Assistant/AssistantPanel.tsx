@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { ArrowLeft, Ellipsis, FileText, History, MessageSquare, Plus, X } from 'lucide-react'
 
 import {
@@ -93,6 +93,7 @@ export const AssistantPanel = ({
   briefGenerated = false,
   recommendRequest,
   onJumpToCard,
+  assessmentTurn,
   className
 }: {
   record: BusinessRecord
@@ -128,6 +129,9 @@ export const AssistantPanel = ({
   summaryRequest?: number
   /** This business's full assessment has been written this session: the thread shows it. */
   briefGenerated?: boolean
+  /** The open assessment's read and next steps (`NextStepsTurn`). Given, the
+   *  thread leads with it in place of the report's brief. */
+  assessmentTurn?: ReactNode
   /** Counts an area's asks for next steps: the Assistant reads the area, then
    *  recommends the step and opens the decision on it. */
   recommendRequest?: { area: string; index: number; request: number }
@@ -220,6 +224,7 @@ export const AssistantPanel = ({
     return () => window.clearTimeout(t)
   }, [recommendRequest?.request])
   const lead = fresh || !briefGenerated ? undefined : brief
+  const turnShown = Boolean(assessmentTurn) && !fresh && briefGenerated
   const suggestions = useMemo(
     () =>
       // Under the assessment, only what an answer offered itself; the
@@ -228,7 +233,7 @@ export const AssistantPanel = ({
     [last, asked, lead]
   )
   // A conversation the assessment leads has already started: the report opened it.
-  const empty = turns.length === 0 && !waiting && !analysis.error && !lead && !askedStep
+  const empty = turns.length === 0 && !waiting && !analysis.error && !lead && !askedStep && !turnShown
 
   const report = analysis.selected
     ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
@@ -585,7 +590,11 @@ export const AssistantPanel = ({
                 </ChatMarker>
               )}
 
-              {lead && analysis.selected && (
+              {turnShown ? (
+                <div ref={briefRef} className="scroll-mt-4">
+                  {assessmentTurn}
+                </div>
+              ) : lead && analysis.selected && (
                 <div ref={briefRef} className="scroll-mt-4">
                 <BriefTurn
                   brief={lead}

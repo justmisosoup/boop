@@ -1,0 +1,28 @@
+{
+  "assessmentId": "a-mv1fpu8e-0",
+  "section": {
+    "id": "a-mv1fpu8e-0",
+    "body": [
+      {
+        "text": "Converted from California; Delaware publishes no status for its domestic filing. Match identified to the submitted Business Name. Match identified to the submitted Office Address. Match identified to the submitted person. Entity type is a limited liability company (LLC).",
+        "cites": [
+          "sos_domestic",
+          "name",
+          "address_verification",
+          "person_verification",
+          "entity_type"
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "business-verification",
+      "why": "Demo reads business name, domestic registration standing, entity type, office address, people verification. Business Verification adds the checks it doesn't: secretary of state status, registered in submitted state, mail deliverability, property type, watchlist screening and 2 more."
+    },
+    {
+      "id": "full-kyb",
+      "why": "Covers the rest of what Middesk holds on this business — 14 more insights, including politically exposed persons, adverse media, liens."
+    }
+  ]
+}
