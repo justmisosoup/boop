@@ -1,0 +1,73 @@
+{
+  "id": "17915863408206n8x",
+  "requestedAt": "2026-10-09T22:52:20.820Z",
+  "businessId": "53ea6dad-3a0f-4e1f-a529-f18e629073e9",
+  "business": {
+    "name": "SORENSON COMMUNICATIONS, LLC"
+  },
+  "assessment": {
+    "id": "a-mv1k8pk1-0",
+    "name": "Amir Demo",
+    "instructions": "Summarise what the Amir Demo assessment found for SORENSON COMMUNICATIONS, LLC, from these insights only: Business name, Secretary of State status, Domestic registration standing, People verification, Watchlist screening.",
+    "insightIds": [
+      "sos_domestic",
+      "watchlist",
+      "sos_inactive",
+      "sos_domestic_sub_status",
+      "name",
+      "person_verification",
+      "sos_active"
+    ]
+  },
+  "insights": [
+    {
+      "id": "sos_domestic",
+      "statement": "Inactive domestic filing found",
+      "state": "result"
+    },
+    {
+      "id": "watchlist",
+      "statement": "2 Watchlists hit(s) have been identified",
+      "state": "result"
+    },
+    {
+      "id": "sos_inactive",
+      "statement": "27 of 28 filings are Inactive",
+      "state": "result"
+    },
+    {
+      "id": "sos_domestic_sub_status",
+      "statement": "The domestic sub-status is Not Provided by State.",
+      "state": "no_result",
+      "reason": "not_published"
+    },
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result"
+    },
+    {
+      "id": "person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result"
+    },
+    {
+      "id": "sos_active",
+      "statement": "1 of 28 filings are Active",
+      "state": "result"
+    }
+  ],
+  "steps": [
+    {
+      "id": "business-verification",
+      "label": "Run Business Verification",
+      "why": "Amir Demo reads business name, secretary of state status, domestic registration standing, people verification, watchlist screening. Business Verification adds the checks it doesn't: registered in submitted state, entity type, office address, mail deliverability, property type and 2 more."
+    },
+    {
+      "id": "documents",
+      "label": "Retrieve Articles of Incorporation and Certificate of Good Standing from Utah",
+      "why": "The Utah domestic filing is inactive (expired) and it records a corporation, while the customer submitted an LLC. The Articles of Incorporation and a Certificate of Good Standing would settle which entity this is and whether it is in good standing. Utah publishes both, so the document agent can fetch them."
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

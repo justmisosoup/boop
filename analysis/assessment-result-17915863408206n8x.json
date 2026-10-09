@@ -1,0 +1,29 @@
+{
+  "assessmentId": "a-mv1k8pk1-0",
+  "section": {
+    "id": "a-mv1k8pk1-0",
+    "body": [
+      {
+        "text": "Inactive domestic filing found. 2 Watchlists hit(s) have been identified. 27 of 28 filings are Inactive. Match identified to the submitted Business Name. Match identified to the submitted person. 1 of 28 filings are Active.",
+        "cites": [
+          "sos_domestic",
+          "watchlist",
+          "sos_inactive",
+          "name",
+          "person_verification",
+          "sos_active"
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "business-verification",
+      "why": "Amir Demo reads business name, secretary of state status, domestic registration standing, people verification, watchlist screening. Business Verification adds the checks it doesn't: registered in submitted state, entity type, office address, mail deliverability, property type and 2 more."
+    },
+    {
+      "id": "documents",
+      "why": "The Utah domestic filing is inactive (expired) and it records a corporation, while the customer submitted an LLC. The Articles of Incorporation and a Certificate of Good Standing would settle which entity this is and whether it is in good standing. Utah publishes both, so the document agent can fetch them."
+    }
+  ]
+}
