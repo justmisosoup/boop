@@ -9,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, ListFilter, Table2, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, ListFilter, Table2, Waypoints, X } from 'lucide-react'
 
 import {
   ActionButton,
@@ -76,15 +76,16 @@ import {
 } from './OperationsCard'
 import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
-import { ResultGrid, ResultTable, type ResultRow } from './ResultTable'
+import { ConnectionsGraph } from './explorer/ConnectionsGraph'
+import { ResultGrid, ResultTable, StatusControl, type ResultRow, type StatusFilter } from './ResultTable'
 import { SubmittedChip } from '../Provenance'
 import { CHIP_NO_GLYPH } from '../chipStyles'
-import { BankruptcyTable, LienTable, LitigationTable } from './ClaimTables'
+import { BankruptcyTable, LienTable, LitigationTable, claimCounts } from './ClaimTables'
 import { WebsiteDetails } from './WebsiteDetails'
 import { useScreenshotViewer } from '../ScreenshotViewer'
 import { confidentRelatedOf } from '../../lib/relatedBusinesses'
 import { StripExpand } from './Strip'
-import { MediaScreen, PepScreen, WatchlistScreen } from './ScreeningCard'
+import { MediaScreen, PepScreen, WatchlistScreen, screenCounts } from './ScreeningCard'
 
 /** The order packages a public-record search ran under, by card. */
 const SEARCHES: Record<
@@ -675,6 +676,16 @@ const rowClass = (on: boolean) =>
 const hostOf = (href?: string | null) =>
   (href ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 
+/** The results cards with a header filter, and their words for standing and cleared. */
+const STATUS_CARDS: Record<string, { standing: string; cleared: string }> = {
+  liens: { standing: 'Open', cleared: 'Closed' },
+  litigation: { standing: 'Open', cleared: 'Closed' },
+  bankruptcy: { standing: 'Open', cleared: 'Closed' },
+  'screening-watchlist': { standing: 'Hits', cleared: 'Dismissed' },
+  'screening-pep': { standing: 'Hits', cleared: 'Dismissed' },
+  'screening-media': { standing: 'Hits', cleared: 'Dismissed' }
+}
+
 type WebView = 'table' | 'grid'
 
 /** The Web presence card's display switch: the site and profiles as a table or a grid. */
@@ -823,10 +834,11 @@ const WebsiteSummary = ({
   const noneTitle = 'No results for a website or third-party profiles'
   return view === 'grid' ? (
     <div className="border-t border-[var(--core-color-border-divider)]">
-      <ResultGrid rows={rows} noneTitle={noneTitle} />
+      {/* The first few; the rest under "Show N more". */}
+      <ResultGrid rows={rows} noneTitle={noneTitle} top={2} />
     </div>
   ) : (
-    <ResultTable columns={['Platform', 'Status']} rows={rows} noneTitle={noneTitle} />
+    <ResultTable columns={['Platform', 'Status']} rows={rows} noneTitle={noneTitle} top={2} />
   )
 }
 
@@ -1072,18 +1084,8 @@ const DocumentsCard = ({
             {retrieved.has(d.id) && <span>· Retrieved by the document agent</span>}
           </>
         ),
-        // Where a status chip sits on the other tables: what to do with it.
-        chips: (
-          <span className="flex items-center gap-1">
-            <ActionButton onClick={() => setViewing(d)} size="compact" type="button" variant="quiet">
-              View
-            </ActionButton>
-            <ActionLink download={d.filename ?? undefined} href={docFile(record.id, d.id, 'pdf')} size="compact" variant="quiet">
-              Download
-            </ActionLink>
-          </span>
-        ),
         cleared: false,
+        // View and Download are in the expansion, over the first page.
         detail: <DocumentPreview businessId={record.id} doc={d} onView={() => setViewing(d)} />
       }
     }),
@@ -1108,16 +1110,6 @@ const DocumentsCard = ({
               ? `Provided${u.at ? ` ${formatDate(u.at)}` : ''} by ${u.email ?? 'the applicant'}`
               : `Uploaded${u.at ? ` ${formatDate(u.at)}` : ''} by ${CURRENT_USER}`}
           </>
-        ),
-        chips: (
-          <span className="flex items-center gap-1">
-            <ActionButton onClick={() => setViewing(doc)} size="compact" type="button" variant="quiet">
-              View
-            </ActionButton>
-            <ActionLink download={u.name} href={docFile(record.id, u.id, 'pdf')} size="compact" variant="quiet">
-              Download
-            </ActionLink>
-          </span>
         ),
         cleared: false,
         detail: <DocumentPreview businessId={record.id} doc={doc} onView={() => setViewing(doc)} />
@@ -1194,9 +1186,26 @@ export const GroupedReport = ({
   // The map over the list: one view. The header filters it and switches the map.
   const filingsView: FilingsLayout = 'list'
   const [regFilter, setRegFilter] = useState<RegistrationFilter>('all')
-  const [regMap, setRegMap] = useState(true)
+  // The list alone by default; the map is one click away in the header.
+  const [regMap, setRegMap] = useState(false)
   const [namesView, setNamesView] = useState<NamesView>('table')
-  const [webView, setWebView] = useState<WebView>('table')
+  const statusCountsOf = (card: string) =>
+    card === 'liens' || card === 'litigation' || card === 'bankruptcy'
+      ? claimCounts(record, card, searchedNames(record, card))
+      : screenCounts(record, card.replace('screening-', '') as 'watchlist' | 'pep' | 'media')
+  // Related businesses: the list alone by default; the graph over it when switched on.
+  const [relGraph, setRelGraph] = useState(false)
+  // A related business picked, in the list or on the graph: the graph narrows to it.
+  const [relPick, setRelPick] = useState<string | null>(null)
+  const pickRelated = (id: string | null) => {
+    setRelPick(id)
+    if (id) setRelGraph(true)
+  }
+  // The results cards' header filters — All, Open, Closed; All, Hits, Dismissed — by card.
+  const [statusBy, setStatusBy] = useState<Record<string, StatusFilter>>({})
+  const statusOf = (card: string) => statusBy[card] ?? 'all'
+  // Web presence is a table only: no grid, no switch.
+  const webView: WebView = 'table'
   // The Names card's former names, folded away until asked for.
   const [showFormer, setShowFormer] = useState(false)
   const parts = useMemo(
@@ -1318,8 +1327,8 @@ export const GroupedReport = ({
   const tally: Partial<Record<string, number>> = {
     people: people.length,
     address: ops.locations.length,
-    // The confident ones only: "No confident matches found" counts none.
-    connections: confidentRelatedOf(record).length,
+    // Every related business the list holds, likely and possibly alike.
+    connections: (record.connections ?? []).length,
     licenses: ops.stateLicences.length + (ops.licence.required ? ops.licence.found.length : 0),
     'screening-watchlist': returned(screens.watchlist.hits),
     'screening-pep': returned(screens.pep.hits),
@@ -1431,7 +1440,23 @@ export const GroupedReport = ({
       />
     ) : undefined,
     connections:
-      (record.connections ?? []).length > 0 ? <RelatedBusinesses record={record} /> : undefined,
+      (record.connections ?? []).length > 0 ? (
+        <>
+          {/* The relationship graph over the list, in the card, as the
+              Registrations map sits over its table. */}
+          {relGraph && (
+            <div className="border-t border-[var(--core-color-border-divider)] px-4 py-3">
+              <ConnectionsGraph
+                record={record}
+                only={relPick}
+                onShowAll={() => setRelPick(null)}
+                onSelectBusiness={(c) => c.id && pickRelated(c.id)}
+              />
+            </div>
+          )}
+          <RelatedBusinesses record={record} selected={relPick} onSelect={pickRelated} />
+        </>
+      ) : undefined,
     // No website on the record is itself the fact the card states. With a
     website: (
       <WebsiteSummary
@@ -1458,19 +1483,20 @@ export const GroupedReport = ({
     // Each screen its own card, as the financial records are: a search that
     // came back clear is still that search, run.
     'screening-watchlist': screens.watchlist.ran ? (
-      <WatchlistScreen record={record} onJumpToSource={onJumpToSource} />
+      <WatchlistScreen record={record} onJumpToSource={onJumpToSource} status={statusOf('screening-watchlist')} />
     ) : undefined,
     'screening-pep': screens.pep.ran ? (
-      <PepScreen record={record} onJumpToSource={onJumpToSource} />
+      <PepScreen record={record} onJumpToSource={onJumpToSource} status={statusOf('screening-pep')} />
     ) : undefined,
     'screening-media': screens.media.ran ? (
-      <MediaScreen record={record} onJumpToSource={onJumpToSource} />
+      <MediaScreen record={record} onJumpToSource={onJumpToSource} status={statusOf('screening-media')} />
     ) : undefined,
     // As the Addresses card reads its places: a row per record, the closed
     // folding under "None found" where nothing is open — and none on file is
     // itself "None found", with what was searched under it.
     liens: (
       <LienTable
+        status={statusOf('liens')}
         record={record}
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'liens')}
@@ -1480,6 +1506,7 @@ export const GroupedReport = ({
     ),
     litigation: (
       <LitigationTable
+        status={statusOf('litigation')}
         record={record}
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'litigation')}
@@ -1489,6 +1516,7 @@ export const GroupedReport = ({
     ),
     bankruptcy: (
       <BankruptcyTable
+        status={statusOf('bankruptcy')}
         record={record}
         onJumpToSource={onJumpToSource}
         none={searchedLine(record, 'bankruptcy')}
@@ -1703,8 +1731,35 @@ export const GroupedReport = ({
                     />
                   ) : card.id === 'address' && visual.address ? (
                     <AddressViewToggle value={addressView} onChange={setAddressView} />
-                  ) : card.id === 'website' && visual.website ? (
-                    <WebViewToggle value={webView} onChange={setWebView} />
+                  ) : STATUS_CARDS[card.id] && statusCountsOf(card.id).all > 0 ? (
+                    // With results, which: All, then Open and Closed, or Hits and Dismissed.
+                    <StatusControl
+                      counts={statusCountsOf(card.id)}
+                      labels={STATUS_CARDS[card.id]}
+                      value={statusOf(card.id)}
+                      onChange={(v) => setStatusBy((by) => ({ ...by, [card.id]: v }))}
+                    />
+                  ) : card.id === 'connections' && (record.connections ?? []).length > 0 ? (
+                    // The view, list first: the list alone, or the graph over it.
+                    <SegmentedControl
+                      size="sm"
+                      aria-label="Related businesses display"
+                      value={relGraph ? 'graph' : 'list'}
+                      onValueChange={(v) => v && setRelGraph(v === 'graph')}
+                    >
+                      <SegmentedControlItem
+                        value="list"
+                        aria-label="List only"
+                        className="!px-2"
+                        icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+                      />
+                      <SegmentedControlItem
+                        value="graph"
+                        aria-label="Graph and list"
+                        className="!px-2"
+                        icon={<Waypoints aria-hidden="true" size={14} strokeWidth={1.75} />}
+                      />
+                    </SegmentedControl>
                   ) : card.id === 'people' && visual.people ? (
                     <PeopleViewToggle value={peopleView} onChange={setPeopleView} />
                   ) : undefined

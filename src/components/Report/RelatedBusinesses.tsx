@@ -328,14 +328,24 @@ const rollUp = (counts: Array<[number, string, string, string]>) => {
  * with this one as chips, People and Addresses with their counts. A chip opens,
  * under the row, the people or addresses shared and the roles each plays.
  *
- * Likely related: it shares people, at a 95% match or better. The rest fold
- * away under them — "Show N possible companies" — the ones that
- * share only addresses last, as they are probably neighbours, a building's
- * other tenants. With none likely related, all of them show.
+ * One list, the strongest first — sharing people and addresses, then people,
+ * then addresses only (probably neighbours, a building's other tenants) — its
+ * match over each name. The first two show; the rest under "Show N more".
  */
-export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
+export const RelatedBusinesses = ({
+  record,
+  selected,
+  onSelect
+}: {
+  record: BusinessRecord
+  /** The business picked: the graph over the list narrows to it. */
+  selected?: string | null
+  /** The whole row picks its business; picked again, it lets go. */
+  onSelect?: (connectionId: string | null) => void
+}) => {
   const [open, setOpen] = useState<{ i: number; kind: Shared } | null>(null)
-  const [showNeighbours, setShowNeighbours] = useState(false)
+  // The first two; the rest under "Show N more".
+  const [showAll, setShowAll] = useState(false)
   // This business's addresses, by street and ZIP: a shared address's characteristics.
   // The people the customer submitted, as the People card holds them.
   const submittedPeople = useMemo(
@@ -377,38 +387,30 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
     const addresses = (c.addresses ?? []).length > 0
     return parties && addresses ? 0 : parties ? 1 : 2
   }
+  // Likely related first — sharing people at a 95% match or better — then the rest.
+  const likely = (c: Connection) => (sharesParties(c) && (c.confidence ?? 0) >= LIKELY ? 0 : 1)
   const rows = connections
-    .map((c, i) => ({
-      c,
-      i,
-      related: sharesParties(c) && (c.confidence ?? 0) >= LIKELY
-    }))
+    .map((c, i) => ({ c, i }))
     .sort(
       (a, b) =>
+        likely(a.c) - likely(b.c) ||
         rank(a.c) - rank(b.c) ||
         sharedCount(b.c) - sharedCount(a.c) ||
         (b.c.confidence ?? 0) - (a.c.confidence ?? 0)
     )
-  const neighbours = rows.filter((r) => !r.related).length
-  const shown = [
-    ...rows.filter((r) => r.related),
-    ...(showNeighbours ? rows.filter((r) => !r.related) : [])
-  ]
+  // One list, strongest first — no split between likely and possible.
+  const TOP = 2
+  const shown = showAll ? rows : rows.slice(0, TOP)
   const toggle = (i: number, kind: Shared) =>
     setOpen((cur) => (cur?.i === i && cur.kind === kind ? null : { i, kind }))
 
   return (
     <RadixTooltip.Provider>
     <div className="border-t border-[var(--core-color-border-divider)]">
-      {/* Nothing at 95% or above: said so, the weaker ones a click away. */}
-      {neighbours === rows.length && (
-        <div className="px-4 py-3 text-sm text-text-primary">No confident matches found</div>
-      )}
       {shown.length > 0 && (
         <div
           className={cn(
             'hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid',
-            neighbours === rows.length && 'border-t',
             COLUMNS
           )}
         >
@@ -416,7 +418,7 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
           <ColumnLabel>Shared</ColumnLabel>
         </div>
       )}
-      {shown.map(({ c, i, related: isRelated }) => {
+      {shown.map(({ c, i }) => {
         const people = sharedPeople(c).length
         const entities = sharedEntities(c).length
         const addresses = (c.addresses ?? []).length
@@ -435,17 +437,33 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
         const confidence = typeof c.confidence === 'number' ? `${Math.round(c.confidence * 100)}% match` : null
         return (
           <Fragment key={c.id ?? i}>
-            <div className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-3', COLUMNS, RULE)}>
+            <div
+              // The whole row picks the business — the chips keep their own click.
+              onClick={(e) => {
+                if (!onSelect || (e.target as HTMLElement).closest('button, a')) return
+                onSelect(selected === c.id ? null : (c.id ?? null))
+              }}
+              aria-selected={onSelect ? selected === c.id : undefined}
+              className={cn(
+                'grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-3',
+                COLUMNS,
+                RULE,
+                onSelect && 'cursor-pointer transition-colors hover:bg-[var(--core-color-state-hover-bg)]',
+                selected === c.id && 'bg-[var(--core-color-surface-subtle)]'
+              )}
+            >
               <div className="min-w-0">
+                {/* Over the name, how it reads — Likely or Possibly related — and its match.
+                    One list all the same: the label says it, not a fold. */}
                 <span className="block text-caption text-text-secondary">
                   {[
-                    isRelated
+                    sharesParties(c) && (c.confidence ?? 0) >= LIKELY
                       ? 'Likely related'
                       : sharesParties(c)
                         ? 'Possibly related'
                         : (c.addresses ?? []).length === 1
-                        ? 'Shared address only'
-                        : 'Shared addresses only',
+                          ? 'Shared address only'
+                          : 'Shared addresses only',
                     confidence
                   ]
                     .filter(Boolean)
@@ -496,12 +514,10 @@ export const RelatedBusinesses = ({ record }: { record: BusinessRecord }) => {
           </Fragment>
         )
       })}
-      {neighbours > 0 && (
+      {rows.length > TOP && (
         <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
-          <ActionButton variant="quiet" size="compact" onClick={() => setShowNeighbours(!showNeighbours)}>
-            {showNeighbours
-              ? `Hide possible ${neighbours === 1 ? 'business' : 'businesses'}`
-              : `Show ${neighbours} possible ${neighbours === 1 ? 'business' : 'businesses'}`}
+          <ActionButton variant="quiet" size="compact" onClick={() => setShowAll(!showAll)}>
+            {showAll ? 'Show less' : `Show ${rows.length - TOP} more`}
           </ActionButton>
         </div>
       )}

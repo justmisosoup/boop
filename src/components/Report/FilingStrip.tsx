@@ -1611,17 +1611,18 @@ export const RegistrationControls = ({
       value={showMap ? 'map' : 'list'}
       onValueChange={(v) => v && onShowMap(v === 'map')}
     >
-      <SegmentedControlItem
-        value="map"
-        aria-label="Map and list"
-        className="!px-2"
-        icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
-      />
+      {/* The table first: it is what the card opens on. */}
       <SegmentedControlItem
         value="list"
         aria-label="List only"
         className="!px-2"
         icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+      />
+      <SegmentedControlItem
+        value="map"
+        aria-label="Map and list"
+        className="!px-2"
+        icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
       />
     </SegmentedControl>
   </span>

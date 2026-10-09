@@ -4,9 +4,9 @@ import { ArrowUpRight, Building2, Circle, CircleMinus, CirclePlus, TriangleAlert
 import { ChatSourceChip, MetaChip, type ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../../lib/deriveResults'
-import { filingsListing, provenanceList } from '../../lib/attributes'
+import { canonicalRole, filingsListing, provenanceList } from '../../lib/attributes'
 import { dismissalOf, screenedOf, screeningOf, type MediaHit, type PepHit, type Screen, type ScreenedName, type WatchlistHit } from '../../lib/screening'
-import { ResultTable, type ResultRow } from './ResultTable'
+import { ResultTable, statusCounts, type ResultRow, type StatusFilter } from './ResultTable'
 import { Explained } from './AddressTable'
 import { AttributeSources } from '../Provenance'
 import { cn } from '../../utils/twUtils'
@@ -302,10 +302,41 @@ const NONE_TITLE: Record<Screen, string> = {
   media: 'No results for adverse media'
 }
 
-type ScreenProps = { record: BusinessRecord; onJumpToSource?: (cardId: string) => void }
+type ScreenProps = {
+  record: BusinessRecord
+  onJumpToSource?: (cardId: string) => void
+  /** The card header's filter: All, Hits, Dismissed. */
+  status?: StatusFilter
+}
+
+/** A screen's results, counted for its card's header: all, hits, dismissed. */
+export const screenCounts = (record: BusinessRecord, screen: Screen) => {
+  const s = screenedOf(record)
+  const hits = s[screen].hits as Array<ScreenedName & { hit: never }>
+  // The names that came back clean, as the table lists them (`ScreenStrip`).
+  const clear =
+    screen === 'pep'
+      ? s.pep.names.filter((n) => !hits.some((h) => nameKey(h.name) === nameKey(n))).length
+      : screeningOf(record).clean.filter((c) => c.screens.includes(screen)).length
+  return statusCounts(
+    hits.map((h) => ({ cleared: Boolean(dismissalOf(screen, h)) })),
+    clear
+  )
+}
 
 /** A name as the screens compare it. */
 const nameKey = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** Who a screened name is to the business: the titles the filings give it —
+ *  "Manager", "Chief Executive Officer", "Registered agent" — or, a name of
+ *  the business's own, Business. */
+export const roleOf = (who: Pick<ScreenedName, 'name' | 'kind'>, record: BusinessRecord) => {
+  const person = record.people.find((p) => nameKey(p.name) === nameKey(who.name))
+  const roles = [...new Set((person?.titles ?? []).map(canonicalRole).filter(Boolean))]
+  if (roles.length) return roles.join(', ')
+  if (who.kind === 'business' || record.names.some((n) => nameKey(n.name) === nameKey(who.name))) return 'Business'
+  return 'Person'
+}
 
 /**
  * One screen as a table, as the Addresses card draws its places: a row per
@@ -322,8 +353,10 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   record,
   onJumpToSource,
   describe,
-  block
+  block,
+  status
 }: {
+  status?: StatusFilter
   screen: Screen
   hits: H[]
   record: BusinessRecord
@@ -349,11 +382,14 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
   const rows: ResultRow[] = hits.map((h, i) => {
     const reason = reasonOf(h)
     const { caption, score } = describe(h)
+    // Adverse media: who they are to the business over the name, and the
+    // articles under it — where the name is on the record is no part of it.
+    const media = screen === 'media'
     return {
       key: `${h.hit.id}-${i}`,
-      caption,
+      caption: media ? roleOf(h, record) : caption,
       title: h.name,
-      sub: <Seen who={h} record={record} onJumpToSource={onJumpToSource} />,
+      sub: media ? caption : <Seen who={h} record={record} onJumpToSource={onJumpToSource} />,
       chips: (
         <>
           {reason ? (
@@ -385,6 +421,8 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
     <ResultTable
       columns={['Results', 'Status']}
       rows={rows}
+      status={status}
+      top={2}
       // Every name screened — the clean and the matched alike — and what became
       // of the matches: "Screened 24 names · 2 matches dismissed".
       none={(() => {
@@ -400,18 +438,20 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
           .join(' · ')
       })()}
       clean={clean.map((c) => c.name)}
+      cleanCaption={(name) => roleOf({ name, kind: clean.find((c) => c.name === name)?.kind ?? 'person' }, record)}
       noneTitle={NONE_TITLE[screen]}
     />
   )
 }
 
 /** Sanctions and watchlists: the names screened, the lists, every hit. */
-export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
+export const WatchlistScreen = ({ record, onJumpToSource, status }: ScreenProps) => {
   const s = useMemo(() => screenedOf(record), [record])
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.watchlist.ran) return null
   return (
     <ScreenStrip
+      status={status}
       screen="watchlist"
       record={record}
       hits={s.watchlist.hits}
@@ -426,12 +466,13 @@ export const WatchlistScreen = ({ record, onJumpToSource }: ScreenProps) => {
 }
 
 /** Politically exposed persons: the people screened, every hit. */
-export const PepScreen = ({ record, onJumpToSource }: ScreenProps) => {
+export const PepScreen = ({ record, onJumpToSource, status }: ScreenProps) => {
   const s = useMemo(() => screenedOf(record), [record])
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.pep.ran) return null
   return (
     <ScreenStrip
+      status={status}
       screen="pep"
       record={record}
       hits={s.pep.hits}
@@ -451,12 +492,13 @@ export const PepScreen = ({ record, onJumpToSource }: ScreenProps) => {
 }
 
 /** Adverse media: the names screened, every article matched. */
-export const MediaScreen = ({ record, onJumpToSource }: ScreenProps) => {
+export const MediaScreen = ({ record, onJumpToSource, status }: ScreenProps) => {
   const s = useMemo(() => screenedOf(record), [record])
   const ctx: BlockContext = { record, onJumpToSource }
   if (!s.media.ran) return null
   return (
     <ScreenStrip
+      status={status}
       screen="media"
       record={record}
       hits={s.media.hits}

@@ -1,0 +1,882 @@
+/*
+ * The Explorer graph canvas surface and its scoped tokens.
+ *
+ * Ported from app/src/containers/Explorer/graph/styles.css. The rules are the
+ * app's; the VALUES are re-expressed in the prototype's semantic `--core-*`
+ * tokens (CLAUDE.md rule 3 — the app's sheet declares its own raw-hex Middesk
+ * palette on `.graph-scope`; here every legacy name resolves to a token):
+ *
+ *   silas → brand-primary · graphite → text-primary · karl → text-secondary ·
+ *   karl-l1 → text-muted · karl-l2 → border-strong · frost → border-default ·
+ *   white → surface-default · paper → surface-subtle
+ *   (the card this canvas sits in) · ad-hoc rgba shadows → elevation tokens ·
+ *   the categorical ramp → the avatar identity hues it already tracked.
+ *
+ * Type takes the `--core-font-size-*` steps where the app's px match one (10 →
+ * xs, 13 → dense); its 11px and 15px take the next step up (sm 12, lg 16 —
+ * plate.ts and surfacing.ts retune their char advances to match). Line heights
+ * stay px: the label solver reserves exactly these.
+ *
+ * Not ported: the selection ring + badge (no multi-select here), the calm-lint
+ * meter, lasso mode and the stage view-transition — their features are not
+ * ported. Because the tokens flip in dark, the app's separate dark ramp for
+ * `.g-inks` is not needed.
+ *
+ * THE CLASS CONTRACT — `GraphCanvas` writes these, this sheet reads them:
+ *   · `.g-em-{hidden,faded,ghost,world,lit,focus}`  emphasis tier (the fog→focus scale)
+ *   · `.g-znode-{lit,focus}`                        z-tier, written on the RF wrapper
+ *   · `.g-hovs` / `.g-nbr` / `.g-metaq` / `.g-busy` hover-held, neighbor, name-only, camera-gate
+ * Renaming any of them without changing both sides silently drops the styling.
+ */
+
+.graph-scope {
+  /* the app's palette names, resolved to tokens (see the header) */
+  --silas: var(--core-color-brand-primary);
+  --graphite: var(--core-color-text-primary);
+  --karl: var(--core-color-text-secondary);
+  --karl-l1: var(--core-color-text-muted);
+  --karl-l2: var(--core-color-border-strong);
+  --frost: var(--core-color-border-default);
+  --white: var(--core-color-surface-default);
+
+  /* intent — reserved severity/status, straight from @/core status tokens */
+  --g-intent-danger: var(--core-color-status-danger-fg);
+  --g-intent-warning: var(--core-color-status-warning-fg);
+  --g-intent-clear: var(--core-color-status-success-fg);
+  --g-intent-info: var(--core-color-status-info-fg);
+
+  --font-ui: var(--core-font-family-default);
+  --font-display: var(--core-font-family-display);
+  --track-name: -0.01em;
+  color: var(--graphite);
+
+  display: flex;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* timetable discipline: tabular figures so counters/dates never jitter */
+  font-variant-numeric: tabular-nums;
+  height: 100%;
+  min-height: 0;
+
+  /* the host fills its container; the map paints edge-to-edge */
+  position: relative;
+  width: 100%;
+}
+
+/* the paper the map is printed on — mark halos knock this color out so lines
+   pass cleanly BEHIND a mark (transit-map punch-through), never touching it.
+   A mode overrides --g-paper on its canvas if the paper isn't frost-light.
+   The canvas fills its positioned host. */
+.graph-scope .g-canvas {
+  --g-paper: var(--core-color-surface-subtle);
+  inset: 0;
+  position: absolute;
+}
+
+/* CHROME COMPOSITING: the camera animates transform: scale() on
+   the viewport during every glide, and the viewport holds dozens of box-shadow
+   "paper halos". Without a layer hint Chrome RE-RASTERIZES that shadow-heavy
+   content every scale step — blank until the raster lands = a white flash + a
+   main-thread block. `will-change: transform` keeps the viewport composited and
+   scales a cached texture instead. Chrome-only symptom; one-line matching fix. */
+.graph-scope .g-canvas .react-flow__viewport {
+  will-change: transform;
+}
+
+.graph-scope .g-canvas .react-flow__attribution {
+  background: transparent;
+  color: var(--karl-l2);
+}
+
+/* ---------- nodes (fixed world; emphasis-only changes) ---------- */
+
+/* Hover/click come only from visible shapes; wrappers pass events through. */
+.graph-scope .g-canvas .react-flow__node {
+  pointer-events: none !important;
+}
+
+/* labeled tiers paint ABOVE the quiet world, so a card that must cover a
+   distant ring covers it CLEANLY — print occlusion, never a half-poke. The
+   runtime writes the tier CLASS on the RF wrapper (a class swap, never a
+   remount) — cheaper than :has() at thousands of nodes (B5). */
+.graph-scope .g-canvas .react-flow__node.g-znode-focus {
+  z-index: 12 !important;
+}
+.graph-scope .g-canvas .react-flow__node.g-znode-lit {
+  z-index: 6 !important;
+}
+/* the pointed-at / inspected node (and its plate) pops above everything —
+   hover z-hoists stay :has() (driven by classList on the INNER node; they
+   touch one element at a time, so the selector cost is nil) */
+.graph-scope .g-canvas .react-flow__node:has(.g-hovs),
+.graph-scope .g-canvas .react-flow__node:has(.g-node:hover) {
+  z-index: 20 !important;
+}
+/* neighbor reveals surface above the crowd, under the placed lit cards */
+.graph-scope .g-canvas .react-flow__node:has(.g-nbr) {
+  z-index: 5 !important;
+}
+
+.graph-scope .g-node {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  transition: opacity 340ms ease;
+  width: 160px;
+}
+
+.graph-scope .g-tile,
+.graph-scope .g-label {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.graph-scope .g-handle {
+  border: none !important;
+  height: 1px !important;
+  left: 50% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 0) !important;
+  width: 1px !important;
+}
+
+.graph-scope .g-tilebox {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.graph-scope .g-tile {
+  align-items: center;
+  box-shadow:
+    0 0 0 1.5px var(--g-paper),
+    var(--core-color-elevation-card);
+  display: flex;
+  justify-content: center;
+  position: relative;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms ease;
+}
+
+/* the DANGER RING — scored high risk, in the reserved intent channel: a ring
+   like focus/selection wear (never a red badge; the tile keeps its kind hue).
+   Paper gap first, matching the halo idiom. Focus/hover/selection ring
+   selectors are more specific and win while they hold — where-you-are and
+   what-you-picked outrank the standing warning; the words (foot, panel pill)
+   carry it there. */
+.graph-scope .g-tile.g-riskring {
+  box-shadow:
+    0 0 0 1.5px var(--g-paper),
+    0 0 0 3px var(--g-intent-danger),
+    var(--core-color-elevation-card);
+}
+
+/* stations: the quiet world as stops on a line. THE PAINT BUDGET: the crowd
+   carries NO box-shadows — shadows are what Chrome re-rasters expensively on
+   every camera frame (LEARNINGS). The paper knockout ring is an OUTLINE (same
+   look, cheap paint); only the few lit/focus tiles may wear shadows. */
+.graph-scope .g-station {
+  background: var(--white);
+  border: 2.5px solid;
+  cursor: pointer;
+  display: inline-block;
+  height: 13px;
+  outline: 2px solid var(--g-paper);
+  pointer-events: auto;
+  position: relative;
+  /* the hover ring is still a box-shadow — one element at a time is cheap;
+     it composites outside the outline (their first 2px share the paper hue) */
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms ease;
+  width: 13px;
+}
+
+/* a 13px ring is a mean hit target — a 29px invisible halo does the catching */
+.graph-scope .g-station::after {
+  border-radius: 50%;
+  content: "";
+  inset: -8px;
+  position: absolute;
+}
+
+.graph-scope .g-em-world:hover .g-station,
+.graph-scope .g-em-world.g-hovs .g-station {
+  box-shadow:
+    0 0 0 2px var(--g-paper),
+    0 0 0 3.5px var(--karl),
+    var(--core-color-elevation-card);
+  transform: scale(1.6);
+}
+
+/* the revealed nameplate is a real click target — it must not fade under the
+   cursor on the way down to it (opacity:1 merged from the nameplate section) */
+.graph-scope .g-em-world:hover .g-label,
+.graph-scope .g-em-world.g-hovs .g-label {
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- emphasis tiers ----------
+   The universal vocabulary: hidden (fog) · faded (stage dressing) · world (the
+   quiet crowd) · lit (first degree) · focus (where you are). A mode may add its
+   own tiers (e.g. a journey 'way') in its own stylesheet. */
+.graph-scope .g-em-world {
+  opacity: 0.58;
+}
+/* a pointed-at station reaches full ink — the 340ms opacity transition on
+   .g-node makes this a fade, never a flash */
+.graph-scope .g-em-world:hover,
+.graph-scope .g-em-world.g-hovs {
+  opacity: 1;
+}
+.graph-scope .g-em-faded {
+  opacity: 0.15;
+}
+/* GHOST — the constellation tier: known depth that stays faintly PRESENT
+   ("distance means quieter, never gone" — the Explorer law). Quieter than the
+   world crowd; hover lifts it to full ink and reveals its name, exactly like
+   a world ring. Every graph gets this baseline. */
+.graph-scope .g-em-ghost {
+  opacity: 0.3;
+}
+.graph-scope .g-em-ghost:hover,
+.graph-scope .g-em-ghost.g-hovs {
+  opacity: 1;
+}
+.graph-scope .g-em-ghost .g-label {
+  opacity: 0;
+  pointer-events: none;
+}
+.graph-scope .g-em-ghost:hover .g-label,
+.graph-scope .g-em-ghost.g-hovs .g-label {
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+.graph-scope .g-em-ghost.g-nbr {
+  opacity: 0.85;
+}
+.graph-scope .g-em-ghost.g-nbr .g-label {
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+.graph-scope .g-em-lit,
+.graph-scope .g-em-focus {
+  opacity: 1;
+}
+
+/* identity rings stay inside; the paper knockout is always the OUTERMOST ring
+   (what a passing line hits first), the ambient shadow sits under it all.
+   Full silas — "the silas ring" — so where-you-are is findable across the map. */
+.graph-scope .g-em-focus .g-tile {
+  box-shadow:
+    0 0 0 3px var(--white),
+    0 0 0 5px var(--silas),
+    0 0 0 6.5px var(--g-paper),
+    var(--core-color-elevation-raised);
+}
+
+/* hover lifts — the pointed-at node must be UNMISTAKABLE across the canvas
+   (the sidebar mirror depends on it): a real lift, a karl ring (gray family,
+   never competes with the silas focus identity), raised above its neighbors.
+   Identity rings are never swapped. */
+.graph-scope .g-node:not(.g-em-focus):hover .g-tile,
+.graph-scope .g-hovs:not(.g-em-focus) .g-tile {
+  box-shadow:
+    0 0 0 2px var(--white),
+    0 0 0 4px var(--karl),
+    0 0 0 5.5px var(--g-paper),
+    var(--core-color-elevation-raised);
+  transform: translateY(-1px) scale(1.16);
+}
+
+/* the bundle's stacked-card backing ("many"). Kept in CSS so it COMPOSES with the
+   state rings below — each state re-declares ring + stack together (box-shadows
+   replace, never merge; an inline stack shadow silently killed the silas ring). */
+.graph-scope .g-tile.g-stack {
+  box-shadow:
+    0 0 0 1.5px var(--g-paper),
+    3px 3px 0 -1px color-mix(in srgb, var(--g-stackfill) 55%, var(--white)),
+    6px 6px 0 -1px color-mix(in srgb, var(--g-stackfill) 30%, var(--white)),
+    var(--core-color-elevation-card);
+}
+.graph-scope .g-node:not(.g-em-focus):hover .g-tile.g-stack,
+.graph-scope .g-hovs:not(.g-em-focus) .g-tile.g-stack {
+  box-shadow:
+    0 0 0 2px var(--white),
+    0 0 0 4px var(--karl),
+    0 0 0 5.5px var(--g-paper),
+    3px 3px 0 -1px color-mix(in srgb, var(--g-stackfill) 55%, var(--white)),
+    6px 6px 0 -1px color-mix(in srgb, var(--g-stackfill) 30%, var(--white)),
+    var(--core-color-elevation-raised);
+}
+.graph-scope .g-em-focus .g-tile.g-stack {
+  box-shadow:
+    0 0 0 3px var(--white),
+    0 0 0 5px var(--silas),
+    0 0 0 6.5px var(--g-paper),
+    3px 3px 0 -1px color-mix(in srgb, var(--g-stackfill) 55%, var(--white)),
+    6px 6px 0 -1px color-mix(in srgb, var(--g-stackfill) 30%, var(--white)),
+    var(--core-color-elevation-raised);
+}
+
+/* the focus is where you ARE, not a place to go — no lift, no pointer */
+.graph-scope .g-em-focus .g-tile,
+.graph-scope .g-em-focus .g-label {
+  cursor: default;
+}
+.graph-scope .g-em-focus:hover .g-tile,
+.graph-scope .g-em-focus.g-hovs .g-tile {
+  transform: none;
+}
+
+/* ---------- hover-focus: point at a node, its neighborhood comes forward ----
+   Additive only — nothing the mouse ISN'T on ever loses ink, so a fast sweep
+   can't flicker. All driven by CSS classes on live DOM (zero React re-render).
+   THE HOVER LAW: hover changes brightness — never geometry of the world, never
+   text, never the camera. */
+
+/* a first-degree neighbor of the hovered node lifts a whisper. Opacity is
+   scoped to the world tier so it only ever RAISES a quiet node (lit/focus are
+   already full — the class must never lower them). */
+.graph-scope .g-em-world.g-nbr {
+  opacity: 0.92;
+}
+/* the spotlight: a hovered/held node blooms its neighborhood out of the faded
+   stage dressing — visit a station and glance around. Opacity only. */
+.graph-scope .g-em-faded.g-nbr {
+  opacity: 0.9;
+}
+.graph-scope .g-em-faded.g-nbr .g-label {
+  opacity: 1;
+}
+.graph-scope .g-nbr:not(.g-em-focus) .g-tile {
+  transform: translateY(-1px) scale(1.02);
+}
+.graph-scope .g-em-world.g-nbr .g-station {
+  transform: scale(1.12);
+}
+/* the neighborhood names itself as you point — nameplate only, never the meta */
+.graph-scope .g-em-world.g-nbr .g-label {
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* the pointed-at connection's line comes FORWARD in the native edge layer,
+   which React Flow paints below the marks — so it passes cleanly behind them.
+   Brightness only (the hover law); width is never touched here, so a focus edge
+   keeps its true strength tier on hover. Quick in (140ms); the path's own inline
+   320ms transition eases it back out. */
+.graph-scope .g-canvas .react-flow__edge.g-edge-hi .react-flow__edge-path {
+  opacity: 1 !important;
+  transition-duration: 140ms !important;
+}
+
+/* ---------- the risk dot ---------- */
+.graph-scope .g-riskdot {
+  background: var(--white);
+  border-radius: 50%;
+  display: inline-flex;
+  padding: 2px;
+  position: absolute;
+  right: -4px;
+  top: -4px;
+}
+
+/* ---------- the nameplate ----------
+   node names live in a hairline card BELOW the mark, so they can never be
+   confused with the relationship labels riding the lines. */
+.graph-scope .g-label {
+  background: var(--white);
+  border: 1px solid var(--frost);
+  border-radius: var(--core-radius-action-standard);
+  box-shadow: var(--core-color-elevation-card);
+  cursor: pointer;
+  left: 50%;
+  padding: var(--core-spacing-xxs) var(--core-spacing-xs); /* card slug: 16 name + 12/line (locality, meta) + 8 pad + 2 border — 26/38/50, on-grid */
+  pointer-events: auto;
+  position: absolute;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  /* placement can move a card between focuses — let it glide, not jump */
+  transition:
+    opacity 300ms ease,
+    left 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.graph-scope .g-em-world .g-label {
+  opacity: 0;
+}
+.graph-scope .g-em-faded .g-label {
+  opacity: 0;
+}
+
+/* interaction honesty: only visible shapes accept the mouse. A world node's
+   target is its station ring, never the invisible plate below it. */
+.graph-scope .g-em-faded .g-tile,
+.graph-scope .g-em-faded .g-station,
+.graph-scope .g-em-faded .g-label,
+.graph-scope .g-em-world .g-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* CANVAS VOICE 1 — station name (TYPOGRAPHY.md: the only lowercase bold on the
+   map). One size everywhere: focus identity is the ring, never a bigger name. */
+.graph-scope .g-name {
+  color: var(--graphite);
+  font-size: var(--core-font-size-dense);
+  font-weight: var(--core-font-weight-bold);
+  letter-spacing: var(--track-name);
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the identity SECOND lines (an address's locality, under its street): the
+   meta voice's TYPE in one shared block (never a fork of it), but identity's
+   rules — always printed when their card prints, exempt from the
+   printed-word budget and the tier gate that .g-sub obeys. One line each,
+   ellipsized (cardDims/plateDims reserve exactly one). */
+.graph-scope .g-name2,
+.graph-scope .g-platesub {
+  color: var(--karl);
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-scope .g-name2 {
+  line-height: 12px;
+}
+
+/* CANVAS VOICE 2 — station meta: a sentence-case caption under the name, the
+   museum-label tradition. Subordinate by exactly TWO devices (smaller + grayer)
+   — never bold, never caps, never tracked: small type is quiet, not loud. */
+.graph-scope .g-sub {
+  color: var(--karl);
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-normal);
+  line-height: 12px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    max-height 200ms ease,
+    opacity 200ms ease;
+  white-space: nowrap;
+}
+/* meta lines print per TIER, statically: the focus plate and the lit cards
+   inside the printed-word budget. Nothing on the canvas reveals text on hover. */
+.graph-scope .g-em-focus .g-sub,
+.graph-scope .g-em-lit .g-sub {
+  max-height: 12px;
+  opacity: 1;
+}
+/* the printed-word budget: a lit card beyond the longest first-degree lines is
+   name-only, always — its relationship reads in the sidebar. */
+.graph-scope .g-metaq .g-sub {
+  max-height: 0;
+  opacity: 0;
+}
+/* …and the words RETURN when you point at the card (top-anchored, so the reveal
+   grows downward and the name never wiggles — the prototype's proven behavior) */
+.graph-scope .g-node:hover .g-metaq .g-sub,
+.graph-scope .g-hovs .g-metaq .g-sub {
+  max-height: 12px;
+  opacity: 1;
+}
+
+/* the risk hue inks the interpunct — a one-character signal, never a badge */
+.graph-scope .g-subsep {
+  margin: 0 var(--core-spacing-xxs);
+}
+.graph-scope .g-subsep-high {
+  color: var(--g-intent-danger);
+}
+.graph-scope .g-subsep-medium {
+  color: var(--g-intent-warning);
+}
+
+/* ---------- the ledger plate (the focus card only) ----------
+   name · caption · rule · fact rows · rule · utility foot — the nameplate's
+   own grammar scaled up, on a LEFT RAIL. No caps, no tracking, ONE bold
+   voice: the name is the canvas's only 600; everything else reads in 400
+   with size + gray carrying the hierarchy (Suisse Intl ships exactly two
+   weights — the calm is structural, not synthetic). Facts pack into rows
+   (plate.ts `packFacts`): a verdict fact takes the whole band and wraps to a
+   2-line clamp (beyond it the panel is the reading surface — README law:
+   never truncate to nonsense), two adjacent short facts share a row. The
+   SAME packing sizes the solver's reserved rect (`plateDims`) — width
+   included: header-only plates hug their content — retune the two together;
+   the ?cards=1 meter is the drift alarm. Vertical spec: 12px card padding,
+   8px air each side of a rule, 12px between rows — seams on the 8px rhythm.
+   NO entrance animation: the plate div remounts on every navigation, so a
+   fade-from-0 would blink the focus card right where the eye is. The parent
+   .g-node opacity (already 1 at focus) carries the calm. */
+.graph-scope .g-plate {
+  padding: var(--core-spacing-sm);
+  text-align: left;
+}
+
+/* the plate's identity second line — type shared with .g-name2 above;
+   SUBHEAD_LH/GAP (plate.ts) mirror these two values */
+.graph-scope .g-platesub {
+  line-height: 13px;
+  margin-top: 2px;
+}
+
+/* the caption: the meta voice under the name — the SAME order the resting
+   nameplate and the panel use, so focusing a node never reshuffles its
+   words. Sentence case as authored; may take a second line, and clamps
+   past two (the panel says the whole subtitle — the README law's routing). */
+.graph-scope .g-caption {
+  -webkit-box-orient: vertical;
+  color: var(--karl);
+  display: -webkit-box;
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-normal);
+  -webkit-line-clamp: 2;
+  line-height: 13px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+/* the plate's name WRAPS (balanced, 2-line clamp) — a title that truncates
+   hides the one thing the card exists to say. Nameplates keep the global
+   one-line .g-name. */
+.graph-scope .g-plate .g-name {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  font-size: var(--core-font-size-lg);
+  -webkit-line-clamp: 2;
+  line-height: 20px;
+  text-wrap: balance;
+  white-space: normal;
+}
+
+/* the foot's words get the same 12px above (8 rule margin + this 4) as the
+   card pad below them — optically centered in the band, never riding the
+   rule. PADDING, not margin: a margin would collapse into the rule's 8. */
+.graph-scope .g-plateutility {
+  -webkit-box-orient: vertical;
+  color: var(--karl);
+  display: -webkit-box;
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-normal);
+  -webkit-line-clamp: 2;
+  line-height: 12px;
+  overflow: hidden;
+  padding-top: var(--core-spacing-xxs);
+}
+/* the risk inks: COLOR is the signal — bolding it too was double-shouting.
+   The INTENT channel (reserved severity, @/core-mapped) so the foot reads
+   like every other risk mark and flips in dark with them. */
+.graph-scope .g-util-high {
+  color: var(--g-intent-danger);
+}
+.graph-scope .g-util-medium {
+  color: var(--g-intent-warning);
+}
+.graph-scope .g-platerule {
+  background: var(--frost);
+  height: 1px;
+  margin: var(--core-spacing-xs) calc(var(--core-spacing-sm) * -1);
+}
+/* the fact band: label over value on the left rail, whitespace as the
+   lattice. A paired row (.g-pair) carries two short facts as equal columns. */
+.graph-scope .g-platerows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--core-spacing-sm);
+}
+/* a full-band row is a plain block; only the PAIR needs grid tracks */
+.graph-scope .g-platerow.g-pair {
+  column-gap: var(--core-spacing-md);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.graph-scope .g-cell {
+  display: block;
+  min-width: 0;
+}
+/* the form tradition, in the panel's calm grammar: label small + gray,
+   value a size up + full ink — COLOR and SIZE carry the payload, never
+   weight (the name keeps the canvas's one bold). Labels never wrap —
+   packFacts full-rows a long-labeled fact, so this ellipsis is only the
+   synthetic-extreme net. */
+.graph-scope .g-celllabel {
+  color: var(--karl);
+  display: block;
+  font-size: var(--core-font-size-xs);
+  font-weight: var(--core-font-weight-normal);
+  line-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* values say themselves whole: wrap, clamp at two lines (plateDims reserves
+   the same two), and break URL-ish unbroken tokens rather than overflow */
+.graph-scope .g-cellvalue {
+  -webkit-box-orient: vertical;
+  color: var(--graphite);
+  display: -webkit-box;
+  font-size: var(--core-font-size-sm);
+  font-weight: var(--core-font-weight-normal);
+  -webkit-line-clamp: 2;
+  line-height: 16px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- CANVAS VOICE 3 — relationship chips on the focus's edges ----------
+   (DESIGN.md law 5) A STATIC, salience-gated default — only the focus's DISTINCTIVE
+   edges, always-on while that node is focused, never on hover. A small sibling
+   of the nameplate card (white, frost hairline, radius) so line and card read as
+   one system; 400/karl so it never competes with the 600 station names. */
+.graph-scope .g-edgelabel {
+  background: var(--white);
+  border: 1px solid var(--frost);
+  border-radius: var(--core-radius-xs);
+  box-shadow: var(--core-color-elevation-card);
+  color: var(--karl);
+  font-size: var(--core-font-size-sm);
+  font-weight: var(--core-font-weight-normal);
+  line-height: 16px;
+  padding: 1px var(--core-spacing-xs);
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+}
+/* KIND WASH: a chip carries the hue of its relationship's MORE SPECIFIC endpoint
+   (--g-k = the kind color), mixed far into paper for a calm fill + firmer
+   hairline. Picked by type, not focus, so it's stable and matches the legend. */
+.graph-scope .g-edgelabel[style*="--g-k"] {
+  background: color-mix(in srgb, var(--g-k) 12%, var(--white));
+  border-color: color-mix(in srgb, var(--g-k) 50%, var(--frost));
+}
+.graph-scope .g-former {
+  color: var(--karl-l1);
+}
+
+/* ---------- fog of war ---------- */
+/* THE PAINT BUDGET: fogged nodes leave the paint pass entirely (visibility)
+   — an opacity-0 element still costs raster work on every camera frame, and
+   the fog can be half the world. The visibility flip waits for the fade-out
+   (0s at 340ms); a reveal flips visible instantly and fades in from 0. The
+   DOM stays mounted, so React Flow's measurements and edges never reset. */
+.graph-scope .g-em-hidden {
+  opacity: 0;
+  transition:
+    opacity 340ms ease,
+    visibility 0s linear 340ms;
+  visibility: hidden;
+}
+.graph-scope .g-em-hidden .g-tile,
+.graph-scope .g-em-hidden .g-station,
+.graph-scope .g-em-hidden .g-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ---------- the camera-busy gate ----------
+   While the camera glides, every mark goes pointer-inert so canvas CSS :hover
+   (which has mouseover semantics) can't light marks as the map slides under a
+   still cursor — the anti-flash law's CSS half. The travel hook toggles it. */
+.graph-scope .g-canvas.g-busy .react-flow__node * {
+  pointer-events: none !important;
+}
+
+/* ---------- region labels: the map's quiet geography (?regions=1 tunes) ----------
+   THE AREAL VOICE — the one sanctioned caps use on the canvas: tracked caps
+   at 400 encode a region's EXTENT (the cartographic rule), never importance
+   on a point; the card grammar's no-caps law stands and the name keeps the
+   canvas's one bold. Faint --core-* ink (never --karl: .graph-scope has no
+   dark ramp of its own), world-scaled inside the viewport transform, painted
+   in the negative stratum so edges, marks, and cards all float above (the
+   mark halo knockout occludes words under tiles for free), and pushed
+   The word's position arrives RESOLVED from regionModel (push + collision
+   displacement baked into left/top); --g-region-push is the lab's live knob,
+   applied as a DELTA from the resolved anchor along each region's inline
+   bearing (--g-rx/--g-ry) — at the 130px default the delta is zero. The
+   30px/130px/0.28em/16% fallbacks mirror regionModel's REGION_SIZE and
+   REGION_PUSH and the knob initials (Amir's round-2 picks) — the camera
+   reserves word extents from those constants, so retune together
+   (?regions=1 is the drift alarm). Pure text — no shadows, no filters: this
+   layer rides the viewport's will-change raster budget. */
+.graph-scope .g-regionlayer {
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  z-index: -1;
+}
+.graph-scope .g-region {
+  animation: g-region-in 700ms ease both;
+  animation-delay: var(--g-enter-regions, 0ms);
+  color: color-mix(
+    in srgb,
+    var(--core-color-text-muted) var(--g-region-ink-pct, 16%),
+    transparent
+  );
+  font-family: var(--font-display);
+  font-size: var(--g-region-size, 30px);
+  font-weight: var(--core-font-weight-normal);
+  letter-spacing: var(--g-region-track, 0.28em);
+  line-height: 1.2;
+
+  /* letter-spacing trails the last glyph too — the box is one track wider
+     on the right, so translate(-50%) alone paints the word track/2 left of
+     its anchor; the matching left pad re-centers the GLYPHS */
+  padding-left: var(--g-region-track, 0.28em);
+  pointer-events: none;
+  position: absolute;
+  text-transform: uppercase;
+
+  /* the push knob is a DELTA from the model-resolved anchor; the baseline
+     arrives from REGION_PUSH via --g-region-push-base (set inline by the
+     layer) so the constant lives in one place */
+  transform: translate(-50%, -50%)
+    translate(
+      calc(
+        (
+          var(--g-region-push, var(--g-region-push-base, 130px)) -
+          var(--g-region-push-base, 130px)
+        ) *
+        var(--g-rx, 0)
+      ),
+      calc(
+        (
+          var(--g-region-push, var(--g-region-push-base, 130px)) -
+          var(--g-region-push-base, 130px)
+        ) *
+        var(--g-ry, 0)
+      )
+    );
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* the dark ramp is LIGHTER than light's — the same mix % would shout. On the
+   CANVAS ROOT, not .g-region: the ?regions=1 Ink knob writes the variable
+   inline on that root, and an element's own declaration would beat the
+   inherited knob value (a dead slider in dark) */
+[data-theme="dark"] .graph-scope .g-canvas {
+  --g-region-ink-pct: 13%;
+}
+
+/* both forms ship in the DOM; the canvas root's data attributes (written by
+   the ?regions=1 lab) pick — full state names are the shipped default */
+.graph-scope .g-r-abbr {
+  display: none;
+}
+.graph-scope [data-region-form="abbr"] .g-r-full {
+  display: none;
+}
+.graph-scope [data-region-form="abbr"] .g-r-abbr {
+  display: inline;
+}
+.graph-scope [data-region-case="sentence"] .g-region {
+  text-transform: none;
+}
+.graph-scope [data-region-motion="off"] .g-region {
+  animation: none;
+}
+
+@keyframes g-region-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- reduced motion: a 220ms crossfade — never a snap, never zero ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .graph-scope .g-node,
+  .graph-scope .g-tile,
+  .graph-scope .g-station,
+  .graph-scope .g-label,
+  .graph-scope .g-sub {
+    transition-duration: 220ms;
+    transition-property: opacity;
+  }
+
+  .graph-scope .g-region {
+    animation-duration: 220ms;
+  }
+}
+
+/* THE CATEGORICAL RAMP — which KIND of thing (never borrowing intent's
+   red / amber / green / info-blue). The app authors it in hex "aligned to the
+   app's avatar identity hues"; here it IS those hues, so it flips in dark
+   with them. `.graph-scope` wears this class too. */
+.g-inks {
+  --g-cat-teal: var(--core-color-avatar-5-fg); /* business · control */
+  --g-cat-violet: var(--core-color-avatar-8-fg); /* person */
+  --g-cat-slate: var(--core-color-border-bold); /* address · location */
+  --g-cat-cyan: var(--core-color-avatar-6-fg); /* phone · digital contact */
+  --g-cat-azure: var(--core-color-avatar-7-fg); /* domain · web */
+  --g-cat-plum: var(--core-color-avatar-10-fg); /* record · filings */
+  --hubgray: var(--core-color-text-disabled);
+}
+
+/* ---------- the settle-in ----------
+   A lone `from` keyframe interpolates to each element's own computed value
+   (a world station's 0.58, a lit card's 1); `backwards` fill holds the from
+   value through `animation-delay`. */
+.graph-scope .g-node.g-enter {
+  animation: g-enter-in var(--g-enter-duration, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--g-enter, 0ms);
+}
+.graph-scope .g-node.g-enter .g-tilebox {
+  animation: g-enter-tile var(--g-enter-duration, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--g-enter, 0ms);
+}
+.graph-scope .g-node.g-enter .g-label {
+  animation: g-enter-in var(--g-enter-duration, 380ms) ease backwards;
+  animation-delay: calc(var(--g-enter, 0ms) + var(--g-enter-label-lag, 120ms));
+}
+.graph-scope .g-canvas g.g-enter {
+  animation: g-enter-in var(--g-enter-duration, 380ms) ease backwards;
+  animation-delay: var(--g-enter, 0ms);
+}
+@keyframes g-enter-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes g-enter-tile {
+  from {
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graph-scope .g-enter,
+  .graph-scope .g-enter .g-tilebox,
+  .graph-scope .g-enter .g-label,
+  .graph-scope .g-canvas g.g-enter {
+    animation: none;
+  }
+}

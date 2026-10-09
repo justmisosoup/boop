@@ -2,7 +2,7 @@ import { Fragment, useState, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { Check, ChevronDown } from 'lucide-react'
 
-import { ActionButton, MetaChip } from '@/core'
+import { ActionButton, MetaChip, SegmentedControl, SegmentedControlItem } from '@/core'
 
 import { cn } from '../../utils/twUtils'
 
@@ -41,21 +41,75 @@ const ColumnLabel = ({ children }: { children: ReactNode }) => (
  * their place. The names searched that came back with nothing fold under it
  * all — "Show 22 clear names" — a row each.
  */
+/** Which results a table shows, from its card's header: all, the standing
+ *  (open, hits), the cleared (closed, dismissed), or the names searched that
+ *  came back with nothing (clear). */
+export type StatusFilter = 'all' | 'standing' | 'cleared' | 'clear'
+
+export const statusCounts = (rows: Array<{ cleared: boolean }>, clear = 0): Record<StatusFilter, number> => ({
+  all: rows.length + clear,
+  standing: rows.filter((r) => !r.cleared).length,
+  cleared: rows.filter((r) => r.cleared).length,
+  clear
+})
+
+/** A results card's header control: All, then the standing and the cleared in
+ *  the card's own words — Open and Closed, Hits and Dismissed — each counted. */
+export const StatusControl = ({
+  counts,
+  labels,
+  value,
+  onChange
+}: {
+  counts: Record<StatusFilter, number>
+  labels: { standing: string; cleared: string }
+  value: StatusFilter
+  onChange: (next: StatusFilter) => void
+}) => (
+  <SegmentedControl size="sm" aria-label="Filter results" value={value} onValueChange={(v) => v && onChange(v as StatusFilter)}>
+    {(
+      [
+        ['all', 'All'],
+        ['standing', labels.standing],
+        ['cleared', labels.cleared],
+        ['clear', 'Clear']
+      ] as const
+    )
+      // Only what there are results for; All always.
+      .filter(([v]) => v === 'all' || counts[v] > 0)
+      .map(([v, label]) => (
+      <SegmentedControlItem key={v} value={v}>
+        {label}
+        <span className="ml-1 tabular-nums text-text-secondary">{counts[v]}</span>
+      </SegmentedControlItem>
+    ))}
+  </SegmentedControl>
+)
+
 export const ResultTable = ({
   columns,
-  rows,
+  rows: allRows,
+  status,
   none,
   clean = [],
+  cleanCaption,
   footnote,
-  foldCleared,
-  noneTitle = 'None found'
+  foldCleared: foldClearedProp,
+  noneTitle = 'None found',
+  top
 }: {
+  /** The first few rows only; the rest fold under "Show N more". */
+  top?: number
+  /** The header's filter: with it, the cleared no longer fold — it says which show. */
+  status?: StatusFilter
   columns: [string, string]
   rows: ResultRow[]
   /** What the search came to, in a line: "Screened 24 names · 2 matches dismissed". */
   none?: ReactNode
   /** The names searched that came back with nothing: a row each, "No results". */
   clean?: string[]
+  /** Over a clear name, who it is to the business: "Manager", "Registered agent". */
+  cleanCaption?: (name: string) => ReactNode
   /** After it: the searches that found none of their kind. */
   footnote?: ReactNode
   /** Fold the cleared away, as what they are — "closed lien(s)" — with
@@ -64,12 +118,41 @@ export const ResultTable = ({
   /** What the card says with nothing found: "No results for tax liens or UCC liens". */
   noneTitle?: string
 }) => {
+  const rows =
+    status === 'standing'
+      ? allRows.filter((r) => !r.cleared)
+      : status === 'cleared'
+        ? allRows.filter((r) => r.cleared)
+        : status === 'clear'
+          ? []
+          : allRows
+  // Filtered from the card's header, the cleared show or don't by the filter, not a fold.
+  const foldCleared = status ? undefined : foldClearedProp
   const [open, setOpen] = useState<string | null>(null)
   const [showCleared, setShowCleared] = useState(false)
   const [showClosed, setShowClosed] = useState(false)
   const standing = rows.filter((r) => !r.cleared)
   const cleared = rows.filter((r) => r.cleared)
-  const shown = [...standing, ...(!foldCleared || showClosed ? cleared : [])]
+  const [showAll, setShowAll] = useState(false)
+  const listed = [...standing, ...(!foldCleared || showClosed ? cleared : [])]
+  // Filtered from the header, the clear names are rows of the table — under
+  // All after the results, or alone under Clear — not a fold of their own.
+  // With no results at all, the card says so — "No results for …", what was
+  // searched — and lists the names searched under it, the first few.
+  const cleanListed = status === 'all' || status === 'clear' ? clean : []
+  const budget = top && !showAll ? top : Infinity
+  const shown = listed.slice(0, budget)
+  const cleanShown = cleanListed.slice(0, Math.max(0, budget - shown.length))
+  const hidden = listed.length + cleanListed.length - shown.length - cleanShown.length
+  // The rows past the first few, folded: "Show 4 more".
+  const moreButton =
+    top && (hidden > 0 || showAll) && listed.length + cleanListed.length > top ? (
+      <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+        <ActionButton variant="quiet" size="compact" onClick={() => setShowAll(!showAll)}>
+          {showAll ? 'Show less' : `Show ${hidden} more`}
+        </ActionButton>
+      </div>
+    ) : null
   // What was searched, in a line: "Screened 24 names · 2 matches dismissed".
   const searchedLine = (
     <>
@@ -86,6 +169,20 @@ export const ResultTable = ({
     </div>
   )
   // A name that came back with nothing, as a row of the table.
+  const cleanRow = (name: string, i: number) => (
+    <div key={`${name}-${i}`} className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-3', COLUMNS, RULE)}>
+      <span className="min-w-0">
+        {cleanCaption && <span className="block text-caption text-text-secondary">{cleanCaption(name)}</span>}
+        <span className="block text-sm font-medium text-text-primary">{name}</span>
+      </span>
+      <span className="flex flex-wrap items-center gap-1.5">
+        <MetaChip tone="neutral" size="compact">
+          <Check aria-hidden="true" size={12} strokeWidth={2} className="shrink-0" />
+          No results
+        </MetaChip>
+      </span>
+    </div>
+  )
   const cleanRows = clean.map((name, i) => (
     <div key={`${name}-${i}`} className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-3', COLUMNS, RULE)}>
       <span className="min-w-0 text-sm font-medium text-text-primary">{name}</span>
@@ -148,7 +245,9 @@ export const ResultTable = ({
                   </span>
                 )}
               </span>
-              <span className="flex flex-wrap items-center gap-1.5">
+              {/* Nothing beside it but the chevron — the Documents rows — it
+                  centres on the row. */}
+              <span className={cn('flex flex-wrap items-center gap-1.5', !r.chips && 'md:self-center')}>
                 {r.chips}
                 <button
                   type="button"
@@ -181,7 +280,20 @@ export const ResultTable = ({
       <div className="border-t border-[var(--core-color-border-divider)]">
         {/* Every match, as it stands: the hits, then the dismissed. With none
             at all, the answer in their place. */}
-        {shown.length > 0 ? (
+        {status ? (
+          // Filtered from the header: the results, then the clear names, as one
+          // table. Nothing found under All still says so, over the clear names.
+          <>
+            {shown.length === 0 && status !== 'clear' && noneFound}
+            {(shown.length > 0 || cleanShown.length > 0) && (
+              <div className={cn(shown.length === 0 && status !== 'clear' && 'border-t border-[var(--core-color-border-divider)]')}>
+                {header}
+                {table}
+                {cleanShown.map(cleanRow)}
+              </div>
+            )}
+          </>
+        ) : shown.length > 0 ? (
           <>
             {foldCleared && standing.length === 0 && noneFound}
             <div className={cn(foldCleared && standing.length === 0 && 'border-t border-[var(--core-color-border-divider)]')}>
@@ -192,6 +304,7 @@ export const ResultTable = ({
         ) : (
           noneFound
         )}
+        {moreButton}
         {/* The closed, folded under the open: "Show 12 closed liens". */}
         {foldCleared && cleared.length > 0 && (
           <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
@@ -203,10 +316,10 @@ export const ResultTable = ({
           </div>
         )}
         {/* The names that came back with nothing, folded under the matches. */}
-        {showCleared && clean.length > 0 && (
+        {!status && showCleared && clean.length > 0 && (
           <div className="border-t border-[var(--core-color-border-divider)]">{cleanRows}</div>
         )}
-        {clean.length > 0 &&
+        {!status && clean.length > 0 &&
           foldButton(
             showCleared
               ? 'Hide clear names'
@@ -224,15 +337,20 @@ export const ResultTable = ({
  * found".
  */
 export const ResultGrid = ({
-  rows,
+  rows: all,
   none,
-  noneTitle = 'None found'
+  noneTitle = 'None found',
+  top
 }: {
+  /** The first few cells only; the rest fold under "Show N more". */
+  top?: number
   rows: ResultRow[]
   none?: ReactNode
   noneTitle?: string
 }) => {
   const [open, setOpen] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const rows = top && !showAll ? all.slice(0, top) : all
   if (rows.length === 0)
     return (
       <div className="border-t border-[var(--core-color-border-divider)] px-4 py-3">
@@ -300,6 +418,13 @@ export const ResultGrid = ({
         </Fragment>
       ))}
     </div>
+    {top && all.length > top && (
+      <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+        <ActionButton variant="quiet" size="compact" onClick={() => setShowAll(!showAll)}>
+          {showAll ? 'Show less' : `Show ${all.length - top} more`}
+        </ActionButton>
+      </div>
+    )}
     </RadixTooltip.Provider>
   )
 }
