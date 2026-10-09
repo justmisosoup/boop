@@ -1,0 +1,15 @@
+{
+  "assessmentId": "a-mv06wxct-0",
+  "section": {
+    "id": "a-mv06wxct-0",
+    "body": [
+      {
+        "text": "Match identified to the submitted Office Address. Match identified to the submitted person.",
+        "cites": [
+          "address_verification",
+          "person_verification"
+        ]
+      }
+    ]
+  }
+}

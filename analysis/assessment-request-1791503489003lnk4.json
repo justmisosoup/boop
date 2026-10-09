@@ -1,0 +1,30 @@
+{
+  "id": "1791503489003lnk4",
+  "requestedAt": "2026-10-08T23:51:29.003Z",
+  "businessId": "917ca622-0948-4a37-9388-807cc770243b",
+  "business": {
+    "name": "CHECKR, INC."
+  },
+  "assessment": {
+    "id": "a-mv06wxct-0",
+    "name": "Demo Assessment (TIN / Office / People)",
+    "instructions": "Summarise what the Demo Assessment (TIN / Office / People) assessment found for CHECKR, INC., from these insights only: TIN match, TIN type, Office address, People verification.",
+    "insightIds": [
+      "address_verification",
+      "person_verification"
+    ]
+  },
+  "insights": [
+    {
+      "id": "address_verification",
+      "statement": "Match identified to the submitted Office Address",
+      "state": "result"
+    },
+    {
+      "id": "person_verification",
+      "statement": "Match identified to the submitted person",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

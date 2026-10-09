@@ -21,7 +21,17 @@ const STATUS_LABEL: Record<ReviewStatus, string> = {
 
 type Kind = 'created' | 'run' | 'completed' | 'summary' | 'status'
 /** Where it came from — the dashboard or the API — and who. */
-type Event = { at: string; text: string; kind: Kind; by: string; via: 'Dashboard' | 'API' }
+type Event = {
+  at: string
+  text: string
+  /** The assessment it is about, apart from what happened to it — so the
+   *  narrow column can clip the name and keep the action. */
+  subject?: string
+  action?: string
+  kind: Kind
+  by: string
+  via: 'Dashboard' | 'API'
+}
 
 const MIDDESK = 'Middesk'
 // Everything here was done in the dashboard: the orders went through its
@@ -50,9 +60,9 @@ export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Ev
     // changing the status — and Middesk for what follows on its own.
     ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
     ...reads.flatMap(({ assessment: a, summary }) => [
-      ...(a.orderedAt ? [{ at: a.orderedAt, text: `${a.name} assessment run`, kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
-      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} assessment completed`, kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
-      ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, kind: 'summary' as const, by: MIDDESK, via: DASHBOARD }] : [])
+      ...(a.orderedAt ? [{ at: a.orderedAt, text: `${a.name} assessment run`, subject: a.name, action: 'assessment run', kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
+      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} assessment completed`, subject: a.name, action: 'assessment completed', kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
+      ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, subject: a.name, action: 'summary generated', kind: 'summary' as const, by: MIDDESK, via: DASHBOARD }] : [])
     ]),
     ...(review.change
       ? [
@@ -123,20 +133,26 @@ const EventList = ({
                 timeAtEnd ? 'items-baseline justify-between gap-4' : 'flex-col'
               )}
             >
-              {/* What happened, and under it who did it. */}
-              <span className="flex min-w-0 flex-col">
-                <span className="font-semibold">{e.text}</span>
-                <Text size="sm" tone="secondary">
-                  {e.via} · {e.by}
-                  {/* In the narrow column the time rides with the name. */}
-                  {!timeAtEnd && (
-                    <>
-                      {' · '}
-                      <DateTime relative>{e.at}</DateTime>
-                    </>
-                  )}
-                </Text>
-              </span>
+              {timeAtEnd ? (
+                // The full page: what happened, and under it where from and who.
+                <span className="flex min-w-0 flex-col">
+                  <span className="font-semibold">{e.text}</span>
+                  <Text size="sm" tone="secondary">
+                    {e.via} · {e.by}
+                  </Text>
+                </span>
+              ) : (
+                // The narrow column: the assessment (clipped when long) over
+                // when and what happened to it — no who.
+                <span className="flex min-w-0 flex-col" title={e.text}>
+                  <span className="truncate font-semibold">{e.subject ?? e.text}</span>
+                  {/* When, then what happened: "18 hours ago · Summary generated". */}
+                  <Text className="truncate" size="sm" tone="secondary">
+                    <DateTime relative>{e.at}</DateTime>
+                    {e.action && <> · {e.action[0].toUpperCase() + e.action.slice(1)}</>}
+                  </Text>
+                </span>
+              )}
               {timeAtEnd && (
                 <Text size="sm" tone="secondary" className="shrink-0 whitespace-nowrap">
                   <DateTime relative>{e.at}</DateTime>

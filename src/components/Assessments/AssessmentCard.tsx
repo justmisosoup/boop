@@ -162,7 +162,7 @@ export const AssessmentCard = (props: Props) => {
       <CardHeader
         title={
           <button
-            className="min-w-0 truncate text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[var(--core-color-focus-ring)]"
+            className="block w-full min-w-0 truncate text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[var(--core-color-focus-ring)]"
             onClick={props.onOpen}
             type="button"
           >

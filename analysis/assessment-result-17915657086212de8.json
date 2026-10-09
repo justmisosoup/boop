@@ -1,0 +1,16 @@
+{
+  "assessmentId": "a-mv17nmke-0",
+  "section": {
+    "id": "a-mv17nmke-0",
+    "body": [
+      {
+        "text": "4 connections found. Match identified to the submitted Business Name. This business likely does not operate in a high risk industry.",
+        "cites": [
+          "business_connections",
+          "name",
+          "industry"
+        ]
+      }
+    ]
+  }
+}

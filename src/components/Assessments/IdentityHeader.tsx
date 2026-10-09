@@ -147,15 +147,33 @@ export const IdentityHeader = ({
           )}
           {assessment && <PageBreadcrumbItem current>{assessment}</PageBreadcrumbItem>}
         </PageBreadcrumb>
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-4">
-          <PageHeaderTitles className="flex-1">
+        {/* The name, its facts and the decision. Wide, the decision sits at
+            the right of the name; narrower, it moves above the name, so the
+            name keeps the full measure. There the quiet Assigned to button is
+            pulled out by its padding, so its words start on the name's edge,
+            and the status and its menu sit at the far right. */}
+        <div className="flex flex-col gap-3 wide:grid wide:grid-cols-[minmax(0,1fr)_auto] wide:gap-x-4 wide:gap-y-1">
+          <PageHeaderTitles className="min-w-0 wide:col-start-1 wide:row-start-1">
             <PageHeading weight="normal" className="whitespace-normal break-words font-arizona text-4xl font-light leading-[2.75rem] tracking-[-0.02em]">
               {displayName(record.name)}
             </PageHeading>
           </PageHeaderTitles>
+          {/* What is always true of the business, whichever assessment is open:
+              one quiet line of facts, each with its icon, wrapping as it must. */}
+          <ul className="-mt-2 m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-text-secondary wide:col-start-1 wide:row-start-2 wide:mt-0">
+            {identityMeta(record).map((m) => (
+              <li key={m.key} className="flex min-w-0 items-center gap-1" title={m.label}>
+                <span className="flex shrink-0">{m.icon}</span>
+                <span className="sr-only">{m.label}: </span>
+                <Text tone="secondary" className="truncate text-dense">
+                  {m.text}
+                </Text>
+              </li>
+            ))}
+          </ul>
           {/* The decision and what to do next, as the dashboard's status bar
               orders them: who has it, where it stands, then the action. */}
-          <PageHeaderActions className="flex-wrap">
+          <PageHeaderActions className="order-first w-full flex-wrap justify-start [&>*:first-child]:-ml-2.5 [&>*:nth-child(2)]:ml-auto wide:order-none wide:w-auto wide:[&>*:first-child]:ml-0 wide:[&>*:nth-child(2)]:ml-0 wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:self-start wide:justify-end">
             <AssigneeDropdown businessId={record.id} />
             <StatusDropdown businessId={record.id} defaultStatus={defaultStatus} />
             {(onRunAssessment || onOpenTimeline || onOpenActivity) && (
@@ -175,19 +193,6 @@ export const IdentityHeader = ({
             )}
           </PageHeaderActions>
         </div>
-        {/* What is always true of the business, whichever assessment is open:
-            one quiet line of facts, each with its icon, wrapping as it must. */}
-        <ul className="-mt-2 m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-text-secondary">
-          {identityMeta(record).map((m) => (
-            <li key={m.key} className="flex min-w-0 items-center gap-1" title={m.label}>
-              <span className="flex shrink-0">{m.icon}</span>
-              <span className="sr-only">{m.label}: </span>
-              <Text tone="secondary" className="truncate text-dense">
-                {m.text}
-              </Text>
-            </li>
-          ))}
-        </ul>
       </PageHeader>
     </PageHeaderBand>
   )

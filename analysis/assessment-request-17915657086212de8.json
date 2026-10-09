@@ -1,0 +1,36 @@
+{
+  "id": "17915657086212de8",
+  "requestedAt": "2026-10-09T17:08:28.621Z",
+  "businessId": "941d9efa-802e-42ab-8734-722d70b24a4d",
+  "business": {
+    "name": "SPRIG TECHNOLOGIES INC."
+  },
+  "assessment": {
+    "id": "a-mv17nmke-0",
+    "name": "Steph",
+    "instructions": "Summarise what the Steph assessment found for SPRIG TECHNOLOGIES INC., from these insights only: Business name, Business connections, Industry classification.",
+    "insightIds": [
+      "business_connections",
+      "name",
+      "industry"
+    ]
+  },
+  "insights": [
+    {
+      "id": "business_connections",
+      "statement": "4 connections found",
+      "state": "result"
+    },
+    {
+      "id": "name",
+      "statement": "Match identified to the submitted Business Name",
+      "state": "result"
+    },
+    {
+      "id": "industry",
+      "statement": "This business likely does not operate in a high risk industry",
+      "state": "result"
+    }
+  ],
+  "catalogVersion": "2026-10-07"
+}

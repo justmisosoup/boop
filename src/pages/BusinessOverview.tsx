@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { ActionButton, IconActionButton, PageHeadingCount, SearchInput, Text } from '@/core'
+import {
+  ActionButton,
+  IconActionButton,
+  PageHeadingCount,
+  SearchInput,
+  SegmentedControl,
+  SegmentedControlItem,
+  Text
+} from '@/core'
+import { cn } from '@/utils/twUtils'
 import { Search, X } from 'lucide-react'
 
 
@@ -18,6 +27,8 @@ import { SectionTitle } from '../components/Assessments/SectionTitle'
 import { readAssessments, type Assessment } from '../lib/assessments'
 import type { BusinessRecord } from '../lib/deriveResults'
 import { useSummaryRuns } from '../lib/useSummaryRuns'
+
+type MobileSection = 'assessments' | 'activity' | 'alerts'
 
 const LAYOUT_KEY = 'prototype:assessments-layout'
 
@@ -104,14 +115,30 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
     onOrderAgain: read.assessment.customOrderId ? () => order(read.assessment.customOrderId) : undefined
   })
 
+  // Stacked, the section on show; side by side, ignored.
+  const [mobileSection, setMobileSection] = useState<MobileSection>('assessments')
+  const offMobile = (section: MobileSection) => (mobileSection === section ? undefined : 'max-lg:hidden')
+
   return (
     <BusinessFrame record={record}>
       {/* Two columns: the assessments, and a 320px column of alerts and
           recent activity at the right. */}
+      {/* Stacked (below lg), the three sections are one at a time: a switch
+          across the page's width picks which. Side by side, all show. */}
+      <SegmentedControl
+        aria-label="Business section"
+        className="mb-6 flex w-full lg:hidden [&>*]:flex-1"
+        onValueChange={(v) => v && setMobileSection(v as MobileSection)}
+        value={mobileSection}
+      >
+        <SegmentedControlItem value="assessments">Assessments</SegmentedControlItem>
+        <SegmentedControlItem value="activity">Activity</SegmentedControlItem>
+        <SegmentedControlItem value="alerts">Alerts</SegmentedControlItem>
+      </SegmentedControl>
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
 
 
-      <section aria-label="Assessments" className="min-w-0">
+      <section aria-label="Assessments" className={cn('min-w-0', offMobile('assessments'))}>
         <div className="mb-3 flex items-center gap-3">
           {/* The same title as Alerts and Recent activity, with its count. */}
           <SectionTitle className="flex items-center gap-2">
@@ -168,7 +195,7 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
         {layout === 'list' ? (
           <AssessmentTable rows={shownReads.map(cardProps)} />
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 wide:grid-cols-2">
             {shownReads.map((read) => (
               <AssessmentCard key={read.assessment.id} {...cardProps(read)} />
             ))}
@@ -181,9 +208,13 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
         )}
       </section>
 
-      <aside className="flex flex-col gap-12">
-        <RecentActivity record={record} reads={reads} />
-        <AlertsCard />
+      <aside className={cn('flex flex-col gap-12', mobileSection === 'assessments' && 'max-lg:hidden')}>
+        <div className={offMobile('activity')}>
+          <RecentActivity record={record} reads={reads} />
+        </div>
+        <div className={offMobile('alerts')}>
+          <AlertsCard />
+        </div>
       </aside>
       </div>
     </BusinessFrame>
