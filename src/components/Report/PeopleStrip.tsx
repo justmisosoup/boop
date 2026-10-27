@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CircleAlert, Landmark, LayoutGrid, List, Table2, UserRound } from 'lucide-react'
+import { Check, Landmark, X, LayoutGrid, List, Table2, UserRound } from 'lucide-react'
 
 import {
   ActionButton,
@@ -19,6 +19,7 @@ import { sourceLabel } from '../../lib/sourceLabels'
 import { AttributeCells } from '../AttributeGrid'
 import { cellsFromRows, type CellContext } from '../attributeCells'
 import { Strip } from './Strip'
+import type { Provenance } from './ResultTable'
 import { cn } from '../../utils/twUtils'
 
 const icon = { 'aria-hidden': true, size: 12, strokeWidth: 2 } as const
@@ -60,7 +61,7 @@ const KINDS: Array<{ label: string; holds: (row: AttributeRow) => boolean }> = [
  * The people on the record as tiles, as the Addresses card draws its places:
  * one strip per kind — officers, registered agents, the people submitted —
  * one chip per person: green with a check where the customer submitted them
- * and a source verifies it, the warning tone where nothing does.
+ * and a source verifies it, red with an X where nothing does.
  * Closed until a chip is picked; the picked one opens their cell under the
  * strip — the name, their titles, every source that names them.
  */
@@ -105,14 +106,14 @@ const kindStrip = (label: string, rows: AttributeRow[], ctx: CellContext) => {
             <HoverCardTrigger asChild>
               <span className="flex">
                 {/* Submitted and verified: green, a check. Submitted and not
-                        verified: the warning tone, an exclamation mark — as the
+                        verified: the danger tone, an X — as the
                         Submitted chip on their cell reads. */}
                 <MetaChip
-                  tone={!r.submitted ? 'neutral' : corroborated(r) ? 'success' : 'warning'}
+                  tone={!r.submitted ? 'neutral' : corroborated(r) ? 'success' : 'danger'}
                   size="compact"
                 >
                   {r.submitted &&
-                    (corroborated(r) ? <Check {...icon} /> : <CircleAlert {...icon} />)}
+                    (corroborated(r) ? <Check {...icon} /> : <X {...icon} />)}
                   {filedName(r.value)}
                 </MetaChip>
               </span>
@@ -214,36 +215,6 @@ const roleOf = (r: AttributeRow) =>
         ? 'Owner'
         : r.label
 
-/** The people folded away under the submitted, verified ones: the ones found. */
-const ShowFoundPeople = ({
-  total,
-  shown,
-  expanded,
-  onToggle
-}: {
-  total: number
-  shown: number
-  expanded: boolean
-  onToggle: () => void
-}) => {
-  const found = total - shown
-  if (found <= 0) return null
-  const noun = found === 1 ? 'person' : 'people'
-  return (
-    <div
-      className={cn(
-        'flex justify-start px-2 py-2',
-        // Nothing above it while folded: the card's own rule is the top edge.
-        (shown > 0 || expanded) && 'border-t border-[var(--core-color-border-divider)]'
-      )}
-    >
-      <ActionButton variant="quiet" size="compact" onClick={onToggle}>
-        {expanded ? `Hide found ${noun}` : `Show ${found} found ${noun}`}
-      </ActionButton>
-    </div>
-  )
-}
-
 const PersonRow = ({ r, ctx }: { r: AttributeRow; ctx: CellContext }) => {
   const Icon = /registered agent/i.test(r.label) ? Landmark : UserRound
   // Their titles as the filings give them — an officer who also owns it with
@@ -300,59 +271,39 @@ const PersonRow = ({ r, ctx }: { r: AttributeRow; ctx: CellContext }) => {
 }
 
 /**
- * Everyone on the record, as the viewer chose to see them: a list — the name,
- * the records that name them and their titles, their role — or the grid of
- * their cells. Everyone submitted shows — or, with no one submitted, the first
- * person found — and the rest of those found fold away.
+ * The people on the record, as the viewer chose to see them: a list — the
+ * name, the records that name them and their titles, their role — or the grid
+ * of their cells. Whose, from the card's filter: everyone, the people
+ * submitted (the verified first), or the people the records found besides.
  */
 export const PeopleView = ({
   people,
   ctx,
-  view = 'list'
+  view = 'list',
+  who = 'all'
 }: {
   people: AttributeRow[]
   ctx: CellContext
   view?: PeopleViewMode
+  who?: Provenance
 }) => {
-  const [expanded, setExpanded] = useState(false)
-  // Everyone submitted always shows — the verified first, then the rest —
-  // and with no one submitted, the first person found: the card is never
-  // only a fold.
   const submitted = people.filter((r) => r.submitted)
-  const lead = submitted.length || (people.length > 0 ? 1 : 0)
-  const rows = [
-    ...submitted.filter((r) => corroborated(r)),
-    ...submitted.filter((r) => !corroborated(r)),
-    ...people.filter((r) => !r.submitted)
-  ]
-  if (rows.length === 0) return null
-  const shown = expanded ? rows : rows.slice(0, lead)
+  // Submitted first, the verified among them first; then everyone found.
+  const lead = [...submitted.filter((r) => corroborated(r)), ...submitted.filter((r) => !corroborated(r))]
+  const found = people.filter((r) => !r.submitted)
+  const shown = who === 'all' ? [...lead, ...found] : who === 'submitted' ? lead : who === 'found' ? found : []
+  if (shown.length === 0) return null
 
   if (view === 'grid') {
     return (
-      <div className="border-t border-[var(--core-color-border-divider)]">
-        {shown.length > 0 && (
-          <div className="overflow-hidden">
-            <AttributeCells
-              className="-mb-px"
-              columns={2}
-              items={cellsFromRows(shown, { ...ctx, allTitles: true })}
-            />
-          </div>
-        )}
-        <ShowFoundPeople
-          total={rows.length}
-          shown={lead}
-          expanded={expanded}
-          onToggle={() => setExpanded(!expanded)}
-        />
+      <div className="overflow-hidden border-t border-[var(--core-color-border-divider)]">
+        <AttributeCells className="-mb-px" columns={2} items={cellsFromRows(shown, { ...ctx, allTitles: true })} />
       </div>
     )
   }
 
   return (
     <div className="border-t border-[var(--core-color-border-divider)]">
-      {shown.length > 0 && (
       <div className="hidden gap-x-4 border-b border-[var(--core-color-border-divider)] px-4 py-1.5 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <span className="text-xs font-medium text-[var(--core-color-table-header-text)]">
           People
@@ -361,16 +312,9 @@ export const PeopleView = ({
           Roles
         </span>
       </div>
-      )}
       {shown.map((r, i) => (
         <PersonRow key={`${r.value}-${i}`} r={r} ctx={ctx} />
       ))}
-      <ShowFoundPeople
-        total={rows.length}
-        shown={lead}
-        expanded={expanded}
-        onToggle={() => setExpanded(!expanded)}
-      />
     </div>
   )
 }

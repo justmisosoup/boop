@@ -218,6 +218,13 @@ body,
   --chip-claim-fg: #0b3139;
 }
 
+/* A passed check's mark: the Verified chip's midnight rather than the status
+   green, so a check reads as the same object wherever it is drawn. Follows the
+   chip's own dark value. */
+.core-theme {
+  --mark-pass: var(--chip-claim-fg);
+}
+
 .core-theme[data-theme='dark'],
 .dark .core-theme {
   --chip-claim-bg: #1d4450;
@@ -296,4 +303,49 @@ body,
 }
 .core-theme button[data-corner][aria-label='Open the Assistant']:hover {
   background-color: var(--core-color-interactive-hover);
+}
+
+/* Every meta tag at the small chip's size: the Verified chip's 12px caption
+   on a 16px line inside the chip's 1px border (18px in all), 6px either
+   side — so a status, a
+   characteristic and a source chip sit at one height in a row.
+
+   Core sizes its compact chips at 24px tall (`.core-chip.core-badge-compact`)
+   and its xs ones at 20px with 10px type; both are restated here rather than
+   in the read-only clone. The selectors carry one more class than core's so
+   they win without !important. */
+.core-theme .core-badge.core-badge-compact.core-badge-compact,
+.core-theme .core-badge.core-chip.core-badge-compact.core-badge-compact {
+  font-size: var(--core-font-size-sm);
+  line-height: 1rem;
+  min-height: 0;
+  padding: 0 calc(var(--core-spacing-xxs) * 1.5);
+}
+
+/* The assessment card's head, by the card's own width rather than the
+   window's: the card narrows beside a docked panel on a wide screen too.
+   Narrow, the controls come first — the assignee at the far left, pulled out
+   by its padding so its words sit on the card's edge, the status and menu on
+   the line under it, also at the left — and the name, whole, under them. */
+.core-theme .assessment-card-body {
+  container-type: inline-size;
+}
+@container (max-width: 520px) {
+  .core-theme .assessment-head {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--core-spacing-xs);
+  }
+  .core-theme .assessment-head > .assessment-actions {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    justify-items: start;
+  }
+  .core-theme .assessment-head > .assessment-actions > :first-child {
+    grid-column: 1 / -1;
+    margin-left: calc(var(--core-spacing-xs) * -1);
+  }
+  .core-theme .assessment-head > h2 {
+    white-space: normal;
+  }
 }

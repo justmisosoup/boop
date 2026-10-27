@@ -41,11 +41,25 @@ import { cn } from '../../utils/twUtils'
  * `FacetFilter` here also predates the app's: no `trigger`, no `footer`, no
  * per-option `leading`/`count`. So the swatches and the counts are gone from
  * the option rows, and Show sits beside the facet rather than inside it.
+ *
+ * ONE PART IS THE PROTOTYPE'S OWN: the Registration facet — the filings by
+ * state and filing number — so a filing's history can be read on its own.
+ * It is not one of `filters.ts`'s filters (that file is the app's, copied
+ * verbatim); the timeline holds it beside them.
  */
+
+/** A filing as the Registration facet keys it: its state and filing number,
+ *  the number without a letter prefix or punctuation — the timeline writes
+ *  Illinois's filing "C64323091" where the filing itself says "64323091". */
+export const filingKey = (state?: string, fileNumber?: string) =>
+  `${state ?? ''}|${(fileNumber ?? '').replace(/^[A-Za-z]+/, '').replace(/[^0-9A-Za-z]/g, '')}`
 
 type Props = {
   filters: TimelineFilters
   onChange: (next: TimelineFilters) => void
+  /** The filings shown, by `filingKey`; none, every filing. */
+  filings: string[]
+  onFilingsChange: (next: string[]) => void
   /** All loaded updates, unfiltered. */
   updates: FilingUpdate[]
   summary: string
@@ -80,6 +94,8 @@ const PRESETS: Array<{ label: string; value: { from: string; to: string } | null
 export const TimelineToolbar = ({
   filters,
   onChange,
+  filings,
+  onFilingsChange,
   updates,
   summary,
   className
@@ -96,6 +112,33 @@ export const TimelineToolbar = ({
       })
     )
   }, [updates])
+
+  // Every filing that has changes, each counted: the ones picked first, then
+  // the rest — each run by state then filing number — so a selection is never
+  // searched for.
+  const filingOptions = useMemo(() => {
+    const counts = new Map<string, { state?: string; fileNumber?: string; n: number }>()
+    for (const update of updates) {
+      const key = filingKey(update.source.state, update.source.fileNumber)
+      const at = counts.get(key) ?? { state: update.source.state, fileNumber: update.source.fileNumber, n: 0 }
+      at.n += update.changes.length
+      counts.set(key, at)
+    }
+    return [...counts.entries()]
+      .filter(([, f]) => f.state || f.fileNumber)
+      .sort(
+        ([ka, a], [kb, b]) =>
+          Number(filings.includes(kb)) - Number(filings.includes(ka)) ||
+          (a.state ?? '').localeCompare(b.state ?? '') ||
+          (a.fileNumber ?? '').localeCompare(b.fileNumber ?? '')
+      )
+      .map(([key, f]) => ({ value: key, name: [f.state, f.fileNumber].filter(Boolean).join(' · '), label: `${[f.state, f.fileNumber].filter(Boolean).join(' · ')} · ${f.n}` }))
+  }, [updates, filings])
+  // One or two picked: the button names them rather than counting them.
+  const named =
+    filings.length > 0 && filings.length <= 2
+      ? filingOptions.filter((o) => filings.includes(o.value)).map((o) => o.name)
+      : []
 
   const rangeLabel =
     PRESETS.find(
@@ -137,6 +180,16 @@ export const TimelineToolbar = ({
         searchable={false}
       />
 
+      <FacetFilter
+        aria-label="Registration"
+        className={cn(named.length > 0 && '[&_.core-count]:hidden')}
+        label={named.length > 0 ? `Registration: ${named.join(', ')}` : 'Registration'}
+        options={filingOptions.map(({ value, label }) => ({ value, label }))}
+        value={filings}
+        onChange={onFilingsChange}
+        searchable={filingOptions.length > 8}
+      />
+
       <SegmentedControl
         aria-label="Show added or removed"
         onValueChange={(next) => onChange({ ...filters, show: next as Show })}
@@ -148,8 +201,15 @@ export const TimelineToolbar = ({
         <SegmentedControlItem value="removed">Removed</SegmentedControlItem>
       </SegmentedControl>
 
-      {isFilterActive(filters) && (
-        <ActionButton onClick={() => onChange(EMPTY_FILTERS)} size="compact" variant="quiet">
+      {(isFilterActive(filters) || filings.length > 0) && (
+        <ActionButton
+          onClick={() => {
+            onChange(EMPTY_FILTERS)
+            onFilingsChange([])
+          }}
+          size="compact"
+          variant="quiet"
+        >
           Clear filters
         </ActionButton>
       )}

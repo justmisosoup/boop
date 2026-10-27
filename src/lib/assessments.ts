@@ -83,6 +83,8 @@ export type AssessmentRead = {
   summary?: { text: string; at: string; body: Paragraph[]; stepWhys?: Record<string, string> }
   /** Its orders are still running. */
   ordering: boolean
+  /** When it was run: its order, or — Full Business KYB — the business's. */
+  runAt?: string
 }
 
 /**
@@ -143,7 +145,8 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
             body: [{ text: (held?.report?.summary ?? held?.report?.headline)! }]
           }
         : undefined,
-      ordering: false
+      ordering: false,
+      runAt: record.createdAt ?? undefined
     }
   }
   const shown = resultsIn(a, live).filter((r) => !r.notReported)
@@ -167,7 +170,8 @@ export const readAssessment = (record: BusinessRecord, a: Assessment, live = der
           stepWhys: kept.steps ? Object.fromEntries(kept.steps.map((x) => [x.id, x.why])) : undefined
         }
       : undefined,
-    ordering: a.orderedAt ? stillOrdering({ orderedAt: a.orderedAt, completedAt: a.completedAt }) : false
+    ordering: a.orderedAt ? stillOrdering({ orderedAt: a.orderedAt, completedAt: a.completedAt }) : false,
+    runAt: a.orderedAt
   }
 }
 

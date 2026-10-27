@@ -29,6 +29,7 @@ export const GroupCard = ({
   title,
   count,
   trailing,
+  controls,
   visual,
   rows,
   record,
@@ -43,8 +44,10 @@ export const GroupCard = ({
   /** How many of the card's things the record holds — liens, people, places —
    *  beside the title. None, or zero, shows nothing. */
   count?: number
-  /** The identifying tag at the header's edge: the Formation card's filing. */
+  /** The card's view toggle — table or grid, list or map — at the header's edge. */
   trailing?: ReactNode
+  /** The card's filter — All, Open, Closed — under its title. */
+  controls?: ReactNode
   /** The group's data view. Absent where the record holds nothing to draw. */
   visual?: ReactNode
   /** The group's insight rows, in the order to show them. */
@@ -69,16 +72,11 @@ export const GroupCard = ({
       aria-label={typeof title === 'string' ? (count ? `${title}, ${count}` : title) : undefined}
     >
       <CardHeader
-        title={
-          count ? (
-            <>
-              {title} <span className="tabular-nums text-text-secondary">{count}</span>
-            </>
-          ) : (
-            title
-          )
-        }
+        // No count beside the title: the card's own filter counts its things.
+        title={title}
+        // The view toggle at the edge; the filter under the title.
         trailing={trailing}
+        below={controls}
         className="border-b-0"
       />
       {visual}

@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck } from 'lucide-react'
+import { CircleCheck, CircleX } from 'lucide-react'
 
 import { cn } from '../utils/twUtils'
 import { ChatSourceChip, type ChatSourceData } from '@/core'
@@ -19,6 +19,7 @@ import { screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
 import { CHIP_CLAIM, CHIP_NO_GLYPH, CHIP_UNVERIFIED } from './chipStyles'
 import { useScreenshotViewer } from './ScreenshotViewer'
+import { SourceListChip } from './SourceListChip'
 import { registrationSources } from './SourceChip'
 
 /**
@@ -87,7 +88,7 @@ const submittedSource = ({
     icon: verified ? (
       <CircleCheck aria-hidden="true" className="size-3" />
     ) : (
-      <CircleAlert aria-hidden="true" className="size-3" />
+      <CircleX aria-hidden="true" className="size-3" />
     )
   }
 }
@@ -124,9 +125,25 @@ export const SubmittedChip = ({
   // Verified is never plain: the chip carries the check itself, so no mark
   // sits beside the value as well.
   if (verified) plain = false
+  const claim = {
+    ...submittedSource({ verified, by, listed: sources.length, onJumpToSource, label }),
+    ...(plain ? { icon: undefined } : {})
+  }
+  const tint = cn(plain ? CHIP_NO_GLYPH : verified ? CHIP_CLAIM : CHIP_UNVERIFIED)
+  // With sources behind it, they open as the registration tooltip lists a
+  // place: each in bold with its status chip, what it is under it.
+  if (sources.length > 0)
+    return (
+      <SourceListChip
+        claim={claim}
+        className={tint}
+        hideCount={hideCount}
+        sources={sources.map((x) => (x.url ? x : { ...x, domain: undefined }))}
+      />
+    )
   return (
   <ChatSourceChip
-    // Not verified: the warning tone, with the exclamation mark.
+    // Not verified: the danger tone, with the X.
     className={cn(plain ? CHIP_NO_GLYPH : verified ? CHIP_CLAIM : CHIP_UNVERIFIED, hideCount && '[&>span.ml-1]:hidden')}
     // Under the claim, each source as the place it is from over what it is —
     // "San Francisco" over "City Registration", "firebirdyarns.com" over

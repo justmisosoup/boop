@@ -26,7 +26,7 @@ const META: Record<Kind, { icon: LucideIcon; word: string; glyph: string }> = {
   positive: {
     icon: CircleCheck,
     word: 'Positive',
-    glyph: 'text-[var(--core-color-status-success-fg)]'
+    glyph: 'text-[var(--mark-pass)]'
   },
   // Grey, as Neutral is: the cross says negative, and red on it passed a
   // judgement the count does not make.

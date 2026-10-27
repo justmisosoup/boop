@@ -21,6 +21,7 @@ import {
   AssessmentLayoutToggle,
   type AssessmentLayout
 } from '../components/Assessments/AssessmentCard'
+import { AssessmentSummaryCard } from '../components/Assessments/AssessmentSummaryCard'
 import { AssessmentTable } from '../components/Assessments/AssessmentTable'
 import { BusinessFrame } from '../components/Assessments/BusinessFrame'
 import { SectionTitle } from '../components/Assessments/SectionTitle'
@@ -75,7 +76,8 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
   // The reader's own preference, kept across businesses on this browser.
   const [layout, setLayoutState] = useState<AssessmentLayout>(() => {
     try {
-      return window.localStorage.getItem(LAYOUT_KEY) === 'list' ? 'list' : 'grid'
+      const kept = window.localStorage.getItem(LAYOUT_KEY)
+      return kept === 'list' || kept === 'summary' ? kept : 'grid'
     } catch {
       return 'grid'
     }
@@ -140,7 +142,7 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
 
       <section aria-label="Assessments" className={cn('min-w-0', offMobile('assessments'))}>
         <div className="mb-3 flex items-center gap-3">
-          {/* The same title as Alerts and Recent activity, with its count. */}
+          {/* The same title as Alerts and Activity, with its count. */}
           <SectionTitle className="flex items-center gap-2">
             Assessments
             {/* The core count chip, as the list pages' headings carry theirs. */}
@@ -197,7 +199,15 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
         ) : (
           <div className="grid grid-cols-1 gap-4 wide:grid-cols-2">
             {shownReads.map((read) => (
-              <AssessmentCard key={read.assessment.id} {...cardProps(read)} />
+              layout === 'summary' ? (
+                <AssessmentSummaryCard
+                  key={read.assessment.id}
+                  read={read}
+                  onOpen={() => open(read.assessment)}
+                />
+              ) : (
+                <AssessmentCard key={read.assessment.id} {...cardProps(read)} />
+              )
             ))}
           </div>
         )}

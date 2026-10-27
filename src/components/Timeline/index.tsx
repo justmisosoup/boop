@@ -15,10 +15,10 @@ import { summaryText } from '../../lib/timeline/format'
 import { countChanges, groupUpdates, yearsOf } from '../../lib/timeline/group'
 import { layoutVars } from '../../lib/timeline/layout'
 import type { Stem } from '../../lib/timeline/strip'
-import type { Kind, TimelineEvent } from '../../lib/timeline/types'
+import type { FilingUpdate, Kind, TimelineEvent } from '../../lib/timeline/types'
 import { OverviewStrip, type StripBrush } from './OverviewStrip'
 import { Spine } from './Spine'
-import { TimelineToolbar } from './TimelineToolbar'
+import { filingKey, TimelineToolbar } from './TimelineToolbar'
 import { updateDomId } from './UpdateEntry'
 
 /**
@@ -41,14 +41,29 @@ import { updateDomId } from './UpdateEntry'
  *   them to session storage per business (`hooks.ts`); here they are state, and
  *   go away with the page.
  */
+/** The filings (`filingKey`) a business's timeline has changes for: where a
+ *  "Timeline" button has something to open. */
+export const filingsWithTimeline = (businessId: string): Set<string> =>
+  new Set(
+    groupUpdates((timelineFixture as { byBusiness: Record<string, TimelineEvent[]> }).byBusiness[businessId] ?? []).map((u) =>
+      filingKey(u.source.state, u.source.fileNumber)
+    )
+  )
+
+export { filingKey }
+
 export const Timeline = ({
   businessId,
-  focus
+  focus,
+  onOpenFiling
 }: {
   businessId: string
+  /** Opens a filing's card in Sources, from its chip on an entry. */
+  onOpenFiling?: (source: FilingUpdate['source']) => void
   /** A change to open on and mark — the Formation card's name history — with
-   *  the change types to filter to. `n` makes a second click follow it again. */
-  focus?: { eventId: string; kinds?: Kind[]; n: number }
+   *  the change types to filter to; or a filing (`filingKey`) to show alone.
+   *  `n` makes a second click follow it again. */
+  focus?: { eventId?: string; kinds?: Kind[]; filing?: string; n: number }
 }) => {
   // This business's stored response (`scripts/pull-timeline.ts`); none stored
   // reads as no events, which the empty state covers.
@@ -59,27 +74,29 @@ export const Timeline = ({
   )
 
   const [filters, setFilters] = useState<TimelineFilters>(EMPTY_FILTERS)
+  // The Registration facet: the prototype's own, held beside the app's filters.
+  const [filings, setFilings] = useState<string[]>([])
   const [shown, setShown] = useState(LIST_WINDOW)
   const [highlightedIds, setHighlightedIds] = useState<Set<string> | null>(null)
   const [hoveredIds, setHoveredIds] = useState<Set<string> | null>(null)
   const highlightTimer = useRef<number | null>(null)
 
   const allUpdates = useMemo(() => groupUpdates(events), [events])
-  const visibleUpdates = useMemo(
-    () => applyFilters(allUpdates, filters),
-    [allUpdates, filters]
-  )
+  const visibleUpdates = useMemo(() => {
+    const ofFilings = filings.length
+      ? allUpdates.filter((u) => filings.includes(filingKey(u.source.state, u.source.fileNumber)))
+      : allUpdates
+    return applyFilters(ofFilings, filters)
+  }, [allUpdates, filters, filings])
+  const filtered = isFilterActive(filters) || filings.length > 0
 
   // `null` means nothing is dimmed in the strip.
   const matchingIds = useMemo(
-    () =>
-      isFilterActive(filters)
-        ? new Set(visibleUpdates.map((update) => update.id))
-        : null,
-    [filters, visibleUpdates]
+    () => (filtered ? new Set(visibleUpdates.map((update) => update.id)) : null),
+    [filtered, visibleUpdates]
   )
 
-  useEffect(() => setShown(LIST_WINDOW), [filters])
+  useEffect(() => setShown(LIST_WINDOW), [filters, filings])
   useEffect(
     () => () => {
       if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
@@ -88,14 +105,13 @@ export const Timeline = ({
   )
 
   const summary = useMemo(() => {
-    const filtered = isFilterActive(filters)
     return summaryText({
       changes: countChanges(visibleUpdates),
       filings: visibleUpdates.length,
       totalChanges: filtered ? countChanges(allUpdates) : undefined,
       years: yearsOf(visibleUpdates)
     })
-  }, [allUpdates, filters, visibleUpdates])
+  }, [allUpdates, filtered, visibleUpdates])
 
   const selectedRange: StripBrush | null =
     filters.from && filters.to ? { from: filters.from, to: filters.to } : null
@@ -125,9 +141,19 @@ export const Timeline = ({
      change in the list and marked until something else is. */
   useEffect(() => {
     if (!focus) return
+    // A filing: every other filter off, that filing alone, from the top.
+    if (focus.filing) {
+      setFilters(EMPTY_FILTERS)
+      setFilings([focus.filing])
+      setHighlightedIds(null)
+      return
+    }
+    if (!focus.eventId) return
+    const eventId = focus.eventId
+    setFilings([])
     const next = { ...EMPTY_FILTERS, kinds: focus.kinds ?? [] }
     const list = applyFilters(allUpdates, next)
-    const index = list.findIndex((u) => u.changes.some((c) => c.id === focus.eventId))
+    const index = list.findIndex((u) => u.changes.some((c) => c.id === eventId))
     if (index === -1) return
     const target = list[index]
     setFilters(next)
@@ -156,6 +182,8 @@ export const Timeline = ({
           className="min-h-12 border-b border-solid border-border px-3 py-1.5"
           filters={filters}
           onChange={setFilters}
+          filings={filings}
+          onFilingsChange={setFilings}
           summary={summary}
           updates={allUpdates}
         />
@@ -178,7 +206,10 @@ export const Timeline = ({
             title="No matching changes"
             description={`None of the ${countChanges(allUpdates)} recorded changes match these filters. The strip above still shows where the history is.`}
             actionLabel="Clear filters"
-            onAction={() => setFilters(EMPTY_FILTERS)}
+            onAction={() => {
+              setFilters(EMPTY_FILTERS)
+              setFilings([])
+            }}
           />
         </div>
       ) : (
@@ -189,6 +220,7 @@ export const Timeline = ({
             highlightedIds={highlightedIds}
             hoveredIds={hoveredIds}
             onHover={(id) => setHoveredIds(id ? new Set([id]) : null)}
+            onOpenFiling={onOpenFiling}
             onShowMore={() => setShown((current) => current + LIST_WINDOW)}
             shown={shown}
             updates={visibleUpdates}

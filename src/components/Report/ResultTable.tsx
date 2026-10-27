@@ -86,6 +86,44 @@ export const StatusControl = ({
   </SegmentedControl>
 )
 
+/** Whose: everything, what the customer submitted, or what the records found besides. */
+export type Provenance = 'all' | 'submitted' | 'found'
+
+const PROVENANCE_WORD: Record<Provenance, string> = { all: 'All', submitted: 'Submitted', found: 'Found' }
+
+/**
+ * The Names and People cards' filter: All, Submitted and Found (former names
+ * among the found) — each counted, as the other cards count theirs. One with none is still shown, disabled: the card
+ * says it found nothing as plainly as it says what it found.
+ */
+export const ProvenanceControl = ({
+  counts,
+  value,
+  onChange,
+  label
+}: {
+  counts: Record<'submitted' | 'found', number>
+  value: Provenance
+  onChange: (next: Provenance) => void
+  /** What is being filtered, for assistive tech: "names", "people". */
+  label: string
+}) => (
+  <SegmentedControl size="sm" aria-label={`Filter ${label}`} value={value} onValueChange={(v) => v && onChange(v as Provenance)}>
+    {(['all', 'submitted', 'found'] as const)
+      .map((v) => (
+        <SegmentedControlItem disabled={v !== 'all' && !counts[v]} key={v} value={v}>
+          {PROVENANCE_WORD[v]}
+          <span className="ml-1 tabular-nums text-text-secondary">
+            {v === 'all' ? counts.submitted + counts.found : counts[v]}
+          </span>
+        </SegmentedControlItem>
+      ))}
+  </SegmentedControl>
+)
+
+/** All, as every card's filter opens on. */
+export const defaultProvenance = (): Provenance => 'all'
+
 export const ResultTable = ({
   columns,
   rows: allRows,

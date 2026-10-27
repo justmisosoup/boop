@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Activity, Clock, Database, ListChecks, MessageSquare, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { Activity, Clock, Database, ListChecks, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 import { AppShellNavItem, Hint, IconActionButton, Text } from '@/core'
 
@@ -9,24 +9,19 @@ export type PanelView = 'assistant' | 'timeline' | 'insights' | 'sources' | 'act
 
 type PanelViewDef = { id: PanelView; label: string; icon: ReactNode }
 
+/** The report's side panel: its insights first, then the business's filings
+ *  over time, then the sources. The Assistant is not one of them — it stays
+ *  in its bubble, floating over the report. */
 export const PANEL_VIEWS: PanelViewDef[] = [
   {
-    id: 'assistant',
-    label: 'Assistant',
-    icon: <MessageSquare aria-hidden="true" size={16} strokeWidth={1.5} />
+    id: 'insights',
+    label: 'Insights',
+    icon: <ListChecks aria-hidden="true" size={16} strokeWidth={1.5} />
   },
   {
     id: 'timeline',
     label: 'Timeline',
     icon: <Clock aria-hidden="true" size={16} strokeWidth={1.5} />
-  },
-  // The assessment's evidence, beside it rather than under tabs of its own:
-  // the insights it read, grouped; the attributes behind them; the sources
-  // they came from.
-  {
-    id: 'insights',
-    label: 'Insights',
-    icon: <ListChecks aria-hidden="true" size={16} strokeWidth={1.5} />
   },
   {
     id: 'sources',

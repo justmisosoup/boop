@@ -39,7 +39,8 @@ import { stateName } from './states'
 const screenHits = (record: BusinessRecord, screen: Screen) =>
   screeningOf(record).findings.filter((f) => f.screen === screen).length
 
-export type BandId = 'established' | 'conditions' | 'not_established'
+/** Two calls, no middle: a KYB recommendation approves or rejects. */
+export type BandId = 'established' | 'not_established'
 
 /**
  * How much an assessment counts, in the one-pager's words.
@@ -143,9 +144,10 @@ export type IdentityScore = {
  * keyed, and nothing about the arithmetic changed.
  */
 export const BANDS: readonly ScoreBand[] = [
-  { id: 'not_established', label: 'Reject', range: '0–49', tone: 'danger', from: 0 },
-  { id: 'conditions', label: 'Needs review', range: '50–89', tone: 'warning', from: 50 },
-  { id: 'established', label: 'Approve', range: '90+', tone: 'success', from: 90 }
+  // Two bands, asked for: a KYB recommendation is approve or reject, never
+  // "needs review". Under the Approve bar is Rejected.
+  { id: 'not_established', label: 'Rejected', range: '0–89', tone: 'danger', from: 0 },
+  { id: 'established', label: 'Approved', range: '90+', tone: 'success', from: 90 }
 ]
 
 /**
@@ -163,7 +165,8 @@ export const bandOfCall = (headline: string | null | undefined): ScoreBand | und
   const id: BandId | undefined = /\b(do not onboard|decline|reject)\b/.test(h)
     ? 'not_established'
     : /\brequest information\b|^request\b/.test(h)
-      ? 'conditions'
+      ? // Not onboardable until the information comes back: Rejected until then.
+        'not_established'
       : /\bonboard\b|\bapprove\b/.test(h)
         ? 'established'
         : undefined

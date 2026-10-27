@@ -44,6 +44,8 @@ import type { BusinessRecord, Derived } from '../../lib/deriveResults'
 import type { GroupId } from '../../lib/groups'
 import { operationsOf } from '../../lib/operations'
 import { REPORT_CARDS, cardAnchor, cardFor } from '../../lib/reportCards'
+import { filingCardOf } from '../../lib/sourceInventory'
+import { docCard, namedCard } from '../../lib/sourceCards'
 import { dismissalOf, screenedOf } from '../../lib/screening'
 import { capturedLabel, screenshotFor } from '../../lib/sourceScreenshots'
 import { faviconFor } from '../../lib/sourceLabels'
@@ -61,7 +63,7 @@ import { Collapsible } from '../Collapsible'
 import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
 import { OtherFilings } from './OtherFilings'
-import { FilingStrip, RegistrationControls, registrationCounts, type FilingsLayout, type RegistrationFilter } from './FilingStrip'
+import { FilingStrip, RegistrationFilterControl, RegistrationViewToggle, registrationCounts, type FilingsLayout, type RegistrationFilter } from './FilingStrip'
 import { BusinessDetailsCard } from './BusinessDetailsCard'
 import { GroupCard } from './GroupCard'
 import { CardHeader } from '../CardHeader'
@@ -77,7 +79,16 @@ import {
 import { PeopleView, PeopleViewToggle, type PeopleViewMode } from './PeopleStrip'
 import { RelatedBusinesses } from './RelatedBusinesses'
 import { ConnectionsGraph } from './explorer/ConnectionsGraph'
-import { ResultGrid, ResultTable, StatusControl, type ResultRow, type StatusFilter } from './ResultTable'
+import {
+  defaultProvenance,
+  ProvenanceControl,
+  ResultGrid,
+  ResultTable,
+  StatusControl,
+  type Provenance,
+  type ResultRow,
+  type StatusFilter
+} from './ResultTable'
 import { SubmittedChip } from '../Provenance'
 import { CHIP_NO_GLYPH } from '../chipStyles'
 import { BankruptcyTable, LienTable, LitigationTable, claimCounts } from './ClaimTables'
@@ -203,6 +214,14 @@ const NameHead = ({ cell, qualifier }: { cell: AttributeCell; qualifier?: string
   </span>
 )
 
+/** A former name's head: "Former name", the filing that carried it beside it. */
+const FormerHead = ({ cell, source }: { cell: AttributeCell; source?: ReactNode }) => (
+  <span className="flex flex-wrap items-center gap-1.5">
+    <NameLabel cell={cell} />
+    {source}
+  </span>
+)
+
 /** The name, marked as an address is: verified, or submitted with nothing to back it. */
 const NameValue = ({ cell, value }: { cell: AttributeCell; value: ReactNode }) => (
   <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
@@ -234,14 +253,23 @@ const NamesList = ({ cells }: { cells: AttributeCell[] }) => {
               'grid grid-cols-1 items-center gap-x-4 gap-y-1 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 last:bg-none'
             )}
           >
-            <span role="cell" className="grid min-w-0 gap-1">
-              <NameHead cell={cell} qualifier={v.qualifier} />
-              <NameValue cell={cell} value={v.value} />
-              {cell.submitted && !cell.verified && <NameSource cell={cell} />}
-              {(v.note ?? cell.note) && (
-                <span className="text-xs text-text-secondary">{v.note ?? cell.note}</span>
-              )}
-            </span>
+            {cell.key === 'former' ? (
+              // A former name: its kind with its history chip beside it — the
+              // change on the timeline, dated on hover — then the name.
+              <span role="cell" className="grid min-w-0 gap-1">
+                <FormerHead cell={cell} source={v.note} />
+                <NameValue cell={cell} value={v.value} />
+              </span>
+            ) : (
+              <span role="cell" className="grid min-w-0 gap-1">
+                <NameHead cell={cell} qualifier={v.qualifier} />
+                <NameValue cell={cell} value={v.value} />
+                {cell.submitted && !cell.verified && <NameSource cell={cell} />}
+                {(v.note ?? cell.note) && (
+                  <span className="text-xs text-text-secondary">{v.note ?? cell.note}</span>
+                )}
+              </span>
+            )}
           </div>
         ))
       )}
@@ -563,7 +591,7 @@ const StatusChips = ({
       {status &&
         tip(
           statusTip,
-          <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'warning'}>
+          <MetaChip size="compact" tone={/online|active/i.test(status) ? 'success' : 'danger'}>
             {titleCase(status)}
           </MetaChip>
         )}
@@ -839,64 +867,6 @@ const WebsiteSummary = ({
     </div>
   ) : (
     <ResultTable columns={['Platform', 'Status']} rows={rows} noneTitle={noneTitle} top={2} />
-  )
-}
-
-/**
- * Narrowed to some of the cards: the way back to the whole report, as a dark
- * tab hanging over the first card — in the space above it, so the card keeps
- * its place, level with the panel beside it. Scrolled away, it pins under the report's
- * sticky head and turns its rounding over. ~/Projects/prototype's `BackTab`
- * (`report/components/Report/GroupedReport.tsx`), its offset read from the
- * head height RecordPage publishes rather than a sticky context. It sits at the
- * top of the report's column, which runs the page's full height, so it stays
- * pinned however far the page scrolls.
- */
-export const BackTab = ({ onClick }: { onClick: () => void }) => {
-  const sentinel = useRef<HTMLSpanElement>(null)
-  const tab = useRef<HTMLButtonElement>(null)
-  const [stuck, setStuck] = useState(false)
-  useEffect(() => {
-    // Pinned once the tab has left its place, which the sentinel keeps.
-    // Capture: the page scrolls in a panel from `wide`, not the window.
-    const check = () => {
-      const from = sentinel.current?.getBoundingClientRect()
-      const at = tab.current?.getBoundingClientRect()
-      if (from && at) setStuck(at.top - from.bottom > 1)
-    }
-    check()
-    window.addEventListener('scroll', check, true)
-    window.addEventListener('resize', check)
-    return () => {
-      window.removeEventListener('scroll', check, true)
-      window.removeEventListener('resize', check)
-    }
-  }, [])
-  return (
-    <>
-      <span ref={sentinel} aria-hidden="true" className="block h-0" />
-      <button
-        ref={tab}
-        type="button"
-        onClick={() => {
-          // Back to the top of the report as it opens out again. Found before
-          // the tab unmounts: the page may scroll in a panel.
-          let scroller = tab.current?.parentElement ?? null
-          while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
-          onClick()
-          requestAnimationFrame(() => (scroller ?? window).scrollTo({ top: 0, behavior: 'smooth' }))
-        }}
-        className={cn(
-          'sticky top-[var(--report-head-h,0px)] z-[3] -mt-7 mx-3 flex h-7 w-[calc(100%-theme(spacing.6))] items-center gap-1.5 px-3 text-caption font-medium wide:top-[calc(var(--report-head-h,0px)-54px)]',
-          // The inverse surface, so the way back reads apart from the cards.
-          'bg-[var(--core-color-surface-inverse)] text-[var(--core-color-text-inverse)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          stuck ? 'rounded-b-card shadow-elevation-control' : 'rounded-t-card'
-        )}
-      >
-        <ArrowLeft aria-hidden="true" size={12} strokeWidth={2} />
-        Back to full report
-      </button>
-    </>
   )
 }
 
@@ -1206,15 +1176,25 @@ export const GroupedReport = ({
   const statusOf = (card: string) => statusBy[card] ?? 'all'
   // Web presence is a table only: no grid, no switch.
   const webView: WebView = 'table'
-  // The Names card's former names, folded away until asked for.
-  const [showFormer, setShowFormer] = useState(false)
+  // The Names and People cards' filter: whose — submitted, found, or former.
+  const [namesWho, setNamesWho] = useState<Provenance>()
+  const [peopleWho, setPeopleWho] = useState<Provenance>()
   const parts = useMemo(
     () => formationParts(record, results, groupFor, onJumpToSource, onJumpToTimeline),
     [record, results, groupFor, onJumpToSource, onJumpToTimeline]
   )
-  // The former names, counted for the card's fold; with none, it has no fold.
-  const formerCount = parts.names.find((cell) => cell.key === 'former')?.values.length ?? 0
-  const namesShown = showFormer ? parts.names : parts.names.filter((cell) => cell.key !== 'former')
+  // The names by whose they are: the submitted one, and every other name the
+  // records found — former names among them. Counted by name, not by row.
+  const nameCells = {
+    submitted: parts.names.filter((cell) => cell.key !== 'former' && cell.submitted),
+    found: parts.names.filter((cell) => cell.key === 'former' || !cell.submitted)
+  }
+  const nameCounts = {
+    submitted: nameCells.submitted.reduce((n, c) => n + c.values.length, 0),
+    found: nameCells.found.reduce((n, c) => n + c.values.length, 0)
+  }
+  const namesFilter = namesWho ?? defaultProvenance()
+  const namesShown = namesFilter === 'submitted' || namesFilter === 'found' ? nameCells[namesFilter] : parts.names
   // The Registrations card holds the city registrations in every view: rows, cells, map pins.
   const cityInTable = Boolean(parts.strip)
   const ops = useMemo(() => operationsOf(record), [record])
@@ -1242,6 +1222,11 @@ export const GroupedReport = ({
      licence holders, the people submitted — one cell each: their roles
      combined, under one spelling of their name. */
   const people = useMemo(() => peopleByPerson(peopleRows(record)), [record])
+  const peopleCounts = {
+    submitted: people.filter((r) => r.submitted).length,
+    found: people.filter((r) => !r.submitted).length
+  }
+  const peopleFilter = peopleWho ?? defaultProvenance()
 
   const grid = (group: GroupId) => {
     const cells = cellsOf(byGroup, group, record, onJumpToSource)
@@ -1351,34 +1336,34 @@ export const GroupedReport = ({
             className="-mb-px"
             columns={2}
             items={namesShown.flatMap((cell, c) =>
-              cell.values.map((v, i) => ({
-                key: `${cell.key ?? c}-${v.key ?? i}`,
-                label: [cell.label, v.qualifier].filter(Boolean).join(' · '),
-                labelNode: <NameHead cell={cell} qualifier={v.qualifier} />,
-                values: [
-                  {
-                    value: (
-                      <span className="grid gap-1">
-                        <NameValue cell={cell} value={v.value} />
-                        {cell.submitted && !cell.verified && <NameSource cell={cell} />}
-                      </span>
-                    ),
-                    note: v.note ?? cell.note
-                  }
-                ]
-              }))
+              cell.values.map((v, i) =>
+                cell.key === 'former'
+                  ? {
+                      // As in the table: kind and its history chip, then the name.
+                      key: `${cell.key}-${v.key ?? i}`,
+                      label: cell.label,
+                      labelNode: <FormerHead cell={cell} source={v.note} />,
+                      values: [{ value: <NameValue cell={cell} value={v.value} /> }]
+                    }
+                  : {
+                      key: `${cell.key ?? c}-${v.key ?? i}`,
+                      label: [cell.label, v.qualifier].filter(Boolean).join(' · '),
+                      labelNode: <NameHead cell={cell} qualifier={v.qualifier} />,
+                      values: [
+                        {
+                          value: (
+                            <span className="grid gap-1">
+                              <NameValue cell={cell} value={v.value} />
+                              {cell.submitted && !cell.verified && <NameSource cell={cell} />}
+                            </span>
+                          ),
+                          note: v.note ?? cell.note
+                        }
+                      ]
+                    }
+              )
             )}
           />
-        </div>
-      )}
-      {/* The names it dropped, folded away under the current ones. */}
-      {formerCount > 0 && (
-        <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
-          <ActionButton variant="quiet" size="compact" onClick={() => setShowFormer(!showFormer)}>
-            {showFormer
-              ? `Hide former ${formerCount === 1 ? 'name' : 'names'}`
-              : `Show ${formerCount} former ${formerCount === 1 ? 'name' : 'names'}`}
-          </ActionButton>
         </div>
       )}
       </>
@@ -1405,6 +1390,21 @@ export const GroupedReport = ({
               kindFilter={regFilter}
               onKindFilter={setRegFilter}
               showMap={regMap}
+              // A filing's row opens its Secretary of State card in Sources.
+              onOpenFiling={onJumpToSource ? (r) => onJumpToSource(filingCardOf(parts.strip!.record, r)) : undefined}
+              // A city's row opens its registration's card: the open one's record,
+              // else the latest; with no record behind it, the city registrations' card.
+              onOpenCity={
+                onJumpToSource
+                  ? (here) => {
+                      const withRef = here.filter((r) => r.refId)
+                      const pick =
+                        withRef.find((r) => !r.locationEnd && !r.businessEnd) ??
+                        [...withRef].sort((a, b) => (b.locationStart ?? '').localeCompare(a.locationStart ?? ''))[0]
+                      onJumpToSource(pick?.refId ? docCard(pick.refId) : namedCard('City registration'))
+                    }
+                  : undefined
+              }
             />
           )}
           {/* The filings other than the state's, under them: city registrations
@@ -1422,6 +1422,7 @@ export const GroupedReport = ({
       people.length > 0 ? (
         <PeopleView
           view={peopleView}
+          who={peopleFilter}
           people={people}
           ctx={{ domesticState: record.formation?.state, onJumpToSource }}
         />
@@ -1715,30 +1716,18 @@ export const GroupedReport = ({
                 count={tally[card.id]}
                 visual={visual[card.id]}
                 rows={rows}
+                // The view — table or grid, list, map or graph — at the header's edge.
                 trailing={
                   card.id === 'name' &&
                   visual.name &&
-                  // One name has nothing to lay out side by side.
-                  namesShown.reduce((n, cell) => n + cell.values.length, 0) > 1 ? (
+                  // One name in all has nothing to lay out side by side; the toggle
+                  // stays put as the filter changes.
+                  nameCounts.submitted + nameCounts.found > 1 ? (
                     <NamesViewToggle value={namesView} onChange={setNamesView} />
                   ) : card.id === 'formation' && parts.strip ? (
-                    <RegistrationControls
-                      counts={registrationCounts(parts.strip.record, parts.strip.lead, parts.city)}
-                      value={regFilter}
-                      onChange={setRegFilter}
-                      showMap={regMap}
-                      onShowMap={setRegMap}
-                    />
+                    <RegistrationViewToggle showMap={regMap} onShowMap={setRegMap} />
                   ) : card.id === 'address' && visual.address ? (
                     <AddressViewToggle value={addressView} onChange={setAddressView} />
-                  ) : STATUS_CARDS[card.id] && statusCountsOf(card.id).all > 0 ? (
-                    // With results, which: All, then Open and Closed, or Hits and Dismissed.
-                    <StatusControl
-                      counts={statusCountsOf(card.id)}
-                      labels={STATUS_CARDS[card.id]}
-                      value={statusOf(card.id)}
-                      onChange={(v) => setStatusBy((by) => ({ ...by, [card.id]: v }))}
-                    />
                   ) : card.id === 'connections' && (record.connections ?? []).length > 0 ? (
                     // The view, list first: the list alone, or the graph over it.
                     <SegmentedControl
@@ -1762,6 +1751,28 @@ export const GroupedReport = ({
                     </SegmentedControl>
                   ) : card.id === 'people' && visual.people ? (
                     <PeopleViewToggle value={peopleView} onChange={setPeopleView} />
+                  ) : undefined
+                }
+                // The filter — which of them to show — under the title.
+                controls={
+                  card.id === 'name' && parts.names.length > 0 ? (
+                    <ProvenanceControl counts={nameCounts} label="names" onChange={setNamesWho} value={namesFilter} />
+                  ) : card.id === 'people' && people.length > 0 ? (
+                    <ProvenanceControl counts={peopleCounts} label="people" onChange={setPeopleWho} value={peopleFilter} />
+                  ) : card.id === 'formation' && parts.strip ? (
+                    <RegistrationFilterControl
+                      counts={registrationCounts(parts.strip.record, parts.strip.lead, parts.city)}
+                      value={regFilter}
+                      onChange={setRegFilter}
+                    />
+                  ) : STATUS_CARDS[card.id] && statusCountsOf(card.id).all > 0 ? (
+                    // With results, which: All, then Open and Closed, or Hits and Dismissed.
+                    <StatusControl
+                      counts={statusCountsOf(card.id)}
+                      labels={STATUS_CARDS[card.id]}
+                      value={statusOf(card.id)}
+                      onChange={(v) => setStatusBy((by) => ({ ...by, [card.id]: v }))}
+                    />
                   ) : undefined
                 }
                 record={record}

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
-import { ArrowLeft, Check, Minus, RefreshCw, Sparkles, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Check, Minus, RefreshCw, Sparkles, X } from 'lucide-react'
 
 import { ActionButton, DateTime, Hint, HintContent, HintTrigger, IconActionButton, PageHeading, Surface, Text } from '@/core'
 
@@ -200,9 +200,9 @@ export const ScoreCard = ({
                       onClick={() => onSelectInsight?.(i.id)}
                       className="flex w-full items-start gap-2.5 bg-[image:var(--insight-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-2 text-left transition-colors duration-fast last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--core-color-focus-ring)] motion-reduce:transition-none"
                     >
-                      {/* The chips' marks: passed, needs review, failed, context. */}
-                      <span className={cn('mt-1 flex', i.outcome === 'fail' ? 'text-[var(--core-color-status-danger-fg)]' : i.outcome === 'review' ? 'text-[var(--core-color-status-warning-fg)]' : i.outcome === 'pass' ? 'text-[var(--core-color-status-success-fg)]' : 'text-text-secondary')}>
-                        {i.outcome === 'fail' ? <X {...CHIP_ICON} /> : i.outcome === 'review' ? <TriangleAlert {...CHIP_ICON} /> : i.outcome === 'pass' ? <Check {...CHIP_ICON} /> : <Minus {...CHIP_ICON} />}
+                      {/* The chips' marks: passed, against (failed or for review), context. */}
+                      <span className={cn('mt-1 flex', i.outcome === 'fail' || i.outcome === 'review' ? 'text-[var(--core-color-status-danger-fg)]' : i.outcome === 'pass' ? 'text-[var(--mark-pass)]' : 'text-text-secondary')}>
+                        {i.outcome === 'fail' || i.outcome === 'review' ? <X {...CHIP_ICON} /> : i.outcome === 'pass' ? <Check {...CHIP_ICON} /> : <Minus {...CHIP_ICON} />}
                       </span>
                       {/* Dense: a step under the body, a step over the group's caption. */}
                       <span className={cn('min-w-0 flex-1 text-dense leading-5', i.outcome === 'neutral' ? 'text-text-secondary' : 'text-foreground')}>{i.statement}</span>
@@ -240,8 +240,8 @@ export const OutcomeSpark = ({ tally, className }: { tally: OutcomeTally; classN
   const parts = (
     [
       [tally.good, 'bg-[var(--core-color-status-success-fg)]'],
-      [tally.review, 'bg-[var(--core-color-status-warning-fg)]'],
-      [tally.bad, 'bg-[var(--core-color-status-danger-fg)]'],
+      // Against: failed and for review, one segment, as the counts read.
+      [tally.bad + tally.review, 'bg-[var(--core-color-status-danger-fg)]'],
       [tally.neutral, 'bg-[var(--core-color-border-strong)]']
     ] as const
   ).filter(([n]) => n > 0)
@@ -249,7 +249,7 @@ export const OutcomeSpark = ({ tally, className }: { tally: OutcomeTally; classN
   return (
     <span
       role="img"
-      aria-label={`${tally.good} passed, ${tally.review} need review, ${tally.bad} failed, ${tally.neutral} context`}
+      aria-label={`${tally.good} passed, ${tally.bad + tally.review} against, ${tally.neutral} context`}
       className={cn('flex h-1 w-full gap-px overflow-hidden rounded-pill', className)}
     >
       {parts.map(([n, cls], i) => (

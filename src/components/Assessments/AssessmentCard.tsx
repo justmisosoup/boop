@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 
-import { LayoutGrid, List, MoreHorizontal } from 'lucide-react'
+import { LayoutGrid, LayoutPanelTop, List, MoreHorizontal } from 'lucide-react'
 
 import {
   ActionButton,
-  DateTime,
   IconActionButton,
   Menu,
   MenuContent,
@@ -20,6 +19,7 @@ import {
 import { cn } from '@/utils/twUtils'
 
 import type { AssessmentRead } from '../../lib/assessments'
+import dayjs from '../../lib/dayjs'
 import { DeterminationChip } from '../DeterminationChip'
 import { InsightCounts } from '../InsightCounts'
 import { countsOf, OutcomeSpark } from '../Report/ReportHero'
@@ -29,7 +29,8 @@ import { CardHeader } from '../CardHeader'
 /** The name both ends of the card's move share — see `ScoreCard`. */
 export const assessmentTransitionName = (id: string) => `assessment-${id}`
 
-export type AssessmentLayout = 'list' | 'grid'
+/** `summary` is an exploration: the call in a sentence and the checks behind it. */
+export type AssessmentLayout = 'list' | 'grid' | 'summary'
 
 type Props = {
   read: AssessmentRead
@@ -63,10 +64,10 @@ const ScoreBlock = ({ read, trailing }: { read: AssessmentRead; trailing?: React
   </div>
 )
 
-/** What it found, and when that was written. Regenerating is in the ⋯ menu. */
+/** What it found, and the date it was run. Regenerating is in the ⋯ menu. */
 /** The ghost holds the summary's full height — two lines in a card, three in
  *  a row — and the line under it is always there, so nothing shifts as the
- *  summary lands. A short summary keeps "Generated" right under it; cards in a
+ *  summary lands. A short summary keeps the run date right under it; cards in a
  *  row stay level by stretching, with the button pinned at the foot. */
 const RESERVE = { 2: 'min-h-10', 3: 'min-h-[3.75rem]' } as const
 
@@ -91,11 +92,12 @@ const SummaryBlock = ({ read, running, lines }: Props & { lines: 2 | 3 }) => (
         {lines === 3 && <Skeleton className="w-2/3" />}
       </div>
     )}
-    <Text size="sm" tone="secondary" className="min-h-5">
-      {read.summary?.at ? (
-        <>
-          Generated <DateTime relative>{read.summary.at}</DateTime>
-        </>
+    {/* The date the assessment was run, as a date — not how long ago. Light
+        grey, a step under the summary: the lightest grey that still reads as
+        text (#77818f, karl light), not the disabled one. */}
+    <Text size="sm" className="min-h-5 text-[var(--core-color-control-placeholder)]">
+      {read.runAt ? (
+        <time dateTime={read.runAt}>{dayjs(read.runAt).format('MMM D, YYYY')}</time>
       ) : (
         <span aria-hidden="true">&nbsp;</span>
       )}
@@ -157,12 +159,13 @@ export const AssessmentCard = (props: Props) => {
       className="relative flex h-full flex-col overflow-hidden shadow-elevation-card transition-[border-color,box-shadow] duration-fast hover:border-[var(--core-color-border-strong)] hover:shadow-elevation-raised motion-reduce:transition-none"
       style={{ viewTransitionName: assessmentTransitionName(read.assessment.id) }}
     >
-      {/* The report cards' own head: the serif title over a hairline, the
-          assessment's call and its menu at the right. */}
+      {/* The report cards' own head: the serif title over a hairline, its
+          menu at the right. */}
       <CardHeader
         title={
           <button
-            className="block w-full min-w-0 truncate text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[var(--core-color-focus-ring)]"
+            // Small, as the report's own card names it.
+            className="block w-full min-w-0 truncate text-left text-dense after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[var(--core-color-focus-ring)]"
             onClick={props.onOpen}
             type="button"
           >
@@ -171,7 +174,6 @@ export const AssessmentCard = (props: Props) => {
         }
         trailing={
           <span className="relative z-[1] -my-1 -mr-2 flex items-center gap-1">
-            {read.ordering ? <MetaChip size="compact">Ordering</MetaChip> : <DeterminationChip band={read.score?.band ?? null} />}
             <MoreMenu {...props} />
           </span>
         }
@@ -179,7 +181,11 @@ export const AssessmentCard = (props: Props) => {
       {/* The drill-in's own score: the number, how the insights read, the
           bar; then what it found. */}
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <ScoreHead score={read.score?.value ?? null} tally={read.tally} />
+        <ScoreHead
+          tally={read.tally}
+          // How its insights read, then the call at the right.
+          trailing={read.ordering ? <MetaChip size="compact">Ordering</MetaChip> : <DeterminationChip band={read.score?.band ?? null} />}
+        />
         <SummaryBlock {...props} lines={2} />
       </div>
     </Surface>
@@ -201,6 +207,12 @@ export const AssessmentLayoutToggle = ({
       aria-label="Grid"
       className="!px-2"
       icon={<LayoutGrid aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="summary"
+      aria-label="Summary cards"
+      className="!px-2"
+      icon={<LayoutPanelTop aria-hidden="true" size={14} strokeWidth={1.75} />}
     />
   </SegmentedControl>
 )

@@ -96,6 +96,48 @@ const identityMeta = (record: BusinessRecord): Array<{ key: string; icon: ReactN
 const LABEL = 'text-xs font-medium text-[var(--core-color-table-header-text)]'
 
 /**
+ * The decision and what to do next, as the dashboard's status bar orders
+ * them: who has it, where it stands, then the action. In the header on the
+ * business page; in the assessment card on the report.
+ */
+export const IdentityActions = ({
+  record,
+  defaultStatus,
+  onRunAssessment,
+  onOpenTimeline,
+  onOpenActivity,
+  small = false
+}: {
+  record: BusinessRecord
+  defaultStatus: ReviewStatus
+  /** The small assignee, for the assessment card's head. */
+  small?: boolean
+  onRunAssessment?: () => void
+  onOpenTimeline?: () => void
+  onOpenActivity?: () => void
+}) => (
+  <>
+    <AssigneeDropdown businessId={record.id} small={small} />
+    <StatusDropdown businessId={record.id} defaultStatus={defaultStatus} />
+    {(onRunAssessment || onOpenTimeline || onOpenActivity) && (
+      <Menu>
+        <MenuTrigger asChild>
+          <IconActionButton aria-label={`More for ${displayName(record.name)}`} variant="secondary">
+            <MoreHorizontal aria-hidden="true" />
+          </IconActionButton>
+        </MenuTrigger>
+        <MenuContent align="end" themeMode="light">
+          {onRunAssessment && <MenuItem onSelect={onRunAssessment}>Run assessment</MenuItem>}
+          {onRunAssessment && (onOpenTimeline || onOpenActivity) && <MenuSeparator />}
+          {onOpenTimeline && <MenuItem onSelect={onOpenTimeline}>Timeline</MenuItem>}
+          {onOpenActivity && <MenuItem onSelect={onOpenActivity}>Activity</MenuItem>}
+        </MenuContent>
+      </Menu>
+    )}
+  </>
+)
+
+/**
  * The business's profile, pinned at the top of its overview and of every
  * assessment in it: what is always true of the business, the decision on it,
  * and the way to run another assessment.
@@ -112,8 +154,11 @@ export const IdentityHeader = ({
   assessment,
   onRunAssessment,
   onOpenTimeline,
-  onOpenActivity
+  onOpenActivity,
+  hideActions = false
 }: {
+  /** The controls are shown elsewhere — the report's assessment card. */
+  hideActions?: boolean
   /** The business's filings over time, in the right-hand column. */
   onOpenTimeline?: () => void
   /** What has happened to the business here. */
@@ -173,25 +218,17 @@ export const IdentityHeader = ({
           </ul>
           {/* The decision and what to do next, as the dashboard's status bar
               orders them: who has it, where it stands, then the action. */}
+          {!hideActions && (
           <PageHeaderActions className="order-first w-full flex-wrap justify-start [&>*:first-child]:-ml-2.5 [&>*:nth-child(2)]:ml-auto wide:order-none wide:w-auto wide:[&>*:first-child]:ml-0 wide:[&>*:nth-child(2)]:ml-0 wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:self-start wide:justify-end">
-            <AssigneeDropdown businessId={record.id} />
-            <StatusDropdown businessId={record.id} defaultStatus={defaultStatus} />
-            {(onRunAssessment || onOpenTimeline || onOpenActivity) && (
-              <Menu>
-                <MenuTrigger asChild>
-                  <IconActionButton aria-label={`More for ${displayName(record.name)}`} variant="secondary">
-                    <MoreHorizontal aria-hidden="true" />
-                  </IconActionButton>
-                </MenuTrigger>
-                <MenuContent align="end" themeMode="light">
-                  {onRunAssessment && <MenuItem onSelect={onRunAssessment}>Run assessment</MenuItem>}
-                  {onRunAssessment && (onOpenTimeline || onOpenActivity) && <MenuSeparator />}
-                  {onOpenTimeline && <MenuItem onSelect={onOpenTimeline}>Timeline</MenuItem>}
-                  {onOpenActivity && <MenuItem onSelect={onOpenActivity}>Activity</MenuItem>}
-                </MenuContent>
-              </Menu>
-            )}
+            <IdentityActions
+              defaultStatus={defaultStatus}
+              onOpenActivity={onOpenActivity}
+              onOpenTimeline={onOpenTimeline}
+              onRunAssessment={onRunAssessment}
+              record={record}
+            />
           </PageHeaderActions>
+          )}
         </div>
       </PageHeader>
     </PageHeaderBand>

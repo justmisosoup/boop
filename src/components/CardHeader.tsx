@@ -24,22 +24,35 @@ import { cn } from '../utils/twUtils'
 export const CardHeader = ({
   title,
   trailing,
+  below,
   className
 }: {
   title: ReactNode
   /** The identifying tag: a source chip, a band chip. Nothing is fine. */
   trailing?: ReactNode
+  /** The card's controls — a filter — under the title rather than beside it;
+   *  `trailing` then sits at the right of the same row. */
+  below?: ReactNode
   className?: string
 }) => (
   <div
     className={cn(
-      'flex items-center justify-between gap-3 border-b border-[var(--core-color-border-divider)] px-4 py-3',
+      'flex flex-col gap-2 border-b border-[var(--core-color-border-divider)] px-4 py-3',
       className
     )}
   >
-    <Heading level={4} className="min-w-0 font-arizona text-base font-light">
-      {title}
-    </Heading>
-    {trailing && <span className="flex shrink-0 items-center">{trailing}</span>}
+    <div className="flex items-center justify-between gap-3">
+      <Heading level={4} className="min-w-0 font-arizona text-base font-light">
+        {title}
+      </Heading>
+      {/* With controls under the title, the tag joins them, at their right. */}
+      {trailing && !below && <span className="flex shrink-0 items-center">{trailing}</span>}
+    </div>
+    {below && (
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {below}
+        {trailing && <span className="ml-auto flex shrink-0 items-center">{trailing}</span>}
+      </div>
+    )}
   </div>
 )

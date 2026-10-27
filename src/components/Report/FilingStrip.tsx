@@ -71,7 +71,8 @@ import {
   CityTooltip,
   cityName,
   isOpen,
-  registrationsOf
+  registrationsOf,
+  SourceDataMark
 } from './CityStrip'
 
 type Kind = 'active' | 'inactive' | 'none'
@@ -101,9 +102,9 @@ const TONE: Record<Kind, MetaChipTone> = {
 
 /** A filing's tone: its status's, except an active filing the state has
  *  started taking away — Indiana's "Pending Admin Dissolution" under a
- *  pending inactive sub status — which reads amber, not green. The standing
+ *  pending inactive sub status — which reads red, not green. The standing
  *  table decides, not the words (`troubled`). */
-const toneOf = (reg: Registration): MetaChipTone => (troubled(reg) ? 'warning' : TONE[kindOf(reg)])
+const toneOf = (reg: Registration): MetaChipTone => (troubled(reg) ? 'danger' : TONE[kindOf(reg)])
 
 /** The selected tile, inverted: its tone's strong colour as the fill and the
  *  card's colour as the text, so the one open reads at a glance among twenty
@@ -229,9 +230,7 @@ export const SubStatusChip = ({ reg }: { reg: Registration }) => {
     ? 'neutral'
     : good
       ? 'success'
-      : /pending/i.test(sub)
-        ? 'warning'
-        : 'danger'
+      : 'danger'
   return (
     <MetaChip tone={tone} size="compact" className={cn(!sub && ABSENT)}>
       {!sub ? (
@@ -447,15 +446,11 @@ export const stateGroupsOf = (record: BusinessRecord, lead?: Registration): Stat
     .sort((a, b) => rank(a) - rank(b) || a.state.localeCompare(b.state))
 }
 
-/** Over a filing's state, in the table: the register it is filed with, then
- *  domestic or foreign — "Secretary of State · Foreign". */
+/** Over a filing's name, in the table: domestic or foreign. The register is
+ *  in the name itself — "Utah Secretary of State" — so not repeated here. */
 const kindLine = (r: Registration) => {
   const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
-  return jurisdiction === 'domestic'
-    ? 'Secretary of State · Domestic'
-    : jurisdiction === 'foreign'
-      ? 'Secretary of State · Foreign'
-      : 'Secretary of State'
+  return jurisdiction === 'domestic' ? 'Domestic' : jurisdiction === 'foreign' ? 'Foreign' : ''
 }
 /** Under it, when it was filed. */
 const filedDate = (r: Registration) =>
@@ -564,6 +559,8 @@ export const FilingStrip = ({
   city,
   kindFilter = 'all',
   onKindFilter,
+  onOpenFiling,
+  onOpenCity,
   showMap = true
 }: {
   /** Which registrations the list shows — the header's control. */
@@ -588,6 +585,11 @@ export const FilingStrip = ({
    *  Sprig's own, over Mixboard Inc.'s linked Delaware filing. */
   legalName?: string
   className?: string
+  /** Given, a filing's row in the table and the grid opens that filing in
+   *  Sources rather than its details under the row. */
+  onOpenFiling?: (r: Registration) => void
+  /** Given, a city registration's row and cell open it in Sources too. */
+  onOpenCity?: (here: NonNullable<BusinessRecord['cityRegistrations']>) => void
 }) => {
   const groups = useMemo(() => stateGroupsOf(record, lead), [record, lead])
   // Where the business says it is: the submitted office address's state.
@@ -1341,6 +1343,7 @@ export const FilingStrip = ({
                               key={item.key}
                               here={here}
                               open={openCity === k}
+                              onOpen={onOpenCity ? () => onOpenCity(here) : undefined}
                               // An orphaned cell takes the whole row, as the Addresses grid's does.
                               className={cn(i === 1 && 'md:border-l', pair.length === 1 && 'md:col-span-2')}
                               onToggle={() => {
@@ -1357,9 +1360,10 @@ export const FilingStrip = ({
                           <button
                             key={item.key}
                             type="button"
-                            aria-expanded={on}
-                            aria-controls={detailId}
-                            onClick={() => toggleRow(item)}
+                            aria-expanded={onOpenFiling ? undefined : on}
+                            aria-controls={onOpenFiling ? undefined : detailId}
+                            // The filing's source, where there is one to open; else its details here.
+                            onClick={() => (onOpenFiling ? onOpenFiling(g.current) : toggleRow(item))}
                             className={cn(
                               'grid gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                               i === 1 && 'md:border-l',
@@ -1432,6 +1436,7 @@ export const FilingStrip = ({
                         key={k}
                         here={here}
                         open={openCity === k}
+                        onOpen={onOpenCity ? () => onOpenCity(here) : undefined}
                         onToggle={() => setOpenCity(openCity === k ? null : k)}
                       />
                     )
@@ -1440,8 +1445,8 @@ export const FilingStrip = ({
                   const on = rowOn(item)
                   const isLead = Boolean(lead && g.state === lead.state)
                   const RowIcon = isLead ? FormationIcon : Landmark
-                  // The register it is filed with over its state — "Domestic Secretary of
-                  // State" over "Delaware" — and when it was filed under it.
+                  // Domestic or foreign over the register itself — "Utah Secretary of
+                  // State" — and when it was filed under it.
                   const kind = kindLine(g.current)
                   const filed = filedDate(g.current)
                   return (
@@ -1451,11 +1456,12 @@ export const FilingStrip = ({
                         <button
                           key={item.key}
                           type="button"
-                          role="radio"
-                          aria-checked={on}
-                          aria-controls={detailId}
-                          aria-label={labelFor(g)}
-                          onClick={() => toggleRow(item)}
+                          role={onOpenFiling ? undefined : 'radio'}
+                          aria-checked={onOpenFiling ? undefined : on}
+                          aria-controls={onOpenFiling ? undefined : detailId}
+                          aria-label={onOpenFiling ? `${labelFor(g)}. Open in Sources` : labelFor(g)}
+                          // The filing's source, where there is one to open; else its details here.
+                          onClick={() => (onOpenFiling ? onOpenFiling(g.current) : toggleRow(item))}
                           className={cn(
                             'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
                             on && 'bg-[var(--core-color-surface-subtle)]'
@@ -1463,9 +1469,9 @@ export const FilingStrip = ({
                         >
                           <span className="flex min-w-0 items-center gap-3">
                             <span className="min-w-0">
-                              <span className="block text-caption text-text-secondary">{kind}</span>
+                              {kind && <span className="block text-caption text-text-secondary">{kind}</span>}
                               <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-                                {stateName(g.state)}
+                                {registryName(g.state)}
                                 {g.others.length > 0 && (
                                   <span
                                     role="img"
@@ -1493,20 +1499,25 @@ export const FilingStrip = ({
                               {WORD[g.kind]}
                             </MetaChip>
                             <SubStatusChip reg={g.current} />
-                            <ChevronDown
-                              aria-hidden="true"
-                              size={16}
-                              strokeWidth={1.75}
-                              className={cn(
-                                'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
-                                on && 'rotate-180'
-                              )}
-                            />
+                            {/* Opening in Sources: the Sources mark, as the side rail draws it. Opening here: the chevron. */}
+                            {onOpenFiling ? (
+                              <SourceDataMark />
+                            ) : (
+                              <ChevronDown
+                                aria-hidden="true"
+                                size={16}
+                                strokeWidth={1.75}
+                                className={cn(
+                                  'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
+                                  on && 'rotate-180'
+                                )}
+                              />
+                            )}
                           </span>
                         </button>
                       )}
                       {/* In the table, a state's details open right under its row. */}
-                      {on && detailPanel}
+                      {on && !onOpenFiling && detailPanel}
                     </Fragment>
                   )
                 })}
@@ -1565,67 +1576,64 @@ export const registrationCounts = (
   }
 }
 
-/** The Registrations card's header: the filter — All, Active, Inactive, No
- *  status, each counted — and the view: the map over the list, or the list alone. */
-export const RegistrationControls = ({
+/** The Registrations card's filter, under its title: All, Active, Inactive,
+ *  No status, each counted. */
+export const RegistrationFilterControl = ({
   counts,
   value,
-  onChange,
-  showMap,
-  onShowMap
+  onChange
 }: {
   counts: Record<RegistrationFilter, number>
   value: RegistrationFilter
   onChange: (next: RegistrationFilter) => void
-  showMap: boolean
-  onShowMap: (on: boolean) => void
 }) => (
-  <span className="flex flex-wrap items-center justify-end gap-3">
-    <SegmentedControl
-      size="sm"
-      aria-label="Filter registrations"
-      value={value}
-      onValueChange={(v) => v && onChange(v as RegistrationFilter)}
-    >
-      {(
-        [
-          ['all', 'All'],
-          ['active', 'Active'],
-          ['inactive', 'Inactive'],
-          ['none', 'No status']
-        ] as const
-      )
-        // All four, always — a count of 0 says as much as any other.
-        .map(([v, label]) => (
-          <SegmentedControlItem key={v} value={v}>
-            {label}
-            <span className="ml-1 tabular-nums text-text-secondary">{counts[v]}</span>
-          </SegmentedControlItem>
-        ))}
-    </SegmentedControl>
-    {/* The view, as the other cards' headers switch theirs: the map over the
-        list, or the list alone. */}
-    <SegmentedControl
-      size="sm"
-      aria-label="Registrations display"
-      value={showMap ? 'map' : 'list'}
-      onValueChange={(v) => v && onShowMap(v === 'map')}
-    >
-      {/* The table first: it is what the card opens on. */}
-      <SegmentedControlItem
-        value="list"
-        aria-label="List only"
-        className="!px-2"
-        icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
-      />
-      <SegmentedControlItem
-        value="map"
-        aria-label="Map and list"
-        className="!px-2"
-        icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
-      />
-    </SegmentedControl>
-  </span>
+  <SegmentedControl
+    size="sm"
+    aria-label="Filter registrations"
+    value={value}
+    onValueChange={(v) => v && onChange(v as RegistrationFilter)}
+  >
+    {(
+      [
+        ['all', 'All'],
+        ['active', 'Active'],
+        ['inactive', 'Inactive'],
+        ['none', 'No status']
+      ] as const
+    )
+      // All four, always — a count of 0 says as much as any other.
+      .map(([v, label]) => (
+        <SegmentedControlItem key={v} value={v}>
+          {label}
+          <span className="ml-1 tabular-nums text-text-secondary">{counts[v]}</span>
+        </SegmentedControlItem>
+      ))}
+  </SegmentedControl>
+)
+
+/** The Registrations card's view, at its header's edge as the other cards'
+ *  are: the map over the list, or the list alone. */
+export const RegistrationViewToggle = ({ showMap, onShowMap }: { showMap: boolean; onShowMap: (on: boolean) => void }) => (
+  <SegmentedControl
+    size="sm"
+    aria-label="Registrations display"
+    value={showMap ? 'map' : 'list'}
+    onValueChange={(v) => v && onShowMap(v === 'map')}
+  >
+    {/* The table first: it is what the card opens on. */}
+    <SegmentedControlItem
+      value="list"
+      aria-label="List only"
+      className="!px-2"
+      icon={<Table2 aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+    <SegmentedControlItem
+      value="map"
+      aria-label="Map and list"
+      className="!px-2"
+      icon={<MapIcon aria-hidden="true" size={14} strokeWidth={1.75} />}
+    />
+  </SegmentedControl>
 )
 
 export const FilingsViewToggle = ({

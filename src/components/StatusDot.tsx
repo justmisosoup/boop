@@ -1,4 +1,4 @@
-import { Circle, CircleAlert, CircleCheck, CircleX, type LucideIcon } from 'lucide-react'
+import { Circle, CircleCheck, CircleX, type LucideIcon } from 'lucide-react'
 
 import { cn } from '../utils/twUtils'
 
@@ -12,15 +12,16 @@ export type StatusDotProps = {
 
 const ICON: Record<NonNullable<StatusDotProps['intent']>, LucideIcon> = {
   success: CircleCheck,
-  warning: CircleAlert,
+  // One mark against: a warning draws as the failure's X.
+  warning: CircleX,
   failure: CircleX,
   unknown: Circle,
   pending: Circle
 }
 
 const TONE: Record<NonNullable<StatusDotProps['intent']>, string> = {
-  success: 'text-[var(--core-color-status-success-fg)]',
-  warning: 'text-[var(--core-color-status-warning-fg)]',
+  success: 'text-[var(--mark-pass)]',
+  warning: 'text-[var(--core-color-status-danger-fg)]',
   failure: 'text-[var(--core-color-status-danger-fg)]',
   unknown: 'text-text-secondary',
   pending: 'text-text-secondary'

@@ -24,6 +24,8 @@ type Props = {
   highlightedIds: Set<string> | null
   hoveredIds: Set<string> | null
   onHover?: (id: string | null) => void
+  /** The prototype's own: passed to each entry's filing chip. */
+  onOpenFiling?: Parameters<typeof UpdateEntry>[0]['onOpenFiling']
   hidesChanges: boolean
 }
 
@@ -35,6 +37,7 @@ export const Spine = ({
   highlightedIds,
   hoveredIds,
   onHover,
+  onOpenFiling,
   hidesChanges
 }: Props) => {
   const visible = updates.slice(0, shown)
@@ -53,6 +56,7 @@ export const Spine = ({
             highlighted={highlightedIds?.has(update.id) ?? false}
             hovered={hoveredIds?.has(update.id) ?? false}
             onHover={onHover}
+            onOpenFiling={onOpenFiling}
             next={
               hasMore || index < visible.length - 1
                 ? updates[index + 1]

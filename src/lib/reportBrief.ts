@@ -58,15 +58,10 @@ export type ReportFocus = { id: string; title: string; sentence?: string; cards:
 
 export type RecommendationKind = 'approve' | 'reject' | 'request'
 
-/**
- * The band, as a call. The middle band is not "Needs Review" — the reviewer
- * is already reviewing — but what would settle it: the information the record
- * is short of, requested from the applicant.
- */
+/** The band, as a call: two bands, so approve or reject — no middle. */
 export const KIND_OF_BAND: Record<BandId, RecommendationKind> = {
   established: 'approve',
-  not_established: 'reject',
-  conditions: 'request'
+  not_established: 'reject'
 }
 
 /** A call in a word or two, for under the score. */

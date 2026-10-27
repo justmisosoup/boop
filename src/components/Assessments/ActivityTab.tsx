@@ -15,9 +15,9 @@ import type { BusinessRecord } from '../../lib/deriveResults'
 import { useReview, type ReviewStatus } from '../../lib/review'
 
 const STATUS_LABEL: Record<ReviewStatus, string> = {
-  approved: 'Approve',
+  approved: 'Approved',
   in_review: 'Needs review',
-  rejected: 'Reject'
+  rejected: 'Rejected'
 }
 
 type Kind = 'created' | 'run' | 'completed' | 'summary' | 'status' | 'step'
@@ -197,7 +197,7 @@ const EventList = ({
   </ol>
 )
 
-/** Every event, as the business page's Recent activity reads them: the same
+/** Every event, as the business page's Activity reads them: the same
  *  feed — icons on a line, each time under its event — in full. */
 export const ActivityTab = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
   const events = useActivity(record, reads)
@@ -214,10 +214,10 @@ const FIRST = 3
 export const RecentActivity = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
   const events = useActivity(record, reads)
   return (
-    <section aria-label="Recent activity" className="flex flex-col gap-5">
+    <section aria-label="Activity" className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-2">
         <SectionTitle className="flex items-center gap-2">
-          Recent activity
+          Activity
           {/* Every event, as Assessments counts its cards. */}
           <PageHeadingCount>{events.length}</PageHeadingCount>
         </SectionTitle>

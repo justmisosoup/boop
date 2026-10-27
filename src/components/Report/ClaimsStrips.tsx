@@ -19,7 +19,7 @@ export const StatusChip = ({ status }: { status: string | null | undefined }) =>
   const s = (status ?? '').toLowerCase()
   if (/open/.test(s))
     return (
-      <MetaChip tone="warning" size="compact">
+      <MetaChip tone="danger" size="compact">
         <PackageOpen {...icon} />
         Open
       </MetaChip>
@@ -97,7 +97,7 @@ export const KindStrip = ({
         return {
           key: k,
           chip: (
-            <MetaChip tone={open ? 'warning' : 'neutral'} size="compact">
+            <MetaChip tone={open ? 'danger' : 'neutral'} size="compact">
               {open ? <PackageOpen {...icon} /> : st === 'Closed' ? <Briefcase {...icon} /> : null}
               {kind}
               {st && ` · ${st}`}

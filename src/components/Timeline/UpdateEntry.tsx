@@ -11,7 +11,7 @@
 
 import { useState } from 'react'
 
-import { ActionButton } from '@/core'
+import { ActionButton, ChatSourceChip, MetaChip } from '@/core'
 import { Activity, FileText, Landmark, MapPin, Type, User } from 'lucide-react'
 
 import {
@@ -32,6 +32,9 @@ import {
 } from '../../lib/timeline/format'
 import type { FilingUpdate, Kind } from '../../lib/timeline/types'
 import { cn } from '../../utils/twUtils'
+
+const sentenceCase = (w: string) => w.charAt(0) + w.slice(1).toLowerCase()
+import { CHIP_NO_GLYPH } from '../chipStyles'
 import { ChangeRow } from './ChangeRow'
 import { SourceChip } from './SourceChip'
 
@@ -147,10 +150,15 @@ type Props = {
   /** Hovered here or via its stem in the overview. */
   hovered?: boolean
   onHover?: (id: string | null) => void
+  /** The prototype's own: opens the filing's card in Sources. Given, the
+   *  filing is the report's source chip — "IL · SOS · C64323091" — rather
+   *  than the app's plain label. */
+  onOpenFiling?: (source: FilingUpdate['source']) => void
 }
 
 export const UpdateEntry = ({
   businessId,
+  onOpenFiling,
   update,
   next,
   hidesChanges,
@@ -193,7 +201,32 @@ export const UpdateEntry = ({
               </span>
             )}
             <span className='ml-auto'>
-              <SourceChip businessId={businessId} source={update.source} />
+              {onOpenFiling && (update.source.state || update.source.fileNumber) ? (
+                <span className='inline-flex items-center gap-1.5'>
+                <ChatSourceChip
+                  // No letter tile, as the report's source chips have none.
+                  className={CHIP_NO_GLYPH}
+                  sources={[
+                    {
+                      id: `filing-${update.source.state ?? ''}-${update.source.fileNumber ?? ''}`,
+                      label: [update.source.state, 'SOS', update.source.fileNumber].filter(Boolean).join(' · '),
+                      title: [update.source.state, update.source.fileNumber, update.source.jurisdiction && sentenceCase(update.source.jurisdiction)]
+                        .filter(Boolean)
+                        .join(' · '),
+                      onSelect: () => onOpenFiling(update.source)
+                    }
+                  ]}
+                />
+                {/* Domestic or Foreign, a tag of its own after the chip. */}
+                {update.source.jurisdiction && (
+                  <MetaChip size='xs' tone='neutral'>
+                    {sentenceCase(update.source.jurisdiction)}
+                  </MetaChip>
+                )}
+                </span>
+              ) : (
+                <SourceChip businessId={businessId} source={update.source} />
+              )}
             </span>
           </div>
           <div className='flex flex-col'>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CircleAlert, CircleCheck } from 'lucide-react'
+import { CircleCheck, CircleX } from 'lucide-react'
 
 import { Hint, Surface, Text } from '@/core'
 
@@ -135,7 +135,7 @@ const Mark = ({ verified }: { verified?: boolean }) => {
         {verified ? (
           <CircleCheck aria-hidden="true" className="size-3.5" />
         ) : (
-          <CircleAlert aria-hidden="true" className="size-3.5" />
+          <CircleX aria-hidden="true" className="size-3.5" />
         )}
       </span>
     </Hint>

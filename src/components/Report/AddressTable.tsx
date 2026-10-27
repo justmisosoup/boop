@@ -169,7 +169,7 @@ const PropertyIcon = ({ a }: { a: Location }) => {
 /** The submitted address, after it: the insights sidebar's own mark — a green
  *  check where a record lists it, the alert where none does. */
 const VerifiedIcon = ({ a, verified }: { a: Location; verified: boolean }) =>
-  // Verified, the Verified chip under it says so; only the amber mark stays.
+  // Verified, the Verified chip under it says so; only the red X stays.
   a.submitted && !verified ? (
     <span role="img" aria-label="Unverified" className="flex shrink-0">
       <StatusDot intent="warning" />
@@ -277,7 +277,7 @@ export const Relevance = ({ a, match, matchedTo }: { a: Location; match?: string
               a.deliverable ? 'USPS can deliver to this address.' : 'USPS can’t deliver to this address.'
             }
           >
-            <MetaChip tone={a.deliverable ? 'neutral' : 'warning'} size="compact">
+            <MetaChip tone={a.deliverable ? 'neutral' : 'danger'} size="compact">
               {a.deliverable ? 'Deliverable' : 'Undeliverable'}
             </MetaChip>
           </Explained>
@@ -297,21 +297,22 @@ export const Relevance = ({ a, match, matchedTo }: { a: Location; match?: string
                 : `The submitted address is a ${match.toLowerCase()} to the address on record, not an exact one.`
             }
           >
-            <MetaChip tone="warning" size="compact">
+            <MetaChip tone="danger" size="compact">
               {match}
             </MetaChip>
           </Explained>
         )}
         {a.cmra && (
           <Explained tip="USPS recognises this as a commercial mail receiving agency — a private mailbox, not a place the business works from.">
-            <MetaChip tone="warning" size="compact">
+            <MetaChip tone="danger" size="compact">
               CMRA
             </MetaChip>
           </Explained>
         )}
         {a.isRegisteredAgent && (
           <Explained tip="A registered agent’s address — it takes legal mail for many businesses, not where this one works.">
-            <MetaChip tone="warning" size="compact">
+            {/* A fact about the address, not a finding: neutral, not red. */}
+            <MetaChip tone="neutral" size="compact">
               Registered agent
             </MetaChip>
           </Explained>

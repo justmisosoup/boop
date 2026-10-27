@@ -28,7 +28,12 @@ export const ROLLUP_NO_GLYPH = '[&_.-space-x-1]:hidden'
 export const CHIP_CLAIM =
   'bg-[var(--chip-claim-bg)] text-[var(--chip-claim-fg)] hover:bg-[var(--chip-claim-hover-bg)] hover:text-[var(--chip-claim-fg)] data-[state=open]:bg-[var(--chip-claim-hover-bg)] data-[state=open]:text-[var(--chip-claim-fg)]'
 
-/** A submitted value nothing verifies: the warning tone, so it is not read as
+/** A submitted value nothing verifies: the danger tone, so it is not read as
  *  one of the claimed-and-checked values beside it. */
 export const CHIP_UNVERIFIED =
-  'bg-[var(--core-color-status-warning-bg)] text-[var(--core-color-status-warning-fg)] ring-1 ring-inset ring-[var(--core-color-status-warning-border)] hover:bg-[var(--core-color-status-warning-bg)] hover:text-[var(--core-color-status-warning-fg)] data-[state=open]:bg-[var(--core-color-status-warning-bg)] data-[state=open]:text-[var(--core-color-status-warning-fg)]'
+  'bg-[var(--core-color-status-danger-bg)] text-[var(--core-color-status-danger-fg)] ring-1 ring-inset ring-[var(--core-color-status-danger-border)] hover:bg-[var(--core-color-status-danger-bg)] hover:text-[var(--core-color-status-danger-fg)] data-[state=open]:bg-[var(--core-color-status-danger-bg)] data-[state=open]:text-[var(--core-color-status-danger-fg)]'
+
+/** A status that reads well — an active filing, a valid permit: the success
+ *  tone, the same chip as the unverified one in green. */
+export const CHIP_GOOD =
+  'bg-[var(--core-color-status-success-bg)] text-[var(--core-color-status-success-fg)] ring-1 ring-inset ring-[var(--core-color-status-success-border)] hover:bg-[var(--core-color-status-success-bg)] hover:text-[var(--core-color-status-success-fg)] data-[state=open]:bg-[var(--core-color-status-success-bg)] data-[state=open]:text-[var(--core-color-status-success-fg)]'

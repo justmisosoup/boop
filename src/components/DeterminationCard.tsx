@@ -21,7 +21,6 @@ import { CardHeader } from './CardHeader'
  */
 const BAND_INK: Record<BandId, string> = {
   established: 'text-[var(--core-color-status-success-fg)]',
-  conditions: 'text-[var(--core-color-status-warning-fg)]',
   not_established: 'text-[var(--core-color-status-danger-fg)]'
 }
 
@@ -137,14 +136,14 @@ export const ScoreRing = ({
  * The card's width, in px, under which it takes the stacked layout.
  *
  * The first thing to give is the header row beside the ring: the label and
- * the status control on one line need about 266px ("Needs Review" is the
+ * the status control on one line need about 266px ("Needs review" is the
  * widest word), and the column they sit in is the card less 32 of padding,
  * the 96px ring and the 20px gap. Under 420 the control rides the card's
  * edge, so that is where the ring goes up top. */
 const NARROW_AT = 420
 
 /** A review status as the dashboard prints it. */
-const STATUS_WORD: Record<string, string> = { approved: 'Approved', in_review: 'Needs Review', rejected: 'Rejected' }
+const STATUS_WORD: Record<string, string> = { approved: 'Approved', in_review: 'Needs review', rejected: 'Rejected' }
 
 
 /** A reviewer's change of status: from what, to what, by whom, when, and why. */

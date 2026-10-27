@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, History } from 'lucide-react'
 
-import { MutedText, Surface, Tag, Text } from '@/core'
+import { ActionButton, IconActionButton, MutedText, Surface, Tag, Text } from '@/core'
+
 
 import { cn } from '../utils/twUtils'
 
@@ -15,6 +16,7 @@ import { capturedLabel, screenshotFor } from '../lib/sourceScreenshots'
 import { streetViewFor } from '../lib/addressStreetViews'
 import { attributesFor, filedName, longDate, maskTin, roleLabel as filedRole } from '../lib/attributes'
 import { NOT_PROVIDED, registrationState } from '../lib/registrationStatus'
+import { StatusTagChip } from './StatusTagChip'
 import { entityFormLabel } from '../lib/normalise'
 import { formationCardFilingOf } from '../lib/linkedFormation'
 import { STATE_NAMES, stateName } from '../lib/states'
@@ -758,16 +760,19 @@ const addressOf = (s: Source) => {
 
 /** A city registration by what the register calls it: its trade name or owner,
  *  its account, and whether it is open. */
-const cityTitleOf = (s: Source) => {
-  const rows = s.doc?.city ?? []
-  if (rows.length === 0) return undefined
-  const first = rows[0]
-  const open = rows.some((r) => !r.locationEnd && !r.businessEnd)
-  return joined(first.dba ?? first.owner, first.accountNumber && `Account ${first.accountNumber}`, open ? 'Open' : 'Closed')
+/** A city registration's account, for under its title: "Account 1142486". */
+const cityAccountOf = (s: Source) => {
+  const first = (s.doc?.city ?? [])[0]
+  return first?.accountNumber ? `Account ${first.accountNumber}` : undefined
 }
 
-const citiesOf = (s: Source) =>
-  unique(metas(s).filter((m) => m.city && m.state).map((m) => `${m.city}, ${stateName((m.state as string).toUpperCase())}`))
+/** A city registration's standing: Active while any location of it is still
+ *  open, Inactive once every one has ended — the words the filings use. */
+const cityStatusOf = (s: Source) => {
+  const rows = s.doc?.city ?? []
+  if (rows.length === 0) return undefined
+  return rows.some((r) => !r.locationEnd && !r.businessEnd) ? 'Active' : 'Inactive'
+}
 
 /** The words a status is stated in, for a subtitle. */
 const statusWord = (v?: string | null) => (v ? sentence(v) : undefined)
@@ -781,17 +786,33 @@ export const appHeader = (s: Source): { title: string; subtitle?: string } => {
   const d = s.doc
   switch (appTypeOf(s)) {
     case 'registration':
-      return { title: 'Secretary of State', subtitle: joined(stateName(s.registration!.state), s.registration!.fileNumber) }
+      // Which Secretary of State, state first — "California Secretary of State" —
+      // and the filing number under it.
+      return {
+        title: [stateName(s.registration!.state), 'Secretary of State'].filter(Boolean).join(' '),
+        subtitle: s.registration!.fileNumber ?? undefined
+      }
     case 'sales_tax_permit':
-      return { title: 'Sales Tax Permit', subtitle: joined(st && stateName(st), statusWord(m.status), addressOf(s)) }
+      // Which permit, state first, as the filings read; its status leads the
+      // head as a tag, so not again here.
+      return { title: [st && stateName(st), 'Sales Tax Permit'].filter(Boolean).join(' '), subtitle: addressOf(s) }
     case 'city_registration':
-      return { title: 'City Registration', subtitle: joined(citiesOf(s).join(' · ') || (st ? stateName(st) : undefined), cityTitleOf(s)) }
+      // "San Francisco City Registration", its account under it; its standing
+      // leads the head as a tag.
+      return {
+        title: [unique(metas(s).map((x) => x.city as string | undefined).filter(Boolean)).join(' · ') || (st ? stateName(st) : undefined), 'City Registration']
+          .filter(Boolean)
+          .join(' '),
+        subtitle: cityAccountOf(s)
+      }
     case 'lien':
-      return { title: 'Lien Filing', subtitle: joined(st && stateName(st), d?.lien?.fileNumber && `File ${d.lien.fileNumber}`) }
+      // "Utah · Lien Filing": the state, then the record.
+      return { title: joined(st && stateName(st), 'Lien Filing')!, subtitle: d?.lien?.fileNumber ? `File ${d.lien.fileNumber}` : undefined }
     case 'litigation':
-      return { title: 'Court record', subtitle: joined(d?.litigation?.court ?? d?.litigation?.courtState, d?.litigation?.caseNumber && `Case ${d.litigation.caseNumber}`) }
+      // The court is the record's name; the case under it.
+      return { title: d?.litigation?.court ?? d?.litigation?.courtState ?? 'Court record', subtitle: d?.litigation?.caseNumber ? `Case ${d.litigation.caseNumber}` : undefined }
     case 'bankruptcy':
-      return { title: 'Bankruptcy petition', subtitle: joined(d?.bankruptcy?.court ?? d?.bankruptcy?.courtState, d?.bankruptcy?.caseNumber && `Case ${d.bankruptcy.caseNumber}`) }
+      return { title: d?.bankruptcy?.court ?? d?.bankruptcy?.courtState ?? 'Bankruptcy petition', subtitle: d?.bankruptcy?.caseNumber ? `Case ${d.bankruptcy.caseNumber}` : undefined }
     case 'sec_filing':
       return { title: 'SEC EDGAR Filings', subtitle: addressOf(s) }
     case 'form_5500':
@@ -1352,17 +1373,40 @@ const ProfilesSection = ({ record }: { record: BusinessRecord }) => {
  * Collapsed to its title until opened. Following a source to it — a chip, a
  * summary tag — opens it, and it stays open once read.
  */
+/** Where a source stands, in its registry's word: a filing's status; a lien's,
+ *  a case's, a petition's; a permit's or licence's. None where it has none. */
+const statusOfSource = (s: Source): string | null | undefined => {
+  if (s.registration) return registrationState(s.registration).status ?? null
+  const type = appTypeOf(s)
+  const d = s.doc
+  return type === 'lien'
+    ? d?.lien?.status
+    : type === 'litigation'
+      ? d?.litigation?.caseStatus
+      : type === 'bankruptcy'
+        ? d?.bankruptcy?.status
+        : type === 'city_registration'
+          ? cityStatusOf(s)
+          : type === 'sales_tax_permit' || type === 'license'
+          ? (metas(s)[0]?.status as string | undefined)
+          : undefined
+}
+
 export const SourceDetail = ({
   source: s,
   record,
-  focused = false
+  focused = false,
+  onShowTimeline
 }: {
   source: Source
   record?: BusinessRecord
   /** Followed here from an attribute's chip — ringed for a moment, and opened. */
   focused?: boolean
+  /** A filing with timeline history: opens the timeline on that filing alone. */
+  onShowTimeline?: () => void
 }) => {
   const { title, subtitle } = appHeader(s)
+  const status = statusOfSource(s)
   const all = sourceGroups(s).flatMap(([, rows]) => rows)
   const [open, setOpen] = useState(focused)
   useEffect(() => {
@@ -1377,32 +1421,57 @@ export const SourceDetail = ({
       padding="none"
       className={cn('overflow-hidden', focused && 'ring-2 ring-ring')}
     >
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={() => setOpen((o) => !o)}
+      {/* The head: what it is and where it stands — the title, the filing
+          with its status beside it — then its history and the toggle, each
+          a button of its own. The head's text opens it too. */}
+      <div
         className={cn(
-          'flex w-full items-start gap-2 px-4 py-3 text-left transition-colors duration-fast hover:bg-[var(--core-color-list-item-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none',
+          'flex items-start gap-2 px-4 py-3 transition-colors duration-fast hover:bg-[var(--core-color-list-item-hover-bg)] motion-reduce:transition-none',
           open && 'border-b border-[var(--core-color-border-divider)]'
         )}
       >
-        <span className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setOpen((o) => !o)}>
           <Text size="md" className="block truncate font-semibold">
             {title}
           </Text>
-          {subtitle && <MutedText className="mt-0.5 block text-caption">{subtitle}</MutedText>}
-        </span>
-        <ChevronDown
-          aria-hidden="true"
-          size={14}
-          strokeWidth={2}
-          className={cn(
-            'mt-1 shrink-0 text-[var(--core-color-text-secondary)] transition-transform duration-standard ease-emphasized motion-reduce:transition-none',
-            !open && '-rotate-90'
+          {/* Where it stands first, then which one it is: Inactive, then the
+              filing number; Open, then the case. A filing with no status says so. */}
+          {(subtitle || status !== undefined) && (
+            <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+              {status !== undefined && <StatusTagChip status={status} />}
+              {subtitle && <MutedText className="text-caption">{subtitle}</MutedText>}
+            </span>
           )}
-        />
-      </button>
+        </div>
+        {onShowTimeline && (
+          <ActionButton
+            leadingIcon={<History aria-hidden="true" size={14} />}
+            onClick={onShowTimeline}
+            size="compact"
+            variant="secondary"
+          >
+            Timeline
+          </ActionButton>
+        )}
+        <IconActionButton
+          aria-controls={bodyId}
+          aria-expanded={open}
+          aria-label={open ? `Hide ${title}` : `Show ${title}`}
+          onClick={() => setOpen((o) => !o)}
+          size="compact"
+          variant="quiet"
+        >
+          <ChevronDown
+            aria-hidden="true"
+            size={14}
+            strokeWidth={2}
+            className={cn(
+              'transition-transform duration-standard ease-emphasized motion-reduce:transition-none',
+              !open && '-rotate-90'
+            )}
+          />
+        </IconActionButton>
+      </div>
 
       <Collapsible open={open} id={bodyId}>
         <div className="-mb-px">
@@ -1544,9 +1613,9 @@ export const SourcesSummary = ({
     ['Jurisdiction registrations', tags('jurisdiction_registration', (s) => [metas(s)[0]?.jurisdiction?.name ?? 'Jurisdiction'])],
     ['EPA facilities', tags('epa_frs_facility', () => ['EPA FRS'], () => 'subtle')],
     // Open is the report's amber, not red: a live lien is a fact to read, not a verdict.
-    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'], (s) => (/open/i.test(s.doc?.lien?.status ?? '') ? 'warning' : 'subtle'))],
-    ['Court records', tags('litigation', (s) => [s.doc?.litigation?.caseNumber ?? s.doc?.litigation?.court ?? 'Case'], (s) => (/open/i.test(s.doc?.litigation?.caseStatus ?? '') ? 'warning' : 'subtle'))],
-    ['Bankruptcy petitions', tags('bankruptcy', (s) => [s.doc?.bankruptcy?.chapter ? `Chapter ${s.doc.bankruptcy.chapter}` : 'Petition'], (s) => (/open/i.test(s.doc?.bankruptcy?.status ?? '') ? 'warning' : 'subtle'))],
+    ['Lien filing', tags('lien', (s) => [stateOf(s) ?? 'Lien'], (s) => (/open/i.test(s.doc?.lien?.status ?? '') ? 'danger' : 'subtle'))],
+    ['Court records', tags('litigation', (s) => [s.doc?.litigation?.caseNumber ?? s.doc?.litigation?.court ?? 'Case'], (s) => (/open/i.test(s.doc?.litigation?.caseStatus ?? '') ? 'danger' : 'subtle'))],
+    ['Bankruptcy petitions', tags('bankruptcy', (s) => [s.doc?.bankruptcy?.chapter ? `Chapter ${s.doc.bankruptcy.chapter}` : 'Petition'], (s) => (/open/i.test(s.doc?.bankruptcy?.status ?? '') ? 'danger' : 'subtle'))],
     ['Screening results', [
       ...tags('watchlist_result', (s) => [s.doc?.watchlist?.list.abbr ?? 'Watchlist'], () => 'danger'),
       ...tags('pep_result', () => ['PEP'], () => 'danger'),

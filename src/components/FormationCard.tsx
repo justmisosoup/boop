@@ -1,5 +1,5 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip'
-import { ArrowUpRight, Building2, FileText } from 'lucide-react'
+import { ArrowUpRight, Building2, FileText, History } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { ChatSourceChip, Text } from '@/core'
@@ -44,6 +44,8 @@ import type { AttributeCell } from './AttributeGrid'
 import { attributeRowsByGroup } from './AttributesTab'
 import { cellsFromRows } from './attributeCells'
 import { AttributeSources } from './Provenance'
+import { CHIP_NO_GLYPH } from './chipStyles'
+import { StatusTagChip } from './StatusTagChip'
 import { readableUrl } from '../lib/sourceLabels'
 import { cityRegistrationSources } from './SourceChip'
 import { docCard, namedCard } from '../lib/sourceCards'
@@ -563,6 +565,129 @@ const FROM_FILING = new Set([
  * filing, a city registration, and — when the record holds nothing found —
  * what the customer submitted.
  */
+/**
+ * A registration chip with the Registrations card's tooltip (`TileTooltip`):
+ * the place in bold, how the registration stands where the tile counts
+ * filings, then a line or two — when a name changed, the account. The chip
+ * opens where its reader goes next: the timeline, or the source.
+ */
+const RegistrationTipChip = ({
+  label,
+  icon,
+  heading,
+  status,
+  lines,
+  onOpen,
+  openLabel
+}: {
+  label: string
+  icon?: ReactNode
+  heading: string
+  status?: string | null
+  lines: Array<{ icon?: ReactNode; text: string }>
+  onOpen?: () => void
+  /** What clicking does, for assistive tech: "open on the timeline". */
+  openLabel?: string
+}) => {
+  // No letter tile where there is no icon, as the report's source chips have none.
+  const chip = <ChatSourceChip className={icon ? undefined : CHIP_NO_GLYPH} sources={[{ id: `tip-${label}`, label, icon }]} />
+  return (
+    <RadixTooltip.Provider>
+      <RadixTooltip.Root delayDuration={200}>
+        <RadixTooltip.Trigger asChild>
+          {onOpen ? (
+            <button
+              aria-label={[heading, ...lines.map((l) => l.text), openLabel].filter(Boolean).join(', ')}
+              className="inline-flex rounded-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={onOpen}
+              type="button"
+            >
+              {chip}
+            </button>
+          ) : (
+            <span className="inline-flex" tabIndex={0}>
+              {chip}
+            </span>
+          )}
+        </RadixTooltip.Trigger>
+        <RadixTooltip.Portal>
+          <RadixTooltip.Content
+            side="top"
+            sideOffset={6}
+            collisionPadding={10}
+            className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+          >
+            <div className="flex flex-col">
+              <span className="flex items-center justify-between gap-4">
+                <span className="font-semibold text-foreground">{heading}</span>
+                {/* As the Sources cards head theirs: the status chip, red or green. */}
+                {status && <StatusTagChip status={status} />}
+              </span>
+              {lines.map((l) => (
+                <span className="flex items-center gap-1" key={l.text}>
+                  {l.icon ?? <span aria-hidden="true" className="w-3 shrink-0" />}
+                  {l.text}
+                </span>
+              ))}
+            </div>
+          </RadixTooltip.Content>
+        </RadixTooltip.Portal>
+      </RadixTooltip.Root>
+    </RadixTooltip.Provider>
+  )
+}
+
+/** A former name's history chip — "SOS · NY" with the history mark — opening
+ *  the name change on the timeline; the tooltip, New York, how its filing
+ *  stands, when the name changed. */
+const FormerNameChip = ({
+  state,
+  filing,
+  changed,
+  onOpen
+}: {
+  state: string
+  filing?: Registration
+  changed?: string
+  onOpen?: () => void
+}) => (
+  <RegistrationTipChip
+    heading={stateName(state)}
+    icon={<History aria-hidden="true" className="size-3" />}
+    label={`SOS · ${state}`}
+    lines={changed ? [{ icon: <History aria-hidden="true" className="shrink-0" size={12} strokeWidth={2} />, text: changed }] : []}
+    onOpen={onOpen}
+    openLabel="open on the timeline"
+    status={filing ? registrationState(filing).status : undefined}
+  />
+)
+
+/** A business's city registrations, one per city, for the Owner row's chips:
+ *  the city, whether it stands (Active while any location of it is open), its
+ *  account and since when. */
+const cityRegistrationTips = (record: BusinessRecord) => {
+  const regs = record.cityRegistrations ?? []
+  const keys = [...new Set(regs.map((r) => `${r.city}|${r.state}`))]
+  return keys.map((k) => {
+    const same = regs.filter((r) => `${r.city}|${r.state}` === k)
+    const r = same[0]
+    const since = same
+      .map((x) => x.businessStart ?? x.locationStart)
+      .filter((x): x is string => Boolean(x))
+      .sort()[0]
+    return {
+      id: `city-${k}`,
+      state: r.state,
+      city: r.state === 'DC' ? `${r.city}, DC` : r.city,
+      open: same.some((x) => !x.locationEnd && !x.businessEnd),
+      account: r.accountNumber,
+      since: since
+        ? new Date(`${since.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : undefined
+    }
+  })
+}
+
 export const formationParts = (
   record: BusinessRecord,
   results: Derived[],
@@ -759,6 +884,7 @@ export const formationParts = (
       )
     return ref ? docCard(ref.id) : namedCard(CITY)
   }
+  const cityTips = cityRegistrationTips(record)
   const cityChips = cityRegistrationSources(record).map((c) => ({
     ...c,
     onSelect: onJumpToSource ? () => onJumpToSource(cityCard(c.id)) : undefined
@@ -782,12 +908,31 @@ export const formationParts = (
               // A city registration previews as a filing does: the city
               // and its standing, the name and owner it is under.
               badge: (
-                <AttributeSources
-                  sources={dbaSources.filter((x) => x !== CITY || cityChips.length === 0)}
-                  extra={dbaSources.includes(CITY) ? cityChips : undefined}
-                  domesticState={domesticState}
-                  onJumpToSource={onJumpToSource}
-                />
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <AttributeSources
+                    sources={dbaSources.filter((x) => x !== CITY || cityChips.length === 0)}
+                    // A city with its registration on the record gets the
+                    // registration tooltip below; otherwise the plain chip.
+                    extra={dbaSources.includes(CITY) && cityTips.length === 0 ? cityChips : undefined}
+                    domesticState={domesticState}
+                    onJumpToSource={onJumpToSource}
+                  />
+                  {dbaSources.includes(CITY) &&
+                    cityTips.map((t) => (
+                      <RegistrationTipChip
+                        heading={t.city}
+                        key={t.id}
+                        label={`City registration · ${t.state}`}
+                        lines={[
+                          ...(t.account ? [{ text: `Account ${t.account}` }] : []),
+                          ...(t.since ? [{ text: `Since ${t.since}` }] : [])
+                        ]}
+                        onOpen={onJumpToSource ? () => onJumpToSource(cityCard(t.id)) : undefined}
+                        openLabel="open in Sources"
+                        status={t.open ? 'Active' : 'Inactive'}
+                      />
+                    ))}
+                </span>
               ),
               values: entries.map((d) => ({
                 key: d.name,
@@ -903,20 +1048,22 @@ export const formationParts = (
           label: 'Former name',
           values: priorNames.map((n) => {
             // The Secretary of State whose filing carried the name, cited
-            // under it as the formation fields cite theirs.
+            // beside it as a history chip that opens the name change on the
+            // timeline; its tooltip says how that filing stands and when.
+            const changed = n.at ? `Changed ${monthYear(n.at)}` : undefined
             const filing =
               record.registrations.find((r) => r.state === n.state && /^domestic$/i.test(r.jurisdiction ?? '')) ??
               record.registrations.find((r) => r.state === n.state)
             return {
               key: n.eventId,
               value: n.name,
-              qualifier: n.at ? `Changed ${monthYear(n.at)}` : undefined,
-              note: filing ? (
-                <AttributeSources
-                  sources={[]}
-                  registrations={[filing]}
-                  domesticState={domesticState}
-                  onJumpToSource={onJumpToSource}
+              qualifier: changed,
+              note: n.state ? (
+                <FormerNameChip
+                  changed={changed}
+                  filing={filing}
+                  onOpen={onJumpToTimeline && n.eventId ? () => onJumpToTimeline(n.eventId) : undefined}
+                  state={n.state}
                 />
               ) : undefined
             }

@@ -1,9 +1,9 @@
 import type { ChatSourceData } from '@/core'
 
 import type { BusinessRecord } from '../lib/deriveResults'
-import { NOT_PROVIDED, registrationState, subStatusLabel } from '../lib/registrationStatus'
+import { registrationState, subStatusLabel } from '../lib/registrationStatus'
 import { stateName } from '../lib/states'
-import { StatusTag, toneOfStatus } from './StatusTag'
+import { StatusTagChip } from './StatusTagChip'
 
 type Registration = BusinessRecord['registrations'][number]
 
@@ -31,7 +31,6 @@ export const registrationSources = (
   return ordered.map((r, i) => {
     const jurisdiction = (r.jurisdiction ?? '').toLowerCase()
     const st = registrationState(r)
-    const tone = toneOfStatus(st.status, st.subStatus)
     const past = registrations.filter((o) => o.state === r.state && o !== r).length
     return {
       id: `${r.state}-${r.fileNumber ?? i}`,
@@ -43,7 +42,7 @@ export const registrationSources = (
       // its status as a tag — over the source and whether this is the
       // formation (domestic) filing or a foreign one.
       title: stateName(r.state),
-      badge: <StatusTag label={st.status ?? NOT_PROVIDED} tone={tone} />,
+      badge: <StatusTagChip status={st.status} />,
       // What the reader wants on hover: which filing this is, and its standing.
       snippet: [
         r.sourceUrl ? new URL(r.sourceUrl).hostname.replace(/^www\./, '') : null,
@@ -97,10 +96,7 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
         title: name,
         // Active, or Inactive in red, as a state filing reads.
         badge: (
-          <StatusTag
-            label={open ? 'Active' : 'Inactive'}
-            tone={open ? toneOfStatus('active', null) : 'danger'}
-          />
+          <StatusTagChip status={open ? 'Active' : 'Inactive'} />
         ),
         snippet: [
           dbas.length > 0 && `DBA: ${dbas.join(', ')}`,
@@ -132,10 +128,7 @@ export const cityRegistrationSources = (record: BusinessRecord): ChatSourceData[
         label: m.state ? `City registration · ${m.state.toUpperCase()}` : 'City registration',
         title: m.state === 'DC' ? `${m.city}, DC` : m.city,
         badge: m.status ? (
-          <StatusTag
-            label={m.status}
-            tone={/^active$/i.test(m.status) ? toneOfStatus('active', null) : 'neutral'}
-          />
+          <StatusTagChip status={m.status} />
         ) : undefined,
         snippet: [`Registered to ${name}`, m.status && `Status: ${m.status}`]
           .filter(Boolean)

@@ -24,14 +24,14 @@ const STATUS_DOT_CLASS: Record<ReviewStatus, string> = {
 }
 
 const STATUS_INTENT: Record<ReviewStatus, string> = {
-  approved: 'Approve',
-  in_review: 'Needs Review',
-  rejected: 'Reject'
+  approved: 'Approved',
+  in_review: 'Needs review',
+  rejected: 'Rejected'
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-const statusLabel = (status: string) => (status === 'in_review' ? 'Needs Review' : capitalize(status))
+const statusLabel = (status: string) => (status === 'in_review' ? 'Needs review' : capitalize(status))
 
 const StatusDot = ({ status }: { status: ReviewStatus }) => (
   <span aria-hidden='true' className={`size-2 shrink-0 rounded-full ${STATUS_DOT_CLASS[status]}`} />

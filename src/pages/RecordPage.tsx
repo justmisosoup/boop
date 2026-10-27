@@ -3,22 +3,20 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 
 import {
   EmptyState,
-  MutedText,
   TabsContent,
   TabsRoot,
   type FloatingPanelPresentation,
   type FloatingPanelState
 } from '@/core'
 
-import { areasOf, identityScore, negativesFor, type AssessmentWeight, bandOfCall } from '../lib/identityScore'
+import { areasOf, BANDS, identityScore, negativesFor, type AssessmentWeight, bandOfCall } from '../lib/identityScore'
 import { AssistantPanel } from '../components/Assistant/AssistantPanel'
 import { standingCall } from '../components/Assistant/RecommendationCard'
 import { ColumnResizer } from '../components/ColumnResizer'
-import { Timeline } from '../components/Timeline'
+import { filingKey, filingsWithTimeline, Timeline } from '../components/Timeline'
 import type { Kind } from '../lib/timeline/types'
 import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
-import { useWide } from '../hooks/useWide'
-import { InsightStack } from '../components/InsightStack'
+import { useWide, WIDE } from '../hooks/useWide'
 
 import { statusForBand, useReview } from '../lib/review'
 import { heldReportFor } from '../lib/heldReports'
@@ -28,10 +26,16 @@ import { NextStepsTurn, type RequestPayload } from '../components/Assistant/Next
 import { documentsWithheld, recordRun, runsFor, useAssessmentRuns } from '../lib/assessmentRuns'
 import { DOC_LABEL, documentsOnRecord, nextStepsFor, sosGaps, type NextStep } from '../lib/nextSteps'
 import { requestInformation } from '../lib/review'
-import { changedInsights } from '../lib/diff'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
-import { BackTab, GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
+import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
 import { AssessmentPanel, type PanelGroup } from '../components/Report/AssessmentPanel'
+import {
+  countIn,
+  InsightsFilterCard,
+  NO_FILTER,
+  outcomeWord,
+  type InsightFilter
+} from '../components/Report/InsightsFilterCard'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
 import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
 import { outcomeOf, statementOf } from '../lib/insightOutcome'
@@ -50,7 +54,7 @@ import { displayName } from '../lib/businessNames'
 import { assessmentById, readAssessment, resultsIn, type Assessment } from '../lib/assessments'
 import { useSummaryRuns } from '../lib/useSummaryRuns'
 import { BusinessOverview } from './BusinessOverview'
-import { IdentityHeader } from '../components/Assessments/IdentityHeader'
+import { IdentityActions, IdentityHeader } from '../components/Assessments/IdentityHeader'
 import { assessmentTransitionName } from '../components/Assessments/AssessmentCard'
 import { byId } from '../lib/records'
 import { workflowByAssessmentId } from '../lib/workflows'
@@ -58,6 +62,7 @@ import { GROUPS, makeGroupFor } from '../lib/groups'
 import { useAnalysis } from '../lib/useAnalysis'
 import { AssessmentEditor } from '../components/AssessmentEditor'
 import { composeAssessment } from '../lib/library'
+import { PAGE_MEASURE } from '../lib/pageMeasure'
 import { cn } from '../utils/twUtils'
 import { useAgent } from '../lib/useAgent'
 import { reportBrief } from '../lib/reportBrief'
@@ -109,7 +114,18 @@ const RAIL_W = '49px'
 /** See `generated` in RecordPage. */
 const GENERATED = new Set<string>()
 
-const MEASURE = 'mx-auto w-full max-w-[1200px] px-6 wide:px-12'
+/** The narrowest the report goes beside a docked panel; below it the panel overlays. */
+const REPORT_MIN = 640
+
+/** The `focus` id the Insights card narrows the report under. `card-` led, so
+ *  the brief reads it as a panel pick, not an assessment of its own. */
+const INSIGHT_FILTER = 'card-insights-filter'
+
+/** A call's kind as the score band its chip reads. */
+const BAND_OF_KIND = { approve: 'established', request: 'not_established', reject: 'not_established' } as const
+
+// The business flow's one measure (`pageMeasure.ts`).
+const MEASURE = PAGE_MEASURE
 
 /**
  * The assistant's state and presentation, remembered per browser.
@@ -400,11 +416,17 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
    * The rail's button brings it back, and dismissing it gives the whole width
    * to the report again.
    */
-  const [chatOpen, setChatOpen] = useState(false)
+  // A report opens with its Insights beside it — where the panel docks and
+  // leaves the report in view (the nav rail, the rail, a 400px panel and
+  // `REPORT_MIN`); narrower, it would cover the report, so it waits to be asked.
+  const [chatOpen, setChatOpen] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth - 49 - 49 - 400 >= REPORT_MIN
+  )
 
   /** What the right-hand column is showing. The picker in its own header, and
    *  the rail it collapses to, both set this. */
-  const [panelView, setPanelView] = useState<PanelView>('assistant')
+  // Insights first: the Assistant is not one of the column's views.
+  const [panelView, setPanelView] = useState<PanelView>('insights')
 
   /**
    * The assistant's own state: pill, window or expanded, docked or floating.
@@ -427,9 +449,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     setAssistantPresentationRaw(next)
     writeStored(ASSISTANT_PRESENTATION_KEY, next)
   }
-  const assistantPresentation: FloatingPanelPresentation =
-    isWide && assistantPreference === 'docked' ? 'docked' : 'floating'
-  const assistantDocked = assistantPresentation === 'docked' && assistantState !== 'pill'
+  // Always the bubble: the Assistant floats over the report and never takes
+  // the side panel, whatever was remembered.
+  void assistantPreference
+  const assistantPresentation: FloatingPanelPresentation = 'floating'
+  // Never docked: the column is the rail's views alone.
+  const assistantDocked = false
 
   /**
    * Whether the column has something in it.
@@ -441,6 +466,31 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   const columnOpen = panelView === 'assistant' ? assistantDocked : chatOpen
 
   /**
+   * Beside the report, or over it.
+   *
+   * Docked while the report still has room to be read beside it — at least
+   * `REPORT_MIN` once the nav, the rail and the panel are taken out — so the
+   * whole report stays in view. In the mid range, where docking would squeeze
+   * it past that, the panel lies over the report instead.
+   */
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const [room, setRoom] = useState({ vw: typeof window === 'undefined' ? 0 : window.innerWidth, nav: 0 })
+  useEffect(() => {
+    const read = () =>
+      setRoom({
+        vw: window.innerWidth,
+        nav: rootRef.current ? parseFloat(getComputedStyle(rootRef.current).getPropertyValue('--nav-w')) || 0 : 0
+      })
+    read()
+    window.addEventListener('resize', read)
+    return () => window.removeEventListener('resize', read)
+  }, [])
+  // The panel's width as the root sets it: a dragged width, else the column's own.
+  const panelPx = chatW ?? (room.vw >= 1504 ? 460 : 400)
+  // The width read on resize, not `isWide`: one measurement for the whole rule.
+  const docked = room.vw >= WIDE && columnOpen && room.vw - room.nav - 49 - panelPx >= REPORT_MIN
+
+  /**
    * Written out rather than composed from `wide:` variants.
    *
    * The three states are `display: contents`, `display: flex` and
@@ -449,9 +499,14 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
    * `contents wide:hidden` is a coin toss. One string, one display.
    */
   const panelClass = !isWide
-    ? 'contents'
+    ? // Below `wide` the panel lies over the report, beside the rail, rather
+      // than taking a column from it: the report keeps its measure.
+      chatOpen && panelView !== 'assistant'
+      ? 'flex w-[min(420px,calc(100vw-49px))] min-w-0 flex-col border-l border-solid border-border bg-card shadow-elevation-drawer'
+      : 'hidden'
     : chatOpen && panelView !== 'assistant'
-      ? 'flex min-w-0 flex-1 flex-col border-l border-solid border-border bg-card'
+      ? // Docked, a column beside the report; with no room for that, over it.
+        cn('flex min-w-0 flex-1 flex-col border-l border-solid border-border bg-card', !docked && 'shadow-elevation-drawer')
       : 'hidden'
 
   /** The insights the score read as a point against the identity, marked in the
@@ -616,17 +671,6 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   /** What the assessment flagged in this moment's reading, marked in the rows
    *  the way the report marks them. */
   const scopeNegatives = useMemo(() => negativesFor(scopeRecord, scopeResults), [scopeRecord, scopeResults])
-  /**
-   * What has moved since the open report was written.
-   *
-   * Reading a report's snapshot, a reviewer needs to know whether the record
-   * still says what the report read. Empty when the report has no snapshot,
-   * or when nothing has changed.
-   */
-  const changedSince = useMemo(
-    () => (view && analysis.selected?.snapshot ? changedInsights(results, live) : []),
-    [view, analysis.selected?.snapshot, results, live]
-  )
   const scopeSources = useMemo(
     () => sourcesFor(scopeRecord, scopeResults, scopeGroupFor),
     [scopeRecord, scopeResults, scopeGroupFor]
@@ -634,15 +678,6 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   // The app's Sources tab, with the prototype's Submitted card kept at its head.
   const scopeSubmitted = useMemo(() => scopeSources.find((s) => s.id === SUBMITTED_CARD), [scopeSources])
   const scopeOrderedSources = useMemo(() => appOrderedSources(scopeSources, scopeRecord), [scopeSources, scopeRecord])
-
-  /** What moved since the report, said once at the head of an evidence panel. */
-  const drift =
-    changedSince.length > 0 ? (
-      <MutedText className="block text-caption">
-        {changedSince.length} {changedSince.length === 1 ? 'insight has' : 'insights have'} changed in the current
-        identity since this report
-      </MutedText>
-    ) : null
 
   const [revealed, setRevealed] = useState<string[]>([])
   /**
@@ -824,15 +859,6 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     regenerateAsked.current = false
     runStanding()
   }, [standing])
-  const overallTally = useMemo(() => {
-    const read = shownResults.filter((r) => !r.notReported).map((r) => outcomeOf(r, record))
-    return {
-      good: read.filter((o) => o === 'pass').length,
-      review: read.filter((o) => o === 'review').length,
-      bad: read.filter((o) => o === 'fail').length,
-      neutral: read.filter((o) => o === 'neutral').length
-    }
-  }, [shownResults, record])
   /** Every insight on the report, grouped by the card it is about, in the
    *  report's order; within a group, failed first, then needs review, passed,
    *  context. The left column lists them in place of the areas. */
@@ -846,7 +872,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   }, [shownResults, groupFor, record])
   /** The same insights for the panel: one group per card, worst first. */
   const panelGroups = useMemo<PanelGroup[]>(() => {
-    const INTENT = { fail: 'failure', review: 'warning', pass: 'success', neutral: 'unknown' } as const
+    // One mark against: a check for review takes the failure's X, as the counts do.
+    const INTENT = { fail: 'failure', review: 'failure', pass: 'success', neutral: 'unknown' } as const
     const byCard = new Map<string, PanelGroup>()
     const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
     shownResults
@@ -886,20 +913,34 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       ]
     }
     // Worst rows first, as the source orders its panel; the report's order within a kind.
-    const worst = (g: PanelGroup) => ['failure', 'warning', 'success', 'unknown'].indexOf(g.insights[0].intent)
+    const worst = (g: PanelGroup) => ['failure', 'success', 'unknown'].indexOf(g.insights[0].intent)
     return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
   }, [shownResults, groupFor, record])
   /** A row of the panel: the report narrowed to its card; the same row again widens it. */
-  const selectCard = (g: PanelGroup) => {
-    // One set of insights, one card: the report is already just that card, so
-    // there is nothing to narrow to — and no way back to show.
-    if (panelGroups.length <= 1) return landOn(g.cardId)
-    const id = `card-${g.cardId}`
-    if (focus?.id === id) return setFocus(null)
-    setFocus({ id, title: g.label, cards: [g.cardId] })
-    panelRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  /**
+   * The Insights card at the report's head: an outcome and the cards picked
+   * under it. It narrows the report as everything else does — through
+   * `focus` — so the back tab and the panel's rows undo it, and reset it.
+   */
+  const [insightFilter, setInsightFilter] = useState<InsightFilter>(NO_FILTER)
+  const applyInsightFilter = (next: InsightFilter) => {
+    setInsightFilter(next)
+    const cards = next.cards.size
+      ? [...next.cards]
+      : next.outcome === 'all'
+        ? []
+        : panelGroups.filter((g) => countIn(g, next.outcome) > 0).map((g) => g.cardId)
+    if (!cards.length) return setFocus(null)
+    const title = next.cards.size
+      ? panelGroups.filter((g) => next.cards.has(g.cardId)).map((g) => g.label).join(', ')
+      : outcomeWord(next.outcome)
+    setFocus({ id: INSIGHT_FILTER, title, cards })
   }
+  // Narrowed some other way, or widened again: the card reads All.
+  useEffect(() => {
+    if (focus?.id !== INSIGHT_FILTER) setInsightFilter(NO_FILTER)
+  }, [focus])
+
   const briefShown = !brief
     ? undefined
     : shownArea
@@ -942,11 +983,21 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     }, 60)
   }
 
-  /** Open the timeline on one change and mark it. */
-  const [timelineFocus, setTimelineFocus] = useState<{ eventId: string; kinds?: Kind[]; n: number }>()
+  /** Open the timeline on one change and mark it; or on one filing, alone. */
+  const [timelineFocus, setTimelineFocus] = useState<{ eventId?: string; kinds?: Kind[]; filing?: string; n: number }>()
   const jumpToTimeline = (eventId: string, kinds?: Kind[]) => {
     showPanel('timeline')
     setTimelineFocus((f) => ({ eventId, kinds, n: (f?.n ?? 0) + 1 }))
+  }
+  const showFilingTimeline = (filing: string) => {
+    showPanel('timeline')
+    setTimelineFocus((f) => ({ filing, n: (f?.n ?? 0) + 1 }))
+  }
+  // The filings with timeline history: their Sources cards get a Timeline button.
+  const timelineFilings = useMemo(() => filingsWithTimeline(selected.id), [selected.id])
+  const filingTimeline = (src: { registration?: { state?: string | null; fileNumber?: string | null } }) => {
+    const key = src.registration && filingKey(src.registration.state ?? undefined, src.registration.fileNumber ?? undefined)
+    return key && timelineFilings.has(key) ? () => showFilingTimeline(key) : undefined
   }
 
   const jumpToSource = (cardId: string) => {
@@ -968,16 +1019,20 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
          never leave the column and the report a frame out of step. It is zero
          below `wide`, where the chat has no column and the composer is the
          fixed bar it has always been. */
-      className="core-theme min-h-full wide:h-screen wide:overflow-hidden [--chat-w:0px] wide:[--chat-w:400px] desk:[--chat-w:460px]"
+      // Below `wide`, the rail's width kept clear at the right: the rail stays,
+      // and the panel opens over the report from it.
+      ref={rootRef}
+      className="core-theme min-h-full pr-[49px] wide:h-screen wide:overflow-hidden wide:pr-0 [--chat-w:0px] wide:[--chat-w:400px] desk:[--chat-w:460px]"
       style={
         {
           '--panel-w': `${PANEL_W}px`,
+          // The report's inset from the right: the open column where it docks,
+          // else the rail alone (the panel lies over the report).
+          '--report-inset': docked ? 'var(--chat-w)' : '49px',
           ...(columnOpen ? {} : { '--chat-w': RAIL_W }),
-          // The timeline is a chart with a year axis and a 144px label column:
-          // at the assistant's width it is a sparkline with truncated values,
-          // so opening it takes the half of the window it needs. A width the
-          // reader has dragged wins over both — they have said what they want.
-          ...(columnOpen && chatW === null && panelView !== 'assistant' ? { '--chat-w': '50%' } : {}),
+          // The column's own width (400, 460 from `desk`), not half the window:
+          // half crowded the report out of docking on any ordinary screen. A
+          // width the reader has dragged wins — they have said what they want.
           ...(columnOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
         } as React.CSSProperties
       }
@@ -1027,7 +1082,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
           * It starts at the top of the window: the page's own header is the
           * band at the head of this column, not a bar fixed across the page.
           */}
-        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-0 wide:bottom-0 wide:right-[calc(var(--panel-w)_+_var(--chat-w))] wide:z-0 wide:flex wide:justify-center wide:bg-surface-canvas">
+        <div className="contents wide:fixed wide:left-[var(--nav-w)] wide:top-0 wide:bottom-0 wide:right-[calc(var(--panel-w)_+_var(--report-inset))] wide:z-0 wide:flex wide:justify-center wide:bg-surface-canvas">
         {/* The report region, edge to edge of the white.
             It used to be the measure itself — `basis-[800px] max-w-[1000px]`,
             centred by the wrapper — which meant the tab bar's rule stopped
@@ -1136,6 +1191,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 record={selected}
                 defaultStatus={determined}
                 assessment={scope.name}
+                // The controls sit in the assessment card, under the head.
+                hideActions={Boolean(hero && assessment)}
                 onOpenTimeline={() => navigate(`/businesses/${selected.id}/timeline`)}
                 onOpenActivity={() => navigate(`/businesses/${selected.id}/activity`)}
                 onRunAssessment={() =>
@@ -1145,15 +1202,19 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 }
               />
             </div>
-            {/* Two columns under the head: the score and its steps at the
-                left; the report's cards at the right.
-                The left card scrolls with the page — pinned, it fought the
-                sticky head for the same strip of screen. */}
+            {/* One column under the head: the assessment, then the report's cards. */}
             <div className={cn('pt-8', hero && 'flex items-start gap-4')}>
+              {/* No gap on the column itself: the report's first child is its
+                  zero-height sticky bar, and a gap there pushed the first card
+                  16px below the score card's top. The brief spaces itself. */}
+              {/* Full height (self-stretch), the report's column. */}
+              <div className="min-w-0 flex-1 self-stretch">
+              {/* The assessment, over the report: its name and call, what it found,
+                  the way to run it — across the column, above Business details. */}
               {hero && !assessment && (
                 // Nothing of this assessment could be read yet — its orders are
                 // still running.
-                <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
+                <section aria-label="Assessment" className="mb-4">
                   <div className="rounded-card border border-border bg-card" style={{ viewTransitionName: assessmentTransitionName(scope.id) }}>
                     <div className="flex flex-col gap-1 px-4 py-4">
                       <h2 className="m-0 text-base font-semibold">{scope.name}</h2>
@@ -1162,19 +1223,32 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                       </p>
                     </div>
                   </div>
-                </aside>
+                </section>
               )}
               {hero && assessment && (
-                <aside className="flex w-80 shrink-0 flex-col gap-4" aria-label="Assessment">
+                <section aria-label="Assessment" className="mb-4">
                   <AssessmentPanel
-                    groups={panelGroups}
-                    onSelectCard={selectCard}
+                    // The business's controls — assignee, status, its menu — where
+                    // the call's chip was: the decision beside the assessment.
+                    actions={
+                      <IdentityActions
+                        defaultStatus={determined}
+                        small
+                        onOpenActivity={() => navigate(`/businesses/${selected.id}/activity`)}
+                        onOpenTimeline={() => navigate(`/businesses/${selected.id}/timeline`)}
+                        onRunAssessment={() =>
+                          navigate('/order', {
+                            state: { businessId: selected.id, origin: `/businesses/${selected.id}/assessments/${scope.id}` }
+                          })
+                        }
+                        record={selected}
+                      />
+                    }
                     regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
-                    score={assessment.score.value}
-                    selectedCard={focus?.id.startsWith('card-') ? focus.id.slice(5) : undefined}
+                    // The call as it stands — a revised one included — as a band.
+                    call={BANDS.find((b) => b.id === BAND_OF_KIND[assessment.kind]) ?? null}
                     summary={panelRead ? { text: panelRead } : null}
                     summaryGenerated={generated.has(selected.id)}
-                    tally={overallTally}
                     title={scope.name}
                     transitionName={assessmentTransitionName(scope.id)}
                     onShowSummary={() => {
@@ -1183,23 +1257,13 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                       // The assessment opens out of the pill as its floating
                       // window, beside the report rather than over it — this
                       // time only; the docked preference stands.
-                      setPanelView('assistant')
                       setAssistantPresentationRaw('floating')
                       setAssistantStateRaw('window')
                       setSummaryRequest((request) => request + 1)
                     }}
                   />
-                </aside>
+                </section>
               )}
-              {/* No gap on the column itself: the report's first child is its
-                  zero-height sticky bar, and a gap there pushed the first card
-                  16px below the score card's top. The brief spaces itself. */}
-              {/* Full height (self-stretch), so the back tab pinned at its top
-                  stays pinned for the whole scroll. */}
-              <div className="min-w-0 flex-1 self-stretch">
-              {/* Narrowed — to a card or a set of them — the way back, as the
-                  dark tab hanging over the first card. */}
-              {focus && <BackTab onClick={() => setFocus(null)} />}
               {/* Narrowed to an area, its assessment first, then the cards it was read from. */}
               {hero && brief && briefShown && (
                 <div className="mb-4">
@@ -1297,7 +1361,11 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
         */}
       <aside
         aria-label="Analysis conversation"
-        className="contents wide:fixed wide:bottom-0 wide:right-0 wide:top-0 wide:flex wide:w-[var(--chat-w)] wide:flex-row"
+        // Fixed at the right edge: the rail, and the panel beside it when open.
+        // Where the report still fits beside it (`docked`), the report is inset
+        // by the whole column; where it would not, by the rail alone, and the
+        // panel lies over it.
+        className="fixed bottom-0 right-0 top-0 z-30 flex flex-row wide:w-[var(--chat-w)]"
       >
         {/* The seam is a handle. It is inside the column so it moves with it,
             and it is the column's own left edge — the one the report is on the
@@ -1318,16 +1386,6 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
             column's, since the column is already sized by `--chat-w` and the
             seam above; the kit's own rail width would fight it. */}
         <AssistantPanel
-          className={cn(
-            assistantPresentation === 'docked' &&
-              (assistantDocked && panelView === 'assistant'
-                ? '!static !h-full !w-full min-w-0 flex-1'
-                : // Put away, or another view has the column: not a zero-width
-                  // rail (its header spilled over the Timeline's) but gone. The
-                  // pill is the panel's sibling and stays; the rail's entry
-                  // brings the panel back.
-                  'hidden')
-          )}
           record={record}
           results={results}
           groupFor={groupFor}
@@ -1337,12 +1395,9 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
           policy={policy}
           state={assistantState}
           presentation={assistantPresentation}
-          canDock={isWide}
+          canDock={false}
           onStateChange={(next) => {
             setAssistantState(next)
-            // Opening it on a column showing another view brings the
-            // assistant back to the front of the column.
-            if (next !== 'pill') setPanelView('assistant')
           }}
           onPresentationChange={setAssistantPresentation}
           onJumpToGroup={jumpToCard}
@@ -1415,60 +1470,67 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
             the composer inside it is never thrown away, so what someone has
             half-typed survives both. */}
         <div className={panelClass}>
-            {isWide && chatOpen && panelView !== 'assistant' && (
+            {chatOpen && panelView !== 'assistant' && (
             <ChatPanelHeader view={panelView} />
             )}
 
             {panelView === 'timeline' && (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 panel-scroll">
-                <Timeline businessId={selected.id} focus={timelineFocus} />
+                <Timeline
+                  businessId={selected.id}
+                  focus={timelineFocus}
+                  onOpenFiling={(f) => {
+                    // The filing's Secretary of State card in Sources: same state, and
+                    // the same number once a letter prefix is set aside ("C64323091"
+                    // on the timeline is "64323091" on the filing); else the state's
+                    // only filing.
+                    const digits = (n?: string | null) => (n ?? '').replace(/^[A-Za-z]+/, '').replace(/[^0-9A-Za-z]/g, '')
+                    const inState = scopeSources.filter((x) => x.registration && x.registration.state === f.state)
+                    const src =
+                      inState.find((x) => digits(x.registration!.fileNumber) === digits(f.fileNumber)) ??
+                      (inState.length === 1 ? inState[0] : undefined)
+                    if (!src) return
+                    showPanel('sources')
+                    jumpToSourceCard(src.id)
+                  }}
+                />
               </div>
             )}
 
             {/* The assessment's evidence, beside the assessment: the insights
                 it read, grouped; the attributes behind them; the sources they
-                came from. Each says, first, whether the record has moved since
-                the report was written. */}
+                came from. */}
             {panelView === 'insights' && (
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 panel-scroll">
-                {drift}
-                {scopeGrouped.map((group) => (
-                  <div key={group.id} id={`group-${group.id}`} className="scroll-mt-4">
-                    <InsightStack title={group.label}>
-                      {group.rows.map((r) => (
-                        <InsightRow
-                          key={r.insightId}
-                          result={r}
-                          record={scopeRecord}
-                          negative={scopeNegatives.has(r.insightId)}
-                          reveal={revealed.includes(r.insightId)}
-                          onJumpToSource={jumpToSource}
-                        />
-                      ))}
-                    </InsightStack>
-                  </div>
-                ))}
+                {/* The report's insights: which way they read, the bar, the
+                    insights by report card — each narrowing the report. */}
+                <InsightsFilterCard filter={insightFilter} groups={panelGroups} onChange={applyInsightFilter} />
               </div>
             )}
 
             {panelView === 'sources' && (
               <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 panel-scroll">
-                {drift}
                 {scopeSubmitted && (
                   <SourceDetail source={scopeSubmitted} record={scopeRecord} focused={sourceFocus === scopeSubmitted.id} />
                 )}
                 <SourcesSummary sources={scopeOrderedSources} record={scopeRecord} onJump={jumpToSourceCard} />
                 {scopeOrderedSources.map((src) => (
-                  <SourceDetail key={src.id} source={src} record={scopeRecord} focused={sourceFocus === src.id} />
+                  <SourceDetail
+                    key={src.id}
+                    source={src}
+                    record={scopeRecord}
+                    focused={sourceFocus === src.id}
+                    onShowTimeline={filingTimeline(src)}
+                  />
                 ))}
               </div>
             )}
 
         </div>
 
-        {/* The rail, always. Putting the panel away leaves the list of what it
-            could show rather than a bare edge. */}
-        {isWide && (
+        {/* The rail, always, at every width. Putting the panel away leaves the
+            list of what it could show rather than a bare edge. */}
+        {(
           <ChatRail
             open={columnOpen}
             onHide={() => {

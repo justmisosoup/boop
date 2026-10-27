@@ -33,19 +33,23 @@ import { deriveResults } from '@/lib/deriveResults'
 import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
 import { InsightCounts } from '../components/InsightCounts'
+import { PAGE_MEASURE } from '../lib/pageMeasure'
 
 
 /**
- * Column widths, from `app/src/containers/Businesses/BusinessList/columns.ts`
- * where the app has the column. The determination as the app's Status chip,
- * the name, how its insights read, and when the business was last assessed.
+ * Column widths — each a minimum; the growing columns share what is left. The
+ * app's (`app/src/containers/Businesses/BusinessList/columns.ts`) summed to
+ * 1096, wider than the business flow's measure (`pageMeasure.ts`), so the
+ * table scrolled sideways inside it. These are what each cell needs: the
+ * Status chip, a name and assessment chips that wrap, the three counts'
+ * fixed tracks (3 × 86 + gaps, with padding), a relative date. 940 in all.
  */
 const COLUMN_WIDTHS = {
-  status: 132,
-  name: 232,
-  assessments: 280,
-  insights: 304,
-  assessed: 148
+  status: 120,
+  name: 200,
+  assessments: 200,
+  insights: 300,
+  assessed: 120
 }
 
 /** What a row holds: the record and its newest assessment. A business whose
@@ -96,9 +100,9 @@ const pendingRows = (): Row[] =>
     .map(({ id, o }) => ({ record: { id, name: o.name }, assessed: null, pending: o.assessments.map((a) => a.name) }))
 
 const STATUS_CHIP: Record<ReviewStatus, { label: string; tone: 'success' | 'warning' | 'danger' }> = {
-  approved: { label: 'Approve', tone: 'success' },
+  approved: { label: 'Approved', tone: 'success' },
   in_review: { label: 'Needs review', tone: 'warning' },
-  rejected: { label: 'Reject', tone: 'danger' }
+  rejected: { label: 'Rejected', tone: 'danger' }
 }
 
 /** The reviewer's status for the business; where nobody has set one, the
@@ -320,7 +324,12 @@ export const BusinessesPage = () => {
   const filtered = Boolean(query.trim())
 
   return (
-    <PageContainer width="wide">
+    // The business flow's one measure (`pageMeasure.ts`): the same width and
+    // breakpoint steps as a business and its report — centred as theirs are,
+    // with the rail's 49px kept clear at the right from `wide`.
+    <div className="wide:pr-[49px]">
+    <PageContainer className={PAGE_MEASURE} padding="none" width="full">
+      <div className="py-6">
       {/* The title's centre on the rail's search line (74px from the top):
           24px of container padding, then 50px less half the serif's 40px line. */}
       <PageHeaderBand className="px-0 pt-[30px]">
@@ -398,6 +407,8 @@ export const BusinessesPage = () => {
 
       {/* Questions about every business at once, in the corner. */}
       <PortfolioAssistant />
+      </div>
     </PageContainer>
+    </div>
   )
 }

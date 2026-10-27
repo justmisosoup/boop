@@ -13,7 +13,7 @@ import { byId } from '../lib/records'
 
 const LABEL = { timeline: 'Timeline', activity: 'Activity' } as const
 
-/** Every event, counted in its heading as Recent activity counts them. */
+/** Every event, counted in its heading as Activity counts them. */
 const ActivitySection = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
   const events = useActivity(record, reads)
   return (

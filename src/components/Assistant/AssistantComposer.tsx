@@ -191,14 +191,15 @@ export const AssistantComposer = ({
 
   return (
     <>
-      {/* The context: the business, as the report on screen reads it — its
-          own card hovering just above the box, Linear's way. Its X takes the
+      {/* The context: the business, as the report on screen reads it — a tab
+          on the box's top edge. Its X takes the
           report out of context, card and all; the crosshairs puts it back.
           With no report there is nothing to take out. */}
       {(!report || withReport) && (
-        // On the inverse surface, the midnight the tooltip sits on, with inverse
-        // text: the context reads as set apart from the conversation above it.
-        <div className="mb-1.5 flex min-w-0 items-center gap-1.5 rounded-card border border-solid border-[var(--core-color-surface-inverse)] bg-[var(--core-color-surface-inverse)] px-2.5 py-1 text-caption leading-4 text-[var(--core-color-text-inverse)]">
+        // A tab on the box, in the Assistant's midnight: its top corners
+        // rounded, its foot laid over the box's top rule (-1px, above it) so
+        // the two read as one shape — the context the question is asked in.
+        <div className="relative z-10 -mb-0.5 ml-3 flex w-fit max-w-[calc(100%-1.5rem)] min-w-0 items-center gap-1.5 rounded-t-card border border-b-0 border-solid border-[var(--core-color-interactive-default)] bg-[var(--core-color-interactive-default)] px-2.5 pb-1.5 pt-1 text-caption leading-4 text-[var(--core-color-text-inverse)]">
           <Crosshair aria-hidden="true" size={12} strokeWidth={1.75} className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{businessName}</span>
           {report && (
@@ -207,7 +208,7 @@ export const AssistantComposer = ({
               aria-label="Take the report out of context"
               title="Take the report out of context"
               onClick={() => setWithReport(false)}
-              className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-control text-[var(--core-color-text-inverse)] opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-control text-[var(--core-color-text-inverse)] opacity-80 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X aria-hidden="true" size={12} strokeWidth={1.75} />
             </button>

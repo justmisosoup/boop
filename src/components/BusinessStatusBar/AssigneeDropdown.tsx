@@ -9,6 +9,7 @@
  * standing command rather than something you have to find your own name in
  * the list to do.
  */
+import { cn } from '@/utils/twUtils'
 import { useMemo } from 'react'
 import { ChevronDown, UserPlus } from 'lucide-react'
 
@@ -16,7 +17,14 @@ import { Avatar, ListPicker, ToolbarButton, type ListPickerAction, type ListPick
 
 import { CURRENT_USER_ID, TEAM, assignReview, useReview } from '../../lib/review'
 
-export const AssigneeDropdown = ({ businessId }: { businessId: string }) => {
+export const AssigneeDropdown = ({
+  businessId,
+  small = false
+}: {
+  businessId: string
+  /** The small size, for a card's head rather than the page's. */
+  small?: boolean
+}) => {
   const { assigneeId } = useReview(businessId)
 
   const items = useMemo<ListPickerItem[]>(
@@ -64,7 +72,10 @@ export const AssigneeDropdown = ({ businessId }: { businessId: string }) => {
       selectedId={assigneeId}
       onSelect={(item) => assignReview(businessId, item.id)}
     >
-      <ToolbarButton trailingIcon={<ChevronDown aria-hidden="true" className="size-4" strokeWidth={1.5} />}>
+      <ToolbarButton
+        className={cn(small && 'h-7 px-2 text-caption')}
+        trailingIcon={<ChevronDown aria-hidden="true" className={small ? 'size-3.5' : 'size-4'} strokeWidth={1.5} />}
+      >
         {!assignee ? (
           <span className="font-medium">Unassigned</span>
         ) : (

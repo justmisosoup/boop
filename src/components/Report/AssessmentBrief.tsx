@@ -104,7 +104,7 @@ export const AssessmentBrief = ({
                 it will take to resolve what is open here. */}
             {satisfied && !onRecommend && (
               <span className="flex items-center gap-2">
-                <CircleCheck size={16} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-[var(--core-color-status-success-fg)]" />
+                <CircleCheck size={16} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-[var(--mark-pass)]" />
                 <Text className="font-medium">This satisfies your policy.</Text>
               </span>
             )}

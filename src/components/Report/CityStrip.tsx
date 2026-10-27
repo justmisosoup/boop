@@ -1,6 +1,6 @@
 import { useContext, useId, useState, type ReactElement, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Database, Check, ChevronDown, X } from 'lucide-react'
 
 import { MetaChip, Text } from '@/core'
 
@@ -255,11 +255,14 @@ export const CityStrip = ({ regs, className }: { regs: CityRegistration[]; class
 export const CityRegistrationRow = ({
   here,
   open,
-  onToggle
+  onToggle,
+  onOpen
 }: {
   here: CityRegistration[]
   open: boolean
   onToggle: () => void
+  /** Given, the row opens the registration in Sources rather than its details under it. */
+  onOpen?: () => void
 }) => {
   const detailId = useId()
   const first = here[0]
@@ -270,10 +273,10 @@ export const CityRegistrationRow = ({
       here,
       <button
         type="button"
-        aria-expanded={open}
-        aria-controls={detailId}
-        aria-label={`City registration, ${cityName(first)}: ${active ? 'active' : 'inactive'}`}
-        onClick={onToggle}
+        aria-expanded={onOpen ? undefined : open}
+        aria-controls={onOpen ? undefined : detailId}
+        aria-label={`City registration, ${cityName(first)}: ${active ? 'active' : 'inactive'}${onOpen ? '. Open in Sources' : ''}`}
+        onClick={onOpen ?? onToggle}
         className={cn(
           'grid w-full grid-cols-1 items-center gap-x-4 gap-y-2 bg-[image:var(--dash-rule-x)] bg-[length:100%_1px] bg-[position:left_bottom] bg-no-repeat px-4 py-3 text-left transition-colors last:bg-none hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
           open && 'bg-[var(--core-color-surface-subtle)]'
@@ -287,19 +290,24 @@ export const CityRegistrationRow = ({
         </span>
         <span className="flex flex-wrap items-center gap-1.5">
           {chip}
-          <ChevronDown
-            aria-hidden="true"
-            size={16}
-            strokeWidth={1.75}
-            className={cn(
-              'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
-              open && 'rotate-180'
-            )}
-          />
+          {/* Opening in Sources: the Sources mark, as the side rail draws it. Opening here: the chevron. */}
+          {onOpen ? (
+            <SourceDataMark />
+          ) : (
+            <ChevronDown
+              aria-hidden="true"
+              size={16}
+              strokeWidth={1.75}
+              className={cn(
+                'ml-auto shrink-0 text-text-secondary transition-transform duration-fast motion-reduce:transition-none',
+                open && 'rotate-180'
+              )}
+            />
+          )}
         </span>
       </button>
       )}
-      <Collapsible open={open}>
+      <Collapsible open={open && !onOpen}>
         <div id={detailId}>
           <CityRegistrationDetail here={here} />
         </div>
@@ -343,11 +351,14 @@ export const CityRegistrationCell = ({
   here,
   open,
   onToggle,
+  onOpen,
   className
 }: {
   here: CityRegistration[]
   open: boolean
   onToggle: () => void
+  /** Given, the cell opens the registration in Sources rather than its details. */
+  onOpen?: () => void
   className?: string
 }) => {
   const { active, caption, chip } = cityRegistrationSummary(here)
@@ -355,9 +366,9 @@ export const CityRegistrationCell = ({
     here,
     <button
       type="button"
-      aria-expanded={open}
-      aria-label={`City registration, ${cityName(here[0])}: ${active ? 'active' : 'inactive'}`}
-      onClick={onToggle}
+      aria-expanded={onOpen ? undefined : open}
+      aria-label={`City registration, ${cityName(here[0])}: ${active ? 'active' : 'inactive'}${onOpen ? '. Open in Sources' : ''}`}
+      onClick={onOpen ?? onToggle}
       className={cn(
         'grid gap-1 border-t border-[var(--core-color-border-divider)] px-4 py-3 text-left transition-colors hover:bg-[var(--core-color-state-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
         open && 'bg-[var(--core-color-surface-subtle)]',
@@ -427,6 +438,38 @@ export const CityTooltip = ({ here }: { here: CityRegistration[] }) => {
 }
 
 /** A city registration's row, cell or pin, with its tooltip. */
+/**
+ * The Sources mark at a registration row's end, as the side rail draws it —
+ * the row opens the registration's source data — with a tooltip of its own
+ * that says so. The row's own tooltip (the state's or the city's standing)
+ * does not open over it: the mark keeps the pointer to itself.
+ */
+export const SourceDataMark = () => (
+  <RadixTooltip.Provider>
+    <RadixTooltip.Root delayDuration={200}>
+      <RadixTooltip.Trigger asChild>
+        <span
+          className="ml-auto inline-flex shrink-0 text-text-secondary"
+          onPointerMove={(e) => e.stopPropagation()}
+          onPointerEnter={(e) => e.stopPropagation()}
+        >
+          <Database aria-hidden="true" size={16} strokeWidth={1.5} />
+        </span>
+      </RadixTooltip.Trigger>
+      <RadixTooltip.Portal>
+        <RadixTooltip.Content
+          side="top"
+          sideOffset={6}
+          collisionPadding={10}
+          className="core-theme z-popover max-w-64 rounded-popover border border-border bg-popover px-3 py-2 text-caption text-popover-foreground shadow-elevation-popover"
+        >
+          Show source data
+        </RadixTooltip.Content>
+      </RadixTooltip.Portal>
+    </RadixTooltip.Root>
+  </RadixTooltip.Provider>
+)
+
 export const withCityTip = (here: CityRegistration[], element: ReactElement, key?: string) => (
   <RadixTooltip.Root key={key} delayDuration={200}>
     <RadixTooltip.Trigger asChild>{element}</RadixTooltip.Trigger>

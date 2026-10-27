@@ -43,7 +43,7 @@ const statusButtonLabel = (status: string) => {
   let formattedStatus = capitalize(status)
 
   if (status === 'in_review') {
-    formattedStatus = 'Needs Review'
+    formattedStatus = 'Needs review'
   }
 
   return formattedStatus

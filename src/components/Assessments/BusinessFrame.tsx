@@ -6,6 +6,7 @@ import { FULL_REPORT, readAssessments } from '../../lib/assessments'
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { statusForBand } from '../../lib/review'
 import { IdentityHeader } from './IdentityHeader'
+import { PAGE_MEASURE } from '../../lib/pageMeasure'
 
 /** The business's own pages, under its profile. */
 export const businessHref = (businessId: string, section?: 'timeline' | 'activity') =>
@@ -40,7 +41,8 @@ export const BusinessFrame = ({
 
   return (
     <div className="pb-12 pt-[54px] wide:pr-[49px]">
-      <div className="mx-auto w-full max-w-[1200px] px-6 wide:px-12">
+      {/* The business flow's one measure, as the list and the report read. */}
+      <div className={PAGE_MEASURE}>
         <title>{`${crumb ? `${crumb} • ` : ''}${record.name} • Middesk`}</title>
         <div className="sticky top-0 z-[5]">
           <IdentityHeader
