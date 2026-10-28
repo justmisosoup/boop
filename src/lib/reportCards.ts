@@ -60,7 +60,7 @@ const GROUP_CARDS: ReadonlyArray<ReportCard> = GROUPS.flatMap((g) =>
 /** The cards that read in a different place than their group: People under Addresses. */
 const AFTER: Partial<Record<string, string>> = { people: 'address' }
 
-export const REPORT_CARDS: ReadonlyArray<ReportCard> = GROUP_CARDS.reduce<ReportCard[]>(
+const IN_ORDER: ReportCard[] = GROUP_CARDS.reduce<ReportCard[]>(
   (cards, card) => {
     if (AFTER[card.id]) return cards
     const moved = GROUP_CARDS.filter((c) => AFTER[c.id] === card.id)
@@ -68,6 +68,14 @@ export const REPORT_CARDS: ReadonlyArray<ReportCard> = GROUP_CARDS.reduce<Report
   },
   []
 )
+
+/** The screens lead: sanctions, PEP and adverse media are the checks an AML
+ *  analyst clears first — a true sanctions match stops onboarding — so they
+ *  read straight under Business details, ahead of the identity cards. */
+export const REPORT_CARDS: ReadonlyArray<ReportCard> = [
+  ...IN_ORDER.filter((c) => c.group === 'screening'),
+  ...IN_ORDER.filter((c) => c.group !== 'screening')
+]
 
 const BY_ID = new Map(REPORT_CARDS.map((c) => [c.id, c]))
 

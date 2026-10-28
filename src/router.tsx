@@ -25,9 +25,10 @@ import { StubPage } from './pages/StubPage'
 export const AppRoutes = () => (
   <>
     <Routes>
-      <Route element={<OrderPage />} path='/order' />
       <Route element={<Shell />} path='/'>
         <Route element={<Navigate replace to='/businesses' />} index />
+        {/* Running an assessment, in the dashboard's body: the nav stays. */}
+        <Route element={<OrderPage />} path='order' />
         <Route element={<BusinessesPage />} path='businesses' />
         <Route element={<RecordPage />} path='businesses/:businessId' />
         {/* The business's overview, and each of its assessments. */}

@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { useContext, useState, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { Building2, House, Landmark, LayoutGrid, Table2 } from 'lucide-react'
 
 import { ActionButton, Hint, MetaChip, SegmentedControl, SegmentedControlItem } from '@/core'
 
+import { ShowAllRows } from './Strip'
 import { StatusDot } from '../StatusDot'
 
 import { filingsListing } from '../../lib/attributes'
@@ -401,7 +402,7 @@ const ShowFound = ({
 }
 
 const TableView = ({ rows, lead, ...props }: AddressProps & { rows: Location[]; lead: number }) => {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(useContext(ShowAllRows))
   const shown = expanded ? rows : rows.slice(0, lead)
   return (
     <>
@@ -438,7 +439,7 @@ const GridView = ({
   record,
   onJumpToSource
 }: AddressProps & { rows: Location[]; lead: number }) => {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(useContext(ShowAllRows))
   const items: AttributeCell[] = (expanded ? rows : rows.slice(0, lead)).map((a, i) => {
     const { chip, verified } = addressSources(a, `address-${i}`, ops, record, onJumpToSource)
     return {

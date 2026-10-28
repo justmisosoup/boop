@@ -2121,7 +2121,7 @@ const attributesForKey = (rawKey: string, record: BusinessRecord): AttributeRow[
       )
       return {
         group: 'people' as const,
-        label: 'Person',
+        label: isBusinessName(p.name) ? 'Business' : 'Person',
         value: p.name,
         source: '',
         sources: provenanceList(p),
@@ -3269,7 +3269,9 @@ export const peopleRows = (
           ? others.map((t) => ({ ...base, label: roleLabel(t) }))
           : agent || cityOwner
             ? []
-            : [{ ...base, label: p.submitted && !onFilings ? 'Person' : 'Officer' }])
+            : // A submitted owner that is itself a company (Sorenson's "Sci
+              // Holdings Llc") is an entity in the ownership chain, not a person.
+              [{ ...base, label: p.submitted && !onFilings ? (isBusinessName(p.name) ? 'Business' : 'Person') : 'Officer' }])
       ]
     })
     .map(nameTheFiling(record))
@@ -3387,7 +3389,7 @@ const checkedRows = (key: string, record: BusinessRecord): AttributeRow[] => {
   const people = (): AttributeRow[] =>
     submittedPeople.map((p) => ({
       group: 'people' as const,
-      label: 'Person',
+      label: isBusinessName(p.name) ? 'Business' : 'Person',
       value: p.name,
       source: '',
       sources: [],

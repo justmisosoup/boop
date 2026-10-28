@@ -21,6 +21,12 @@ export const Label = ({ children }: { children: ReactNode }) => (
 export const StripExpand = createContext(false)
 
 /**
+ * Lists under it show every row, nothing folded under "Show N more": a card
+ * an insight was just followed to, everything it found in view.
+ */
+export const ShowAllRows = createContext(false)
+
+/**
  * A strip of tiles opening a detail under them — the filing strip's and the
  * city strip's behaviour: the picked tile opens its detail, picking it again
  * closes it.

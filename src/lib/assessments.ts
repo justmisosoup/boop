@@ -182,3 +182,23 @@ export const readAssessments = (record: BusinessRecord): AssessmentRead[] => {
     .map((a) => readAssessment(record, a, live))
     .sort((x, y) => (x.score?.value ?? 101) - (y.score?.value ?? 101))
 }
+
+/**
+ * What a business opens on: every assessment it has, not one workflow's.
+ * Full Business KYB reads everything, so where the business has it, that;
+ * otherwise every insight its workflows read, together. None run, none.
+ */
+export const businessScopeOf = (record: BusinessRecord): Assessment | undefined => {
+  const all = assessmentsOf(record)
+  const full = all.find((a) => a.full)
+  if (full) return full
+  const done = all.filter((a) => a.completedAt)
+  if (done.length === 0) return undefined
+  return {
+    id: done[done.length - 1].id,
+    name: 'All assessments',
+    insights: [...new Set(done.flatMap((a) => a.insights ?? []))],
+    completedAt: done.map((a) => a.completedAt!).sort().at(-1),
+    full: false
+  }
+}

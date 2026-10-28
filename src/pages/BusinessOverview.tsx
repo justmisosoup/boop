@@ -133,18 +133,18 @@ export const BusinessOverview = ({ record }: { record: BusinessRecord }) => {
         onValueChange={(v) => v && setMobileSection(v as MobileSection)}
         value={mobileSection}
       >
-        <SegmentedControlItem value="assessments">Assessments</SegmentedControlItem>
+        <SegmentedControlItem value="assessments">Workflows</SegmentedControlItem>
         <SegmentedControlItem value="activity">Activity</SegmentedControlItem>
         <SegmentedControlItem value="alerts">Alerts</SegmentedControlItem>
       </SegmentedControl>
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
 
 
-      <section aria-label="Assessments" className={cn('min-w-0', offMobile('assessments'))}>
+      <section aria-label="Workflows" className={cn('min-w-0', offMobile('assessments'))}>
         <div className="mb-3 flex items-center gap-3">
           {/* The same title as Alerts and Activity, with its count. */}
           <SectionTitle className="flex items-center gap-2">
-            Assessments
+            Workflows
             {/* The core count chip, as the list pages' headings carry theirs. */}
             <PageHeadingCount>{reads.length}</PageHeadingCount>
           </SectionTitle>

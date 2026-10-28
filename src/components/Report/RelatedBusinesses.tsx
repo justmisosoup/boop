@@ -1,9 +1,10 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useContext, useMemo, useState, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { Building2, ChevronDown, MapPin, UsersRound } from 'lucide-react'
 
 import { ActionButton, MetaChip } from '@/core'
 
+import { ShowAllRows } from './Strip'
 import type { BusinessRecord } from '../../lib/deriveResults'
 import { operationsOf, type Location } from '../../lib/operations'
 import {
@@ -345,7 +346,7 @@ export const RelatedBusinesses = ({
 }) => {
   const [open, setOpen] = useState<{ i: number; kind: Shared } | null>(null)
   // The first two; the rest under "Show N more".
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(useContext(ShowAllRows))
   // This business's addresses, by street and ZIP: a shared address's characteristics.
   // The people the customer submitted, as the People card holds them.
   const submittedPeople = useMemo(

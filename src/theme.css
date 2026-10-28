@@ -349,3 +349,9 @@ body,
     white-space: normal;
   }
 }
+
+/* The Assistant opens from the side panel's rail (`ChatRail`'s own item), so
+   `FloatingPanel`'s launcher pill is not drawn: one way in, not two. */
+button[aria-label='Open the Assistant'][data-corner] {
+  display: none;
+}

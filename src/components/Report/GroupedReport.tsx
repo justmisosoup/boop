@@ -9,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, ListFilter, Table2, Waypoints, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, Table2, Waypoints, X } from 'lucide-react'
 
 import {
   ActionButton,
@@ -24,13 +24,9 @@ import {
   SegmentedControl,
   SegmentedControlItem,
   Skeleton,
-  Surface,
-  Tag,
-  Toolbar,
-  ToolbarCount,
-  ToolbarSection,
-  ToolbarSeparator,
-  ToolbarSpacer
+  DateTime,
+  Input,
+  Surface
 } from '@/core'
 
 import {
@@ -59,7 +55,6 @@ import { StatusDot } from '../StatusDot'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { attributeRowsByGroup } from '../AttributesTab'
 import { cellsFromRows } from '../attributeCells'
-import { Collapsible } from '../Collapsible'
 import { cn } from '../../utils/twUtils'
 import { formationParts } from '../FormationCard'
 import { OtherFilings } from './OtherFilings'
@@ -95,7 +90,8 @@ import { BankruptcyTable, LienTable, LitigationTable, claimCounts } from './Clai
 import { WebsiteDetails } from './WebsiteDetails'
 import { useScreenshotViewer } from '../ScreenshotViewer'
 import { confidentRelatedOf } from '../../lib/relatedBusinesses'
-import { StripExpand } from './Strip'
+import { ShowAllRows, StripExpand } from './Strip'
+import { missingInputs } from '../../lib/assessmentContext'
 import { MediaScreen, PepScreen, WatchlistScreen, screenCounts } from './ScreeningCard'
 
 /** The order packages a public-record search ran under, by card. */
@@ -386,6 +382,81 @@ const TinTable = ({ record }: { record: BusinessRecord }) => {
             </span>
           )}
         </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * No TIN submitted: the TIN Match assessment can't be read yet. The field as
+ * the table would hold it, with what the assessment needs — absence as a
+ * plain sentence, no chip.
+ */
+/** TIN Match's two ways to a TIN: Middesk finds it, or the reader submits it. */
+export type TinActions = {
+  /** When Middesk was asked to find it; absent, not asked. */
+  requestedAt?: string
+  onRequest: () => void
+  onCancelRequest: () => void
+  /** The TIN typed, nine digits: TIN Match is ordered with it. */
+  onSubmit: (tin: string) => void
+}
+
+const TinMissing = ({ record, actions }: { record: BusinessRecord; actions?: TinActions }) => {
+  const [typed, setTyped] = useState('')
+  const digits = typed.replace(/\D/g, '')
+  const valid = digits.length === 9
+  return (
+    <div role="table" aria-label="Tax ID" className="border-t border-[var(--core-color-border-divider)]">
+      <div role="row" className="grid grid-cols-1 gap-y-3 px-4 py-3">
+        <span role="cell" className="flex min-w-0 flex-col">
+          <span className="text-caption text-text-secondary">TIN</span>
+          <span className="text-sm text-text-primary">Not submitted</span>
+          {actions?.requestedAt ? (
+            <span className="mt-0.5 text-sm text-text-secondary">
+              Middesk is finding the TIN — asked <DateTime relative>{actions.requestedAt}</DateTime>. TIN Match runs once it is found.
+            </span>
+          ) : (
+            <span className="mt-0.5 text-sm text-text-secondary">{missingInputs('tin', record).join(' ')}</span>
+          )}
+        </span>
+        {actions && (
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            {/* Submit it: nine digits, the dash optional; it orders TIN Match with it. */}
+            <form
+              className="flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (valid) actions.onSubmit(digits)
+              }}
+            >
+              <label className="flex flex-col gap-1">
+                <span className="text-caption text-text-secondary">Submit the TIN</span>
+                <Input
+                  aria-invalid={typed.length > 0 && !valid}
+                  className="w-40 tabular-nums"
+                  inputMode="numeric"
+                  onChange={(e) => setTyped(e.target.value)}
+                  placeholder="12-3456789"
+                  value={typed}
+                />
+              </label>
+              <ActionButton disabled={!valid} size="compact" type="submit" variant="primary">
+                Submit
+              </ActionButton>
+            </form>
+            {/* Or let Middesk find it. */}
+            {actions.requestedAt ? (
+              <ActionButton onClick={actions.onCancelRequest} size="compact" variant="quiet">
+                Cancel request
+              </ActionButton>
+            ) : (
+              <ActionButton onClick={actions.onRequest} size="compact" variant="secondary">
+                Let Middesk find it
+              </ActionButton>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1124,6 +1195,8 @@ export const GroupedReport = ({
   focus,
   pinned = false,
   expand,
+  view,
+  tinActions,
   onJumpToSource,
   onJumpToTimeline,
   documents,
@@ -1143,6 +1216,11 @@ export const GroupedReport = ({
   pinned?: boolean
   /** The card an Assistant chip just led to, opened; `n` counts the jumps. */
   expand?: { card: string; n: number }
+  /** An insight just followed: its card, and the header filter that shows
+   *  what it found — Inactive filings, Open liens, Hits. `n` counts the asks. */
+  view?: { card: string; filter?: RegistrationFilter | StatusFilter; lead?: boolean; n: number }
+  /** No TIN on file: TIN Match's two ways to one. */
+  tinActions?: TinActions
   onJumpToSource?: (cardId: string) => void
   onJumpToTimeline?: (eventId: string, kinds?: Kind[]) => void
   /** Narrowed to an area: its insights are listed under the area, not in the cards. */
@@ -1174,6 +1252,19 @@ export const GroupedReport = ({
   // The results cards' header filters — All, Open, Closed; All, Hits, Dismissed — by card.
   const [statusBy, setStatusBy] = useState<Record<string, StatusFilter>>({})
   const statusOf = (card: string) => statusBy[card] ?? 'all'
+  // An insight, followed: its card's header filter set to what it found.
+  // The registrations narrowed to the domestic filing alone — an insight about it, followed.
+  const [regLeadOnly, setRegLeadOnly] = useState(false)
+  const pickRegFilter = (next: RegistrationFilter) => {
+    setRegFilter(next)
+    setRegLeadOnly(false)
+  }
+  useEffect(() => {
+    if (view?.card === 'formation') setRegLeadOnly(Boolean(view.lead))
+    if (!view?.filter) return
+    if (view.card === 'formation') setRegFilter(view.filter as RegistrationFilter)
+    else if (STATUS_CARDS[view.card]) setStatusBy((by) => ({ ...by, [view.card]: view.filter as StatusFilter }))
+  }, [view])
   // Web presence is a table only: no grid, no switch.
   const webView: WebView = 'table'
   // The Names and People cards' filter: whose — submitted, found, or former.
@@ -1388,7 +1479,9 @@ export const GroupedReport = ({
               // In the table and the grid, the city registrations are entries of it.
               city={cityInTable ? parts.city : undefined}
               kindFilter={regFilter}
-              onKindFilter={setRegFilter}
+              onKindFilter={pickRegFilter}
+              leadOnly={regLeadOnly}
+              onShowAll={() => setRegLeadOnly(false)}
               showMap={regMap}
               // A filing's row opens its Secretary of State card in Sources.
               onOpenFiling={onJumpToSource ? (r) => onJumpToSource(filingCardOf(parts.strip!.record, r)) : undefined}
@@ -1415,7 +1508,8 @@ export const GroupedReport = ({
           )}
         </>
       ) : undefined,
-    tin: parts.tin ? <TinTable record={record} /> : undefined,
+    // Not submitted, the card still stands: its assessment says what it needs.
+    tin: parts.tin ? <TinTable record={record} /> : missingInputs('tin', record).length ? <TinMissing actions={tinActions} record={record} /> : undefined,
     // As the Addresses card draws its places: a strip per kind, a chip per
     // person, their cell under the strip when picked.
     people:
@@ -1566,11 +1660,9 @@ export const GroupedReport = ({
     ...all.filter(({ card }) => !noResults(card.id)),
     ...all.filter(({ card }) => noResults(card.id))
   ]
-  /* The compliance checks read as one run: what still stands first — a hit,
-     an open lien — then what was only dismissed or closed, then the checks that
-     came back with nothing, each group in the run's own order (Sanctions, PEP,
-     Adverse media, then Liens, Litigation, Bankruptcy). The run sits with what
-     was found where any of it found something, at the end where none did. */
+  /* The screens read as one run at the report's head: what still stands
+     first — a hit — then what was only dismissed, then what came back clear,
+     each in the run's own order (Sanctions, PEP, Adverse media). */
   const CLOSED = /closed|terminated|lapsed|released|dismissed|satisfied|discharged/i
   const standingOf = (statuses: Array<string | null | undefined>) =>
     statuses.some((st) => !CLOSED.test(st ?? '')) ? 0 : statuses.length > 0 ? 1 : 2
@@ -1590,14 +1682,9 @@ export const GroupedReport = ({
               : id === 'bankruptcy'
                 ? standingOf(petitions.map((b) => b.status))
                 : 0
-  const COMPLIANCE = [
-    'screening-watchlist',
-    'screening-pep',
-    'screening-media',
-    'liens',
-    'litigation',
-    'bankruptcy'
-  ]
+  // The screens, first in the report (`REPORT_CARDS`), read with any hit first;
+  // liens, litigation and bankruptcy keep their place further down.
+  const COMPLIANCE = ['screening-watchlist', 'screening-pep', 'screening-media']
   const inRun = ({ card }: (typeof byResults)[number]) => COMPLIANCE.includes(card.id)
   const run = byResults
     .filter(inRun)
@@ -1606,9 +1693,9 @@ export const GroupedReport = ({
         foundRank(x.card.id) - foundRank(y.card.id) ||
         COMPLIANCE.indexOf(x.card.id) - COMPLIANCE.indexOf(y.card.id)
     )
-  const at = byResults.findIndex(inRun)
   const rest = byResults.filter((x) => !inRun(x))
-  const drawn = at < 0 ? byResults : [...rest.slice(0, at), ...run, ...rest.slice(at)]
+  // Always first, found or clear: a clean screen is itself the answer.
+  const drawn = [...run, ...rest]
   // Tax ID always reads before Registrations, whatever was found where.
   const ordered = (() => {
     const tin = drawn.findIndex(({ card }) => card.id === 'tin')
@@ -1626,73 +1713,25 @@ export const GroupedReport = ({
 
   return (
     <>
-      {/*
-       * Narrowed to one assessment: an applied filter, as Dovetail's
-       * "Filtered by" pill and HubSpot's filter chips read it — the area as a
-       * removable badge, the count, and the way back — and sticky so it is
-       * there wherever the reader has scrolled. The sticky shell stays mounted at zero height so
-       * the bar can grow in and collapse out with the house motion; it sits
-       * outside the card stack so a closed bar takes no gap.
-       */}
-      {/* The report's scroller (RecordPage's panel, from `wide`) pads its top
-          by 54px, and a sticky box pins inside that padding, so the bar pins
-          54px higher, directly under the sticky report head (whose height the
-          page publishes as `--report-head-h`). */}
-      <div
-        className={cn(
-          'sticky top-[var(--report-head-h,0px)] z-[3] wide:top-[calc(var(--report-head-h,0px)-54px)]',
-          // The canvas behind the bar is the report column's own width, no
-          // wider: the score sits in the column beside it and must not be
-          // painted over.
-          'before:pointer-events-none before:absolute before:inset-x-0 before:inset-y-0 before:-z-10 before:bg-surface-canvas before:transition-shadow before:duration-fast motion-reduce:before:transition-none',
-          // The lowest pinned bar casts the shadow, its bottom edge only.
-          pinned &&
-            narrowed &&
-            'before:border-b before:border-solid before:border-[var(--core-color-border-divider)] before:shadow-elevation-control before:[clip-path:inset(0_0_-8px_0)]'
-        )}
-      >
-        <Collapsible open={narrowed}>
-          <div className="pb-4">
-            <Toolbar
-              role="status"
-              aria-live="polite"
-              // The data-table toolbar, as shadcn draws it: a neutral surface,
-              // the applied filter as an outline badge, a hairline, the count
-              // in muted text, and a ghost reset at the right. No tint: the
-              // badge and the reset are what say "filtered".
-              className="h-10 flex-nowrap gap-2 rounded-card border border-border bg-card px-2"
-            >
-              <ToolbarSection className="min-w-0 gap-2">
-                <ListFilter
-                  aria-hidden="true"
-                  size={14}
-                  strokeWidth={1.5}
-                  className="ml-1 shrink-0 text-text-secondary"
-                />
-                <span className="whitespace-nowrap text-sm text-text-secondary">Filtered to</span>
-                {focus && (
-                  <Tag tone="default" onRemove={focus.onClear} removeLabel="Show full report">
-                    {focus.name}
-                  </Tag>
-                )}
-                <ToolbarSeparator />
-                <ToolbarCount>
-                  {shown.length} of {ordered.length} cards
-                </ToolbarCount>
-              </ToolbarSection>
-              <ToolbarSpacer />
-              <ActionButton
-                variant="quiet"
-                size="compact"
-                onClick={focus?.onClear}
-                leadingIcon={<X aria-hidden="true" size={14} strokeWidth={1.75} />}
-              >
-                Show full report
-              </ActionButton>
-            </Toolbar>
-          </div>
-        </Collapsible>
-      </div>
+      {/* Narrowed to some of its cards: a tab on the first card, in the
+          Assistant's midnight, as its box's context tab is drawn — top corners
+          rounded, its foot laid over the card's top rule so the two read as
+          one shape. It widens the report back. Above its card only (z 1),
+          under the page's pinned head (z 5) as the report scrolls. */}
+      {narrowed && focus && (
+        <button
+          className={cn(
+            'relative z-[1] -mb-0.5 ml-3 flex w-fit items-center gap-1.5 rounded-t-card border border-b-0 border-solid px-2.5 pb-1.5 pt-1 text-caption leading-4',
+            'border-[var(--core-color-interactive-default)] bg-[var(--core-color-interactive-default)] text-[var(--core-color-text-inverse)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          )}
+          onClick={focus.onClear}
+          type="button"
+        >
+          Show full report
+          <X aria-hidden="true" className="opacity-80" size={12} strokeWidth={1.75} />
+        </button>
+      )}
       <div className="flex flex-col gap-4">
         {/* The business at a glance, over the cards — as the dashboard's
             Business details card heads its page. Only on the whole report and
@@ -1710,6 +1749,8 @@ export const GroupedReport = ({
               key={`${card.id}:${open ? `open-${focus?.id ?? ''}-${expand?.n ?? ''}` : ''}`}
               value={open}
             >
+              {/* Followed to from an insight: everything it found, unfolded. */}
+              <ShowAllRows.Provider value={open && view?.card === card.id}>
               <GroupCard
                 id={card.id}
                 title={card.label}
@@ -1763,7 +1804,7 @@ export const GroupedReport = ({
                     <RegistrationFilterControl
                       counts={registrationCounts(parts.strip.record, parts.strip.lead, parts.city)}
                       value={regFilter}
-                      onChange={setRegFilter}
+                      onChange={pickRegFilter}
                     />
                   ) : STATUS_CARDS[card.id] && statusCountsOf(card.id).all > 0 ? (
                     // With results, which: All, then Open and Closed, or Hits and Dismissed.
@@ -1781,6 +1822,7 @@ export const GroupedReport = ({
                 onJumpToSource={onJumpToSource}
                 hideInsights={hideInsights}
               />
+              </ShowAllRows.Provider>
             </StripExpand.Provider>
             {/* Documents a next step retrieved or the analyst added, under the filings they settle. */}
             {card.id === 'formation' && docsCard}

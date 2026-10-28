@@ -7,6 +7,10 @@ import { dismissalOf, screenedOf } from './screening'
 /**
  * Whether an insight passed, needs review, or failed — as a reviewer reads it.
  *
+ * This stands in for the policy, which is not built yet: positive, negative
+ * or neutral is the policy's call, read against the assessment's context
+ * (assessmentContext.ts). Until then, this table emulates it.
+ *
  * Not the score's polarity: that is a weighting, and it reads an inactive
  * filing as nothing and a filing it has no entry for as a point FOR the
  * business. This is the review task's own result word, mapped once, every
@@ -105,8 +109,29 @@ const conversionReading = (key: string, record: BusinessRecord): { outcome: Outc
   return undefined
 }
 
+/** The API's sentences that read as the system talking, in an analyst's words. */
+const PLAIN: Record<string, string> = {
+  'Identified people we believe are different from the submitted People': "The people found online don't match the submitted people",
+  'The domestic sub-status is Not Provided by State.': 'The state gives no sub-status for the domestic filing'
+}
+
 /** The insight's sentence, restated where the record reads it differently than the check did. */
-export const statementOf = (r: Derived, record: BusinessRecord) => conversionReading(keyOf(r.insightId), record)?.statement ?? r.statement
+export const statementOf = (r: Derived, record: BusinessRecord) =>
+  conversionReading(keyOf(r.insightId), record)?.statement ?? screenReading(r, record) ?? PLAIN[r.statement] ?? r.statement
+
+/** A screen whose every match was dismissed passes (`outcomeOf`); its sentence
+ *  says so, rather than the API's "2 Watchlists hit(s) have been identified". */
+function screenReading(r: Derived, record: BusinessRecord): string | undefined {
+  const key = keyOf(r.insightId)
+  const screen = key === 'watchlist' ? 'watchlist' : key === 'politically_exposed_persons' ? 'pep' : key === 'adverse_media' ? 'media' : undefined
+  if (!screen) return undefined
+  const hits = screenedOf(record)[screen].hits as Array<Parameters<typeof dismissalOf>[1]>
+  if (hits.length === 0 || hits.some((h) => !dismissalOf(screen, h))) return undefined
+  const what = screen === 'watchlist' ? 'watchlist match' : screen === 'pep' ? 'PEP match' : 'adverse media match'
+  return hits.length === 1
+    ? `1 ${what} found, dismissed as not a match`
+    : `${hits.length} ${what}es found, all dismissed as not a match`
+}
 
 export const outcomeOf = (r: Derived, record: BusinessRecord): Outcome => {
   const key = keyOf(r.insightId)

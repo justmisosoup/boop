@@ -179,24 +179,15 @@ export const IdentityHeader = ({
               Businesses
             </Link>
           </PageBreadcrumbItem>
-          {/* Each crumb a child of its own: the separators go between children,
-              and a fragment around two of them counted as one. */}
-          {assessment ? (
-            <PageBreadcrumbItem asChild>
-              <Link to={`/businesses/${record.id}`} viewTransition className="no-underline">
-                {displayName(record.name)}
-              </Link>
-            </PageBreadcrumbItem>
-          ) : (
-            <PageBreadcrumbItem current>{displayName(record.name)}</PageBreadcrumbItem>
-          )}
-          {assessment && <PageBreadcrumbItem current>{assessment}</PageBreadcrumbItem>}
+          {/* The business is the page: its workflow's assessments are what it
+              shows, not a place under it. */}
+          <PageBreadcrumbItem current>{displayName(record.name)}</PageBreadcrumbItem>
         </PageBreadcrumb>
         {/* The name, its facts and the decision. Wide, the decision sits at
-            the right of the name; narrower, it moves above the name, so the
-            name keeps the full measure. There the quiet Assigned to button is
-            pulled out by its padding, so its words start on the name's edge,
-            and the status and its menu sit at the far right. */}
+            the right of the name; narrower, it moves under the facts, so the
+            name leads and keeps the full measure. There the quiet Assigned to
+            button is pulled out by its padding, so its words start on the
+            name's edge, and the status and its menu sit at the far right. */}
         <div className="flex flex-col gap-3 wide:grid wide:grid-cols-[minmax(0,1fr)_auto] wide:gap-x-4 wide:gap-y-1">
           <PageHeaderTitles className="min-w-0 wide:col-start-1 wide:row-start-1">
             <PageHeading weight="normal" className="whitespace-normal break-words font-arizona text-4xl font-light leading-[2.75rem] tracking-[-0.02em]">
@@ -219,7 +210,7 @@ export const IdentityHeader = ({
           {/* The decision and what to do next, as the dashboard's status bar
               orders them: who has it, where it stands, then the action. */}
           {!hideActions && (
-          <PageHeaderActions className="order-first w-full flex-wrap justify-start [&>*:first-child]:-ml-2.5 [&>*:nth-child(2)]:ml-auto wide:order-none wide:w-auto wide:[&>*:first-child]:ml-0 wide:[&>*:nth-child(2)]:ml-0 wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:self-start wide:justify-end">
+          <PageHeaderActions className="w-full flex-wrap justify-start [&>*:first-child]:-ml-2.5 [&>*:nth-child(2)]:ml-auto wide:order-none wide:w-auto wide:[&>*:first-child]:ml-0 wide:[&>*:nth-child(2)]:ml-0 wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:self-start wide:justify-end">
             <IdentityActions
               defaultStatus={defaultStatus}
               onOpenActivity={onOpenActivity}

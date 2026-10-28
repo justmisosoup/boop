@@ -1367,6 +1367,75 @@ const ProfilesSection = ({ record }: { record: BusinessRecord }) => {
 }
 
 /**
+ * Each third-party profile as a source of its own — LinkedIn, BBB, Trustpilot
+ * — in the Web & profiles kind: the card the profiles card holds, one per
+ * page. Its head is the site and where the page stands; opened, what the page
+ * says, with the page itself to open.
+ */
+export const ProfileSourceCards = ({ record }: { record: BusinessRecord }) => {
+  const rows = attributesFor('profile', record).filter((r) => r.pageUrl || r.docId)
+  return (
+    <>
+      {rows.map((r) => (
+        <ProfileSourceCard key={r.docId ?? r.pageUrl ?? r.label} row={r} />
+      ))}
+    </>
+  )
+}
+
+const ProfileSourceCard = ({ row }: { row: ReturnType<typeof attributesFor>[number] }) => {
+  const [open, setOpen] = useState(false)
+  const host = row.pageUrl ? row.pageUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : undefined
+  const bodyId = `source-body-profile-${row.docId ?? row.label}`
+  return (
+    <Surface id={`source-profile-${row.docId ?? row.label}`} variant="card" padding="none" className="overflow-hidden">
+      <div
+        className={cn(
+          'flex items-start gap-2 px-4 py-3 transition-colors duration-fast hover:bg-[var(--core-color-list-item-hover-bg)] motion-reduce:transition-none',
+          open && 'border-b border-[var(--core-color-border-divider)]'
+        )}
+      >
+        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setOpen((o) => !o)}>
+          <Text size="md" className="block truncate font-semibold">
+            {row.label}
+          </Text>
+          <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            <StatusTagChip status={row.sourceNote} />
+            {host && <MutedText className="truncate text-caption">{host}</MutedText>}
+          </span>
+        </div>
+        <IconActionButton
+          aria-controls={bodyId}
+          aria-expanded={open}
+          aria-label={open ? `Hide ${row.label}` : `Show ${row.label}`}
+          onClick={() => setOpen((o) => !o)}
+          size="compact"
+          variant="quiet"
+        >
+          <ChevronDown
+            aria-hidden="true"
+            size={14}
+            strokeWidth={2}
+            className={cn('transition-transform duration-standard ease-emphasized motion-reduce:transition-none', !open && '-rotate-90')}
+          />
+        </IconActionButton>
+      </div>
+      <Collapsible open={open} id={bodyId}>
+        <div className="-mb-px">
+          <AttributeCells
+            items={cellsFromRows([{ ...row, fields: row.fields ?? [] }], {
+              provenance: false,
+              // The page's name for the business, opening the page itself.
+              valueFor: (r) => (r.pageUrl ? <RecordLink href={r.pageUrl}>{r.value}</RecordLink> : r.value)
+            })}
+          />
+        </div>
+      </Collapsible>
+    </Surface>
+  )
+}
+
+/**
  * One source, as the app's card for it: its title, the subtitle saying where it
  * is from, and its sections.
  *

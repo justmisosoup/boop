@@ -1,32 +1,50 @@
 import type { ReactNode } from 'react'
 import { Activity, Clock, Database, ListChecks, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
-import { AppShellNavItem, Hint, IconActionButton, Text } from '@/core'
+import { AppShellNavItem, Hint, IconActionButton } from '@/core'
+import { cn } from '@/utils/twUtils'
+
+import { MiddeskMark } from './MiddeskMark'
 
 
 /** What the right-hand column can be showing. */
-export type PanelView = 'assistant' | 'timeline' | 'insights' | 'sources' | 'activity'
+/** `sources:<kind>`: one kind of source (`SourceGroups.tsx`); `sources`, every one. */
+export type PanelView = 'assistant' | 'timeline' | 'insights' | 'sources' | 'activity' | 'alerts' | `sources:${string}`
 
-type PanelViewDef = { id: PanelView; label: string; icon: ReactNode }
+/** `foot`: under a divider, apart from the business's own views — the
+ *  record's evidence (its filings over time, its sources) rather than its
+ *  state. Not at the rail's foot: the Assistant's bubble sits there. */
+export type PanelViewDef = { id: PanelView; label: string; icon: ReactNode; foot?: boolean }
 
-/** The report's side panel: its insights first, then the business's filings
- *  over time, then the sources. The Assistant is not one of them — it stays
- *  in its bubble, floating over the report. */
+/** The business's side panel: its assessments, what has happened to it here
+ *  and its alerts; then, under a divider, its sources — its filings over time
+ *  first, then on the record page one item per kind of source it has
+ *  (`SourceGroups.tsx`). The Assistant is not one of them — it stays in its bubble,
+ *  floating over the report. */
 export const PANEL_VIEWS: PanelViewDef[] = [
   {
     id: 'insights',
-    label: 'Insights',
+    label: 'Assessments',
     icon: <ListChecks aria-hidden="true" size={16} strokeWidth={1.5} />
+  },
+  {
+    id: 'activity',
+    // Its alerts and its activity, one place: monitoring, then what happened.
+    label: 'Activity',
+    icon: <Activity aria-hidden="true" size={16} strokeWidth={1.5} />
   },
   {
     id: 'timeline',
     label: 'Timeline',
-    icon: <Clock aria-hidden="true" size={16} strokeWidth={1.5} />
+    icon: <Clock aria-hidden="true" size={16} strokeWidth={1.5} />,
+    // The filings over time are a source too: the first under the divider.
+    foot: true
   },
   {
     id: 'sources',
     label: 'Sources',
-    icon: <Database aria-hidden="true" size={16} strokeWidth={1.5} />
+    icon: <Database aria-hidden="true" size={16} strokeWidth={1.5} />,
+    foot: true
   }
 ]
 
@@ -61,14 +79,23 @@ export const BUSINESS_PANEL_VIEWS: PanelViewDef[] = [
  * right of the bar — in the rail, past the panel's own edge, where the column
  * actually ends.
  */
-export const ChatPanelHeader = ({ view, views = PANEL_VIEWS }: { view: PanelView; views?: PanelViewDef[] }) => {
+export const ChatPanelHeader = ({
+  view,
+  views = PANEL_VIEWS,
+  action
+}: {
+  view: PanelView
+  views?: PanelViewDef[]
+  /** The view's own action, at the bar's right: Assessments' "Add assessment". */
+  action?: ReactNode
+}) => {
   const current = views.find((v) => v.id === view) ?? views[0]
 
   return (
     <div className="flex h-[49px] shrink-0 items-center gap-2 border-b border-solid border-border bg-card px-3">
-      <Text size="sm" className="font-semibold">
-        {current.label}
-      </Text>
+      {/* In the report's serif, as its cards name themselves. */}
+      <h2 className="m-0 min-w-0 flex-1 font-arizona text-base font-light text-text-primary">{current.label}</h2>
+      {action}
     </div>
   )
 }
@@ -90,8 +117,14 @@ export const ChatRail = ({
   open,
   onOpen,
   onHide,
-  views = PANEL_VIEWS
+  views = PANEL_VIEWS,
+  onAssistant,
+  assistantOpen = false
 }: {
+  /** Opens the Middesk Assistant: given, its bubble sits at the rail's foot. */
+  onAssistant?: () => void
+  /** The Assistant is open: its bubble is ringed. */
+  assistantOpen?: boolean
   /** What the column can show; the report's four by default. */
   views?: PanelViewDef[]
   view: PanelView
@@ -137,8 +170,9 @@ export const ChatRail = ({
         here IS selected there: `NAV_ITEM_ACTIVE` in `src/core/AppShell.tsx`,
         one constant, applied by the same component. It carries its own tooltip
         on the collapsed form, so there is no `Hint` around it. */}
-    <div className="flex flex-col gap-1 px-2 pt-3">
-      {views.map((v) => (
+    {[views.filter((v) => !v.foot), views.filter((v) => v.foot)].map((group, g) => (
+    <div className={cn('flex flex-col gap-1 px-2', g === 0 ? 'pt-3' : 'mx-2 mt-2 border-t border-solid border-[var(--core-color-border-divider)] px-0 pt-2')} key={g}>
+      {group.map((v) => (
         <AppShellNavItem
           key={v.id}
           // Nothing is current while the panel is shut: the rail is then a
@@ -165,5 +199,30 @@ export const ChatRail = ({
         </AppShellNavItem>
       ))}
     </div>
+    ))}
+    {/* The Assistant, at the rail's foot and set apart from the views above:
+        a filled bubble in the primary colour, the one thing here that talks
+        back. It opens the Assistant's own window rather than this column. */}
+    {onAssistant && (
+      <div className="mt-auto flex justify-center pb-4">
+        <Hint asChild content="Middesk Assistant" side="left" size="compact">
+          <button
+            aria-label="Open the Middesk Assistant"
+            aria-pressed={assistantOpen}
+            className={cn(
+              'grid size-9 place-items-center rounded-full shadow-elevation-raised',
+              'bg-[var(--core-color-action-primary-bg)] text-[var(--core-color-action-primary-fg)]',
+              'transition-transform duration-[var(--core-duration-fast)] hover:scale-105 motion-reduce:transition-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              assistantOpen && 'ring-2 ring-[var(--core-color-action-primary-bg)] ring-offset-2'
+            )}
+            onClick={onAssistant}
+            type="button"
+          >
+            <MiddeskMark className="h-[9px] w-4 [&_path]:fill-current" />
+          </button>
+        </Hint>
+      </div>
+    )}
   </div>
 )

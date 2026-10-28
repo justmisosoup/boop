@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { Circle, CircleCheck, CircleX, type LucideIcon } from "lucide-react"
+import { Circle, CircleCheck, CircleDashed, CircleX, type LucideIcon } from "lucide-react"
 
 import { ActionButton, Skeleton, Text } from "@/core"
 
@@ -35,6 +35,8 @@ export type PanelInsight = {
   verdict: string
   /** The full sentence, for the hover. */
   statement: string
+  /** Why it matters for this business, from the assessment's context (`whyOf`). */
+  why?: string
   /** Not an insight of its own — the row's lead (the business's name), or a
    *  tally of what else was found — so not counted. */
   synthetic?: boolean
@@ -46,20 +48,31 @@ export type PanelGroup = {
   label: string
   /** Worst first: the head of the row, then its chips. */
   insights: PanelInsight[]
+  /** What the insights found, said once (`assessmentSummary`). */
+  summary?: string
+  /** The assessment cannot be read yet: what it needs (`missingInputs`). */
+  needs?: string[]
+  /** When it last ran, as shown — the workflow's run, until assessments run on their own. */
+  updated?: string
+  /** What the reader can do about it, under its summary: TIN Match's two ways to a TIN. */
+  actions?: ReactNode
 }
 
 const ICON: Record<Intent, LucideIcon> = {
   success: CircleCheck,
-  // One mark against: a warning draws as the failure's X.
+  // One mark against: a warning draws as the failure's X — in ink, not red,
+  // which is kept for what fails outright.
   warning: CircleX,
   failure: CircleX,
   unknown: Circle,
-  pending: Circle
+  // Can't assess yet: an input the assessment needs is missing. Dashed — shape
+  // before colour — so it never reads as Context.
+  pending: CircleDashed
 }
 
 const COLOR: Record<Intent, string> = {
   success: "text-[var(--mark-pass)]",
-  warning: "text-[var(--core-color-status-danger-fg)]",
+  warning: "text-text-primary",
   failure: "text-[var(--core-color-status-danger-fg)]",
   unknown: "text-text-secondary",
   pending: "text-text-disabled"
@@ -145,6 +158,7 @@ export const AssessmentPanel = ({
   summaryGenerated,
   onShowSummary,
   actions,
+  meta,
   transitionName
 }: {
   /** The call, as the business page's cards chip it; null where none is made. */
@@ -158,6 +172,9 @@ export const AssessmentPanel = ({
   onShowSummary?: () => void
   /** The business's controls — assignee, status, its menu — in the chip's place. */
   actions?: ReactNode
+  /** Where the status stands — Middesk's recommendation, or who decided and
+   *  when — and when the report ran: the line under the name. */
+  meta?: ReactNode
   transitionName?: string
 }) => {
 
@@ -183,9 +200,9 @@ export const AssessmentPanel = ({
             {actions ?? <DeterminationChip band={call} />}
           </span>
         </div>
-        {/* What it found: secondary, a touch smaller. */}
+        {/* The business, summed up: what it found, secondary, a touch smaller. */}
         {summary ? (
-          <Text className="break-words text-dense leading-5" tone="secondary">
+          <Text className="-mt-2 break-words text-dense leading-5" tone="secondary">
             {summary.text}
           </Text>
         ) : regenerating ? (
@@ -194,21 +211,21 @@ export const AssessmentPanel = ({
             <Skeleton className="w-11/12" />
           </div>
         ) : null}
+        {/* Then Middesk's recommendation — or who decided — under it. */}
+        {meta && <p className="m-0 text-dense leading-5 text-text-primary">{meta}</p>}
         {/* The assessment, in full, and its recommendations are the Assistant's;
             this is the way to them. The panel never lists the steps. */}
         {onShowSummary && (
           <ActionButton
-            // As wide as its label, at the left. The Assistant's own button:
-            // its pill, in midnight with the label reversed, and the Middesk
-            // mark — this opens it. Important, as core's action classes
-            // outrank a utility.
-            className="self-start !rounded-pill !border-transparent !bg-[var(--core-color-interactive-default)] !text-[var(--core-color-text-inverse)] hover:!bg-[var(--core-color-interactive-hover)]"
+            // As wide as its label, at the left: a plain secondary button with
+            // the Middesk mark, so the decision beside it stays the card's lead.
+            className="self-start"
             leadingIcon={<MiddeskMark className="h-[9px] w-4" />}
             onClick={onShowSummary}
             size="compact"
             variant="secondary"
           >
-            Run Assistant
+            Ask Middesk Assistant
           </ActionButton>
         )}
       </div>

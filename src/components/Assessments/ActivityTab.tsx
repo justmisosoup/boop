@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Building2, CircleCheck, Flag, ListChecks, Play, Sparkles } from 'lucide-react'
+import { Building2, CircleCheck, Code, Flag, ListChecks, Monitor, Play, Sparkles } from 'lucide-react'
 
 import { ActionLink, DateTime, PageHeadingCount, Surface, Text } from '@/core'
 import { cn } from '@/utils/twUtils'
@@ -51,11 +51,16 @@ const ICON: Record<Kind, ReactNode> = {
 
 /**
  * What has happened to the business, newest first: when it was created, each
- * assessment run and completed, each summary written, and the status changed.
- * Assembled from what is already kept — the orders, the summaries, the review —
- * so nothing new is stored.
+ * workflow run and completed, each of its assessments completed (`assessed`,
+ * the open workflow's: Registrations, Names…), each summary written, and the
+ * status changed. Assembled from what is already kept — the orders, the
+ * summaries, the review — so nothing new is stored.
  */
-export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Event[] => {
+export const useActivity = (
+  record: BusinessRecord,
+  reads: AssessmentRead[],
+  assessed: Array<{ label: string; at: string }> = []
+): Event[] => {
   const review = useReview(record.id)
   useAssessmentRuns()
   // The next steps run on each assessment, from the Assistant.
@@ -79,12 +84,27 @@ export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Ev
     ...stepEvents,
     // Who did it: the reader for what a person does — creating, running,
     // changing the status — and Middesk for what follows on its own.
-    ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
-    ...reads.flatMap(({ assessment: a, summary }) => [
-      ...(a.orderedAt ? [{ at: a.orderedAt, text: `${a.name} assessment run`, subject: a.name, action: 'assessment run', kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
-      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} assessment completed`, subject: a.name, action: 'assessment completed', kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
+    // A workflow — Full Business KYB, a custom order — run, and come back. Full
+    // Business KYB has no order of its own: it ran when the business's report did.
+    ...reads.flatMap(({ assessment: a, summary, runAt }) => [
+      ...((a.orderedAt ?? runAt)
+        ? [{ at: (a.orderedAt ?? runAt)!, text: `${a.name} workflow run`, subject: a.name, action: 'workflow run', kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }]
+        : []),
+      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} workflow completed`, subject: a.name, action: 'workflow completed', kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
       ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, subject: a.name, action: 'summary generated', kind: 'summary' as const, by: MIDDESK, via: DASHBOARD }] : [])
     ]),
+    // Created last in the list, so at the same moment as a first run it reads under it.
+    ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
+    // Each assessment the open workflow ran, completed.
+    ...assessed.map((x) => ({
+      at: x.at,
+      text: `${x.label} assessment completed`,
+      subject: x.label,
+      action: 'assessment completed',
+      kind: 'completed' as const,
+      by: MIDDESK,
+      via: DASHBOARD
+    })),
     ...(review.change
       ? [
           {
@@ -98,6 +118,67 @@ export const useActivity = (record: BusinessRecord, reads: AssessmentRead[]): Ev
       : [])
   ]
   return events.sort((a, b) => b.at.localeCompare(a.at))
+}
+
+/**
+ * The side panel's activity, in the Timeline's own pattern (Timeline/
+ * UpdateEntry.tsx): a rail with a line down it and a round node per entry; on
+ * the entry's head, when — how long ago — at the left and where it was ordered
+ * from at the right; under it, what happened, a row each. Events of one day
+ * are one entry.
+ */
+const PanelEventList = ({ events }: { events: Event[] }) => {
+  const days: Event[][] = []
+  for (const e of events) {
+    const last = days[days.length - 1]
+    if (last && last[0].at.slice(0, 10) === e.at.slice(0, 10)) last.push(e)
+    else days.push([e])
+  }
+  return (
+    <ol className="m-0 flex list-none flex-col p-0">
+      {days.map((day, i) => {
+        const vias = [...new Set(day.map((e) => e.via))]
+        const kinds = [...new Set(day.map((e) => e.kind))]
+        return (
+          <li key={day[0].at} className="grid grid-cols-[40px_minmax(0,1fr)]">
+            {/* The rail: the node, and the line on to the next entry. */}
+            <div className="relative flex justify-center">
+              {i < days.length - 1 && (
+                <span aria-hidden="true" className="absolute bottom-0 left-1/2 top-3 w-px -translate-x-1/2 bg-border" />
+              )}
+              <span
+                aria-hidden="true"
+                className="relative z-[1] grid size-6 shrink-0 place-items-center rounded-full border border-border bg-[var(--core-color-surface-subtle)] text-text-secondary"
+              >
+                {kinds.length === 1 ? ICON[kinds[0]] : ICON.step}
+              </span>
+            </div>
+            <div className={cn('min-w-0 pr-2', i < days.length - 1 && 'pb-4')}>
+              <div className="flex min-h-6 items-center gap-x-1.5 text-dense tabular-nums text-text-secondary">
+                <DateTime relative>{day[0].at}</DateTime>
+                <span className="ml-auto flex items-center gap-1">
+                  {vias.map((v) =>
+                    v === 'API' ? (
+                      <Code aria-label="Ordered through the API" key={v} size={13} strokeWidth={1.75} />
+                    ) : (
+                      <Monitor aria-label="Ordered in the dashboard" key={v} size={13} strokeWidth={1.75} />
+                    )
+                  )}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                {day.map((e, j) => (
+                  <span className="flex min-h-7 items-center text-dense leading-5 text-text-primary" key={`${e.at}-${j}`}>
+                    {e.text}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
 /** Ruled rows. `stacked` — the narrow column — sets each event over its time,
@@ -199,12 +280,23 @@ const EventList = ({
 
 /** Every event, as the business page's Activity reads them: the same
  *  feed — icons on a line, each time under its event — in full. */
-export const ActivityTab = ({ record, reads }: { record: BusinessRecord; reads: AssessmentRead[] }) => {
-  const events = useActivity(record, reads)
+export const ActivityTab = ({
+  record,
+  reads,
+  dense = false,
+  assessed
+}: {
+  record: BusinessRecord
+  reads: AssessmentRead[]
+  dense?: boolean
+  /** The open workflow's assessments and when each completed. */
+  assessed?: Array<{ label: string; at: string }>
+}) => {
+  const events = useActivity(record, reads, assessed)
   return events.length === 0 ? (
     <Text tone="secondary">No activity yet.</Text>
   ) : (
-    <EventList events={events} stacked flush timeAtEnd />
+    dense ? <PanelEventList events={events} /> : <EventList events={events} stacked flush timeAtEnd />
   )
 }
 

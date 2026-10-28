@@ -387,17 +387,19 @@ const ScreenStrip = <H extends ScreenedName & { hit: { id: string; status?: stri
     const media = screen === 'media'
     return {
       key: `${h.hit.id}-${i}`,
-      caption: media ? roleOf(h, record) : caption,
+      // Why a dismissed match was dismissed, in view rather than only on hover.
+      caption: [media ? roleOf(h, record) : caption, reason && `Dismissed: ${reason}`].filter(Boolean).join(' · '),
       title: h.name,
       sub: media ? caption : <Seen who={h} record={record} onJumpToSource={onJumpToSource} />,
       chips: (
         <>
           {reason ? (
             // Why it was dismissed, on the chip that says it was.
-            <Explained tip={`Dismissed: ${reason}`}>
+            // Who dismissed it and why, on the chip: Middesk's rule, not an analyst.
+            <Explained tip={`Dismissed automatically by Middesk: ${reason}`}>
               <MetaChip tone="neutral" size="compact">
                 <CircleMinus {...icon} />
-                Dismissed
+                Auto-dismissed
               </MetaChip>
             </Explained>
           ) : (

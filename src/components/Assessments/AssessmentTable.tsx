@@ -80,7 +80,7 @@ const columns: DataTableColumnDef<Row>[] = [
 
 export const AssessmentTable = ({ rows }: { rows: Row[] }) => (
   <DataTable
-    caption="Assessments"
+    caption="Workflows"
     columns={columns}
     data={rows}
     density="compact"

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router'
 
+import { Plus } from 'lucide-react'
+
 import {
+  ActionButton,
   EmptyState,
   TabsContent,
   TabsRoot,
@@ -15,10 +18,12 @@ import { standingCall } from '../components/Assistant/RecommendationCard'
 import { ColumnResizer } from '../components/ColumnResizer'
 import { filingKey, filingsWithTimeline, Timeline } from '../components/Timeline'
 import type { Kind } from '../lib/timeline/types'
-import { ChatPanelHeader, ChatRail, type PanelView } from '../components/ChatPanelHeader'
+import { ChatPanelHeader, ChatRail, PANEL_VIEWS, type PanelView, type PanelViewDef } from '../components/ChatPanelHeader'
+import { sourceGroupOf, sourceGroupsIn } from '../components/SourceGroups'
 import { useWide, WIDE } from '../hooks/useWide'
 
-import { statusForBand, useReview } from '../lib/review'
+import { statusForBand, useReview, type ReviewStatus } from '../lib/review'
+import dayjs from '../lib/dayjs'
 import { heldReportFor } from '../lib/heldReports'
 import { sameName } from '../lib/registrationStatus'
 import { BriefTurn } from '../components/Assistant/AssistantTurn'
@@ -28,33 +33,45 @@ import { DOC_LABEL, documentsOnRecord, nextStepsFor, sosGaps, type NextStep } fr
 import { requestInformation } from '../lib/review'
 import { reportLabel, reportStamp } from '../lib/reportLabels'
 import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
-import { AssessmentPanel, type PanelGroup } from '../components/Report/AssessmentPanel'
+import { type PanelGroup, type PanelInsight } from '../components/Report/AssessmentPanel'
+import { SummaryBubble, type BubbleNotice } from '../components/Report/SummaryBubble'
+import { cancelTinRequest, requestTin, useTinRequest } from '../lib/tinRequests'
+
+/** The floating Assistant bubble beside the rail — off for now. */
+const SHOW_ASSISTANT_BUBBLE = false
+import type { RegistrationFilter } from '../components/Report/FilingStrip'
+import type { StatusFilter } from '../components/Report/ResultTable'
 import {
-  countIn,
+  inStatus,
+  statusOf,
   InsightsFilterCard,
   NO_FILTER,
   outcomeWord,
   type InsightFilter
 } from '../components/Report/InsightsFilterCard'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
-import { cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
+import { REPORT_CARDS, cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
+import { missingInputs, whyOf } from '../lib/assessmentContext'
+import { assessmentSummary } from '../lib/assessmentSummary'
 import { outcomeOf, statementOf } from '../lib/insightOutcome'
 import { evidenceByCard } from '../components/Assistant/evidence'
 import { REVIEW_AREAS, areaOfAssessmentName, reviewGroups, type ReviewAreaId } from '../lib/reviewAreas'
 import { areaBrief } from '../lib/areaBriefs'
 import type { BriefCard, ReportFocus } from '../lib/reportBrief'
 import { ScreenshotViewerProvider } from '../components/ScreenshotViewer'
-import { SourceDetail, SourcesSummary, appOrderedSources, sourcesFor } from '../components/SourcesTab'
+import { ProfileSourceCards, SourceDetail, SourcesSummary, appOrderedSources, appTypeOf, sourcesFor } from '../components/SourcesTab'
 import { SUBMITTED_CARD } from '../lib/sourceCards'
 import { CardLabel } from '../components/CardLabel'
 import { InsightRow } from '../components/InsightRow'
 import { categoriesOf, deriveResults, type BusinessRecord, type Derived } from '../lib/deriveResults'
 import { areaSummaries } from '../lib/areaSummaries'
 import { displayName } from '../lib/businessNames'
-import { assessmentById, readAssessment, resultsIn, type Assessment } from '../lib/assessments'
+import { assessmentById, businessScopeOf, readAssessment, readAssessments, resultsIn, type Assessment } from '../lib/assessments'
+import { ActivityTab } from '../components/Assessments/ActivityTab'
+import { AlertsCard } from '../components/Assessments/AlertsCard'
 import { useSummaryRuns } from '../lib/useSummaryRuns'
 import { BusinessOverview } from './BusinessOverview'
-import { IdentityActions, IdentityHeader } from '../components/Assessments/IdentityHeader'
+import { IdentityHeader } from '../components/Assessments/IdentityHeader'
 import { assessmentTransitionName } from '../components/Assessments/AssessmentCard'
 import { byId } from '../lib/records'
 import { workflowByAssessmentId } from '../lib/workflows'
@@ -181,11 +198,11 @@ export function RecordPage() {
   // a half-rendered screen.
   if (!selected) return <Navigate replace to='/businesses' />
 
-  // The business itself: its identity and its assessments.
-  if (!assessmentId) return <BusinessOverview key={selected.id} record={selected} />
-
-  // One of its assessments, its report scoped to that assessment's insights.
-  const scope = assessmentById(selected, assessmentId)
+  // The business itself is this page, showing every assessment it has
+  // (`businessScopeOf`) — not only its latest workflow's; with none run yet,
+  // the overview.
+  const scope = assessmentId ? assessmentById(selected, assessmentId) : businessScopeOf(selected)
+  if (!assessmentId && !scope) return <BusinessOverview key={selected.id} record={selected} />
   if (!scope) return <Navigate replace to={`/businesses/${selected.id}`} />
   return <Record key={`${selected.id}/${scope.id}`} record={selected} scope={scope} />
 }
@@ -208,6 +225,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   const scoped = !scope.full
   /** What the business is now. What a new report is run against. */
   const liveAll = useMemo(() => deriveResults(selected), [selected])
+  // Every workflow run on the business, for its Activity.
+  const reads = useMemo(() => readAssessments(selected), [selected])
   const live = useMemo(() => resultsIn(scope, liveAll), [scope, liveAll])
 
   // The skill that runs on arrival. Not a special case: it is the same thing a
@@ -369,6 +388,16 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     (bandOfCall(analysis.selected && 'headline' in analysis.selected.result ? (analysis.selected.result as { headline?: string }).headline : undefined) ?? score?.band)?.id
   )
   const review = useReview(selected.id, determined)
+  /** Whose call the status is — Middesk's, until someone decides — and when
+   *  the report ran: the assessment card's line under its name. */
+  /** When the workflow's assessments last ran. */
+  const ran = (scoped ? scopedRead?.runAt : analysis.selected?.at) || undefined
+  // Who decided and when, once someone has; until then nothing — the status
+  // in the page head is the call. When it ran is the card's Last updated.
+  const decisionLine = (() => {
+    const WORD: Record<ReviewStatus, string> = { approved: 'Approved', in_review: 'Needs review', rejected: 'Rejected' }
+    return review.change ? `${WORD[review.change.to]} by ${review.change.by} on ${dayjs(review.change.at).format('MMM D, YYYY')}` : undefined
+  })()
 
   /**
    * Each area's weight, keyed by its section, for the card headers.
@@ -439,6 +468,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   // Dismissed on load: the report first. Brought back, it opens at the size
   // last used (`readAssistantState`).
   const [assistantState, setAssistantStateRaw] = useState<FloatingPanelState>('pill')
+  /** The floating summary, put away with its × for this visit. */
+  const [summaryDismissed, setSummaryDismissed] = useState(false)
+  /** A question typed in the floating summary, for the Assistant to ask. */
+  const [askRequest, setAskRequest] = useState<{ text: string; n: number }>()
+  /** The summary, carried over as the Assistant thread's first message. */
+  const [opener, setOpener] = useState<{ text: string; at: string }>()
   const [assistantPreference, setAssistantPresentationRaw] =
     useState<FloatingPanelPresentation>(readAssistantPresentation)
   const setAssistantState = (next: FloatingPanelState) => {
@@ -678,6 +713,23 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   // The app's Sources tab, with the prototype's Submitted card kept at its head.
   const scopeSubmitted = useMemo(() => scopeSources.find((s) => s.id === SUBMITTED_CARD), [scopeSources])
   const scopeOrderedSources = useMemo(() => appOrderedSources(scopeSources, scopeRecord), [scopeSources, scopeRecord])
+  /** The rail: the panel's own views, then under its divider one item per
+   *  kind of source the business has, in place of a single Sources. */
+  const railViews = useMemo<PanelViewDef[]>(
+    () => [
+      ...PANEL_VIEWS.filter((v) => v.id !== 'sources'),
+      ...sourceGroupsIn(scopeSources).map((g) => ({ id: `sources:${g.id}` as PanelView, label: g.label, icon: g.icon, foot: true }))
+    ],
+    [scopeSources]
+  )
+  /** The rail item a source is under; a screening result, none — every source. */
+  const viewOfSource = (s: (typeof scopeSources)[number]): PanelView => {
+    const group = sourceGroupOf(s)
+    return group ? `sources:${group.id}` : 'sources'
+  }
+  /** The sources the panel shows: one kind, or — `sources` — every one. */
+  const panelSources = (view: PanelView) =>
+    view === 'sources' ? scopeOrderedSources : scopeOrderedSources.filter((s) => viewOfSource(s) === view)
 
   const [revealed, setRevealed] = useState<string[]>([])
   /**
@@ -824,6 +876,37 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     setFocus(null)
   }
   /**
+   * An insight, followed — a row's lead or one of its chips — leads to what it
+   * found: the report narrowed to its card, with the card's header filter on
+   * the rows that matter (the inactive filings, the open liens, the screening
+   * hits) and none of them folded. A finding the card shows whole needs no filter.
+   */
+  const [reportView, setReportView] = useState<{ card: string; filter?: RegistrationFilter | StatusFilter; lead?: boolean; n: number }>()
+  const followChip = (insight: PanelInsight | undefined, group: PanelGroup) => {
+    const key = insight?.id.split(':')[0]
+    const against = insight?.intent === 'failure' || insight?.intent === 'warning'
+    const filter = ((): RegistrationFilter | StatusFilter | undefined => {
+      // The category itself: its card whole.
+      if (!insight) return 'all'
+      // The domestic filing's sub status: every kind, the domestic filing alone (`lead`).
+      if (key === 'sos_domestic_sub_status') return 'all'
+      if (key === 'sos_inactive' || key === 'sos_domestic') return against ? 'inactive' : 'active'
+      if (key === 'sos_active') return 'active'
+      // Liens, litigation, bankruptcies, the screens: what stands, or — passed —
+      // what was dismissed or closed, where there is any.
+      if (/^(liens|litigation|bankruptcy|screening-)/.test(group.cardId)) return against ? 'standing' : 'all'
+      return undefined
+    })()
+    // The report narrowed to the card, as its row narrows it; the card opened,
+    // filtered, every row shown.
+    const lead = key === 'sos_domestic_sub_status'
+    setReportView((cur) => ({ card: group.cardId, filter, lead, n: (cur?.n ?? 0) + 1 }))
+    setExpandCard((cur) => ({ card: group.cardId, n: (cur?.n ?? 0) + 1 }))
+    applyInsightFilter({ outcome: insightFilter.outcome, cards: new Set([group.cardId]) })
+    panelRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  /**
    * An area, chosen: the report narrowed to the cards the area is read from
    * (`REVIEW_AREAS`), plus any its open steps cite. The same area again
    * widens back out.
@@ -872,8 +955,9 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   }, [shownResults, groupFor, record])
   /** The same insights for the panel: one group per card, worst first. */
   const panelGroups = useMemo<PanelGroup[]>(() => {
-    // One mark against: a check for review takes the failure's X, as the counts do.
-    const INTENT = { fail: 'failure', review: 'failure', pass: 'success', neutral: 'unknown' } as const
+    // One mark against, counted as one (`statusOf`); drawn red only where it
+    // fails outright — a check for review is the X in ink.
+    const INTENT = { fail: 'failure', review: 'warning', pass: 'success', neutral: 'unknown' } as const
     const byCard = new Map<string, PanelGroup>()
     const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
     shownResults
@@ -886,7 +970,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
         // Inc." — doesn't say what matched or what the name is.
         const statement = statementOf(r, record)
         const verdict = r.insightId === 'submitted_name_dba' && r.value ? `Listed as a DBA of ${r.value}` : statement
-        g.insights.push({ id: r.insightId, intent: INTENT[outcome], verdict, statement })
+        g.insights.push({ id: r.insightId, intent: INTENT[outcome], verdict, statement, why: whyOf(r.insightId, record) })
         byCard.set(card, g)
       })
     // Names: led by the business's own name, and saying what else was found —
@@ -912,10 +996,102 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
           : [])
       ]
     }
-    // Worst rows first, as the source orders its panel; the report's order within a kind.
-    const worst = (g: PanelGroup) => ['failure', 'success', 'unknown'].indexOf(g.insights[0].intent)
+    // The workflow's assessments that need an input the record lacks: listed
+    // whether or not they produced insights, saying what they need.
+    for (const card of REPORT_CARDS) {
+      if (workflowCards && !workflowCards.has(card.id)) continue
+      const needs = missingInputs(card.id, record)
+      if (!needs.length) continue
+      byCard.set(card.id, { ...(byCard.get(card.id) ?? { cardId: card.id, label: card.label, insights: [] }), needs })
+    }
+    for (const g of byCard.values()) {
+      g.summary = assessmentSummary(g, record)
+      g.updated = ran ? dayjs(ran).format('MMM D, YYYY') : undefined
+    }
+    // Worst rows first, as the source orders its panel; the report's order
+    // within a kind. One that can't be read yet sits after the findings.
+    const ORDER = ['failure', 'warning', 'pending', 'success', 'unknown']
+    const worst = (g: PanelGroup) => ORDER.indexOf(g.needs?.length ? 'pending' : (g.insights[0]?.intent ?? 'unknown'))
     return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
-  }, [shownResults, groupFor, record])
+  }, [shownResults, groupFor, record, workflowCards, ran])
+  /**
+   * What the floating bubble leads with — the Assistant's latest word to the
+   * reader, while it is put away: an answer being written; a reply not yet
+   * read in the Assistant; else, with assessments needing review and nothing
+   * decided, the way to review the assessment's summary. None, the summary.
+   */
+  const lastTurn = analysis.thread[analysis.thread.length - 1]
+  const [seenReply, setSeenReply] = useState<string>()
+  // Opening the Assistant reads what is in it.
+  useEffect(() => {
+    if (assistantState !== 'pill' && lastTurn) setSeenReply(lastTurn.id)
+  }, [assistantState, lastTurn?.id])
+  const needReview = panelGroups.filter((g) => statusOf(g) === 'failure').length
+  const openAssistantWindow = () => {
+    setAssistantPresentationRaw('floating')
+    setAssistantStateRaw('window')
+  }
+  const bubbleNotice: BubbleNotice | undefined =
+    analysis.waiting && analysis.waitingKind === 'question'
+      ? { kind: 'working', title: 'Working on your question' }
+      : lastTurn && lastTurn.kind === 'question' && lastTurn.id !== seenReply
+        ? {
+            kind: 'reply',
+            title: 'New reply',
+            context: lastTurn.typed || undefined,
+            text: lastTurn.result.sections
+              .filter((s) => s.id !== 'recommendation')
+              .flatMap((s) => s.body.map((b) => b.text))[0],
+            actionLabel: 'Open conversation',
+            onAction: openAssistantWindow
+          }
+        : needReview > 0 && !review.change
+          ? {
+              kind: 'review',
+              title: 'Review assessment summary',
+              text: `${needReview} of ${panelGroups.length} assessments need review. ${panelRead ?? ''}`.trim(),
+              actionLabel: 'Review summary',
+              onAction: () => {
+                // The assessment's summary, opened in the Assistant's window.
+                GENERATED.add(selected.id)
+                setGenerated(new Set(GENERATED))
+                openAssistantWindow()
+                setSummaryRequest((request) => request + 1)
+              }
+            }
+          : undefined
+  /**
+   * TIN Match without a TIN: the two ways to one — Middesk finds it, or the
+   * reader submits it, which orders TIN Match with it, on the details step.
+   */
+  const tinRequest = useTinRequest(selected.id)
+  const tinActions = {
+    requestedAt: tinRequest?.at,
+    onRequest: () => requestTin(selected.id),
+    onCancelRequest: () => cancelTinRequest(selected.id),
+    onSubmit: (tin: string) =>
+      navigate('/order', { state: { businessId: selected.id, origin: location.pathname, customOrderId: 'report:tin', tin } })
+  }
+  /** The panel's assessments, with what the reader can do on TIN Match. */
+  const panelGroupsShown = panelGroups.map((g) =>
+    g.cardId !== 'tin' || !g.needs?.length
+      ? g
+      : {
+          ...g,
+          summary: tinRequest ? 'Middesk is finding the TIN. TIN Match runs once it is found.' : g.summary,
+          actions: tinRequest ? undefined : (
+            <>
+              <ActionButton onClick={() => requestTin(selected.id)} size="compact" variant="secondary">
+                Let Middesk find it
+              </ActionButton>
+              {/* To the TIN card, where it is typed. */}
+              <ActionButton onClick={() => followChip(undefined, g)} size="compact" variant="quiet">
+                Submit TIN
+              </ActionButton>
+            </>
+          )
+        }
+  )
   /** A row of the panel: the report narrowed to its card; the same row again widens it. */
   /**
    * The Insights card at the report's head: an outcome and the cards picked
@@ -929,7 +1105,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       ? [...next.cards]
       : next.outcome === 'all'
         ? []
-        : panelGroups.filter((g) => countIn(g, next.outcome) > 0).map((g) => g.cardId)
+        : panelGroups.filter((g) => inStatus(g, next.outcome)).map((g) => g.cardId)
     if (!cards.length) return setFocus(null)
     const title = next.cards.size
       ? panelGroups.filter((g) => next.cards.has(g.cardId)).map((g) => g.label).join(', ')
@@ -1002,7 +1178,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
 
   const jumpToSource = (cardId: string) => {
     const hit = resolveSource(scopeSources, cardId)
-    showPanel('sources')
+    showPanel(hit ? viewOfSource(hit) : 'sources')
     if (!hit) return
     flashSource(hit.id)
     window.setTimeout(() => {
@@ -1127,7 +1303,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
               */}
             <div
               ref={panelRef}
-              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll [overflow-anchor:none]"
+              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-0 wide:pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll [overflow-anchor:none]"
             >
               <div className={MEASURE}>
                 {/* One report column: the determination opens it at every
@@ -1191,13 +1367,11 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 record={selected}
                 defaultStatus={determined}
                 assessment={scope.name}
-                // The controls sit in the assessment card, under the head.
-                hideActions={Boolean(hero && assessment)}
                 onOpenTimeline={() => navigate(`/businesses/${selected.id}/timeline`)}
                 onOpenActivity={() => navigate(`/businesses/${selected.id}/activity`)}
                 onRunAssessment={() =>
                   navigate('/order', {
-                    state: { businessId: selected.id, origin: `/businesses/${selected.id}/assessments/${scope.id}` }
+                    state: { businessId: selected.id, origin: location.pathname }
                   })
                 }
               />
@@ -1225,45 +1399,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                   </div>
                 </section>
               )}
-              {hero && assessment && (
-                <section aria-label="Assessment" className="mb-4">
-                  <AssessmentPanel
-                    // The business's controls — assignee, status, its menu — where
-                    // the call's chip was: the decision beside the assessment.
-                    actions={
-                      <IdentityActions
-                        defaultStatus={determined}
-                        small
-                        onOpenActivity={() => navigate(`/businesses/${selected.id}/activity`)}
-                        onOpenTimeline={() => navigate(`/businesses/${selected.id}/timeline`)}
-                        onRunAssessment={() =>
-                          navigate('/order', {
-                            state: { businessId: selected.id, origin: `/businesses/${selected.id}/assessments/${scope.id}` }
-                          })
-                        }
-                        record={selected}
-                      />
-                    }
-                    regenerating={scoped ? summaryRuns.isRunning(scope.id) : running}
-                    // The call as it stands — a revised one included — as a band.
-                    call={BANDS.find((b) => b.id === BAND_OF_KIND[assessment.kind]) ?? null}
-                    summary={panelRead ? { text: panelRead } : null}
-                    summaryGenerated={generated.has(selected.id)}
-                    title={scope.name}
-                    transitionName={assessmentTransitionName(scope.id)}
-                    onShowSummary={() => {
-                      GENERATED.add(selected.id)
-                      setGenerated(new Set(GENERATED))
-                      // The assessment opens out of the pill as its floating
-                      // window, beside the report rather than over it — this
-                      // time only; the docked preference stands.
-                      setAssistantPresentationRaw('floating')
-                      setAssistantStateRaw('window')
-                      setSummaryRequest((request) => request + 1)
-                    }}
-                  />
-                </section>
-              )}
+              {/* The summary is the Assistant's opening line now, floating over
+                  its bubble (`SummaryBubble`), not a card in the report. */}
               {/* Narrowed to an area, its assessment first, then the cards it was read from. */}
               {hero && brief && briefShown && (
                 <div className="mb-4">
@@ -1302,13 +1439,16 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                     ? new Set(focus.cards.filter((c) => !workflowCards || workflowCards.has(c)))
                     : workflowCards
                 }
-                // No filter bar, ever: the card above the report names what it is
-                // narrowed to and carries the way back.
+                // Narrowed, the report says so — what it is narrowed to and the
+                // way back — so a reader never takes a part for the whole.
+                focus={focus ? { id: focus.id, name: focus.title, onClear: () => setFocus(null) } : undefined}
                 // The insights are listed in the left card, grouped by card,
                 // so the cards carry none of their own.
                 hideInsights
                 pinned={pinned}
                 expand={expandCard}
+                view={reportView}
+                tinActions={tinActions}
                 onJumpToSource={jumpToSource}
                 onJumpToTimeline={jumpToTimeline}
               />
@@ -1385,7 +1525,34 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
             screen precisely then. Its own width and height are forced to the
             column's, since the column is already sized by `--chat-w` and the
             seam above; the kit's own rail width would fight it. */}
+        {/* The business summed up, as the Assistant's opening line: just above
+            its bubble while it is collapsed, until put away. */}
+        {/* Off for now (Sara): the floating bubble, its summary and its
+            "Review assessment summary". The Assistant opens from the rail. */}
+        {SHOW_ASSISTANT_BUBBLE && hero && assessment && assistantState === 'pill' && (!summaryDismissed || bubbleNotice?.kind === 'reply' || bubbleNotice?.kind === 'working') && (
+          // Beside the rail's Assistant bubble, its foot level with it.
+          <div className="fixed bottom-4 right-[61px] z-floating w-[22.5rem] max-w-[calc(100vw-5rem)]">
+            <SummaryBubble
+              decided={decisionLine}
+              notice={bubbleNotice}
+              onAsk={(question) => {
+                // Opens the Assistant as its floating window, beside the
+                // report, and carries the question on there.
+                setAssistantPresentationRaw('floating')
+                setAssistantStateRaw('window')
+                // The summary goes with it, as the thread's first message.
+                if (panelRead) setOpener((cur) => cur ?? { text: panelRead, at: new Date().toISOString() })
+                if (question.trim()) setAskRequest((cur) => ({ text: question, n: (cur?.n ?? 0) + 1 }))
+              }}
+              onDismiss={() => setSummaryDismissed(true)}
+              summary={panelRead || undefined}
+              writing={scoped ? summaryRuns.isRunning(scope.id) : running}
+            />
+          </div>
+        )}
         <AssistantPanel
+          askRequest={askRequest}
+          opener={opener}
           record={record}
           results={results}
           groupFor={groupFor}
@@ -1471,7 +1638,27 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
             half-typed survives both. */}
         <div className={panelClass}>
             {chatOpen && panelView !== 'assistant' && (
-            <ChatPanelHeader view={panelView} />
+            <ChatPanelHeader
+              view={panelView}
+              views={railViews}
+              // Order another assessment on this business, from the panel that lists them.
+              action={
+                panelView === 'insights' ? (
+                  <ActionButton
+                    leadingIcon={<Plus aria-hidden="true" size={14} strokeWidth={1.75} />}
+                    onClick={() =>
+                      navigate('/order', {
+                        state: { businessId: selected.id, origin: location.pathname }
+                      })
+                    }
+                    size="compact"
+                    variant="secondary"
+                  >
+                    Add assessment
+                  </ActionButton>
+                ) : undefined
+              }
+            />
             )}
 
             {panelView === 'timeline' && (
@@ -1490,7 +1677,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                       inState.find((x) => digits(x.registration!.fileNumber) === digits(f.fileNumber)) ??
                       (inState.length === 1 ? inState[0] : undefined)
                     if (!src) return
-                    showPanel('sources')
+                    showPanel(viewOfSource(src))
                     jumpToSourceCard(src.id)
                   }}
                 />
@@ -1504,25 +1691,56 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 panel-scroll">
                 {/* The report's insights: which way they read, the bar, the
                     insights by report card — each narrowing the report. */}
-                <InsightsFilterCard filter={insightFilter} groups={panelGroups} onChange={applyInsightFilter} />
+                <InsightsFilterCard filter={insightFilter} groups={panelGroupsShown} onChange={applyInsightFilter} onChip={followChip} />
               </div>
             )}
 
-            {panelView === 'sources' && (
+            {/* Its alerts and what has happened to it here, as one: monitoring
+                to opt into first, then the activity. */}
+            {panelView === 'activity' && (
               <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 panel-scroll">
-                {scopeSubmitted && (
+                <AlertsCard titled={false} />
+                <ActivityTab
+                  // Each assessment completed as its workflow did — the run, where the
+                  // workflow keeps no completion of its own.
+                  assessed={(scope.completedAt ?? ran) ? panelGroups.map((g) => ({ label: g.label, at: (scope.completedAt ?? ran)! })) : []}
+                  dense
+                  record={selected}
+                  reads={reads}
+                />
+              </div>
+            )}
+            {panelView === 'alerts' && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 panel-scroll">
+                <AlertsCard titled={false} />
+              </div>
+            )}
+
+            {/* Every source, or one kind of them: its cards, and — all of
+                them — the summary over them. What the customer submitted
+                leads wherever it belongs. */}
+            {(panelView === 'sources' || panelView.startsWith('sources:')) && (
+              <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 panel-scroll">
+                {scopeSubmitted && (panelView === 'sources' || viewOfSource(scopeSubmitted) === panelView) && (
                   <SourceDetail source={scopeSubmitted} record={scopeRecord} focused={sourceFocus === scopeSubmitted.id} />
                 )}
-                <SourcesSummary sources={scopeOrderedSources} record={scopeRecord} onJump={jumpToSourceCard} />
-                {scopeOrderedSources.map((src) => (
-                  <SourceDetail
-                    key={src.id}
-                    source={src}
-                    record={scopeRecord}
-                    focused={sourceFocus === src.id}
-                    onShowTimeline={filingTimeline(src)}
-                  />
-                ))}
+                {panelView === 'sources' && (
+                  <SourcesSummary sources={scopeOrderedSources} record={scopeRecord} onJump={jumpToSourceCard} />
+                )}
+                {panelSources(panelView).map((src) =>
+                  // In its own kind, each third-party profile is a source of its own.
+                  panelView === 'sources:web' && appTypeOf(src) === 'profiles' ? (
+                    <ProfileSourceCards key={src.id} record={scopeRecord} />
+                  ) : (
+                    <SourceDetail
+                      key={src.id}
+                      source={src}
+                      record={scopeRecord}
+                      focused={sourceFocus === src.id}
+                      onShowTimeline={filingTimeline(src)}
+                    />
+                  )
+                )}
               </div>
             )}
 
@@ -1532,6 +1750,11 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
             list of what it could show rather than a bare edge. */}
         {(
           <ChatRail
+            views={railViews}
+            // The Assistant's way in: its bubble at the rail's foot, opening
+            // it as it was last left, or minimizing it again.
+            assistantOpen={assistantState !== 'pill'}
+            onAssistant={() => setAssistantState(assistantState === 'pill' ? readAssistantState() : 'pill')}
             open={columnOpen}
             onHide={() => {
               if (panelView === 'assistant') setAssistantState('pill')

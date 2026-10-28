@@ -49,6 +49,7 @@ import { formatDate } from '../../lib/reportLabels'
 import {
   NOT_PROVIDED,
   newDetails,
+  notPublished,
   registrationState,
   subStatusLabel,
   troubled,
@@ -57,7 +58,7 @@ import {
 import { stateName } from '../../lib/states'
 import { cityLngLat } from '../../lib/cityCoordinates'
 import { cn } from '../../utils/twUtils'
-import { StripExpand } from './Strip'
+import { ShowAllRows, StripExpand } from './Strip'
 import { canonicalRole, nameKey } from '../../lib/attributes'
 import { AttributeCells, type AttributeCell } from '../AttributeGrid'
 import { Collapsible } from '../Collapsible'
@@ -223,8 +224,22 @@ export const StatusChip = ({ reg }: { reg: Registration }) => {
     </MetaChip>
   )
 }
-export const SubStatusChip = ({ reg }: { reg: Registration }) => {
+export const SubStatusChip = ({
+  reg,
+  hideAbsent = false,
+  saysAbsent = false
+}: {
+  reg: Registration
+  hideAbsent?: boolean
+  /** The domestic filing: where its state publishes a status but gives no sub
+   *  status, its absent chip shows in the list too — "Not provided by state". */
+  saysAbsent?: boolean
+}) => {
   const sub = registrationState(reg).subStatus
+  // In a list's status column a missing sub status is noise beside the status;
+  // the filing's own details still say "Not provided by state". Not on the
+  // domestic filing: there the missing sub status is a finding of its own.
+  if (!sub && hideAbsent && !(saysAbsent && !notPublished(reg))) return null
   const good = Boolean(sub && /good standing/i.test(sub) && !/not/i.test(sub))
   const tone: MetaChipTone = !sub
     ? 'neutral'
@@ -561,8 +576,14 @@ export const FilingStrip = ({
   onKindFilter,
   onOpenFiling,
   onOpenCity,
-  showMap = true
+  showMap = true,
+  leadOnly = false,
+  onShowAll
 }: {
+  /** The domestic filing alone — an insight about it, followed. */
+  leadOnly?: boolean
+  /** Back from `leadOnly` to every registration. */
+  onShowAll?: () => void
   /** Which registrations the list shows — the header's control. */
   kindFilter?: RegistrationFilter
   onKindFilter?: (next: RegistrationFilter) => void
@@ -607,7 +628,8 @@ export const FilingStrip = ({
   // The one strip that does not open on its first result — Sara, 2026-10-05.
   const expandedByLink = useContext(StripExpand)
   // Past the top two registrations, the rest fold under "Show more".
-  const [showMore, setShowMore] = useState(false)
+  const showAllByLink = useContext(ShowAllRows)
+  const [showMore, setShowMore] = useState(showAllByLink)
   // A state picked on the map: the list is that state's registrations — its
   // filings and its city registrations — none opened.
   const [stateOnly, setStateOnly] = useState<string | null>(null)
@@ -619,7 +641,7 @@ export const FilingStrip = ({
   // top two. A city zoomed into stays — the filter narrows its pins — unless
   // the map is put away.
   useEffect(() => {
-    setShowMore(false)
+    setShowMore(showAllByLink)
     setPinOnly(null)
     setStateOnly(null)
     setOpenCity(null)
@@ -740,7 +762,9 @@ export const FilingStrip = ({
     ? filtered.filter((i) => i.city && `${i.city[1][0].state}|${cityName(i.city[1][0])}` === zoomCity)
     : []
   const inCity = cityKept.length ? cityKept : undefined
-  const gridItems = pinOnly
+  const gridItems = leadOnly && lead
+    ? ranked.filter((i) => i.state?.state === lead.state)
+    : pinOnly
     ? ranked.filter((i) => i.key === pinOnly)
     : stateOnly
       ? // The state's registrations: its Secretary of State filings and its cities'.
@@ -757,7 +781,13 @@ export const FilingStrip = ({
     setShowMore(true)
   }
   const moreToggle =
-    pinOnly || stateOnly || inCity ? (
+    leadOnly && lead ? (
+      <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
+        <ActionButton variant="quiet" size="compact" onClick={onShowAll}>
+          Show {ranked.length - gridItems.length} more
+        </ActionButton>
+      </div>
+    ) : pinOnly || stateOnly || inCity ? (
       <div className="flex justify-start border-t border-[var(--core-color-border-divider)] px-2 py-2">
         <ActionButton variant="quiet" size="compact" onClick={backOut}>
           {/* How many more the full list holds. */}
@@ -1391,7 +1421,7 @@ export const FilingStrip = ({
                                 <Icon reg={g.current} kind={g.kind} />
                                 {WORD[g.kind]}
                               </MetaChip>
-                              <SubStatusChip reg={g.current} />
+                              <SubStatusChip hideAbsent reg={g.current} saysAbsent={Boolean(lead && g.state === lead.state)} />
                             </span>
                           </button>
                         )
@@ -1498,7 +1528,7 @@ export const FilingStrip = ({
                               <Icon reg={g.current} kind={g.kind} />
                               {WORD[g.kind]}
                             </MetaChip>
-                            <SubStatusChip reg={g.current} />
+                            <SubStatusChip hideAbsent reg={g.current} saysAbsent={Boolean(lead && g.state === lead.state)} />
                             {/* Opening in Sources: the Sources mark, as the side rail draws it. Opening here: the chevron. */}
                             {onOpenFiling ? (
                               <SourceDataMark />

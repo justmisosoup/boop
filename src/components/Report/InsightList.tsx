@@ -1,26 +1,20 @@
-import { useLayoutEffect, useRef, type MouseEvent } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 
-import { Hint, HintContent, HintTrigger, MetaChip } from '@/core'
+import { ChevronRight } from 'lucide-react'
+
+import { Hint, HintContent, HintTrigger } from '@/core'
 import { cn } from '@/utils/twUtils'
 
 import { StatusDot, type PanelGroup, type PanelInsight } from './AssessmentPanel'
 
 /*
- * The report's insights as a list, one row per card of the report: the card,
- * its worst finding as the verdict, the rest as chips. A row narrows the report
- * to its card; the same row again widens it back. Rows that passed with
+ * The report's insights as a list, one row per card of the report: the
+ * category, marked by its worst finding, then each review task under it. The
+ * category opens its card whole; a task opens it on what the task found; the
+ * same category again widens the report back. Rows that passed with
  * nothing more to say sit two-up. Moved out of the left panel into the
  * Insights card at the report's head, under its switch.
  */
-
-/** Failed and for review are one mark against: both read red. */
-const CHIP_TONE = {
-  success: 'neutral',
-  warning: 'danger',
-  failure: 'danger',
-  unknown: 'neutral',
-  pending: 'neutral'
-} as const
 
 /** Rows that move when the list reorders glide to their new place. */
 const useFlipList = () => {
@@ -73,58 +67,64 @@ const useFlipList = () => {
 const rowHairline =
   'relative before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:border-t before:border-[var(--core-color-border-divider)] before:content-[""]'
 
-const Chip = ({ insight }: { insight: PanelInsight }) => (
-  <Hint>
-    {/* The row's click passes through the hover's trigger. */}
-    <HintTrigger className="min-w-0 max-w-full cursor-[inherit]" data-row-passthrough="">
-      {/* A long finding clips at the card's edge; the hover has it whole. */}
-      <MetaChip className="max-w-full" size="xs" tone={CHIP_TONE[insight.intent]}>
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <StatusDot intent={insight.intent} size={12} />
-          <span className="truncate">{insight.verdict}</span>
+/**
+ * One insight under its assessment: its mark and its finding, the whole line
+ * the target. Followed, the report shows what it found (`onFollow`). A finding
+ * against the business reads in ink; a pass or a fact, quieter. On hover, why
+ * it matters for this business — the assessment's context.
+ */
+const Task = ({ insight, onFollow }: { insight: PanelInsight; onFollow: () => void }) => {
+  const flagged = insight.intent === 'failure' || insight.intent === 'warning'
+  const line = (
+      // A link to what it found: the arrow says so before the hover does, and
+      // the hover underlines the finding and moves the arrow on.
+      <button
+        className={cn(
+          'group/task relative z-[1] -mx-2 grid w-[calc(100%+16px)] cursor-pointer grid-cols-[12px_minmax(0,1fr)_14px] items-start gap-x-2 rounded-control px-2 py-1 text-left',
+          'transition-colors duration-[var(--core-duration-fast)] hover:bg-[var(--core-color-state-hover-bg)] motion-reduce:transition-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          onFollow()
+        }}
+        type="button"
+      >
+        <StatusDot className="mt-[3px]" intent={insight.intent} size={12} />
+        <span
+          className={cn(
+            'break-words text-dense leading-5 decoration-[var(--core-color-border-strong)] underline-offset-2 group-hover/task:underline',
+            flagged ? 'text-text-primary' : 'text-text-secondary'
+          )}
+        >
+          {insight.verdict}
         </span>
-      </MetaChip>
-    </HintTrigger>
-    <HintContent align="start" maxWidth={280} side="top">
-      {insight.statement}
-    </HintContent>
-  </Hint>
-)
-
-/** The card's name over its verdict; the whole row is the target. */
-const Header = ({ group, selected, onSelect }: { group: PanelGroup; selected: boolean; onSelect: () => void }) => {
-  const head = group.insights[0]
-  const flagged = head.intent === 'failure' || head.intent === 'warning'
-  const target = (
-    <button
-      aria-pressed={selected}
-      className={cn(
-        'min-w-0 text-left',
-        'after:absolute after:inset-0 after:content-[""]',
-        'focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring'
-      )}
-      onClick={onSelect}
-      type="button"
-    >
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[10px] leading-3 tracking-[0.02em] text-text-secondary">{group.label}</span>
-        <span className={cn('text-dense leading-5 text-text-primary', flagged && 'font-semibold')}>{head.verdict}</span>
-      </span>
-    </button>
+        <ChevronRight
+          aria-hidden="true"
+          className="mt-[3px] text-[var(--core-color-text-muted)] transition-transform duration-[var(--core-duration-fast)] group-hover/task:translate-x-0.5 group-hover/task:text-text-primary motion-reduce:transition-none"
+          size={14}
+          strokeWidth={1.75}
+        />
+      </button>
   )
-  // The hover adds the full sentence — only when the row shows something shorter.
-  if (head.verdict === head.statement) return <span className="flex min-w-0">{target}</span>
   return (
-    <Hint>
-      <HintTrigger asChild>
-        <span className="flex min-w-0">{target}</span>
-      </HintTrigger>
-      <HintContent align="start" maxWidth={300} side="top">
-        {head.statement}
-      </HintContent>
-    </Hint>
+    <li className="m-0 list-none">
+      {insight.why ? (
+        <Hint>
+          <HintTrigger asChild>{line}</HintTrigger>
+          <HintContent align="start" maxWidth={280} side="left">
+            {insight.why}
+          </HintContent>
+        </Hint>
+      ) : (
+        line
+      )}
+    </li>
   )
 }
+
+/** The assessment's mark: what it can't read yet, else its worst insight. */
+const markOf = (g: PanelGroup) => (g.needs?.length ? 'pending' : (g.insights[0]?.intent ?? 'unknown'))
 
 const rowClass = (selected: boolean) =>
   cn(
@@ -132,26 +132,63 @@ const rowClass = (selected: boolean) =>
     selected && 'bg-[color-mix(in_srgb,var(--core-color-state-selected-bg)_50%,var(--core-color-surface-card))]'
   )
 
-const InsightRow = ({ group, selected, onSelect }: { group: PanelGroup; selected: boolean; onSelect: () => void }) => {
-  const [head, ...rest] = group.insights
-  const delegate = (e: MouseEvent<HTMLDivElement>) => {
-    if (!(e.target instanceof Element)) return
-    const button = e.target.closest('button')
-    if (button && !('rowPassthrough' in button.dataset)) return
-    onSelect()
-  }
+/** The category's name: the target that opens its card whole. */
+const CategoryButton = ({ group, selected, onSelect, children }: { group: PanelGroup; selected: boolean; onSelect: () => void; children: ReactNode }) => (
+  <button
+    aria-pressed={selected}
+    className={cn(
+      'min-w-0 text-left',
+      'after:absolute after:inset-0 after:content-[""]',
+      'focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring'
+    )}
+    aria-label={`${group.label}: open its card`}
+    onClick={onSelect}
+    type="button"
+  >
+    {children}
+  </button>
+)
+
+/**
+ * A category of the report — Liens, Addresses, Registrations — marked by the
+ * worst of its insights, and under it every insight that rolls up to it: the
+ * review tasks, each its own line.
+ */
+const InsightRow = ({
+  group,
+  selected,
+  onSelect,
+  onChip
+}: {
+  group: PanelGroup
+  selected: boolean
+  onSelect: () => void
+  onChip?: (insight: PanelInsight, group: PanelGroup) => void
+}) => {
+  // The Names row's synthetic lead is the business's name — the category says Names.
+  const tasks = group.insights.filter((i, n) => !(n === 0 && i.synthetic))
   return (
-    <div className={rowClass(selected)} onClick={delegate}>
-      <StatusDot className="mt-4" intent={head.intent} />
-      <div className="flex min-w-0 flex-col">
-        <Header group={group} onSelect={onSelect} selected={selected} />
-        {rest.length > 0 && (
-          <div className="relative flex flex-wrap items-center gap-1.5 pt-1.5">
-            {rest.map((i) => (
-              <Chip insight={i} key={i.id} />
-            ))}
-          </div>
-        )}
+    <div className={rowClass(selected)}>
+      <StatusDot className="mt-0.5" intent={markOf(group)} />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <CategoryButton group={group} onSelect={onSelect} selected={selected}>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-dense font-semibold leading-5 text-text-primary">
+              {group.label}
+              {group.needs?.length ? <span className="font-normal text-text-secondary"> · Can't assess yet</span> : null}
+            </span>
+            {group.summary && <span className="text-dense leading-5 text-text-secondary">{group.summary}</span>}
+          </span>
+        </CategoryButton>
+        {/* What the reader can do about it, above the row's own target. */}
+        {group.actions && <div className="relative z-[1] flex flex-wrap gap-2">{group.actions}</div>}
+        {tasks.length > 0 && <ul className="m-0 flex flex-col p-0">
+          {tasks.map((i) => (
+            <Task insight={i} key={i.id} onFollow={() => (onChip ? onChip(i, group) : onSelect())} />
+          ))}
+        </ul>}
+        {/* When it last ran, as metadata at its foot. */}
+        {group.updated && <span className="text-[10px] leading-4 tracking-[0.02em] text-[var(--core-color-text-muted)]">Updated {group.updated}</span>}
       </div>
     </div>
   )
@@ -159,23 +196,32 @@ const InsightRow = ({ group, selected, onSelect }: { group: PanelGroup; selected
 
 const InsightCell = ({ group, selected, onSelect }: { group: PanelGroup; selected: boolean; onSelect: () => void }) => (
   <div className={rowClass(selected)}>
-    <StatusDot className="mt-4" intent={group.insights[0].intent} />
-    <Header group={group} onSelect={onSelect} selected={selected} />
+    <StatusDot className="mt-4" intent={markOf(group)} />
+    <CategoryButton group={group} onSelect={onSelect} selected={selected}>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+        <span className="text-dense leading-5 text-text-secondary">{group.insights[0].verdict}</span>
+        {group.updated && <span className="text-[10px] leading-4 tracking-[0.02em] text-[var(--core-color-text-muted)]">Updated {group.updated}</span>}
+      </span>
+    </CategoryButton>
   </div>
 )
 
 /** Passed with nothing more to say: a cell of the two-up band. */
-const isSimple = (g: PanelGroup) => g.insights.length === 1 && g.insights[0].intent === 'success'
+const isSimple = (g: PanelGroup) => !g.needs?.length && !g.summary && g.insights.length === 1 && g.insights[0].intent === 'success'
 
 export const InsightList = ({
   groups,
   selected,
-  onSelect
+  onSelect,
+  onChip
 }: {
   groups: PanelGroup[]
   /** The cards the report is narrowed to. */
   selected: ReadonlySet<string>
   onSelect: (group: PanelGroup) => void
+  /** A chip, followed: the report shows what it found. */
+  onChip?: (insight: PanelInsight, group: PanelGroup) => void
 }) => {
   const flipRef = useFlipList()
   const fulls = groups.filter((g) => !isSimple(g))
@@ -185,7 +231,7 @@ export const InsightList = ({
     <div ref={flipRef}>
       {fulls.map((g, i) => (
         <div className={cn('bg-card', i > 0 && rowHairline)} data-flip-id={g.cardId} key={g.cardId}>
-          <InsightRow group={g} onSelect={() => onSelect(g)} selected={selected.has(g.cardId)} />
+          <InsightRow group={g} onChip={onChip} onSelect={() => onSelect(g)} selected={selected.has(g.cardId)} />
         </div>
       ))}
       {band.length > 0 && (

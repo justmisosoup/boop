@@ -36,8 +36,12 @@ export const AssessmentChecklist = ({
   selected,
   onChange,
   returnTo,
-  lastRun
+  lastRun,
+  items
 }: {
+  /** What to list; absent, the saved assessments. Only saved ones have the
+   *  edit, duplicate and delete menu — the report's assessments are fixed. */
+  items?: ReadonlyArray<SavedCustomOrder>
   selected: string[]
   onChange: (ids: string[]) => void
   /** Where the builder returns to after a save. */
@@ -46,7 +50,9 @@ export const AssessmentChecklist = ({
   lastRun?: (assessmentId: string) => string | undefined
 }) => {
   const navigate = useNavigate()
-  const assessments = useSavedWorkflows()
+  const saved = useSavedWorkflows()
+  const assessments = items ?? saved
+  const isSaved = (id: string) => saved.some((s) => s.id === id)
   const [deleteOrder, { isLoading: isDeleting }] = useDeleteCustomOrderMutation()
   const [pendingDelete, setPendingDelete] = useState<SavedCustomOrder | null>(null)
   const { showToast } = useToast()
@@ -89,12 +95,13 @@ export const AssessmentChecklist = ({
                 <span className="font-semibold">{a.name}</span>
               </Checkbox>
               <div className="flex shrink-0 items-center gap-2">
+                {/* Already on this business: when it last ran. Checking it runs it again. */}
                 {ran && (
                   <Text tone="secondary" className="whitespace-nowrap">
-                    Ran <DateTime relative>{ran}</DateTime>
+                    Already run · <DateTime relative>{ran}</DateTime>
                   </Text>
                 )}
-                <Menu>
+                {isSaved(a.id) && <Menu>
                   <MenuTrigger asChild>
                     <IconActionButton aria-label={`Actions for ${a.name}`} type="button" variant="quiet">
                       <MoreHorizontal aria-hidden="true" />
@@ -108,7 +115,7 @@ export const AssessmentChecklist = ({
                       Delete
                     </MenuItem>
                   </MenuContent>
-                </Menu>
+                </Menu>}
               </div>
             </li>
           )

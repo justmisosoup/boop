@@ -1,9 +1,10 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useContext, useState, type ReactNode } from 'react'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { Check, ChevronDown } from 'lucide-react'
 
 import { ActionButton, MetaChip, SegmentedControl, SegmentedControlItem } from '@/core'
 
+import { ShowAllRows } from './Strip'
 import { cn } from '../../utils/twUtils'
 
 const COLUMNS = 'md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
@@ -171,7 +172,7 @@ export const ResultTable = ({
   const [showClosed, setShowClosed] = useState(false)
   const standing = rows.filter((r) => !r.cleared)
   const cleared = rows.filter((r) => r.cleared)
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(useContext(ShowAllRows))
   const listed = [...standing, ...(!foldCleared || showClosed ? cleared : [])]
   // Filtered from the header, the clear names are rows of the table — under
   // All after the results, or alone under Clear — not a fold of their own.
@@ -387,7 +388,7 @@ export const ResultGrid = ({
   noneTitle?: string
 }) => {
   const [open, setOpen] = useState<string | null>(null)
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(useContext(ShowAllRows))
   const rows = top && !showAll ? all.slice(0, top) : all
   if (rows.length === 0)
     return (

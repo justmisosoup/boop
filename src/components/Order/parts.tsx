@@ -13,8 +13,9 @@ import { cn } from '@/utils/twUtils'
  * same layout, with tokens where those used the legacy theme.
  */
 
-/** Full page, no app chrome: a bar with the breadcrumb, the step's actions and a
- *  close button, pinned over a narrow column. */
+/** A page in the dashboard's body, under its nav: a bar with the breadcrumb and
+ *  the step's actions — Cancel among them, so no close of its own — pinned
+ *  over a narrow column as the page scrolls. */
 export const OrderPageFrame = ({
   children,
   close,
@@ -29,25 +30,14 @@ export const OrderPageFrame = ({
   actions?: ReactNode
 }) => {
   return (
-    // Its own scroller, with the scrollbar's room kept on both sides at every
-    // step: a longer step showing the bar no longer shifts the column.
-    <div className='flex h-dvh w-full flex-col overflow-y-auto bg-[var(--core-color-surface-canvas)] pb-5 text-foreground [scrollbar-gutter:stable_both-edges]'>
+    // The dashboard's page scrolls it; the bar stays pinned at its top.
+    <div className='flex min-h-dvh w-full flex-col bg-[var(--core-color-surface-canvas)] pb-5 text-foreground'>
       <div className='sticky top-0 z-10 border-b border-[var(--core-color-border-divider)] bg-[var(--core-color-surface-canvas)] px-4 py-4'>
-        {/* The crumb and the actions on the form's own column; close at the far right. */}
+        {/* The crumb and the actions on the form's own column. */}
         <div className='mx-auto flex w-full max-w-xl items-center justify-between gap-4'>
           <div className='min-w-0'>{crumbs}</div>
           <div className='flex shrink-0 items-center gap-2'>{actions}</div>
         </div>
-        <IconActionButton
-          aria-label='Close'
-          className='absolute right-10 top-1/2 -translate-y-1/2'
-          onClick={close}
-          size='standard'
-          type='button'
-          variant='quiet'
-        >
-          <X aria-hidden='true' />
-        </IconActionButton>
       </div>
       <div className='mt-10 flex flex-col items-center px-4'>
         <div className='w-full max-w-xl'>{children}</div>

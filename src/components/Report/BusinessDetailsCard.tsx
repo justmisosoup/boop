@@ -89,7 +89,8 @@ export const BusinessDetailsCard = ({
   const items: AttributeCell[] = [
     cell('Business name', displayName(legal), 'name'),
     cell('Office address', office?.fullAddress, 'address_verification'),
-    cell('TIN', tin ? maskTin(tin) : undefined),
+    // A dash would not say why: the applicant gave none, so there was nothing to match.
+    cell('TIN', tin ? maskTin(tin) : 'Not submitted'),
     cell('Formation state', f?.state ? stateName(f.state) : undefined),
     cell('Entity type', f?.entityType ? entityTypeShown(record, f.entityType) : undefined),
     // How long ago, then the day: "14 years ago · Dec 19, 2012".

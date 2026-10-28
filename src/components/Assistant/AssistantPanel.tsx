@@ -90,6 +90,8 @@ export const AssistantPanel = ({
   reviewStepsRequest = 0,
   reviewStepIndex,
   summaryRequest = 0,
+  askRequest,
+  opener,
   briefGenerated = false,
   recommendRequest,
   onJumpToCard,
@@ -127,6 +129,12 @@ export const AssistantPanel = ({
   reviewStepIndex?: number
   /** Counts the page's asks to show the summary: the thread opens on it. */
   summaryRequest?: number
+  /** A question typed outside the Assistant (the floating summary's box):
+   *  asked in the thread when `n` changes. */
+  askRequest?: { text: string; n: number }
+  /** The floating summary's message, carried over: the thread opens on it,
+   *  so the conversation reads on from where the reader started it. */
+  opener?: { text: string; at: string }
   /** This business's full assessment has been written this session: the thread shows it. */
   briefGenerated?: boolean
   /** The open assessment's read and next steps (`NextStepsTurn`). Given, the
@@ -233,7 +241,7 @@ export const AssistantPanel = ({
     [last, asked, lead]
   )
   // A conversation the assessment leads has already started: the report opened it.
-  const empty = turns.length === 0 && !waiting && !analysis.error && !lead && !askedStep && !turnShown
+  const empty = turns.length === 0 && !waiting && !analysis.error && !lead && !askedStep && !turnShown && !opener
 
   const report = analysis.selected
     ? { id: analysis.selected.id, label: reportLabel(analysis.selected) }
@@ -260,6 +268,13 @@ export const AssistantPanel = ({
   /** A starter or a suggestion: asked as typed, of the open report. */
   const ask = (prompt: string) =>
     analysis.run(prompt, [], 'question', [], prompt, undefined, analysis.selected?.id)
+  // The floating summary's question, carried on in the thread.
+  useEffect(() => {
+    if (!askRequest?.text.trim()) return
+    setFresh(false)
+    setView('thread')
+    ask(askRequest.text.trim())
+  }, [askRequest?.n])
 
   /**
    * Documents added in the chat box, read against the recommendation.
@@ -588,6 +603,14 @@ export const AssistantPanel = ({
                 <ChatMarker>
                   {reportDate(analysis.selected)}
                 </ChatMarker>
+              )}
+
+              {/* The summary the reader started from, as the Assistant's first message. */}
+              {opener && (
+                <div className="flex flex-col gap-1.5">
+                  <Meta align="start" at={opener.at} who={<AssistantWho />} />
+                  <p className="m-0 break-words text-text-primary">{opener.text}</p>
+                </div>
               )}
 
               {turnShown ? (

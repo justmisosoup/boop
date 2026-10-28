@@ -47,7 +47,6 @@ import { PAGE_MEASURE } from '../lib/pageMeasure'
 const COLUMN_WIDTHS = {
   status: 120,
   name: 200,
-  assessments: 200,
   insights: 300,
   assessed: 120
 }
@@ -80,9 +79,15 @@ const lastAssessedOf = (reads: AssessmentRead[], held?: string) =>
  *  custom orders' assessments with their insights counted once. */
 const rowFor = (record: BusinessRecord): Row => {
   const reads = readAssessments(record)
-  if (reads.every((r) => r.assessment.full)) {
+  // A business with a "Full Business KYB" report reads as that report: its call
+  // and its insights counted as the report's Insights panel counts them, review
+  // folded into negative — so the row and the report it opens agree.
+  const full = reads.find((r) => r.assessment.full)
+  if (full) {
     const assessed = assessmentOf(record)
-    return { record, assessed, reads, counts: assessed?.counts, lastAt: lastAssessedOf(reads, assessed?.at) }
+    const { good, bad, review, neutral } = full.tally
+    const counts = { positive: good, negative: bad + review, neutral }
+    return { record, assessed: assessed && { ...assessed, counts }, reads, counts, lastAt: lastAssessedOf(reads, assessed?.at) }
   }
   const results = deriveResults(record)
   const keys = new Set(reads.flatMap((r) => r.assessment.insights ?? []))
@@ -117,7 +122,15 @@ const StatusCell = ({ row }: { row: Row }) => {
         {STATUS_CHIP[stored].label}
       </MetaChip>
     )
-  if (row.assessed) return <DeterminationChip band={row.assessed.score.band} />
+  // Nobody has decided yet: Middesk's call, marked as a recommendation so it
+  // is never read as an analyst's decision.
+  if (row.assessed)
+    return (
+      <span className="flex flex-col items-start gap-0.5">
+        <DeterminationChip band={row.assessed.score.band} />
+        <span className="text-text-secondary">Recommended</span>
+      </span>
+    )
   return <MetaChip size="compact">{row.reads?.length ? 'Not reviewed' : 'Not assessed'}</MetaChip>
 }
 
@@ -149,29 +162,6 @@ const columns: DataTableColumnDef<Row>[] = [
     // shows the full name in a tooltip when it's actually clipped.
     cell: ({ row }) => <TruncatedText className="font-semibold">{displayName(row.original.record.name)}</TruncatedText>,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
-  },
-  {
-    id: 'assessments',
-    header: 'Assessments',
-    accessorFn: (row) => row.reads?.length ?? 0,
-    /** One chip per assessment, by name: no status — each one's call is on
-     *  the business itself. */
-    cell: ({ row }) => {
-      const reads = row.original.reads
-      if (row.original.pending)
-        return <TruncatedText className="text-caption text-text-secondary">{row.original.pending.join(', ')}</TruncatedText>
-      if (!reads?.length) return <span className="text-caption text-text-disabled">—</span>
-      return (
-        <span className="flex flex-wrap gap-1">
-          {reads.map((r) => (
-            <MetaChip key={r.assessment.id} size="compact">
-              {r.assessment.name}
-            </MetaChip>
-          ))}
-        </span>
-      )
-    },
-    meta: { align: 'start', width: COLUMN_WIDTHS.assessments, grow: true }
   },
   {
     id: 'insights',

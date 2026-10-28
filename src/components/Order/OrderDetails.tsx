@@ -27,6 +27,7 @@ import type { BusinessRecord } from '../../lib/deriveResults'
 import { ALL, byId } from '../../lib/records'
 import { displayName } from '../../lib/businessNames'
 import { useSavedWorkflows } from '../../lib/savedWorkflows'
+import { REPORT_ASSESSMENTS } from '../../lib/reportAssessments'
 import { STATE_NAMES } from '../../lib/states'
 import type { OrderSelection } from '../../pages/OrderPage'
 import { SectionTitle } from '../Assessments/SectionTitle'
@@ -206,14 +207,19 @@ type ErrorState = { header: string; messages: string[] }
  */
 export const useOrderDetails = ({
   selection,
-  onPlaced
+  onPlaced,
+  prefill
 }: {
   selection: OrderSelection
   onPlaced: (count: number) => void
+  /** Details the reader already gave — a TIN submitted from TIN Match — over the business's own. */
+  prefill?: { tin?: string }
 }) => {
   const { showToast } = useToast()
   const saved = useSavedWorkflows()
-  const workflows = saved.filter((w) => selection.workflowIds.includes(w.id))
+  // What was picked: the report's assessments and the saved ones, each its
+  // own workflow on the business.
+  const workflows = [...REPORT_ASSESSMENTS, ...saved].filter((w) => selection.workflowIds.includes(w.id))
   const existing = selection.businessId ? byId(selection.businessId) : undefined
   const config = useMemo(() => combineConfigs(workflows), [workflows])
   const [submitting, setSubmitting] = useState(false)
@@ -238,7 +244,10 @@ export const useOrderDetails = ({
   const usedFor = (key: InputKey) => (isRequired(key) ? undefined : optional.find((o) => o.key === key)?.usedFor)
 
   const schema = useMemo(() => buildSchema(required), [required.map((r) => JSON.stringify(r)).join()])
-  const initial = useMemo(() => (existing ? detailsOf(existing) : emptyValues()), [existing])
+  const initial = useMemo(() => {
+    const base = existing ? detailsOf(existing) : emptyValues()
+    return prefill?.tin ? { ...base, tin: prefill.tin } : base
+  }, [existing, prefill?.tin])
   const form = useMiddeskForm<Values>({
     defaultValues: initial,
     schema: schema as unknown as z.ZodType<Values, Values>
