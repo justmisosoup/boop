@@ -61,6 +61,10 @@ export type PanelGroup = {
   runList?: Array<{ id: string; name: string; at: string; href: string; scheduled?: boolean }>
   /** Where its monitoring setting is kept (`monitorKey`). */
   monitorKey?: string
+  /** Runs it again now, on the business's details on file; absent, it can't be. */
+  onRerun?: () => void
+  /** A re-run is on its way. */
+  rerunning?: boolean
   /** What the reader can do about it, under its summary: TIN Match's two ways to a TIN. */
   actions?: ReactNode
 }

@@ -86,13 +86,18 @@ export const useActivity = (
     // changing the status — and Middesk for what follows on its own.
     // A workflow — Full Business KYB, a custom order — run, and come back. Full
     // Business KYB has no order of its own: it ran when the business's report did.
-    ...reads.flatMap(({ assessment: a, summary, runAt }) => [
+    // Full Business KYB is the workflow; everything ordered on its own —
+    // Registrations, Liens only — is an assessment, and says so.
+    ...reads.flatMap(({ assessment: a, summary, runAt }) => {
+      const what = a.full ? 'workflow' : 'assessment'
+      return [
       ...((a.orderedAt ?? runAt)
-        ? [{ at: (a.orderedAt ?? runAt)!, text: `${a.name} workflow run`, subject: a.name, action: 'workflow run', kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }]
+        ? [{ at: (a.orderedAt ?? runAt)!, text: `${a.name} ${what} run`, subject: a.name, action: `${what} run`, kind: 'run' as const, by: CURRENT_USER, via: DASHBOARD }]
         : []),
-      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} workflow completed`, subject: a.name, action: 'workflow completed', kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
+      ...(a.completedAt ? [{ at: a.completedAt, text: `${a.name} ${what} completed`, subject: a.name, action: `${what} completed`, kind: 'completed' as const, by: MIDDESK, via: DASHBOARD }] : []),
       ...(summary?.at ? [{ at: summary.at, text: `${a.name} summary generated`, subject: a.name, action: 'summary generated', kind: 'summary' as const, by: MIDDESK, via: DASHBOARD }] : [])
-    ]),
+      ]
+    }),
     // Created last in the list, so at the same moment as a first run it reads under it.
     ...(record.createdAt ? [{ at: record.createdAt, text: 'Business created', kind: 'created' as const, by: CURRENT_USER, via: DASHBOARD }] : []),
     // Each assessment the open workflow ran, completed.

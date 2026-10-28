@@ -244,6 +244,20 @@ const Footer = ({ group }: { group: PanelGroup }) => {
       ) : (
         <span className="inline-flex items-center gap-1">{count}</span>
       )}
+      {/* Run it again now, on the details on file. */}
+      {group.onRerun && (
+        <button
+          className="-ml-1 mr-auto rounded-control text-[var(--core-color-text-link)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:text-[var(--core-color-text-muted)] disabled:no-underline"
+          disabled={group.rerunning}
+          onClick={(e) => {
+            e.stopPropagation()
+            group.onRerun?.()
+          }}
+          type="button"
+        >
+          {group.rerunning ? 'Rerunning…' : 'Rerun'}
+        </button>
+      )}
       {group.monitorKey && <MonitorControl label={group.label} storeKey={group.monitorKey} />}
     </span>
   )

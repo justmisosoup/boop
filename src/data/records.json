@@ -2,7 +2,7 @@
   {
     "id": "53ea6dad-3a0f-4e1f-a529-f18e629073e9",
     "name": "SORENSON COMMUNICATIONS, LLC",
-    "status": "in_audit",
+    "status": "in_review",
     "createdAt": "2026-09-17T17:14:34.394Z",
     "formation": {
       "date": "2000-03-24",
@@ -15,6 +15,7 @@
         "type": "legal",
         "submitted": true,
         "sources": [
+          "lien",
           "lien",
           "form_5500",
           "form_5500",
@@ -29,6 +30,13 @@
           "registration"
         ],
         "sourceRefs": [
+          {
+            "id": "2f59d071-206d-49ec-9f0a-dfd8db4130cd",
+            "type": "lien",
+            "metadata": {
+              "state": "UT"
+            }
+          },
           {
             "id": "e4777db0-2edb-4d2c-899f-e8b873625d0e",
             "type": "lien",
@@ -4778,8 +4786,7 @@
           "phone": "+18667566729",
           "submitted": false,
           "sources": [
-            "website",
-            "profile"
+            "website"
           ],
           "sourceRefs": [
             {
@@ -4787,99 +4794,6 @@
               "type": "website",
               "metadata": {
                 "url": "http://sorenson.com"
-              }
-            },
-            {
-              "id": "03a1f915-7c95-4274-9732-3fe2a992da79",
-              "type": "profile",
-              "metadata": {
-                "url": "https://facebook.com/SorensonComm",
-                "name": "Sorenson",
-                "type": "facebook",
-                "phone": "(866) 756-6729",
-                "website": "http://sorenson.com",
-                "followers": 118000,
-                "categories": [
-                  "Telecommunication company"
-                ],
-                "recent_posts": [
-                  {
-                    "text": "Trusting yourself hits different. Watch to see how Compass supported her growth, both in her ASL and in who she is! \n\nApply here: https://sorenson.com/sorenson-interpreter-academy/compass-program/",
-                    "likes": 6,
-                    "shares": 0,
-                    "comments": 2,
-                    "posted_at": "2026-10-28T21:35:28Z"
-                  },
-                  {
-                    "text": "“Interpreters just translate.” Nope 😤 They connect people, support access, and bridge communication every day.",
-                    "likes": 286,
-                    "shares": 43,
-                    "comments": 9,
-                    "posted_at": "2026-10-26T15:45:36Z"
-                  },
-                  {
-                    "text": "This is why VRS CHAMP! Share Location lets the interpreter pinpoint your exact location, even off your home address.",
-                    "likes": 479,
-                    "shares": 73,
-                    "comments": 35,
-                    "posted_at": "2026-10-22T15:53:55Z"
-                  },
-                  {
-                    "text": "What does community mean to you?",
-                    "likes": 104,
-                    "shares": 12,
-                    "comments": 9,
-                    "posted_at": "2026-10-21T21:48:55Z"
-                  },
-                  {
-                    "text": "Got a SignMail from someone new? 👀 \n\nSave them to your contacts right from the message. Watch to learn now!",
-                    "likes": 446,
-                    "shares": 72,
-                    "comments": 17,
-                    "posted_at": "2026-10-20T20:35:21Z"
-                  },
-                  {
-                    "text": "Meet Kate, our interpreter who noticed mural festivals felt like hearing spaces and started the KissFist Mural Festival in Boulder to welcome the whole Deaf artist community!",
-                    "likes": 175,
-                    "shares": 15,
-                    "comments": 14,
-                    "posted_at": "2026-10-19T15:40:40Z"
-                  },
-                  {
-                    "text": "Congratulations to Puget Sound Association of the Deaf on 125 incredible years! 🎉 Here’s to honoring the past, celebrating the present, and building a stronger future together.",
-                    "likes": 61,
-                    "shares": 12,
-                    "comments": 6,
-                    "posted_at": "2026-10-17T22:53:22Z"
-                  },
-                  {
-                    "text": "We absolutely loved seeing each and every one of you at Seattle DeafNation today! 💙 Thank you all for stopping by our booth!",
-                    "likes": 81,
-                    "shares": 2,
-                    "comments": 4,
-                    "posted_at": "2026-10-17T22:28:03Z"
-                  },
-                  {
-                    "text": "The college football loyalty is REAL. 🏈😭\n\nBYU? Georgia? Notre Dame? Michigan? Or someone else? 👀\n\nWho's YOUR team? Defend your pick in the comments! ⬇️🔥\n\n#CollegeFootball #NCAA #DeafCommunity",
-                    "likes": 237,
-                    "shares": 13,
-                    "comments": 96,
-                    "hashtags": [
-                      "#CollegeFootball",
-                      "#NCAA",
-                      "#DeafCommunity"
-                    ],
-                    "posted_at": "2026-10-17T13:24:35Z"
-                  },
-                  {
-                    "text": "Team Austin or Team Las Vegas?!? 👀😂\n\nCome challenge us at our booth at Seattle DeafNation tomorrow!",
-                    "likes": 95,
-                    "shares": 6,
-                    "comments": 5,
-                    "posted_at": "2026-10-17T05:16:30Z"
-                  }
-                ],
-                "recent_reviews": []
               }
             }
           ]
@@ -5264,108 +5178,6 @@
         "followers": null,
         "categories": [
           "Deaf service"
-        ]
-      },
-      {
-        "id": "03a1f915-7c95-4274-9732-3fe2a992da79",
-        "externalId": null,
-        "name": "Sorenson",
-        "metadata": {
-          "name": "Sorenson",
-          "categories": [
-            "Telecommunication company"
-          ],
-          "followers": 118000,
-          "phone": "(866) 756-6729",
-          "website": "http://sorenson.com",
-          "recent_posts": [
-            {
-              "text": "Trusting yourself hits different. Watch to see how Compass supported her growth, both in her ASL and in who she is! \n\nApply here: https://sorenson.com/sorenson-interpreter-academy/compass-program/",
-              "posted_at": "2026-10-28T21:35:28Z",
-              "comments": 2,
-              "shares": 0,
-              "likes": 6
-            },
-            {
-              "text": "“Interpreters just translate.” Nope 😤 They connect people, support access, and bridge communication every day.",
-              "posted_at": "2026-10-26T15:45:36Z",
-              "comments": 9,
-              "shares": 43,
-              "likes": 286
-            },
-            {
-              "text": "This is why VRS CHAMP! Share Location lets the interpreter pinpoint your exact location, even off your home address.",
-              "posted_at": "2026-10-22T15:53:55Z",
-              "comments": 35,
-              "shares": 73,
-              "likes": 479
-            },
-            {
-              "text": "What does community mean to you?",
-              "posted_at": "2026-10-21T21:48:55Z",
-              "comments": 9,
-              "shares": 12,
-              "likes": 104
-            },
-            {
-              "text": "Got a SignMail from someone new? 👀 \n\nSave them to your contacts right from the message. Watch to learn now!",
-              "posted_at": "2026-10-20T20:35:21Z",
-              "comments": 17,
-              "shares": 72,
-              "likes": 446
-            },
-            {
-              "text": "Meet Kate, our interpreter who noticed mural festivals felt like hearing spaces and started the KissFist Mural Festival in Boulder to welcome the whole Deaf artist community!",
-              "posted_at": "2026-10-19T15:40:40Z",
-              "comments": 14,
-              "shares": 15,
-              "likes": 175
-            },
-            {
-              "text": "Congratulations to Puget Sound Association of the Deaf on 125 incredible years! 🎉 Here’s to honoring the past, celebrating the present, and building a stronger future together.",
-              "posted_at": "2026-10-17T22:53:22Z",
-              "comments": 6,
-              "shares": 12,
-              "likes": 61
-            },
-            {
-              "text": "We absolutely loved seeing each and every one of you at Seattle DeafNation today! 💙 Thank you all for stopping by our booth!",
-              "posted_at": "2026-10-17T22:28:03Z",
-              "comments": 4,
-              "shares": 2,
-              "likes": 81
-            },
-            {
-              "text": "The college football loyalty is REAL. 🏈😭\n\nBYU? Georgia? Notre Dame? Michigan? Or someone else? 👀\n\nWho's YOUR team? Defend your pick in the comments! ⬇️🔥\n\n#CollegeFootball #NCAA #DeafCommunity",
-              "posted_at": "2026-10-17T13:24:35Z",
-              "comments": 96,
-              "shares": 13,
-              "likes": 237,
-              "hashtags": [
-                "#CollegeFootball",
-                "#NCAA",
-                "#DeafCommunity"
-              ]
-            },
-            {
-              "text": "Team Austin or Team Las Vegas?!? 👀😂\n\nCome challenge us at our booth at Seattle DeafNation tomorrow!",
-              "posted_at": "2026-10-17T05:16:30Z",
-              "comments": 5,
-              "shares": 6,
-              "likes": 95
-            }
-          ],
-          "recent_reviews": []
-        },
-        "url": "https://facebook.com/SorensonComm",
-        "type": "facebook",
-        "status": "online",
-        "submitted": false,
-        "rating": null,
-        "ratingCount": null,
-        "followers": 118000,
-        "categories": [
-          "Telecommunication company"
         ]
       },
       {
@@ -7177,7 +6989,7 @@
         "debtors": [
           {
             "name": "SORENSON COMMUNICATIONS LLC",
-            "type": "ORGANIZATION",
+            "type": null,
             "addresses": [
               "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550"
             ]
@@ -7186,41 +6998,9 @@
         "securedParties": [
           {
             "name": "OAKTREE FUND ADMINISTRATION LLC AS ADMINISTRATIVE AGENT",
-            "type": "ORGANIZATION",
-            "addresses": [
-              "333 S Grand Ave Fl 28, Los Angeles, CA 90071-1530"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "2f59d071-206d-49ec-9f0a-dfd8db4130cd",
-        "type": "ucc",
-        "fileNumber": "566307201935",
-        "state": "UT",
-        "status": "open",
-        "statusCategory": "open",
-        "filingDate": "2019-04-30",
-        "lapseDate": "2029-04-30",
-        "updatedDate": "2023-11-02",
-        "collateral": null,
-        "collateralType": null,
-        "liabilityCents": null,
-        "loanPrincipalCents": null,
-        "url": "https://ucc.utah.gov/OnlineUCCSearch/OnlineUCCSearch",
-        "debtors": [
-          {
-            "name": "SORENSON COMMUNICATIONS, LLC",
-            "type": null,
-            "addresses": []
-          }
-        ],
-        "securedParties": [
-          {
-            "name": "CREDIT SUISSE AG, CAYMAN ISLANDS BRANCH, AS COLLATERAL AGENT",
             "type": null,
             "addresses": [
-              "11 MADISON AVENUE NEW YORK, NY 10010, USA "
+              "333 SOUTH GRAND AVENUE, 28TH FLOOR LOS ANGELES, CA 90071, USA"
             ]
           }
         ]
@@ -7254,6 +7034,38 @@
             "name": "State of Indiana",
             "type": "ORGANIZATION",
             "addresses": []
+          }
+        ]
+      },
+      {
+        "id": "2f59d071-206d-49ec-9f0a-dfd8db4130cd",
+        "type": "ucc",
+        "fileNumber": "566307201935",
+        "state": "UT",
+        "status": "closed",
+        "statusCategory": "closed",
+        "filingDate": "2019-04-30",
+        "lapseDate": "2029-04-30",
+        "updatedDate": "2023-11-02",
+        "collateral": null,
+        "collateralType": null,
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://ucc.utah.gov/OnlineUCCSearch/OnlineUCCSearch",
+        "debtors": [
+          {
+            "name": "SORENSON COMMUNICATIONS, LLC",
+            "type": null,
+            "addresses": []
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "CREDIT SUISSE AG, CAYMAN ISLANDS BRANCH, AS COLLATERAL AGENT",
+            "type": null,
+            "addresses": [
+              "11 MADISON AVENUE NEW YORK, NY 10010, USA "
+            ]
           }
         ]
       },
@@ -7360,41 +7172,6 @@
         ]
       },
       {
-        "id": "0bced24b-b6c7-438f-aa5f-cfd3d27daa61",
-        "type": "ucc",
-        "fileNumber": "502044201629",
-        "state": "UT",
-        "status": "closed",
-        "statusCategory": "closed",
-        "filingDate": "2016-09-30",
-        "lapseDate": "2021-09-30",
-        "updatedDate": "2019-05-01",
-        "collateral": "",
-        "collateralType": null,
-        "liabilityCents": null,
-        "loanPrincipalCents": null,
-        "url": "https://ucc.utah.gov/OnlineUCCSearch/OnlineUCCSearch",
-        "debtors": [
-          {
-            "name": "SORENSON COMMUNICATIONS LLC",
-            "type": "ORGANIZATION",
-            "addresses": [
-              "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550"
-            ]
-          }
-        ],
-        "securedParties": [
-          {
-            "name": "U S BANK NATIONAL ASSOCIATION AS SECOND LIEN COLLATERAL AGENT",
-            "type": "ORGANIZATION",
-            "addresses": [
-              "PO Box 6026, Chicago, IL 60638",
-              "PO Box 6026, Chicago, IL 60680-6026"
-            ]
-          }
-        ]
-      },
-      {
         "id": "1afa80e3-1ca4-49e9-84c9-02ce168f726a",
         "type": "ucc",
         "fileNumber": "502041201626",
@@ -7437,14 +7214,14 @@
         ]
       },
       {
-        "id": "c473184e-8412-40c4-8bef-5ed27b5a2181",
+        "id": "0bced24b-b6c7-438f-aa5f-cfd3d27daa61",
         "type": "ucc",
-        "fileNumber": "449304201438",
+        "fileNumber": "502044201629",
         "state": "UT",
         "status": "closed",
         "statusCategory": "closed",
-        "filingDate": "2014-05-01",
-        "lapseDate": "2024-05-01",
+        "filingDate": "2016-09-30",
+        "lapseDate": "2021-09-30",
         "updatedDate": "2019-05-01",
         "collateral": "",
         "collateralType": null,
@@ -7452,13 +7229,6 @@
         "loanPrincipalCents": null,
         "url": "https://ucc.utah.gov/OnlineUCCSearch/OnlineUCCSearch",
         "debtors": [
-          {
-            "name": "SORENSON COMMUNICATIONS INC",
-            "type": "ORGANIZATION",
-            "addresses": [
-              "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550"
-            ]
-          },
           {
             "name": "SORENSON COMMUNICATIONS LLC",
             "type": "ORGANIZATION",
@@ -7469,7 +7239,7 @@
         ],
         "securedParties": [
           {
-            "name": "JPMORGAN CHASE BANK N A AS FIRST LIEN COLLATERAL AGENT",
+            "name": "U S BANK NATIONAL ASSOCIATION AS SECOND LIEN COLLATERAL AGENT",
             "type": "ORGANIZATION",
             "addresses": [
               "PO Box 6026, Chicago, IL 60638",
@@ -7515,6 +7285,48 @@
             "type": "ORGANIZATION",
             "addresses": [
               "60 Livingston Ave # WS3C, Saint Paul, MN 55107-2292"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "c473184e-8412-40c4-8bef-5ed27b5a2181",
+        "type": "ucc",
+        "fileNumber": "449304201438",
+        "state": "UT",
+        "status": "closed",
+        "statusCategory": "closed",
+        "filingDate": "2014-05-01",
+        "lapseDate": "2024-05-01",
+        "updatedDate": "2019-05-01",
+        "collateral": "",
+        "collateralType": null,
+        "liabilityCents": null,
+        "loanPrincipalCents": null,
+        "url": "https://ucc.utah.gov/OnlineUCCSearch/OnlineUCCSearch",
+        "debtors": [
+          {
+            "name": "SORENSON COMMUNICATIONS INC",
+            "type": "ORGANIZATION",
+            "addresses": [
+              "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550"
+            ]
+          },
+          {
+            "name": "SORENSON COMMUNICATIONS LLC",
+            "type": "ORGANIZATION",
+            "addresses": [
+              "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550"
+            ]
+          }
+        ],
+        "securedParties": [
+          {
+            "name": "JPMORGAN CHASE BANK N A AS FIRST LIEN COLLATERAL AGENT",
+            "type": "ORGANIZATION",
+            "addresses": [
+              "PO Box 6026, Chicago, IL 60638",
+              "PO Box 6026, Chicago, IL 60680-6026"
             ]
           }
         ]
@@ -7694,7 +7506,7 @@
     "bankruptcies": [],
     "connections": [
       {
-        "id": "3e5f0d2d-c415-4892-b6b2-53908f908e5f",
+        "id": "1077a424-083e-4754-8d19-5de6a0dedb02",
         "name": "SORENSON HOLDINGS, LLC",
         "confidence": 0.999,
         "connectedBusinessId": null,
@@ -8040,7 +7852,7 @@
         "businesses": []
       },
       {
-        "id": "023adc8e-7683-47b2-b76c-65ad6cff7288",
+        "id": "08d12a8b-35fb-4980-87d0-32aa5554691f",
         "name": "CAPTIONCALL, LLC",
         "confidence": 0.996,
         "connectedBusinessId": null,
@@ -8604,7 +8416,7 @@
         ]
       },
       {
-        "id": "130999c4-6443-420c-8e78-46158bc38908",
+        "id": "33724de0-4785-4b74-b310-1b11496edb7c",
         "name": "SORENSON INTERPRETIVE SERVICES, LLC",
         "confidence": 0.987,
         "connectedBusinessId": null,
@@ -8986,23 +8798,7 @@
         ]
       },
       {
-        "id": "2b4452ac-6831-4688-a4aa-b8c5b977ee71",
-        "name": "SKYHOOK SERVICE COMPANY",
-        "confidence": 0.937,
-        "connectedBusinessId": null,
-        "people": [
-          {
-            "name": "REED E STEINER",
-            "titles": [
-              "REGISTERED AGENT"
-            ]
-          }
-        ],
-        "addresses": [],
-        "businesses": []
-      },
-      {
-        "id": "ec38d6fb-e845-4faa-b6e1-cdecc86967a2",
+        "id": "009152f1-00e0-4710-96b6-15eaaeb0e7a2",
         "name": "STARRIDER INVESTMENTS LLC",
         "confidence": 0.937,
         "connectedBusinessId": null,
@@ -9019,7 +8815,23 @@
         "businesses": []
       },
       {
-        "id": "376f09f4-9351-4deb-b01c-f19191e67c2e",
+        "id": "da458dfe-1cdd-4382-ae19-ec2e937c7a0c",
+        "name": "SKYHOOK SERVICE COMPANY",
+        "confidence": 0.937,
+        "connectedBusinessId": null,
+        "people": [
+          {
+            "name": "REED E STEINER",
+            "titles": [
+              "REGISTERED AGENT"
+            ]
+          }
+        ],
+        "addresses": [],
+        "businesses": []
+      },
+      {
+        "id": "29789c09-d532-4219-83bb-01646eaff00c",
         "name": "SEQUEL MARKETING, INC.",
         "confidence": 0.857,
         "connectedBusinessId": null,
@@ -9115,7 +8927,7 @@
         "businesses": []
       },
       {
-        "id": "09034263-0aa5-4dfb-9144-8038247b83e0",
+        "id": "798fe51a-2750-41c7-9f05-5c580778d6b1",
         "name": "UNIVERSITY VENTURE FUND",
         "confidence": 0.853,
         "connectedBusinessId": null,
@@ -9182,7 +8994,7 @@
         "businesses": []
       },
       {
-        "id": "c6956c43-5488-4801-8a8d-973635bbb696",
+        "id": "3c6c5629-e5b5-47a1-8602-7bfe55c5b70d",
         "name": "FAMILY BTS, L.L.C.",
         "confidence": 0.85,
         "connectedBusinessId": null,
@@ -9250,8 +9062,8 @@
         "businesses": []
       },
       {
-        "id": "3dd205f0-d3e7-4d89-b0b0-3ad6243c4d43",
-        "name": "INTERACTIVECARE, LLC",
+        "id": "67d7c550-8196-46c5-a13b-5ac7a5ffa186",
+        "name": "Allied Communications, LLC",
         "confidence": 0.845,
         "connectedBusinessId": null,
         "people": [
@@ -9505,8 +9317,8 @@
         "businesses": []
       },
       {
-        "id": "7921422c-d00f-4b61-b822-64f9c5ceb531",
-        "name": "Allied Communications, LLC",
+        "id": "8315856f-e959-438a-aa60-8bf505142862",
+        "name": "INTERACTIVECARE, LLC",
         "confidence": 0.845,
         "connectedBusinessId": null,
         "people": [
@@ -9762,6 +9574,14 @@
     ],
     "orders": [
       {
+        "id": "41eb890f-6f47-44c5-8139-b6996ccdee7d",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-28T23:27:28.440Z",
+        "completedAt": "2026-10-28T23:27:33.753Z"
+      },
+      {
         "id": "135969b4-3b44-4e07-9d1a-bea503f59e12",
         "package": "enhanced_screenings",
         "subproducts": [],
@@ -9808,9 +9628,9 @@
         "id": "33cd7c35-98f7-4d0c-b8f0-81d2c1d70c00",
         "package": "liens",
         "subproducts": [],
-        "status": "pending",
+        "status": "completed",
         "createdAt": "2026-10-28T21:40:57.243Z",
-        "completedAt": null
+        "completedAt": "2026-10-28T22:28:20.612Z"
       },
       {
         "id": "6def2688-0e2f-4edf-9d90-3091730eb39f",

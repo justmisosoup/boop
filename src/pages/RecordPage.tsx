@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import {
   ActionButton,
   EmptyState,
+  useToast,
   TabsContent,
   TabsRoot,
   type FloatingPanelPresentation,
@@ -37,6 +38,7 @@ import { type PanelGroup, type PanelInsight } from '../components/Report/Assessm
 import { SummaryBubble, type BubbleNotice } from '../components/Report/SummaryBubble'
 import { formationParts } from '../components/FormationCard'
 import { cancelTinRequest, requestTin, useTinRequest } from '../lib/tinRequests'
+import { REPORT_ASSESSMENTS } from '../lib/reportAssessments'
 import { monitorKey } from '../lib/monitoring'
 
 /** The floating Assistant bubble beside the rail — off for now. */
@@ -1095,8 +1097,41 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     onSubmit: (tin: string) =>
       navigate('/order', { state: { businessId: selected.id, origin: location.pathname, customOrderId: 'report:tin', tin } })
   }
-  /** The panel's assessments, with what the reader can do on TIN Match. */
-  const panelGroupsShown = panelGroups.map((g) =>
+  /**
+   * Rerun an assessment now: one order for it alone, on the business's details
+   * on file — the order page's own endpoint, with nothing to fill in. Each
+   * report assessment is its own order (`REPORT_ASSESSMENTS`).
+   */
+  const { showToast } = useToast()
+  const [rerunning, setRerunning] = useState<string | null>(null)
+  const rerun = async (cardId: string) => {
+    const a = REPORT_ASSESSMENTS.find((x) => x.id === `report:${cardId}`)
+    if (!a || rerunning) return
+    setRerunning(cardId)
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: selected.id,
+          body: { name: selected.name },
+          workflows: [{ id: a.id, name: a.name, config: { packages: a.packages, insight_groups: a.insight_groups, status_overrides: a.status_overrides } }]
+        })
+      })
+      showToast(res.ok ? { text: `${a.name} is running again`, appearance: 'success' } : { text: `Couldn’t rerun ${a.name}`, appearance: 'error' })
+    } catch {
+      showToast({ text: 'Couldn’t reach the order endpoint', appearance: 'error' })
+    } finally {
+      setRerunning(null)
+    }
+  }
+  /** The panel's assessments, with what the reader can do on TIN Match, and a rerun each. */
+  const panelGroupsWithRerun = panelGroups.map((g) =>
+    REPORT_ASSESSMENTS.some((x) => x.id === `report:${g.cardId}`) && !g.needs?.length
+      ? { ...g, onRerun: () => void rerun(g.cardId), rerunning: rerunning === g.cardId }
+      : g
+  )
+  const panelGroupsShown = panelGroupsWithRerun.map((g) =>
     g.cardId !== 'tin' || !g.needs?.length
       ? g
       : {

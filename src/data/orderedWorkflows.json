@@ -65,6 +65,33 @@
         ],
         "orderedAt": "2026-10-28T22:00:51.320Z",
         "completedAt": "2026-10-28T22:01:03.432Z"
+      },
+      {
+        "id": "a-mvsqvcwu-0",
+        "customOrderId": "report:formation",
+        "name": "Registrations",
+        "insight_groups": [
+          "sos_registration_status",
+          "sos_domestic_standing",
+          "sos_state_match",
+          "formation_state",
+          "entity_type_match",
+          "entity_type"
+        ],
+        "insights": [
+          "sos_active",
+          "sos_inactive",
+          "sos_not_found",
+          "sos_unknown",
+          "sos_domestic_sub_status",
+          "sos_domestic",
+          "sos_match",
+          "formation_state",
+          "entity_type_match",
+          "entity_type"
+        ],
+        "orderedAt": "2026-10-28T23:27:28.542Z",
+        "completedAt": "2026-10-28T23:27:36.184Z"
       }
     ]
   }
