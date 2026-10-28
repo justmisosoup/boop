@@ -35,7 +35,9 @@ import { reportLabel, reportStamp } from '../lib/reportLabels'
 import { GroupedReport, STATE_RANK } from '../components/Report/GroupedReport'
 import { type PanelGroup, type PanelInsight } from '../components/Report/AssessmentPanel'
 import { SummaryBubble, type BubbleNotice } from '../components/Report/SummaryBubble'
+import { formationParts } from '../components/FormationCard'
 import { cancelTinRequest, requestTin, useTinRequest } from '../lib/tinRequests'
+import { monitorKey } from '../lib/monitoring'
 
 /** The floating Assistant bubble beside the rail — off for now. */
 const SHOW_ASSISTANT_BUBBLE = false
@@ -131,8 +133,6 @@ const RAIL_W = '49px'
 /** See `generated` in RecordPage. */
 const GENERATED = new Set<string>()
 
-/** The narrowest the report goes beside a docked panel; below it the panel overlays. */
-const REPORT_MIN = 640
 
 /** The `focus` id the Insights card narrows the report under. `card-` led, so
  *  the brief reads it as a panel pick, not an assessment of its own. */
@@ -445,12 +445,10 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
    * The rail's button brings it back, and dismissing it gives the whole width
    * to the report again.
    */
-  // A report opens with its Insights beside it — where the panel docks and
-  // leaves the report in view (the nav rail, the rail, a 400px panel and
-  // `REPORT_MIN`); narrower, it would cover the report, so it waits to be asked.
-  const [chatOpen, setChatOpen] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth - 49 - 49 - 400 >= REPORT_MIN
-  )
+  // A report opens with its Assessments beside it wherever the panel docks
+  // (`wide` and up); in a smaller window it would cover the report, so it
+  // waits to be asked.
+  const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= WIDE)
 
   /** What the right-hand column is showing. The picker in its own header, and
    *  the rail it collapses to, both set this. */
@@ -503,10 +501,9 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   /**
    * Beside the report, or over it.
    *
-   * Docked while the report still has room to be read beside it — at least
-   * `REPORT_MIN` once the nav, the rail and the panel are taken out — so the
-   * whole report stays in view. In the mid range, where docking would squeeze
-   * it past that, the panel lies over the report instead.
+   * Docked from `wide` up: the report adapts to the room the panel leaves it
+   * rather than having the panel lie over it. Only a small or medium window,
+   * below `wide`, has the panel over the report.
    */
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [room, setRoom] = useState({ vw: typeof window === 'undefined' ? 0 : window.innerWidth, nav: 0 })
@@ -520,10 +517,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     window.addEventListener('resize', read)
     return () => window.removeEventListener('resize', read)
   }, [])
-  // The panel's width as the root sets it: a dragged width, else the column's own.
-  const panelPx = chatW ?? (room.vw >= 1504 ? 460 : 400)
   // The width read on resize, not `isWide`: one measurement for the whole rule.
-  const docked = room.vw >= WIDE && columnOpen && room.vw - room.nav - 49 - panelPx >= REPORT_MIN
+  const docked = room.vw >= WIDE && columnOpen
 
   /**
    * Written out rather than composed from `wide:` variants.
@@ -978,7 +973,13 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     const names = byCard.get('name')
     if (names) {
       const submitted = record.names?.find((n) => (n as { submitted?: boolean }).submitted)?.name ?? record.name
-      const others = (record.names ?? []).filter((n) => !(n as { submitted?: boolean }).submitted && !sameName(n.name, submitted))
+      // Every other name the records found, counted as the Names card counts
+      // them (`formationParts`) — former names among them, a suffix apart
+      // counting as its own — so the panel and the card say the same number.
+      const others = formationParts(record, results, groupFor)
+        .names.filter((c) => c.key === 'former' || !c.submitted)
+        .flatMap((c) => c.values.map((v) => ({ name: typeof v.value === 'string' ? v.value : String(v.value ?? '') })))
+        .filter((n) => n.name)
       const head = names.insights[0]
       names.insights = [
         { id: 'name:head', intent: head.intent, verdict: displayName(submitted), statement: head.statement, synthetic: true },
@@ -1004,16 +1005,38 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       if (!needs.length) continue
       byCard.set(card.id, { ...(byCard.get(card.id) ?? { cardId: card.id, label: card.label, insights: [] }), needs })
     }
+    // How many times each ran: every workflow on the business that read its
+    // card (Full Business KYB reads them all). Monitoring — a scheduled
+    // re-run — is not built yet, so none is monitored.
+    const runsOf = (card: string) =>
+      reads
+        .filter(
+          (r) =>
+            (r.assessment.completedAt ?? r.runAt) &&
+            (!r.assessment.insights || r.assessment.insights.some((k) => cardFor(k, groupFor) === card))
+        )
+        .map((r) => ({
+          id: r.assessment.id,
+          name: r.assessment.name,
+          at: (r.assessment.completedAt ?? r.runAt)!,
+          href: `/businesses/${selected.id}/assessments/${r.assessment.id}`
+        }))
+        .sort((a, b) => b.at.localeCompare(a.at))
     for (const g of byCard.values()) {
       g.summary = assessmentSummary(g, record)
-      g.updated = ran ? dayjs(ran).format('MMM D, YYYY') : undefined
+      g.runList = runsOf(g.cardId)
+      g.runs = g.runList.length
+      // When it last ran: its newest run, else the report's own run.
+      const last = g.runList[0]?.at ?? ran
+      g.updated = last ? dayjs(last).format('MMM D, YYYY') : undefined
+      g.monitorKey = monitorKey(selected.id, g.cardId)
     }
     // Worst rows first, as the source orders its panel; the report's order
     // within a kind. One that can't be read yet sits after the findings.
     const ORDER = ['failure', 'warning', 'pending', 'success', 'unknown']
     const worst = (g: PanelGroup) => ORDER.indexOf(g.needs?.length ? 'pending' : (g.insights[0]?.intent ?? 'unknown'))
     return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
-  }, [shownResults, groupFor, record, workflowCards, ran])
+  }, [shownResults, groupFor, record, workflowCards, ran, reads])
   /**
    * What the floating bubble leads with — the Assistant's latest word to the
    * reader, while it is put away: an answer being written; a reply not yet
@@ -1209,7 +1232,11 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
           // The column's own width (400, 460 from `desk`), not half the window:
           // half crowded the report out of docking on any ordinary screen. A
           // width the reader has dragged wins — they have said what they want.
-          ...(columnOpen && chatW !== null ? { '--chat-w': `${chatW}px` } : {})
+          // A dragged width, but never so wide the report beside it drops below
+          // 480px: the panel gives way first, then the report's cells stack.
+          ...(columnOpen && chatW !== null
+            ? { '--chat-w': `${Math.max(320, Math.min(chatW, room.vw - room.nav - 49 - 480))}px` }
+            : {})
         } as React.CSSProperties
       }
     >

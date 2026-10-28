@@ -119,7 +119,6 @@ const spans = (items: AttributeCell[], cols = 2) => {
   })
   return out
 }
-const SPAN: Record<number, string> = { 2: 'sm:col-span-2', 3: 'sm:col-span-3' }
 
 const Mark = ({ verified }: { verified?: boolean }) => {
   const what = verified ? 'Submitted, verified' : 'Submitted, not verified'
@@ -212,17 +211,26 @@ export const AttributeCells = ({
   className?: string
 }) => {
   if (items.length === 0) return null
-  const wide = spans(items, columns)
+  // How far each cell runs at two across and at three: the card's own width
+  // decides which applies (`.attr-grid` in theme.css), not the window's — a
+  // docked panel narrows the card on a wide screen too, and then the cells
+  // stack rather than squeeze.
+  const two = spans(items, 2)
+  const three = spans(items, 3)
+  const cols = items.length > 1 ? columns : 1
 
   return (
-    <div className={cn('-mr-px grid', items.length > 1 && columns > 1 && (columns === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'), className)}>
+    <div className="attr-wrap">
+    <div className={cn('attr-grid -mr-px', className)} data-cols={cols}>
       {items.map((item, i) => {
         const key = item.key ?? `${item.label ?? ''}-${i}`
-        const cls = cn('attribute-cell p-4', SPAN[wide[i]])
+        const cls = 'attribute-cell p-4'
+        const span = { 'data-span2': two[i], 'data-span3': three[i] }
 
         return item.onSelect ? (
           <button
             key={key}
+            {...span}
             type="button"
             onClick={item.onSelect}
             className={cn(
@@ -233,7 +241,7 @@ export const AttributeCells = ({
             <CellBody item={item} />
           </button>
         ) : (
-          <div key={key} className={cn(cls, item.aside && 'flex items-start gap-3')}>
+          <div key={key} {...span} className={cn(cls, item.aside && 'flex items-start gap-3')}>
             {item.aside ? (
               <>
                 <div className="min-w-0 flex-1">
@@ -247,6 +255,7 @@ export const AttributeCells = ({
           </div>
         )
       })}
+    </div>
     </div>
   )
 }

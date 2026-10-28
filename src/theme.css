@@ -355,3 +355,96 @@ body,
 button[aria-label='Open the Assistant'][data-corner] {
   display: none;
 }
+
+/* The business page's head, by its own width rather than the window's: a
+   docked panel narrows it on a wide screen too. Narrow, one column — the
+   name, its facts, then the decision (the quiet Assigned to pulled out by its
+   padding onto the name's edge, the status and menu at the far right). With
+   room for the whole name beside the decision, two columns. */
+.core-theme .identity-wrap {
+  container-type: inline-size;
+}
+.core-theme .identity-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--core-spacing-sm, 12px);
+}
+.core-theme .identity-head > .identity-meta {
+  margin-top: -8px;
+}
+.core-theme .identity-head > .identity-actions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.core-theme .identity-head > .identity-actions > :first-child {
+  margin-left: -10px;
+}
+.core-theme .identity-head > .identity-actions > :nth-child(2) {
+  margin-left: auto;
+}
+@container (min-width: 880px) {
+  .core-theme .identity-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 16px;
+    row-gap: 4px;
+  }
+  .core-theme .identity-head > .identity-title {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .core-theme .identity-head > .identity-meta {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0;
+  }
+  .core-theme .identity-head > .identity-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+    justify-content: flex-end;
+    width: auto;
+  }
+  .core-theme .identity-head > .identity-actions > :first-child,
+  .core-theme .identity-head > .identity-actions > :nth-child(2) {
+    margin-left: 0;
+  }
+}
+
+/* Attribute cells, by the card's own width: stacked when it is narrow, two
+   across, then three where the grid asks for three — never squeezed into
+   columns too thin to read. Each cell carries how far it runs at two and at
+   three (`AttributeCells`); the width decides which applies. */
+.attr-wrap {
+  container-type: inline-size;
+}
+.attr-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+@container (min-width: 440px) {
+  .attr-grid[data-cols='2'],
+  .attr-grid[data-cols='3'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .attr-grid[data-cols='2'] > [data-span2='2'],
+  .attr-grid[data-cols='3'] > [data-span2='2'] {
+    grid-column: span 2;
+  }
+}
+@container (min-width: 640px) {
+  .attr-grid[data-cols='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .attr-grid[data-cols='3'] > [data-span2] {
+    grid-column: auto;
+  }
+  .attr-grid[data-cols='3'] > [data-span3='2'] {
+    grid-column: span 2;
+  }
+  .attr-grid[data-cols='3'] > [data-span3='3'] {
+    grid-column: span 3;
+  }
+}

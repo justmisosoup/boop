@@ -54,14 +54,20 @@ export type PanelGroup = {
   needs?: string[]
   /** When it last ran, as shown — the workflow's run, until assessments run on their own. */
   updated?: string
+  /** How many times it has run on the business: each workflow that ran it. */
+  runs?: number
+  /** Those runs, newest first: the workflow, when, where it opens, and
+   *  whether its schedule ran it (monitoring) rather than someone by hand. */
+  runList?: Array<{ id: string; name: string; at: string; href: string; scheduled?: boolean }>
+  /** Where its monitoring setting is kept (`monitorKey`). */
+  monitorKey?: string
   /** What the reader can do about it, under its summary: TIN Match's two ways to a TIN. */
   actions?: ReactNode
 }
 
 const ICON: Record<Intent, LucideIcon> = {
   success: CircleCheck,
-  // One mark against: a warning draws as the failure's X — in ink, not red,
-  // which is kept for what fails outright.
+  // One mark against: a warning draws as the failure's X, in the same red.
   warning: CircleX,
   failure: CircleX,
   unknown: Circle,
@@ -72,14 +78,16 @@ const ICON: Record<Intent, LucideIcon> = {
 
 const COLOR: Record<Intent, string> = {
   success: "text-[var(--mark-pass)]",
-  warning: "text-text-primary",
+  // Red as failed is: both are not passed, as the chip and the filter say.
+  warning: "text-[var(--core-color-status-danger-fg)]",
   failure: "text-[var(--core-color-status-danger-fg)]",
   unknown: "text-text-secondary",
   pending: "text-text-disabled"
 }
 
 const BAR: Record<Exclude<Intent, "pending">, string> = {
-  success: "bg-[var(--core-color-status-success-fg)]",
+  // Passed in the Verified chips' midnight, as its mark is.
+  success: "bg-[var(--mark-pass)]",
   warning: "bg-[var(--core-color-status-danger-fg)]",
   failure: "bg-[var(--core-color-status-danger-fg)]",
   unknown: "bg-[var(--core-color-border-strong)]"

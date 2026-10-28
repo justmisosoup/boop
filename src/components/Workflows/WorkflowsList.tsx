@@ -22,6 +22,9 @@ import {
   PageHeaderBar,
   PageHeaderTitles,
   PageHeading,
+  SearchInput,
+  SegmentedControl,
+  SegmentedControlItem,
   Text,
   useToast
 } from '@/core'
@@ -32,6 +35,9 @@ import { useNavigate } from 'react-router'
 import { useDeleteCustomOrderMutation } from '@/lib/customOrders/api'
 import type { SavedCustomOrder } from '@/lib/customOrders/types'
 import { useCustomOrderData } from '@/lib/customOrders/api'
+import { ORDER_CATALOG } from '@/lib/customOrders/catalog'
+import { summarize } from '@/lib/customOrders/model'
+import { REPORT_ASSESSMENTS } from '@/lib/reportAssessments'
 import cya from '@/utils/cya'
 
 import {
@@ -89,6 +95,15 @@ export const WorkflowsList = () => {
   )
   const { showToast } = useToast()
   const create = () => navigate(NEW_WORKFLOW_PATH)
+  // Every assessment: Middesk's defaults — the report's own — then the
+  // team's custom ones; narrowed by kind and by what is searched.
+  const [kind, setKind] = useState<'all' | 'default' | 'custom'>('all')
+  const [query, setQuery] = useState('')
+  const custom = saved.data ?? []
+  const isDefault = (a: SavedCustomOrder) => REPORT_ASSESSMENTS.some((d) => d.id === a.id)
+  const rows = (kind === 'default' ? [...REPORT_ASSESSMENTS] : kind === 'custom' ? custom : [...REPORT_ASSESSMENTS, ...custom]).filter((a) =>
+    a.name.toLowerCase().includes(query.trim().toLowerCase())
+  )
 
   const confirmDelete = async () => {
     if (!pendingDelete) return
@@ -110,20 +125,35 @@ export const WorkflowsList = () => {
         id: 'name',
         header: 'Assessment',
         cell: ({ row }) => row.original.name,
-        meta: { minWidth: 240 }
+        meta: { minWidth: 200 }
       },
       {
+        // What it checks, in the catalog's words.
+        id: 'checks',
+        header: 'Checks',
+        cell: ({ row }) => (
+          <Text className='line-clamp-2' tone='secondary'>
+            {summarize(ORDER_CATALOG, row.original)}
+          </Text>
+        ),
+        meta: { minWidth: 280, hideBelow: 'md' }
+      },
+      {
+        // A default is Middesk's; a custom one, whoever on the team made it.
         id: 'created_by',
         header: 'Created by',
-        cell: ({ row }) => row.original.created_by ?? '—',
-        meta: { minWidth: 160, hideBelow: 'sm' }
+        cell: ({ row }) => (isDefault(row.original) ? 'Middesk' : (row.original.created_by ?? '—')),
+        meta: { minWidth: 140, hideBelow: 'sm' }
       },
       {
         id: 'updated',
         header: 'Last updated',
-        cell: ({ row }) => (
-          <DateTime relative>{row.original.updated_at}</DateTime>
-        ),
+        cell: ({ row }) =>
+          isDefault(row.original) ? (
+            <Text tone='secondary'>—</Text>
+          ) : (
+            <DateTime relative>{row.original.updated_at}</DateTime>
+          ),
         meta: { width: 'content', hideBelow: 'sm' }
       },
       {
@@ -134,10 +164,13 @@ export const WorkflowsList = () => {
             className='flex items-center justify-end'
             onClick={event => event.stopPropagation()}
           >
-            <WorkflowActionsMenu
-              onDelete={setPendingDelete}
-              order={row.original}
-            />
+            {/* Defaults are Middesk's, fixed: only a custom one is edited. */}
+            {!isDefault(row.original) && (
+              <WorkflowActionsMenu
+                onDelete={setPendingDelete}
+                order={row.original}
+              />
+            )}
           </div>
         ),
         meta: { align: 'end', width: 'content', skeleton: false }
@@ -154,13 +187,14 @@ export const WorkflowsList = () => {
           <PageHeaderBar>
             <PageHeaderTitles>
               <PageHeading
-                count={saved.data ? saved.data.length : null}
+                count={saved.data ? REPORT_ASSESSMENTS.length + custom.length : null}
                 weight='normal'
               >
                 Assessments
               </PageHeading>
               <PageDescription>
-                Saved selections of insights your team can run on any business.
+                Middesk’s default assessments, and the custom ones your team saves — each a set of
+                insights you can run on any business.
               </PageDescription>
             </PageHeaderTitles>
             <PageHeaderActions>
@@ -172,10 +206,32 @@ export const WorkflowsList = () => {
         </PageHeader>
       </PageHeaderBand>
 
+      {/* Searched by name, and narrowed to either kind. */}
+      <div className='mt-5 flex flex-wrap items-center gap-3'>
+        <SearchInput
+          aria-label='Search assessments'
+          className='min-w-0 max-w-xs flex-1'
+          onChange={setQuery}
+          placeholder='Search assessments'
+          value={query}
+        />
+        <SegmentedControl aria-label='Which assessments' onValueChange={(v) => v && setKind(v as typeof kind)} size='sm' value={kind}>
+          <SegmentedControlItem value='all'>
+            All <span className='tabular-nums'>{REPORT_ASSESSMENTS.length + custom.length}</span>
+          </SegmentedControlItem>
+          <SegmentedControlItem value='default'>
+            Default <span className='tabular-nums'>{REPORT_ASSESSMENTS.length}</span>
+          </SegmentedControlItem>
+          <SegmentedControlItem value='custom'>
+            Custom <span className='tabular-nums'>{custom.length}</span>
+          </SegmentedControlItem>
+        </SegmentedControl>
+      </div>
+
       <DataTable<SavedCustomOrder>
-        className='mt-5'
+        className='mt-3'
         columns={columns}
-        data={saved.data}
+        data={saved.data ? rows : undefined}
         density='compact'
         empty={
           <EmptyState
@@ -196,9 +252,12 @@ export const WorkflowsList = () => {
         }
         getRowId={order => order.id}
         loading={saved.isLoading}
+        // A custom one opens its page; a default has none of its own.
         rowIntent={{
           kind: 'detail',
-          onOpen: order => navigate(workflowPath(order.id))
+          onOpen: order => {
+            if (!isDefault(order)) navigate(workflowPath(order.id))
+          }
         }}
         skeletonRowHeight={56}
       />

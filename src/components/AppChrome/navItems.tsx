@@ -1,8 +1,8 @@
 import {
   CircleCheckBig,
   Compass,
+  ListChecks,
   Settings as SettingsIcon,
-  Workflow,
   Zap,
   type LucideIcon
 } from 'lucide-react'
@@ -42,7 +42,8 @@ export const PRIMARY_NAV: AppNavLink[] = [
     id: 'workflows',
     label: 'Assessments',
     href: '/assessments',
-    icon: glyph(Workflow)
+    // The side panel's own mark for assessments, so the two read as one thing.
+    icon: glyph(ListChecks)
   }
 ]
 

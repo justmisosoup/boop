@@ -172,7 +172,8 @@ export const IdentityHeader = ({
 }) => {
   return (
     <PageHeaderBand className="sticky top-0 z-[5] border-b border-[var(--core-color-border-divider)] bg-surface-canvas px-0 pb-8 pt-[30px]">
-      <PageHeader>
+      {/* Measured for the head's layout (`identity-wrap`, theme.css). */}
+      <PageHeader className="identity-wrap">
         <PageBreadcrumb className="mb-3">
           <PageBreadcrumbItem asChild>
             <Link to="/businesses" className="no-underline">
@@ -183,20 +184,20 @@ export const IdentityHeader = ({
               shows, not a place under it. */}
           <PageBreadcrumbItem current>{displayName(record.name)}</PageBreadcrumbItem>
         </PageBreadcrumb>
-        {/* The name, its facts and the decision. Wide, the decision sits at
-            the right of the name; narrower, it moves under the facts, so the
-            name leads and keeps the full measure. There the quiet Assigned to
-            button is pulled out by its padding, so its words start on the
-            name's edge, and the status and its menu sit at the far right. */}
-        <div className="flex flex-col gap-3 wide:grid wide:grid-cols-[minmax(0,1fr)_auto] wide:gap-x-4 wide:gap-y-1">
-          <PageHeaderTitles className="min-w-0 wide:col-start-1 wide:row-start-1">
+        {/* The name, its facts and the decision. By the header's own width
+            (`identity-head` in theme.css), not the window's — a docked panel
+            narrows it on a wide screen too: with room for the whole name, the
+            decision sits at its right; without, it moves under the facts, so
+            the name keeps the full measure and never breaks mid-word. */}
+        <div className="identity-head">
+          <PageHeaderTitles className="identity-title min-w-0">
             <PageHeading weight="normal" className="whitespace-normal break-words font-arizona text-4xl font-light leading-[2.75rem] tracking-[-0.02em]">
               {displayName(record.name)}
             </PageHeading>
           </PageHeaderTitles>
           {/* What is always true of the business, whichever assessment is open:
               one quiet line of facts, each with its icon, wrapping as it must. */}
-          <ul className="-mt-2 m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-text-secondary wide:col-start-1 wide:row-start-2 wide:mt-0">
+          <ul className="identity-meta m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-text-secondary">
             {identityMeta(record).map((m) => (
               <li key={m.key} className="flex min-w-0 items-center gap-1" title={m.label}>
                 <span className="flex shrink-0">{m.icon}</span>
@@ -210,7 +211,7 @@ export const IdentityHeader = ({
           {/* The decision and what to do next, as the dashboard's status bar
               orders them: who has it, where it stands, then the action. */}
           {!hideActions && (
-          <PageHeaderActions className="w-full flex-wrap justify-start [&>*:first-child]:-ml-2.5 [&>*:nth-child(2)]:ml-auto wide:order-none wide:w-auto wide:[&>*:first-child]:ml-0 wide:[&>*:nth-child(2)]:ml-0 wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:self-start wide:justify-end">
+          <PageHeaderActions className="identity-actions">
             <IdentityActions
               defaultStatus={defaultStatus}
               onOpenActivity={onOpenActivity}

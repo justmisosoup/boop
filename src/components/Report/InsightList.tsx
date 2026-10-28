@@ -1,11 +1,24 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { Hand, RadioTower, Repeat, RotateCw } from 'lucide-react'
 
-import { ChevronRight } from 'lucide-react'
-
-import { Hint, HintContent, HintTrigger } from '@/core'
+import {
+  Hint,
+  HintContent,
+  HintTrigger,
+  Menu,
+  MenuContent,
+  MenuLabel,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
+  MetaChip
+} from '@/core'
 import { cn } from '@/utils/twUtils'
 
 import { StatusDot, type PanelGroup, type PanelInsight } from './AssessmentPanel'
+import { CHIP_CLAIM } from '../chipStyles'
+import { PointerTip } from '../PointerTip'
+import { CADENCES, setMonitoring, useMonitoring, type Cadence } from '../../lib/monitoring'
 
 /*
  * The report's insights as a list, one row per card of the report: the
@@ -76,11 +89,10 @@ const rowHairline =
 const Task = ({ insight, onFollow }: { insight: PanelInsight; onFollow: () => void }) => {
   const flagged = insight.intent === 'failure' || insight.intent === 'warning'
   const line = (
-      // A link to what it found: the arrow says so before the hover does, and
-      // the hover underlines the finding and moves the arrow on.
+      // A link to what it found: the hover underlines the finding.
       <button
         className={cn(
-          'group/task relative z-[1] -mx-2 grid w-[calc(100%+16px)] cursor-pointer grid-cols-[12px_minmax(0,1fr)_14px] items-start gap-x-2 rounded-control px-2 py-1 text-left',
+          'group/task relative z-[1] -mx-2 grid w-[calc(100%+16px)] cursor-pointer grid-cols-[12px_minmax(0,1fr)] items-start gap-x-2 rounded-control px-2 py-1 text-left',
           'transition-colors duration-[var(--core-duration-fast)] hover:bg-[var(--core-color-state-hover-bg)] motion-reduce:transition-none',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         )}
@@ -99,12 +111,6 @@ const Task = ({ insight, onFollow }: { insight: PanelInsight; onFollow: () => vo
         >
           {insight.verdict}
         </span>
-        <ChevronRight
-          aria-hidden="true"
-          className="mt-[3px] text-[var(--core-color-text-muted)] transition-transform duration-[var(--core-duration-fast)] group-hover/task:translate-x-0.5 group-hover/task:text-text-primary motion-reduce:transition-none"
-          size={14}
-          strokeWidth={1.75}
-        />
       </button>
   )
   return (
@@ -126,9 +132,139 @@ const Task = ({ insight, onFollow }: { insight: PanelInsight; onFollow: () => vo
 /** The assessment's mark: what it can't read yet, else its worst insight. */
 const markOf = (g: PanelGroup) => (g.needs?.length ? 'pending' : (g.insights[0]?.intent ?? 'unknown'))
 
+/** The mark's word, as the filter above names it; failed and for review are one. */
+const WORD = { failure: 'Not passed', warning: 'Not passed', success: 'Passed', unknown: 'Context', pending: "Can't assess yet" } as const
+/** Red for not passed; passed in the Verified chips' midnight (`CHIP_CLAIM`); the rest plain. */
+const TONE = { failure: 'danger', warning: 'danger', success: 'neutral', unknown: 'neutral', pending: 'neutral' } as const
+
+/**
+ * The assessment's foot, as metadata: at the left, monitoring where it
+ * re-runs on a schedule, else how many times it has run; when it last ran at
+ * the right.
+ */
+/**
+ * Monitoring, at the foot's right: its mark and how it runs — "Manual", run
+ * when someone runs it, or the cadence it re-runs at: "Weekly". Clicked, one
+ * choice among them.
+ */
+/** How it runs, at a glance: by hand, live, or on a repeat. */
+const RUN_ICON = { off: Hand, realtime: RadioTower, daily: Repeat, weekly: Repeat, monthly: Repeat } as const
+
+const MonitorControl = ({ storeKey, label }: { storeKey: string; label: string }) => {
+  const cadence = useMonitoring(storeKey)
+  const on = cadence !== null
+  const word = on ? CADENCES.find((c) => c.id === cadence)?.label : 'Manual'
+  const Icon = RUN_ICON[cadence ?? 'off']
+  return (
+    <Menu>
+      <MenuTrigger asChild>
+        <button
+          aria-label={`Monitoring for ${label}: ${word}`}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1 rounded-control hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            on ? 'text-text-secondary' : 'text-[var(--core-color-text-muted)]'
+          )}
+          onClick={(e) => e.stopPropagation()}
+          type="button"
+        >
+          <Icon aria-hidden="true" size={11} strokeWidth={2} />
+          {word}
+        </button>
+      </MenuTrigger>
+      <MenuContent align="end" themeMode="light">
+        <MenuLabel>Run {label}</MenuLabel>
+        <MenuRadioGroup onValueChange={(v) => setMonitoring(storeKey, v === 'off' ? null : (v as Cadence))} value={cadence ?? 'off'}>
+          <MenuRadioItem value="off">
+            <span className="inline-flex items-center gap-2">
+              <Hand aria-hidden="true" size={14} strokeWidth={1.75} />
+              Manual
+            </span>
+          </MenuRadioItem>
+          {CADENCES.map((c) => {
+            const ItemIcon = RUN_ICON[c.id]
+            return (
+              <MenuRadioItem key={c.id} value={c.id}>
+                <span className="inline-flex items-center gap-2">
+                  <ItemIcon aria-hidden="true" size={14} strokeWidth={1.75} />
+                  {c.label}
+                </span>
+              </MenuRadioItem>
+            )
+          })}
+        </MenuRadioGroup>
+      </MenuContent>
+    </Menu>
+  )
+}
+
+/**
+ * The assessment's foot, as metadata: how many times it has run at the left —
+ * on hover, the runs themselves and when each was — and monitoring at the right.
+ */
+const Footer = ({ group }: { group: PanelGroup }) => {
+  if (group.runs === undefined && !group.monitorKey) return null
+  const runs = group.runList ?? []
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  // On hover, each run: when, newest first, and how — run by hand, or by its
+  // schedule. Every run so far was ordered by hand; a scheduled one will say so.
+  const runsCard = (
+    <ol className="m-0 flex w-48 list-none flex-col gap-1 p-0">
+      {runs.map((r, i) => {
+        const scheduled = Boolean(r.scheduled)
+        const How = scheduled ? Repeat : Hand
+        return (
+          <li className="flex items-center justify-between gap-3" key={r.id}>
+            <span className="text-text-primary">
+              {day(r.at)}
+              {i === 0 && <span className="text-text-secondary"> · Latest</span>}
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-text-secondary">
+              <How aria-hidden="true" size={12} strokeWidth={1.75} />
+              {scheduled ? 'Scheduled' : 'Manual'}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+  const count = (
+    <>
+      <RotateCw aria-hidden="true" size={11} strokeWidth={2} />
+      {group.runs} {group.runs === 1 ? 'run' : 'runs'}
+    </>
+  )
+  return (
+    <span className="relative z-[1] flex items-center justify-between gap-3 text-[10px] leading-4 tracking-[0.02em] text-[var(--core-color-text-muted)]">
+      {group.runs === undefined ? (
+        <span />
+      ) : runs.length > 0 ? (
+        <PointerTip className="inline-flex items-center gap-1 hover:text-text-primary" content={runsCard}>
+          {count}
+        </PointerTip>
+      ) : (
+        <span className="inline-flex items-center gap-1">{count}</span>
+      )}
+      {group.monitorKey && <MonitorControl label={group.label} storeKey={group.monitorKey} />}
+    </span>
+  )
+}
+
+/** The assessment's status, as a chip at the right of its name: its mark and its word. */
+const StatusChip = ({ group }: { group: PanelGroup }) => {
+  const intent = markOf(group)
+  return (
+    <MetaChip className={cn('shrink-0', intent === 'success' && CHIP_CLAIM)} size="compact" tone={TONE[intent]}>
+      <span className="inline-flex items-center gap-1">
+        <StatusDot intent={intent} size={12} />
+        {WORD[intent]}
+      </span>
+    </MetaChip>
+  )
+}
+
 const rowClass = (selected: boolean) =>
   cn(
-    'relative grid cursor-pointer grid-cols-[16px_minmax(0,1fr)] gap-x-3 px-4 py-3 transition-colors duration-[var(--core-duration-fast)] hover:bg-[var(--core-color-list-item-hover-bg)] motion-reduce:transition-none',
+    'relative grid cursor-pointer grid-cols-[minmax(0,1fr)] px-4 py-3 transition-colors duration-[var(--core-duration-fast)] hover:bg-[var(--core-color-list-item-hover-bg)] motion-reduce:transition-none',
     selected && 'bg-[color-mix(in_srgb,var(--core-color-state-selected-bg)_50%,var(--core-color-surface-card))]'
   )
 
@@ -169,13 +305,13 @@ const InsightRow = ({
   const tasks = group.insights.filter((i, n) => !(n === 0 && i.synthetic))
   return (
     <div className={rowClass(selected)}>
-      <StatusDot className="mt-0.5" intent={markOf(group)} />
       <div className="flex min-w-0 flex-col gap-1.5">
         <CategoryButton group={group} onSelect={onSelect} selected={selected}>
           <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-dense font-semibold leading-5 text-text-primary">
-              {group.label}
-              {group.needs?.length ? <span className="font-normal text-text-secondary"> · Can't assess yet</span> : null}
+            {/* The name, and how it came out as a chip at the right. */}
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+              <StatusChip group={group} />
             </span>
             {group.summary && <span className="text-dense leading-5 text-text-secondary">{group.summary}</span>}
           </span>
@@ -187,8 +323,7 @@ const InsightRow = ({
             <Task insight={i} key={i.id} onFollow={() => (onChip ? onChip(i, group) : onSelect())} />
           ))}
         </ul>}
-        {/* When it last ran, as metadata at its foot. */}
-        {group.updated && <span className="text-[10px] leading-4 tracking-[0.02em] text-[var(--core-color-text-muted)]">Updated {group.updated}</span>}
+        <Footer group={group} />
       </div>
     </div>
   )
@@ -196,12 +331,14 @@ const InsightRow = ({
 
 const InsightCell = ({ group, selected, onSelect }: { group: PanelGroup; selected: boolean; onSelect: () => void }) => (
   <div className={rowClass(selected)}>
-    <StatusDot className="mt-4" intent={markOf(group)} />
     <CategoryButton group={group} onSelect={onSelect} selected={selected}>
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+        <span className="flex items-center justify-between gap-3">
+          <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+          <StatusChip group={group} />
+        </span>
         <span className="text-dense leading-5 text-text-secondary">{group.insights[0].verdict}</span>
-        {group.updated && <span className="text-[10px] leading-4 tracking-[0.02em] text-[var(--core-color-text-muted)]">Updated {group.updated}</span>}
+        <Footer group={group} />
       </span>
     </CategoryButton>
   </div>

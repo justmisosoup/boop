@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { ChevronDown, ChevronUp, Columns3, GripVertical } from 'lucide-react'
 
 import {
   ActionButton,
   DataTable,
   DateTime,
+  Checkbox,
+  IconActionButton,
   MetaChip,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   PageContainer,
   PageHeader,
   PageHeaderActions,
@@ -17,22 +23,30 @@ import {
   Toolbar,
   ToolbarSection,
   ToolbarSpacer,
-  TruncatedText,
   type DataTableColumnDef,
   type DataTableSortState
 } from '@/core'
 import type { BusinessRecord } from '@/lib/deriveResults'
+import { cn } from '@/utils/twUtils'
 import { ALL, assessmentOf, type Assessed } from '@/lib/records'
 import { displayName } from '@/lib/businessNames'
 import { isOrdering, ORDERED } from '@/lib/orderedWorkflows'
 import { readAssessments, type AssessmentRead } from '@/lib/assessments'
-import { useStoredStatus, type ReviewStatus } from '@/lib/review'
+import { assessmentCountsOf, type AssessmentCounts, type AssessmentStatus } from '@/lib/assessmentCounts'
+import { StatusDot } from '@/components/Report/AssessmentPanel'
+import { PointerTip } from '@/components/PointerTip'
+import { maskTin } from '@/lib/attributes'
+import dayjs from '@/lib/dayjs'
+import { entityTypeShown } from '@/lib/normalise'
+import { stateName } from '@/lib/states'
+import { statusForBand, TEAM, useReview, useStoredStatus, type ReviewStatus } from '@/lib/review'
+import { CURRENT_USER } from '@/lib/user'
+import { domesticOf, notPublished, registrationState } from '@/lib/registrationStatus'
 import { polarityCounts } from '@/lib/identityScore'
 import { deriveResults } from '@/lib/deriveResults'
 
 import { PortfolioAssistant } from '../components/Assistant/PortfolioAssistant'
 import { DeterminationChip } from '../components/DeterminationChip'
-import { InsightCounts } from '../components/InsightCounts'
 import { PAGE_MEASURE } from '../lib/pageMeasure'
 
 
@@ -47,7 +61,8 @@ import { PAGE_MEASURE } from '../lib/pageMeasure'
 const COLUMN_WIDTHS = {
   status: 120,
   name: 200,
-  insights: 300,
+  // Four marks and their counts: no wider, so it sits by Last updated.
+  assessments: 210,
   assessed: 120
 }
 
@@ -60,6 +75,8 @@ type Row = {
   reads?: AssessmentRead[]
   /** Across its assessments, each insight once. */
   counts?: { positive: number; negative: number; neutral: number }
+  /** Its assessments by status, as its page's Assessments panel counts them. */
+  statuses?: AssessmentCounts
   /** When it was last assessed: the newest run, completion or summary. */
   lastAt?: string
   pending?: string[]
@@ -87,12 +104,19 @@ const rowFor = (record: BusinessRecord): Row => {
     const assessed = assessmentOf(record)
     const { good, bad, review, neutral } = full.tally
     const counts = { positive: good, negative: bad + review, neutral }
-    return { record, assessed: assessed && { ...assessed, counts }, reads, counts, lastAt: lastAssessedOf(reads, assessed?.at) }
+    return { record, assessed: assessed && { ...assessed, counts }, reads, counts, statuses: assessmentCountsOf(record), lastAt: lastAssessedOf(reads, assessed?.at) }
   }
   const results = deriveResults(record)
   const keys = new Set(reads.flatMap((r) => r.assessment.insights ?? []))
   const ids = results.filter((r) => keys.has(r.insightId.split(':')[0])).map((r) => r.insightId)
-  return { record, assessed: null, reads, counts: polarityCounts(record, results, ids), lastAt: lastAssessedOf(reads, assessmentOf(record)?.at) }
+  return {
+    record,
+    assessed: null,
+    reads,
+    counts: polarityCounts(record, results, ids),
+    statuses: assessmentCountsOf(record),
+    lastAt: lastAssessedOf(reads, assessmentOf(record)?.at)
+  }
 }
 
 /** Ordered from `/order` but not in records.json yet — the pull right after
@@ -113,25 +137,179 @@ const STATUS_CHIP: Record<ReviewStatus, { label: string; tone: 'success' | 'warn
 /** The reviewer's status for the business; where nobody has set one, the
  *  report's own call for "Full Business KYB", and "Not reviewed" for custom orders,
  *  which have no roll-up. */
+/** A long date, as the cards write one: "Mar 24, 2000". */
+const longDay = (iso?: string | null) => (iso ? dayjs(iso.slice(0, 10)).format('MMM D, YYYY') : undefined)
+
+/**
+ * A cell, and on hover what is behind it: the same white card, following the
+ * pointer, as the name's and the assessments'. One fact a line.
+ */
+const Tipped = ({ facts, children }: { facts: Array<[string, ReactNode]>; children: ReactNode }) => {
+  const shown = facts.filter(([, v]) => v !== undefined && v !== null && v !== '')
+  if (shown.length === 0) return <>{children}</>
+  return (
+    <PointerTip
+      className="inline-block max-w-full align-middle"
+      content={
+        <dl className="m-0 flex max-w-56 flex-col gap-1.5">
+          {shown.map(([label, value], i) => (
+            <div className="flex flex-col" key={label || i}>
+              {/* A fact that says itself — "Policy · Full Business KYB" — has no label. */}
+              {label && <dt className="text-text-secondary">{label}</dt>}
+              <dd className="m-0 break-words text-text-primary">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      }
+    >
+      {children}
+    </PointerTip>
+  )
+}
+
 const StatusCell = ({ row }: { row: Row }) => {
   const stored = useStoredStatus(row.record.id)
-  if (row.pending || isOrdering(row.record.id)) return <MetaChip size="xs">Ordering</MetaChip>
+  const review = useReview(row.record.id)
+  if (row.pending || isOrdering(row.record.id))
+    return (
+      <Tipped facts={[['Ordering', row.pending?.join(', ') ?? 'Its assessments are still running']]}>
+        <MetaChip size="xs">Ordering</MetaChip>
+      </Tipped>
+    )
+  // Who decided, in one field: the policy and which, or the assignee and who
+  // (an agent among them) — and their note, only where there is one.
   if (stored)
     return (
-      <MetaChip size="compact" tone={STATUS_CHIP[stored].tone}>
-        {STATUS_CHIP[stored].label}
-      </MetaChip>
+      <Tipped
+        facts={[
+          ['', review.change ? `Assignee · ${review.change.by}` : undefined],
+          ['Note', review.change?.note]
+        ]}
+      >
+        <MetaChip size="compact" tone={STATUS_CHIP[stored].tone}>
+          {STATUS_CHIP[stored].label}
+        </MetaChip>
+      </Tipped>
     )
-  // Nobody has decided yet: Middesk's call, marked as a recommendation so it
-  // is never read as an analyst's decision.
   if (row.assessed)
     return (
-      <span className="flex flex-col items-start gap-0.5">
+      <Tipped
+        facts={[
+          ['', `Policy · ${row.reads?.find((r) => r.assessment.full)?.assessment.name ?? 'Full Business KYB'}`]
+        ]}
+      >
         <DeterminationChip band={row.assessed.score.band} />
-        <span className="text-text-secondary">Recommended</span>
-      </span>
+      </Tipped>
     )
   return <MetaChip size="compact">{row.reads?.length ? 'Not reviewed' : 'Not assessed'}</MetaChip>
+}
+
+/** A business's age from its formation date: "27 years", or months under a year. */
+const ageOf = (date?: string) => {
+  if (!date) return undefined
+  const years = dayjs().diff(dayjs(date.slice(0, 10)), 'year')
+  if (years >= 1) return `${years} ${years === 1 ? 'year' : 'years'}`
+  const months = dayjs().diff(dayjs(date.slice(0, 10)), 'month')
+  return `${months} ${months === 1 ? 'month' : 'months'}`
+}
+
+/** The top-level identity, one fact a line — the name is the row's own: what
+ *  it is, how old, where formed, its TIN, where it is, its site. */
+const listFacts = (record: BusinessRecord): Array<{ label: string; value: string }> => {
+  const f = record.formation
+  const tin = (record.tin as { tin?: string } | null)?.tin
+  const site = (record.website as { url?: string } | null)?.url
+  const office = record.addresses.find((a) => a.submitted) ?? record.addresses[0]
+  return [
+    { label: 'Entity type', value: f?.entityType ? String(entityTypeShown(record, f.entityType)) : '—' },
+    { label: 'Age', value: ageOf(f?.date) ?? '—' },
+    { label: 'Formation state', value: f?.state ? stateName(f.state) : '—' },
+    { label: 'TIN', value: tin ? maskTin(tin) : 'Not submitted' },
+    { label: 'Office address', value: office?.fullAddress ?? '—' },
+    { label: 'Website', value: site ? site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : '—' }
+  ]
+}
+
+/**
+ * The business's name, and on hover its identity (`listFacts`) in the white
+ * popover the report uses. A business still ordering has no record yet: its
+ * name alone.
+ */
+const BusinessNameCell = ({ id, name }: { id: string; name: string }) => {
+  const record = ALL.find((r) => r.id === id)
+  const label = <span className="block truncate font-semibold">{displayName(name)}</span>
+  if (!record) return label
+  return (
+    // As wide as the name; the card follows the pointer over it.
+    <PointerTip
+      className="inline-block max-w-full align-middle"
+      content={
+        <dl className="m-0 flex w-64 flex-col gap-1.5">
+          {listFacts(record).map((f) => (
+            <div className="flex flex-col" key={f.label}>
+              <dt className="text-text-secondary">{f.label}</dt>
+              <dd className="m-0 break-words text-text-primary">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      }
+    >
+      {label}
+    </PointerTip>
+  )
+}
+
+/** The panel's four statuses, in its order and with its marks. */
+const STATUS_ORDER: Array<{ key: AssessmentStatus; intent: AssessmentStatus; word: string }> = [
+  { key: 'failure', intent: 'failure', word: 'Not passed' },
+  { key: 'success', intent: 'success', word: 'Passed' },
+  { key: 'unknown', intent: 'unknown', word: 'Context' },
+  { key: 'pending', intent: 'pending', word: "Can't assess" }
+]
+
+/** A business's assessments by status: each its mark and its count; a status
+ *  none of them has is left out. On hover, each assessment and how it came
+ *  out, grouped by status in the same order. */
+const AssessmentStatusCounts = ({ counts }: { counts: AssessmentCounts }) => {
+  const shown = STATUS_ORDER.filter(({ key }) => counts[key] > 0)
+  // What every mark opens: each assessment, grouped by how it came out.
+  const outcomes = (
+    <span className="flex flex-col gap-2">
+      {shown.map(({ key, intent, word }) => (
+        <span className="flex flex-col gap-0.5" key={key}>
+          <span className="flex items-baseline justify-between gap-4 font-semibold text-text-primary">
+            {word}
+            <span className="font-normal tabular-nums text-text-secondary">{counts[key]}</span>
+          </span>
+          {counts.items
+            .filter((i) => i.status === key)
+            .map((i) => (
+              <span className="flex items-center gap-1.5 text-text-primary" key={i.cardId}>
+                <StatusDot intent={intent} size={12} />
+                {i.label}
+              </span>
+            ))}
+        </span>
+      ))}
+    </span>
+  )
+  return (
+    // The marks and their counts; the card follows the pointer over them.
+    <PointerTip className="inline-flex flex-wrap items-center gap-x-3 gap-y-1" content={outcomes}>
+      {shown.map(({ key, intent, word }) => (
+        // The mark and the count; the word is the mark's name, to a screen reader.
+        <span
+          aria-label={`${counts[key]} ${word.toLowerCase()}`}
+          className="inline-flex items-center gap-1 whitespace-nowrap"
+          key={key}
+          role="img"
+        >
+          <StatusDot intent={intent} size={14} />
+          <span className="tabular-nums text-text-primary">{counts[key]}</span>
+        </span>
+      ))}
+    </PointerTip>
+  )
 }
 
 /** Every business whose orders are still running, pulled or not. */
@@ -158,46 +336,369 @@ const columns: DataTableColumnDef<Row>[] = [
     id: 'name',
     header: 'Business Name',
     accessorFn: (row) => row.record.name,
-    // The name is the row's primary identifier, so it's bold. `TruncatedText`
-    // shows the full name in a tooltip when it's actually clipped.
-    cell: ({ row }) => <TruncatedText className="font-semibold">{displayName(row.original.record.name)}</TruncatedText>,
+    // The name is the row's primary identifier, so it's bold. On hover, the
+    // business's identity in the white popover — the full name among it.
+    cell: ({ row }) => <BusinessNameCell id={row.original.record.id} name={row.original.record.name} />,
     meta: { width: COLUMN_WIDTHS.name, grow: true }
   },
   {
-    id: 'insights',
-    header: 'Insights',
-    accessorFn: (row) => row.assessed?.counts.negative ?? -1,
-    /**
-     * How the insights the assessment rests on read: positive, negative,
-     * neutral. The app's `TaskList` triplet, with the score's own reading in
-     * place of the review task's status the records do not carry — see
-     * `InsightCounts`. A record with no report has nothing the score has read,
-     * so it reads as a dash rather than as three zeros.
-     */
+    id: 'assessments',
+    header: 'Assessments',
+    accessorFn: (row) => row.statuses?.failure ?? -1,
+    /** Its assessments by status, in the report's own terms — not passed,
+     *  passed, context, can't assess yet — each with the panel's mark. A
+     *  business with none run reads as a dash. */
     cell: ({ row }) => {
-      const counts = row.original.counts
-      if (!counts) return <span className="text-caption text-text-disabled">—</span>
-      return <InsightCounts counts={counts} />
+      const s = row.original.statuses
+      if (!s) return <span className="text-caption text-text-disabled">—</span>
+      return <AssessmentStatusCounts counts={s} />
     },
-    meta: { align: 'start', width: COLUMN_WIDTHS.insights, grow: true }
+    meta: { align: 'start', width: COLUMN_WIDTHS.assessments }
   },
   {
     id: 'assessed',
-    header: 'Last assessed',
+    header: 'Last updated',
     accessorFn: (row) => row.lastAt ?? '',
     // When the newest report ran — not when the record was created, which is
     // what the column said before and which no decision turns on.
+    // On hover, the day, and each workflow run with when it ran.
     cell: ({ row }) =>
       row.original.lastAt ? (
-        <DateTime className="whitespace-nowrap text-caption text-text-secondary" relative>
-          {row.original.lastAt}
-        </DateTime>
+        <Tipped
+          facts={[
+            ['Last updated', longDay(row.original.lastAt)]
+          ]}
+        >
+          <DateTime className="whitespace-nowrap text-caption text-text-secondary" relative>
+            {row.original.lastAt}
+          </DateTime>
+        </Tipped>
       ) : (
         <span className="text-caption text-text-disabled">—</span>
       ),
-    meta: { width: COLUMN_WIDTHS.assessed, grow: true }
+    meta: { width: COLUMN_WIDTHS.assessed }
   }
 ]
+
+/** The record behind a row; a business still ordering has none yet. */
+const recordOf = (row: Row) => ALL.find((r) => r.id === row.record.id)
+const dash = <span className="text-caption text-text-disabled">—</span>
+/** A plain fact of the record, or a dash. */
+const fact = (value: string | undefined) => (value ? <span className="block truncate">{value}</span> : dash)
+
+/** Who has the business, as its page's "Assigned to" says. */
+const AssigneeCell = ({ id }: { id: string }) => {
+  const review = useReview(id)
+  const who = TEAM.find((t) => t.id === review.assigneeId)
+  if (!who) return dash
+  return (
+    <Tipped facts={[['Email', who.email]]}>
+      {fact(who.name)}
+    </Tipped>
+  )
+}
+
+/**
+ * Columns the reader can add: when the business was created, who has it, and
+ * its identity's attributes — one fact a column, as the name's card lists them.
+ */
+const OPTIONAL_COLUMNS: DataTableColumnDef<Row>[] = [
+  {
+    id: 'created',
+    header: 'Created',
+    accessorFn: (row) => recordOf(row)?.createdAt ?? '',
+    cell: ({ row }) => {
+      const at = recordOf(row.original)?.createdAt
+      return at ? (
+        // When it was ordered, how, and by whom. Everything in the prototype is
+        // ordered in the dashboard, by the reader, as Activity says too.
+        <Tipped
+          facts={[
+            ['Ordered', `${longDay(at)} by ${CURRENT_USER} · Dashboard`]
+          ]}
+        >
+          <DateTime className="whitespace-nowrap text-caption text-text-secondary" relative>
+            {at}
+          </DateTime>
+        </Tipped>
+      ) : (
+        dash
+      )
+    },
+    meta: { width: 120 }
+  },
+  {
+    id: 'assigned',
+    header: 'Assigned to',
+    cell: ({ row }) => <AssigneeCell id={row.original.record.id} />,
+    meta: { width: 140 }
+  },
+  {
+    id: 'entity_type',
+    header: 'Entity type',
+    accessorFn: (row) => recordOf(row)?.formation?.entityType ?? '',
+    // On hover, the filing that says so.
+    cell: ({ row }) => {
+      const r = recordOf(row.original)
+      if (!r?.formation?.entityType) return dash
+      const d = domesticOf(r)
+      return (
+        <Tipped
+          facts={[
+            ['From', d ? `${stateName(d.state)} Secretary of State filing` : 'The submitted details']
+          ]}
+        >
+          {fact(String(entityTypeShown(r, r.formation.entityType)))}
+        </Tipped>
+      )
+    },
+    meta: { width: 170 }
+  },
+  {
+    id: 'age',
+    header: 'Age',
+    accessorFn: (row) => recordOf(row)?.formation?.date ?? '',
+    // On hover, the domestic registration it is counted from: when, and where.
+    cell: ({ row }) => {
+      const r = recordOf(row.original)
+      const age = ageOf(r?.formation?.date)
+      if (!r || !age) return dash
+      const d = domesticOf(r)
+      return (
+        <Tipped
+          facts={[
+            [
+              'Domestic registration',
+              [longDay(d?.registrationDate ?? r.formation?.date), d ? stateName(d.state) : r.formation?.state ? stateName(r.formation.state) : undefined]
+                .filter(Boolean)
+                .join(' · ')
+            ]
+          ]}
+        >
+          {fact(age)}
+        </Tipped>
+      )
+    },
+    meta: { width: 100 }
+  },
+  {
+    id: 'formation_state',
+    header: 'Formation state',
+    accessorFn: (row) => recordOf(row)?.formation?.state ?? '',
+    // On hover, how its domestic filing there stands.
+    cell: ({ row }) => {
+      const r = recordOf(row.original)
+      const st = r?.formation?.state
+      if (!r || !st) return dash
+      const d = domesticOf(r)
+      const s = d ? registrationState(d) : undefined
+      return (
+        <Tipped
+          facts={[
+            ['Domestic filing', !d ? 'None found' : notPublished(d) ? 'Status not published by the state' : (s?.status ?? 'No status')]
+          ]}
+        >
+          {fact(stateName(st))}
+        </Tipped>
+      )
+    },
+    meta: { width: 140 }
+  },
+  {
+    id: 'tin',
+    header: 'TIN',
+    cell: ({ row }) => {
+      const r = recordOf(row.original)
+      if (!r) return dash
+      const tin = (r.tin as { tin?: string } | null)?.tin
+      if (!tin) return <span className="text-text-secondary">Not submitted</span>
+      // On hover, what the IRS said of it.
+      const irs = r.reviewTasks.find((t) => t.key === 'tin')?.subLabel
+      return (
+        <Tipped facts={[['IRS match', irs]]}>
+          <span className="tabular-nums">{maskTin(tin)}</span>
+        </Tipped>
+      )
+    },
+    meta: { width: 130 }
+  },
+  {
+    id: 'office',
+    header: 'Office address',
+    // On hover, what the address is: deliverable, what kind of property, an agent's.
+    cell: ({ row }) => {
+      const r = recordOf(row.original)
+      const a = r?.addresses.find((x) => x.submitted) ?? r?.addresses[0]
+      if (!a) return dash
+      return (
+        <Tipped
+          facts={[
+            [
+              'Office',
+              [
+                a.propertyType ? a.propertyType.charAt(0).toUpperCase() + a.propertyType.slice(1).toLowerCase() : undefined,
+                a.deliverable === false ? 'Undeliverable' : a.deliverable ? 'Deliverable' : undefined,
+                a.isRegisteredAgent ? 'Registered agent' : undefined
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined
+            ]
+          ]}
+        >
+          {fact(a.fullAddress)}
+        </Tipped>
+      )
+    },
+    meta: { width: 260 }
+  },
+  {
+    id: 'website',
+    header: 'Website',
+    // On hover, the full address and whether it is up.
+    cell: ({ row }) => {
+      const w = recordOf(row.original)?.website as { url?: string | null; status?: string | null; parked?: boolean } | null
+      if (!w?.url) return dash
+      return (
+        <Tipped
+          facts={[
+            ['Website', w.parked ? 'Parked' : w.status ? w.status.charAt(0).toUpperCase() + w.status.slice(1) : undefined]
+          ]}
+        >
+          {fact(w.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}
+        </Tipped>
+      )
+    },
+    meta: { width: 180 }
+  }
+]
+
+/**
+ * Which columns show, and in what order — the reader's own, and kept. The
+ * name cannot be hidden. Every column the list knows is in `order`, shown or
+ * not, so one put back returns to where it was.
+ */
+type ColumnLayout = { order: string[]; shown: string[] }
+const LOCKED = 'name'
+const COLUMNS_KEY = 'prototype:business-columns.v2'
+const columnById = (id: string) => [...columns, ...OPTIONAL_COLUMNS].find((c) => c.id === id)
+const DEFAULT_LAYOUT: ColumnLayout = {
+  order: ['status', 'name', ...OPTIONAL_COLUMNS.map((c) => c.id!), 'assessments', 'assessed'],
+  shown: ['status', 'name', 'assessments', 'assessed']
+}
+const readLayout = (): ColumnLayout => {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(COLUMNS_KEY) ?? 'null') as ColumnLayout | null
+    if (!saved?.order || !saved.shown?.includes(LOCKED)) return DEFAULT_LAYOUT
+    // A column added since the layout was kept joins at the end, hidden.
+    const known = saved.order.filter((id) => columnById(id))
+    return { order: [...known, ...DEFAULT_LAYOUT.order.filter((id) => !known.includes(id))], shown: saved.shown }
+  } catch {
+    return DEFAULT_LAYOUT
+  }
+}
+
+/**
+ * The columns, to show or hide and to put in order: dragged by the grip, or
+ * moved a place at a time with the arrows (the keyboard's way). The name can
+ * move but not be hidden.
+ */
+const ColumnsPanel = ({ layout, onChange }: { layout: ColumnLayout; onChange: (next: ColumnLayout) => void }) => {
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  // The shown, in the table's order, then the hidden: only the shown are put
+  // in order, so a move never jumps past a column that isn't there.
+  const visible = layout.order.filter((id) => id === LOCKED || layout.shown.includes(id))
+  const hidden = layout.order.filter((id) => !visible.includes(id))
+  const setVisible = (next: string[], shown = layout.shown) => onChange({ order: [...next, ...hidden.filter((h) => !next.includes(h))], shown })
+  const move = (id: string, to: number) => {
+    const next = visible.filter((x) => x !== id)
+    next.splice(Math.max(0, Math.min(next.length, to)), 0, id)
+    setVisible(next)
+  }
+  // Put on: it joins the end of the shown. Taken off: it goes to the hidden.
+  const show = (id: string) => setVisible([...visible, id], [...layout.shown, id])
+  const hide = (id: string) => {
+    const shown = layout.shown.filter((x) => x !== id)
+    onChange({ order: [...visible.filter((x) => x !== id), id, ...hidden], shown })
+  }
+  const label = (id: string) => String(columnById(id)?.header ?? id)
+  return (
+    <div className="flex w-64 flex-col">
+      <span className="px-2 pb-1 pt-0.5 text-caption font-semibold text-text-secondary">Shown · drag to reorder</span>
+      <ol className="m-0 flex list-none flex-col p-0">
+        {visible.map((id, i) => {
+          const locked = id === LOCKED
+          return (
+            <li
+              className={cn(
+                'flex items-center gap-1.5 rounded-control px-1 py-0.5',
+                dragging === id && 'opacity-50',
+                over === id && dragging !== id && 'shadow-[inset_0_2px_0_var(--core-color-action-primary-bg)]'
+              )}
+              draggable
+              key={id}
+              onDragEnd={() => {
+                setDragging(null)
+                setOver(null)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setOver(id)
+              }}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                setDragging(id)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragging && dragging !== id) move(dragging, visible.filter((x) => x !== dragging).indexOf(id))
+                setDragging(null)
+                setOver(null)
+              }}
+            >
+              <GripVertical aria-hidden="true" className="shrink-0 cursor-grab text-text-secondary" size={14} strokeWidth={1.75} />
+              <Checkbox checked className="min-w-0 flex-1" disabled={locked} onCheckedChange={() => hide(id)}>
+                {label(id)}
+              </Checkbox>
+              <IconActionButton aria-label={`Move ${label(id)} up`} disabled={i === 0} onClick={() => move(id, i - 1)} size="compact" variant="quiet">
+                <ChevronUp aria-hidden="true" size={14} />
+              </IconActionButton>
+              <IconActionButton
+                aria-label={`Move ${label(id)} down`}
+                disabled={i === visible.length - 1}
+                onClick={() => move(id, i + 1)}
+                size="compact"
+                variant="quiet"
+              >
+                <ChevronDown aria-hidden="true" size={14} />
+              </IconActionButton>
+            </li>
+          )
+        })}
+      </ol>
+      {hidden.length > 0 && (
+        <>
+          <span className="mt-2 border-t border-[var(--core-color-border-divider)] px-2 pb-1 pt-2 text-caption font-semibold text-text-secondary">
+            Hidden
+          </span>
+          <ul className="m-0 flex list-none flex-col p-0">
+            {hidden.map((id) => (
+              // Indented to the shown columns' checkboxes, past their grip.
+              <li className="flex items-center py-0.5 pl-[26px] pr-1" key={id}>
+                <Checkbox checked={false} className="min-w-0 flex-1" onCheckedChange={() => show(id)}>
+                  {label(id)}
+                </Checkbox>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <ActionButton className="mt-1 self-start" onClick={() => onChange(DEFAULT_LAYOUT)} size="compact" variant="quiet">
+        Reset
+      </ActionButton>
+    </div>
+  )
+}
 
 /** What a column sorts by — the same value its cell prints. */
 const sortKey = (row: Row, id: string): number | string => {
@@ -242,6 +743,20 @@ export const BusinessesPage = () => {
   const [query, setQuery] = useState(() => params.get('q') ?? '')
   // Newest assessment first: the business just worked on is the one being looked for.
   const [sort, setSort] = useState<DataTableSortState>({ id: 'assessed', direction: 'desc' })
+  // Which columns show, and in what order — the reader's own, and kept.
+  const [layout, setLayout] = useState<ColumnLayout>(readLayout)
+  const changeLayout = (next: ColumnLayout) => {
+    setLayout(next)
+    try {
+      window.localStorage.setItem(COLUMNS_KEY, JSON.stringify(next))
+    } catch {
+      // Blocked storage: the choice lasts for this visit.
+    }
+  }
+  const visibleColumns = layout.order
+    .filter((id) => id === LOCKED || layout.shown.includes(id))
+    .map((id) => columnById(id)!)
+    .filter(Boolean)
 
   /**
    * Dock the table's sticky column header to the sticky filter bar.
@@ -363,20 +878,31 @@ export const BusinessesPage = () => {
                 onChange={onQueryChange}
               />
             </search>
-          </ToolbarSection>
-          <ToolbarSpacer />
-          <div className="flex shrink-0 items-center gap-2 text-caption text-muted-foreground">
-            <span className="whitespace-nowrap tabular-nums">
+            {/* How many, beside what narrows them. */}
+            <span className="whitespace-nowrap text-caption tabular-nums text-muted-foreground">
               {!filtered ? `${ALL.length} businesses` : `${rows.length} of ${ALL.length}`}
             </span>
-          </div>
+          </ToolbarSection>
+          <ToolbarSpacer />
+          {/* The columns to show: every one but the name can be taken off, and
+              the record's other attributes put on. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <ActionButton leadingIcon={<Columns3 aria-hidden="true" size={14} strokeWidth={1.75} />} size="compact" variant="quiet">
+                Columns
+              </ActionButton>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="p-2" themeMode="light">
+              <ColumnsPanel layout={layout} onChange={changeLayout} />
+            </PopoverContent>
+          </Popover>
         </Toolbar>
       </div>
 
       <DataTable
         caption="Businesses"
         className="rounded-t-none border-t-0"
-        columns={columns}
+        columns={visibleColumns}
         data={rows}
         density="compact"
         empty={`No businesses match “${query.trim()}”`}

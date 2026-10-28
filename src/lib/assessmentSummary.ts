@@ -21,7 +21,7 @@ export const assessmentSummary = (group: PanelGroup, record: BusinessRecord): st
   // A card's own composer adds what its rows don't (the counts); the generic
   // one only gathers the rows, so a lone insight needs none.
   const composer = COMPOSERS[group.cardId]
-  const summary = composer ? composer(insights, record) : generic(insights)
+  const summary = composer ? composer(insights, record, group) : generic(insights)
   return insights.length === 1 && summary === sentence(insights[0].statement) ? undefined : summary
 }
 
@@ -37,32 +37,118 @@ const generic = (insights: PanelInsight[]) => {
   return found.length ? found.map((i) => sentence(i.statement)).join(' ') : undefined
 }
 
-type Composer = (insights: PanelInsight[], record: BusinessRecord) => string | undefined
+type Composer = (insights: PanelInsight[], record: BusinessRecord, group: PanelGroup) => string | undefined
 
-/** Open and closed, in the card's own words. */
+/** "a, b and c". */
+const listed = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`)
+const byKey = (insights: PanelInsight[], key: string) => insights.find((i) => keyOf(i) === key)
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+
+/** How many were found, then how many are open and closed. */
 const claims =
   (kind: 'liens' | 'litigation' | 'bankruptcy', one: string, many: string): Composer =>
   (_insights, record) => {
     const c = claimCounts(record, kind)
-    if (c.standing + c.cleared === 0) return `No ${many} found.`
-    if (!c.cleared) return `${plural(c.standing, `open ${one}`, `open ${many}`)}.`
-    if (!c.standing) return `No open ${many}; ${c.cleared} closed.`
-    return `${plural(c.standing, `open ${one}`, `open ${many}`)}, ${c.cleared} closed.`
+    const total = c.standing + c.cleared
+    if (total === 0) return `No ${many} found.`
+    const found = plural(total, one, many)
+    if (!c.cleared) return `${found} found, ${total === 1 ? 'open' : 'all open'}.`
+    if (!c.standing) return `${found} found, ${total === 1 ? 'closed' : 'all closed'}.`
+    return `${found} found: ${c.standing} open, ${c.cleared} closed.`
   }
 
-/** What stands once the matches on someone else are dismissed. */
+/** Why a hit was dismissed, in a few words, by the kind of reason
+ *  `dismissalOf` gives: another name, a weak match, or excluded. */
+const dismissedFor = (reason: string) =>
+  /excluded/i.test(reason) ? 'excluded on the platform' : /% name match/i.test(reason) ? 'weak name matches' : "names that don't match"
+
+/** How many hits, how many stand, and why the rest were dismissed. */
 const screen =
-  (which: 'watchlist' | 'pep' | 'media'): Composer =>
+  (which: 'watchlist' | 'pep' | 'media', noun: string): Composer =>
   (_insights, record) => {
     const hits = screenedOf(record)[which].hits as Array<Parameters<typeof dismissalOf>[1]>
-    if (hits.length === 0) return 'No hits.'
-    const dismissed = hits.filter((h) => dismissalOf(which, h)).length
-    const standing = hits.length - dismissed
-    if (!standing) return `${plural(hits.length, 'hit', 'hits')}, ${hits.length === 1 ? '' : 'all '}dismissed as not a match.`
-    return dismissed
-      ? `${plural(standing, 'hit stands', 'hits stand')}; ${dismissed} dismissed as not a match.`
-      : `${plural(standing, 'hit stands', 'hits stand')}.`
+    if (hits.length === 0) return `No ${noun} hits found.`
+    const reasons = hits.map((h) => dismissalOf(which, h)).filter((r): r is string => Boolean(r))
+    const standing = hits.length - reasons.length
+    const found = `${plural(hits.length, `${noun} hit`, `${noun} hits`)} found`
+    const why = [...new Set(reasons.map(dismissedFor))]
+    const dismissed = reasons.length
+      ? `${reasons.length === hits.length ? (hits.length === 1 ? 'dismissed' : 'all dismissed') : `${reasons.length} dismissed`} for ${listed(why)}`
+      : ''
+    if (!standing) return `${found}, ${dismissed}.`
+    if (!reasons.length) return `${found}, ${hits.length === 1 ? 'and it stands' : 'and all stand'}.`
+    return `${found}: ${plural(standing, 'hit stands', 'hits stand')}, ${dismissed}.`
   }
+
+/** What was found online, then what matches the business and what doesn't. */
+const web: Composer = (insights, record) => {
+  const site = (record.website as { url?: string | null; status?: string | null } | null)?.url
+  const status = (record.website as { status?: string | null } | null)?.status
+  const profiles = (record.profiles ?? []).length
+  const found = [
+    site ? `a website${status ? ` (${status.toLowerCase()})` : ''}` : undefined,
+    profiles ? plural(profiles, 'third-party profile', 'third-party profiles') : undefined
+  ].filter((x): x is string => Boolean(x))
+  const FIELD: Record<string, string> = {
+    web_business_name_verification: 'the business name',
+    web_address_verification: 'the office address',
+    web_phone_number_verification: 'the phone number',
+    web_email_address_verification: 'the email address',
+    web_person_verification: 'the people'
+  }
+  const matched = insights.filter((i) => FIELD[keyOf(i)] && i.intent === 'success').map((i) => FIELD[keyOf(i)])
+  const off = insights.filter((i) => FIELD[keyOf(i)] && against(i)).map((i) => lower(i.statement.replace(/[.]$/, '')))
+  return [
+    found.length ? `Web presence found: ${listed(found)}.` : 'No web presence found.',
+    matched.length ? `Matches ${listed(matched)}${off.length ? `; however, ${listed(off)}` : ''}.` : off.length ? `${sentence(off.map((o) => o.charAt(0).toUpperCase() + o.slice(1)).join('; '))}` : undefined
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+/** The office: whether it is verified, deliverable, and what kind of place. */
+const addresses: Composer = (insights, record) => {
+  const office = record.addresses.find((a) => a.submitted)
+  if (!office) return undefined
+  const verified = byKey(insights, 'address_verification')
+  const parts = [
+    verified ? (verified.intent === 'success' ? 'verified' : 'not verified') : undefined,
+    office.deliverable === true ? 'deliverable' : office.deliverable === false ? 'undeliverable' : undefined,
+    office.propertyType ? `a ${office.propertyType.toLowerCase()} property` : undefined
+  ].filter((x): x is string => Boolean(x))
+  const flags = [office.isRegisteredAgent ? "a registered agent's address" : undefined, office.cmra ? 'a mail-receiving agency' : undefined].filter(
+    (x): x is string => Boolean(x)
+  )
+  return [
+    parts.length ? `The office address is ${listed(parts)}.` : undefined,
+    flags.length ? `It is ${listed(flags)}.` : undefined
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+/** The submitted name against the registered one, then the others found. */
+const names: Composer = (insights, _record, group) => {
+  const match = byKey(insights, 'name') ?? byKey(insights, 'submitted_name')
+  const others = group.insights.find((i) => i.id === 'name:others')?.verdict
+  const dba = byKey(insights, 'submitted_name_dba')
+  return [
+    match ? (match.intent === 'success' ? 'The submitted name matches the registered name.' : sentence(match.statement)) : undefined,
+    others ? `${others.replace(/ found$/, '')} found${dba ? `, among them ${lower(dba.verdict.replace(/^Listed as /, ''))}` : ''}.` : undefined
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+/** The submitted people against the filings. */
+const people: Composer = (insights, record) => {
+  const submitted = record.people.filter((p) => p.submitted).length
+  const v = byKey(insights, 'person_verification')
+  if (!submitted || !v) return undefined
+  return v.intent === 'success'
+    ? `${plural(submitted, 'submitted person', 'submitted people')} verified against the filings.`
+    : `${plural(submitted, 'submitted person', 'submitted people')} not found on the filings.`
+}
 
 const COMPOSERS: Record<string, Composer> = {
   /**
@@ -92,7 +178,11 @@ const COMPOSERS: Record<string, Composer> = {
   liens: claims('liens', 'lien', 'liens'),
   litigation: claims('litigation', 'case', 'cases'),
   bankruptcy: claims('bankruptcy', 'bankruptcy', 'bankruptcies'),
-  'screening-watchlist': screen('watchlist'),
-  'screening-pep': screen('pep'),
-  'screening-media': screen('media')
+  'screening-watchlist': screen('watchlist', 'watchlist'),
+  'screening-pep': screen('pep', 'PEP'),
+  'screening-media': screen('media', 'adverse media'),
+  website: web,
+  address: addresses,
+  name: names,
+  people
 }

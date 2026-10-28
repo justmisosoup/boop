@@ -67,12 +67,16 @@ const TABLE: Record<string, Record<string, Outcome>> = {
 
 /** Insights the prototype derives, with no review task word of their own. */
 const DERIVED: Record<string, (r: Derived, record: BusinessRecord) => Outcome> = {
-  // The submitted name as another business's DBA, the owner's filing, the
-  // suffix against the type: each a question for the reviewer, not a failure.
-  submitted_name_dba: (r) => (r.state === 'result' ? R : N),
-  dba_owner_filing: (r) => (r.state === 'result' ? P : R),
-  // The suffix against the type: a match passes; only a mismatch is a question.
-  name_entity_type: (r) => (r.state !== 'result' ? N : /mismatch/i.test(r.value ?? '') ? R : r.value === 'match' ? P : R),
+  // The submitted name as another business's DBA, and that owner's filing:
+  // context about how the name is held, not a finding against the business —
+  // a DBA is a common, legitimate arrangement, and nothing in it is
+  // conclusive. Only a found owner filing reads as a pass.
+  submitted_name_dba: () => N,
+  dba_owner_filing: (r) => (r.state === 'result' ? P : N),
+  // The suffix against the type: a match passes; a mismatch is context — a
+  // name's "Inc." or "LLC" drifts from the filing often, and says nothing
+  // conclusive on its own.
+  name_entity_type: (r) => (r.state === 'result' && r.value === 'match' ? P : N),
   submitted_name: (_r, record) => {
     const { assessment } = nameStandingOf(record)
     return assessment === 'CLEAR' ? P : assessment === 'NOTE' || assessment === 'REVIEW' ? R : F
