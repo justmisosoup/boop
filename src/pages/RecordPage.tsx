@@ -1136,17 +1136,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       ? g
       : {
           ...g,
-          summary: tinRequest ? 'Middesk is finding the TIN. TIN Match runs once it is found.' : g.summary,
-          actions: tinRequest ? undefined : (
-            <>
-              <ActionButton onClick={() => requestTin(selected.id)} size="compact" variant="secondary">
-                Let Middesk find it
-              </ActionButton>
-              {/* To the TIN card, where it is typed. */}
-              <ActionButton onClick={() => followChip(undefined, g)} size="compact" variant="quiet">
-                Submit TIN
-              </ActionButton>
-            </>
+          // Middesk already looked, with prefill; what is left is the reader's TIN.
+          actions: (
+            /* To the TIN card, where it is typed. */
+            <ActionButton onClick={() => followChip(undefined, g)} size="compact" variant="secondary">
+              Submit TIN
+            </ActionButton>
           )
         }
   )
@@ -1365,7 +1360,7 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
               */}
             <div
               ref={panelRef}
-              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-0 wide:pt-[54px] wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll [overflow-anchor:none]"
+              className="relative z-10 min-w-0 bg-surface-canvas pb-56 pt-0 wide:min-h-0 wide:flex-1 wide:bg-transparent wide:pb-12 wide:overflow-y-auto panel-scroll [overflow-anchor:none]"
             >
               <div className={MEASURE}>
                 {/* One report column: the determination opens it at every
@@ -1414,17 +1409,13 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 acted on. */}
             {/* With no report there is no hero, so the crumb, the name and the
                 assignee head the page on their own. */}
-            {/* The head sticks: at the scroller's true top from \`wide\` (its
-                54px padding lifted, as the filter bar's is), on the canvas so
-                the cards pass under it. */}
             {/* The business at the top, as on its overview: the crumb, the
                 name, the reviewer's status and the facts of its identity. */}
             {/* The business's profile, pinned as the report scrolls under it —
                 the same band as on its overview, Run assessment included. */}
-            {/* At `wide` the report scrolls inside its own column, which pads
-                its top by 54px; the band pins at the column's true top by
-                lifting that padding, as the report's old head did. */}
-            <div ref={headRef} className="sticky top-0 z-[5] wide:top-[-54px]">
+            {/* The column has no top padding at any width, so the crumb sits
+                as far from the top at rest as it does once the band pins. */}
+            <div ref={headRef} className="sticky top-0 z-[5]">
               <IdentityHeader
                 record={selected}
                 defaultStatus={determined}
@@ -1503,7 +1494,12 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
                 }
                 // Narrowed, the report says so — what it is narrowed to and the
                 // way back — so a reader never takes a part for the whole.
-                focus={focus ? { id: focus.id, name: focus.title, onClear: () => setFocus(null) } : undefined}
+                focus={focus ? { id: focus.id, name: focus.title, onClear: () => {
+                        setFocus(null)
+                        // Back to the whole report, from its top.
+                        panelRef.current?.scrollTo({ top: 0 })
+                        window.scrollTo({ top: 0 })
+                      } } : undefined}
                 // The insights are listed in the left card, grouped by card,
                 // so the cards carry none of their own.
                 hideInsights

@@ -224,7 +224,7 @@ const listFacts = (record: BusinessRecord): Array<{ label: string; value: string
     { label: 'Entity type', value: f?.entityType ? String(entityTypeShown(record, f.entityType)) : '—' },
     { label: 'Age', value: ageOf(f?.date) ?? '—' },
     { label: 'Formation state', value: f?.state ? stateName(f.state) : '—' },
-    { label: 'TIN', value: tin ? maskTin(tin) : 'Not submitted' },
+    { label: 'TIN', value: tin ? maskTin(tin) : 'Not found' },
     { label: 'Office address', value: office?.fullAddress ?? '—' },
     { label: 'Website', value: site ? site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : '—' }
   ]
@@ -511,7 +511,7 @@ const OPTIONAL_COLUMNS: DataTableColumnDef<Row>[] = [
       const r = recordOf(row.original)
       if (!r) return dash
       const tin = (r.tin as { tin?: string } | null)?.tin
-      if (!tin) return <span className="text-text-secondary">Not submitted</span>
+      if (!tin) return <span className="text-text-secondary">Not found</span>
       // On hover, what the IRS said of it.
       const irs = r.reviewTasks.find((t) => t.key === 'tin')?.subLabel
       return (

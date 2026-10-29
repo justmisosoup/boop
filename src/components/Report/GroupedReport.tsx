@@ -9,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { ArrowLeft, Check, ChevronDown, Download, LayoutGrid, Maximize2, Table2, Waypoints, X } from 'lucide-react'
+import { ArrowLeft, ArrowUp, Check, ChevronDown, Download, LayoutGrid, Maximize2, Table2, Waypoints, X } from 'lucide-react'
 
 import {
   ActionButton,
@@ -411,14 +411,10 @@ const TinMissing = ({ record, actions }: { record: BusinessRecord; actions?: Tin
       <div role="row" className="grid grid-cols-1 gap-y-3 px-4 py-3">
         <span role="cell" className="flex min-w-0 flex-col">
           <span className="text-caption text-text-secondary">TIN</span>
-          <span className="text-sm text-text-primary">Not submitted</span>
-          {actions?.requestedAt ? (
-            <span className="mt-0.5 text-sm text-text-secondary">
-              Middesk is finding the TIN — asked <DateTime relative>{actions.requestedAt}</DateTime>. TIN Match runs once it is found.
-            </span>
-          ) : (
-            <span className="mt-0.5 text-sm text-text-secondary">{missingInputs('tin', record).join(' ')}</span>
-          )}
+          {/* Middesk looks for the TIN by default, with prefill: none here
+              means it looked and found none. */}
+          <span className="text-sm text-text-primary">Not found</span>
+          <span className="mt-0.5 text-sm text-text-secondary">{missingInputs('tin', record).join(' ')}</span>
         </span>
         {actions && (
           <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
@@ -445,16 +441,6 @@ const TinMissing = ({ record, actions }: { record: BusinessRecord; actions?: Tin
                 Submit
               </ActionButton>
             </form>
-            {/* Or let Middesk find it. */}
-            {actions.requestedAt ? (
-              <ActionButton onClick={actions.onCancelRequest} size="compact" variant="quiet">
-                Cancel request
-              </ActionButton>
-            ) : (
-              <ActionButton onClick={actions.onRequest} size="compact" variant="secondary">
-                Let Middesk find it
-              </ActionButton>
-            )}
           </div>
         )}
       </div>
@@ -1713,15 +1699,15 @@ export const GroupedReport = ({
 
   return (
     <>
-      {/* Narrowed to some of its cards: a tab on the first card, in the
-          Assistant's midnight, as its box's context tab is drawn — top corners
-          rounded, its foot laid over the card's top rule so the two read as
-          one shape. It widens the report back. Above its card only (z 1),
-          under the page's pinned head (z 5) as the report scrolls. */}
+      {/* Narrowed to some of its cards: a tab hung from the page head's
+          bottom rule, in the Assistant's midnight — bottom corners rounded,
+          its top flush with the rule, so it reads as part of the head. It
+          pins there as the report scrolls (`--report-head-h`, published by
+          RecordPage) and widens the report back. */}
       {narrowed && focus && (
         <button
           className={cn(
-            'relative z-[1] -mb-0.5 ml-3 flex w-fit items-center gap-1.5 rounded-t-card border border-b-0 border-solid px-2.5 pb-1.5 pt-1 text-caption leading-4',
+            'sticky top-[var(--report-head-h,0px)] z-[6] -mt-8 mb-2 mx-auto flex w-fit items-center gap-1.5 rounded-b-card border border-t-0 border-solid px-2.5 pb-1.5 pt-1 text-caption leading-4',
             'border-[var(--core-color-interactive-default)] bg-[var(--core-color-interactive-default)] text-[var(--core-color-text-inverse)]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
           )}
@@ -1729,14 +1715,16 @@ export const GroupedReport = ({
           type="button"
         >
           Show full report
-          <X aria-hidden="true" className="opacity-80" size={12} strokeWidth={1.75} />
+          <ArrowUp aria-hidden="true" className="opacity-80" size={12} strokeWidth={1.75} />
         </button>
       )}
       <div className="flex flex-col gap-4">
         {/* The business at a glance, over the cards — as the dashboard's
             Business details card heads its page. Only on the whole report and
             on an assessment that reads the business's identity. */}
-        {(!only || only.has('name') || only.has('formation')) && <BusinessDetailsCard onJumpToSource={onJumpToSource} record={record} results={results} />}
+        {/* Condensed to an insight's cards, it goes: those cards hold the
+            evidence themselves, and the business at a glance is not it. */}
+        {!narrowed && (!only || only.has('name') || only.has('formation')) && <BusinessDetailsCard onJumpToSource={onJumpToSource} record={record} results={results} />}
         {shown.map(({ card, rows }) => {
           /* The card a chip landed on opens: each strip on its first tile,
            keyed so it opens afresh each time it is led to. Narrowed to an

@@ -37,7 +37,7 @@ export const ASSESSMENT_CONTEXT: Record<string, AssessmentContext> = {
     requires: [
       {
         present: submittedTin,
-        need: 'Needs a TIN to check against the IRS. Let Middesk find it, or submit it yourself.'
+        need: "Middesk couldn't find a TIN for this business. Submit it if you have it."
       }
     ]
   },

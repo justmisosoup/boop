@@ -105,7 +105,7 @@ const Task = ({ insight, onFollow }: { insight: PanelInsight; onFollow: () => vo
         <StatusDot className="mt-[3px]" intent={insight.intent} size={12} />
         <span
           className={cn(
-            'break-words text-dense leading-5 decoration-[var(--core-color-border-strong)] underline-offset-2 group-hover/task:underline',
+            'break-words text-sm decoration-[var(--core-color-border-strong)] underline-offset-2 group-hover/task:underline',
             flagged ? 'text-text-primary' : 'text-text-secondary'
           )}
         >
@@ -264,8 +264,31 @@ const Footer = ({ group }: { group: PanelGroup }) => {
 }
 
 /** The assessment's status, as a chip at the right of its name: its mark and its word. */
+/** Assessments whose finding is that something exists — cases, liens, a PEP, a web
+ *  presence — not that a check failed: their chip says what was found. */
+const FOUND_CARDS = new Set(['website', 'litigation', 'liens', 'screening-pep'])
+/** Of those, the ones where what was found counts against the business: cases, liens, PEP hits.
+ *  The rest count for it: a web presence. */
+const FOUND_AGAINST = new Set(['litigation', 'liens', 'screening-pep'])
+
 const StatusChip = ({ group }: { group: PanelGroup }) => {
-  const intent = markOf(group)
+  const mark = markOf(group)
+  const found = FOUND_CARDS.has(group.cardId) && (mark === 'failure' || mark === 'warning')
+  if (found)
+    return (
+      // Cases found read as a mark against, red; a web presence found as one for, in Passed's midnight.
+      <MetaChip
+        className={cn('shrink-0', !FOUND_AGAINST.has(group.cardId) && CHIP_CLAIM)}
+        size="compact"
+        tone={FOUND_AGAINST.has(group.cardId) ? 'danger' : 'neutral'}
+      >
+        <span className="inline-flex items-center gap-1">
+          <StatusDot intent={FOUND_AGAINST.has(group.cardId) ? 'failure' : 'success'} size={12} />
+          Found
+        </span>
+      </MetaChip>
+    )
+  const intent = mark
   return (
     <MetaChip className={cn('shrink-0', intent === 'success' && CHIP_CLAIM)} size="compact" tone={TONE[intent]}>
       <span className="inline-flex items-center gap-1">
@@ -322,12 +345,14 @@ const InsightRow = ({
       <div className="flex min-w-0 flex-col gap-1.5">
         <CategoryButton group={group} onSelect={onSelect} selected={selected}>
           <span className="flex min-w-0 flex-col gap-0.5">
-            {/* The name, and how it came out as a chip at the right. */}
+            {/* The name as a label, as the report's fields label their values
+                — small, secondary — over the summary; its chip at the right. */}
             <span className="flex items-center justify-between gap-3">
-              <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+              <span className="text-caption leading-4 text-text-secondary">{group.label}</span>
               <StatusChip group={group} />
             </span>
-            {group.summary && <span className="text-dense leading-5 text-text-secondary">{group.summary}</span>}
+            {/* What it found, in graphite: the row's substance, not a caption. */}
+            {group.summary && <span className="text-sm text-text-primary">{group.summary}</span>}
           </span>
         </CategoryButton>
         {/* What the reader can do about it, above the row's own target. */}
@@ -348,10 +373,10 @@ const InsightCell = ({ group, selected, onSelect }: { group: PanelGroup; selecte
     <CategoryButton group={group} onSelect={onSelect} selected={selected}>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="flex items-center justify-between gap-3">
-          <span className="text-dense font-semibold leading-5 text-text-primary">{group.label}</span>
+          <span className="text-caption leading-4 text-text-secondary">{group.label}</span>
           <StatusChip group={group} />
         </span>
-        <span className="text-dense leading-5 text-text-secondary">{group.insights[0].verdict}</span>
+        <span className="text-sm text-text-primary">{group.insights[0].verdict}</span>
         <Footer group={group} />
       </span>
     </CategoryButton>

@@ -131,10 +131,10 @@ function screenReading(r: Derived, record: BusinessRecord): string | undefined {
   if (!screen) return undefined
   const hits = screenedOf(record)[screen].hits as Array<Parameters<typeof dismissalOf>[1]>
   if (hits.length === 0 || hits.some((h) => !dismissalOf(screen, h))) return undefined
-  const what = screen === 'watchlist' ? 'watchlist match' : screen === 'pep' ? 'PEP match' : 'adverse media match'
+  const what = screen === 'watchlist' ? 'watchlist hit' : screen === 'pep' ? 'PEP hit' : 'adverse media hit'
   return hits.length === 1
-    ? `1 ${what} found, dismissed as not a match`
-    : `${hits.length} ${what}es found, all dismissed as not a match`
+    ? `We found 1 ${what}, which was dismissed as not a match.`
+    : `We found ${hits.length} ${what}s, ${hits.length === 2 ? 'both' : 'all'} dismissed as not a match.`
 }
 
 export const outcomeOf = (r: Derived, record: BusinessRecord): Outcome => {

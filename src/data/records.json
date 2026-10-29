@@ -7506,20 +7506,20 @@
     "bankruptcies": [],
     "connections": [
       {
-        "id": "1077a424-083e-4754-8d19-5de6a0dedb02",
+        "id": "2eab21b6-586d-4f0a-9247-d7bc1e29e5da",
         "name": "SORENSON HOLDINGS, LLC",
         "confidence": 0.999,
         "connectedBusinessId": null,
         "people": [
           {
-            "name": "Keith  Luh",
+            "name": "James  V Continenza",
             "titles": [
               "GOVERNOR",
               "MANAGER"
             ]
           },
           {
-            "name": "James  V Continenza",
+            "name": "Keith  Luh",
             "titles": [
               "GOVERNOR",
               "MANAGER"
@@ -7527,24 +7527,6 @@
           }
         ],
         "addresses": [
-          {
-            "fullAddress": "208 S Lasalle St Ste 814, Chicago, IL 60609",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
           {
             "fullAddress": "450 Veterans Memorial Pkwy Ste 7A, East Providence, RI 02914-5300",
             "labels": [
@@ -7558,6 +7540,24 @@
                   "state": "RI",
                   "status": "inactive",
                   "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "8927 Lorraine Rd Ste 204-A, Gulfport, MS 39503-5043",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -7584,18 +7584,38 @@
           {
             "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
             "labels": [
+              "mailing",
               "associated_person",
-              "primary",
-              "mailing"
+              "primary"
             ],
             "sources": [
               {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
                 "type": "registration",
                 "metadata": {
-                  "state": "NY",
+                  "state": "NC",
                   "status": "inactive",
-                  "file_number": "3170841",
+                  "file_number": "0762650",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
+                "type": "registration",
+                "metadata": {
+                  "state": "HI",
+                  "status": "inactive",
+                  "file_number": "41365 F1",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -7620,132 +7640,12 @@
                 }
               },
               {
-                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
-                "type": "registration",
-                "metadata": {
-                  "state": "MT",
-                  "status": "inactive",
-                  "file_number": "F058451",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              },
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "560266",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
-                "type": "registration",
-                "metadata": {
-                  "state": "NC",
-                  "status": "inactive",
-                  "file_number": "0762650",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
                 "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
                 "type": "registration",
                 "metadata": {
                   "state": "MN",
                   "status": "inactive",
                   "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
-                "type": "registration",
-                "metadata": {
-                  "state": "FL",
-                  "status": "inactive",
-                  "file_number": "F04000006261",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
-                "type": "registration",
-                "metadata": {
-                  "state": "HI",
-                  "status": "inactive",
-                  "file_number": "41365 F1",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
-                "type": "registration",
-                "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -7760,22 +7660,12 @@
                 }
               },
               {
-                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
                 "type": "registration",
                 "metadata": {
-                  "state": "CA",
+                  "state": "ID",
                   "status": "inactive",
-                  "file_number": "C2249546",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
+                  "file_number": "560266",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -7790,6 +7680,46 @@
                 }
               },
               {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
                 "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
                 "type": "registration",
                 "metadata": {
@@ -7798,22 +7728,92 @@
                   "file_number": "3776085",
                   "jurisdiction": "FOREIGN"
                 }
+              },
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
+                "type": "registration",
+                "metadata": {
+                  "state": "MT",
+                  "status": "inactive",
+                  "file_number": "F058451",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
+                "type": "registration",
+                "metadata": {
+                  "state": "FL",
+                  "status": "inactive",
+                  "file_number": "F04000006261",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "C2249546",
+                  "jurisdiction": "FOREIGN"
+                }
               }
             ]
           },
           {
-            "fullAddress": "8927 Lorraine Rd Ste 204-A, Gulfport, MS 39503-5043",
+            "fullAddress": "208 S Lasalle St Ste 814, Chicago, IL 60609",
             "labels": [
               "registered_agent"
             ],
             "sources": [
               {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
                 "type": "registration",
                 "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -7852,23 +7852,29 @@
         "businesses": []
       },
       {
-        "id": "08d12a8b-35fb-4980-87d0-32aa5554691f",
+        "id": "00559ab8-5c54-4559-aaf6-1b5c106ef0c0",
         "name": "CAPTIONCALL, LLC",
         "confidence": 0.996,
         "connectedBusinessId": null,
         "people": [
           {
-            "name": "SCOTT   SORENSEN",
+            "name": "R SCOTT WOOD",
             "titles": [
-              "CHIEF EXECUTIVE OFFICER",
-              "DIRECTOR",
+              "MANAGER",
+              "SECRETARY"
+            ]
+          },
+          {
+            "name": "H PATRICK NOLAN",
+            "titles": [
               "MANAGER"
             ]
           },
           {
-            "name": "REED E STEINER",
+            "name": "SCOTT   SORENSEN",
             "titles": [
-              "CHIEF FINANCIAL OFFICER",
+              "CHIEF EXECUTIVE OFFICER",
+              "DIRECTOR",
               "MANAGER"
             ]
           },
@@ -7879,20 +7885,324 @@
             ]
           },
           {
-            "name": "J. Patrick Nolan",
+            "name": "REED E STEINER",
             "titles": [
+              "CHIEF FINANCIAL OFFICER",
               "MANAGER"
-            ]
-          },
-          {
-            "name": "R SCOTT WOOD",
-            "titles": [
-              "MANAGER",
-              "SECRETARY"
             ]
           }
         ],
         "addresses": [
+          {
+            "fullAddress": "3800 N Central Ave Ste 460, Phoenix, AZ 85012-1992",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "aa988b6a-2510-43c3-98b2-4e3d0fc24983",
+                "type": "registration",
+                "metadata": {
+                  "state": "AZ",
+                  "status": "inactive",
+                  "file_number": "F11442973",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "780 Commercial St SE Ste 100, Salem, OR 97301-3465",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "450 Veterans Memorial Pkwy Ste 7A, East Providence, RI 02914-5300",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "5601 S 59th St, Lincoln, NE 68516-2306",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "1833 S Morgan Rd, Oklahoma City, OK 73128-7004",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "607d72d3-2746-481b-960d-1e16280754c7",
+                "type": "registration",
+                "metadata": {
+                  "state": "OK",
+                  "status": "inactive",
+                  "file_number": "2312107653",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
+            "labels": [
+              "mailing",
+              "associated_person",
+              "primary"
+            ],
+            "sources": [
+              {
+                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
+                "type": "registration",
+                "metadata": {
+                  "state": "NC",
+                  "status": "inactive",
+                  "file_number": "0762650",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
+                "type": "registration",
+                "metadata": {
+                  "state": "HI",
+                  "status": "inactive",
+                  "file_number": "41365 F1",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
+                "type": "registration",
+                "metadata": {
+                  "state": "SD",
+                  "status": "inactive",
+                  "file_number": "FB033401",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
+                "type": "registration",
+                "metadata": {
+                  "state": "CT",
+                  "status": "inactive",
+                  "file_number": "0820240",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
+                "type": "registration",
+                "metadata": {
+                  "state": "MN",
+                  "status": "inactive",
+                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
+                "type": "registration",
+                "metadata": {
+                  "state": "VT",
+                  "status": "inactive",
+                  "file_number": "0088975",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
+                "type": "registration",
+                "metadata": {
+                  "state": "ID",
+                  "status": "inactive",
+                  "file_number": "560266",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
+                "type": "registration",
+                "metadata": {
+                  "state": "MA",
+                  "status": "inactive",
+                  "file_number": "000886195",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
+                "type": "registration",
+                "metadata": {
+                  "state": "KS",
+                  "status": "inactive",
+                  "file_number": "3776085",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
+                "type": "registration",
+                "metadata": {
+                  "state": "MT",
+                  "status": "inactive",
+                  "file_number": "F058451",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
+                "type": "registration",
+                "metadata": {
+                  "state": "FL",
+                  "status": "inactive",
+                  "file_number": "F04000006261",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "C2249546",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
           {
             "fullAddress": "40600 Ann Arbor Rd E Ste 201, Plymouth, MI 48170-4675",
             "labels": [
@@ -7906,6 +8216,132 @@
                   "state": "MI",
                   "status": "inactive",
                   "file_number": "801047871",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "155 Federal St Ste 700, Boston, MA 02110-1727",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
+                "type": "registration",
+                "metadata": {
+                  "state": "MA",
+                  "status": "inactive",
+                  "file_number": "000886195",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "4701 Cox Rd Ste 285, Glen Allen, VA 23060-6808",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "1010 Dale St N, Saint Paul, MN 55117-5603",
+            "labels": [
+              "primary"
+            ],
+            "sources": [
+              {
+                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
+                "type": "registration",
+                "metadata": {
+                  "state": "MN",
+                  "status": "inactive",
+                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "208 S Lasalle St Ste 814, Chicago, IL 60609",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "319 Coteau St, Pierre, SD 57501-3187",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
+                "type": "registration",
+                "metadata": {
+                  "state": "SD",
+                  "status": "inactive",
+                  "file_number": "FB033401",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "112 SW 7th St Ste 3C, Topeka, KS 66603-3858",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
+                "type": "registration",
+                "metadata": {
+                  "state": "KS",
+                  "status": "inactive",
+                  "file_number": "3776085",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -7941,352 +8377,6 @@
             ]
           },
           {
-            "fullAddress": "450 Veterans Memorial Pkwy Ste 7A, East Providence, RI 02914-5300",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "208 S Lasalle St Ste 814, Chicago, IL 60609",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "780 Commercial St SE Ste 100, Salem, OR 97301-3465",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1833 S Morgan Rd, Oklahoma City, OK 73128-7004",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "607d72d3-2746-481b-960d-1e16280754c7",
-                "type": "registration",
-                "metadata": {
-                  "state": "OK",
-                  "status": "inactive",
-                  "file_number": "2312107653",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "4701 Cox Rd Ste 285, Glen Allen, VA 23060-6808",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1010 Dale St N, Saint Paul, MN 55117-5603",
-            "labels": [
-              "primary"
-            ],
-            "sources": [
-              {
-                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
-                "type": "registration",
-                "metadata": {
-                  "state": "MN",
-                  "status": "inactive",
-                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "112 SW 7th St Ste 3C, Topeka, KS 66603-3858",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
-                "type": "registration",
-                "metadata": {
-                  "state": "KS",
-                  "status": "inactive",
-                  "file_number": "3776085",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
-            "labels": [
-              "associated_person",
-              "primary",
-              "mailing"
-            ],
-            "sources": [
-              {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
-                "type": "registration",
-                "metadata": {
-                  "state": "NY",
-                  "status": "inactive",
-                  "file_number": "3170841",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
-                "type": "registration",
-                "metadata": {
-                  "state": "SD",
-                  "status": "inactive",
-                  "file_number": "FB033401",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
-                "type": "registration",
-                "metadata": {
-                  "state": "CT",
-                  "status": "inactive",
-                  "file_number": "0820240",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
-                "type": "registration",
-                "metadata": {
-                  "state": "MT",
-                  "status": "inactive",
-                  "file_number": "F058451",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              },
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "560266",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
-                "type": "registration",
-                "metadata": {
-                  "state": "NC",
-                  "status": "inactive",
-                  "file_number": "0762650",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
-                "type": "registration",
-                "metadata": {
-                  "state": "MN",
-                  "status": "inactive",
-                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
-                "type": "registration",
-                "metadata": {
-                  "state": "FL",
-                  "status": "inactive",
-                  "file_number": "F04000006261",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
-                "type": "registration",
-                "metadata": {
-                  "state": "HI",
-                  "status": "inactive",
-                  "file_number": "41365 F1",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
-                "type": "registration",
-                "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
-                "type": "registration",
-                "metadata": {
-                  "state": "VT",
-                  "status": "inactive",
-                  "file_number": "0088975",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
-                "type": "registration",
-                "metadata": {
-                  "state": "CA",
-                  "status": "inactive",
-                  "file_number": "C2249546",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
-                "type": "registration",
-                "metadata": {
-                  "state": "MA",
-                  "status": "inactive",
-                  "file_number": "000886195",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
-                "type": "registration",
-                "metadata": {
-                  "state": "KS",
-                  "status": "inactive",
-                  "file_number": "3776085",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
             "fullAddress": "111 8th Ave, New York, NY 10011-5201",
             "labels": [
               "mailing"
@@ -8299,96 +8389,6 @@
                   "state": "NY",
                   "status": "inactive",
                   "file_number": "3170841",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "5601 S 59th St, Lincoln, NE 68516-2306",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "155 Federal St Ste 700, Boston, MA 02110-1727",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
-                "type": "registration",
-                "metadata": {
-                  "state": "MA",
-                  "status": "inactive",
-                  "file_number": "000886195",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "319 Coteau St, Pierre, SD 57501-3187",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
-                "type": "registration",
-                "metadata": {
-                  "state": "SD",
-                  "status": "inactive",
-                  "file_number": "FB033401",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "3800 N Central Ave Ste 460, Phoenix, AZ 85012-1992",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "aa988b6a-2510-43c3-98b2-4e3d0fc24983",
-                "type": "registration",
-                "metadata": {
-                  "state": "AZ",
-                  "status": "inactive",
-                  "file_number": "F11442973",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -8416,11 +8416,17 @@
         ]
       },
       {
-        "id": "33724de0-4785-4b74-b310-1b11496edb7c",
+        "id": "f06cfd6a-dda1-44df-9f99-b1b0b76ff2c4",
         "name": "SORENSON INTERPRETIVE SERVICES, LLC",
         "confidence": 0.987,
         "connectedBusinessId": null,
         "people": [
+          {
+            "name": "R SCOTT WOOD",
+            "titles": [
+              "CHIEF EXECUTIVE OFFICER"
+            ]
+          },
           {
             "name": "SCOTT   SORENSEN",
             "titles": [
@@ -8431,12 +8437,6 @@
             "name": "\tDavid Johnson",
             "titles": [
               "VICE PRESIDENT"
-            ]
-          },
-          {
-            "name": "R SCOTT WOOD",
-            "titles": [
-              "CHIEF EXECUTIVE OFFICER"
             ]
           }
         ],
@@ -8460,36 +8460,18 @@
             ]
           },
           {
-            "fullAddress": "4701 Cox Rd Ste 285, Glen Allen, VA 23060-6808",
+            "fullAddress": "3800 N Central Ave Ste 460, Phoenix, AZ 85012-1992",
             "labels": [
               "registered_agent"
             ],
             "sources": [
               {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "id": "aa988b6a-2510-43c3-98b2-4e3d0fc24983",
                 "type": "registration",
                 "metadata": {
-                  "state": "VA",
+                  "state": "AZ",
                   "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1010 Dale St N, Saint Paul, MN 55117-5603",
-            "labels": [
-              "primary"
-            ],
-            "sources": [
-              {
-                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
-                "type": "registration",
-                "metadata": {
-                  "state": "MN",
-                  "status": "inactive",
-                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "file_number": "F11442973",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -8498,18 +8480,38 @@
           {
             "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
             "labels": [
+              "mailing",
               "associated_person",
-              "primary",
-              "mailing"
+              "primary"
             ],
             "sources": [
               {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
                 "type": "registration",
                 "metadata": {
-                  "state": "NY",
+                  "state": "NC",
                   "status": "inactive",
-                  "file_number": "3170841",
+                  "file_number": "0762650",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
+                "type": "registration",
+                "metadata": {
+                  "state": "HI",
+                  "status": "inactive",
+                  "file_number": "41365 F1",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -8534,132 +8536,12 @@
                 }
               },
               {
-                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
-                "type": "registration",
-                "metadata": {
-                  "state": "MT",
-                  "status": "inactive",
-                  "file_number": "F058451",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              },
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "560266",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
-                "type": "registration",
-                "metadata": {
-                  "state": "NC",
-                  "status": "inactive",
-                  "file_number": "0762650",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
                 "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
                 "type": "registration",
                 "metadata": {
                   "state": "MN",
                   "status": "inactive",
                   "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
-                "type": "registration",
-                "metadata": {
-                  "state": "FL",
-                  "status": "inactive",
-                  "file_number": "F04000006261",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
-                "type": "registration",
-                "metadata": {
-                  "state": "HI",
-                  "status": "inactive",
-                  "file_number": "41365 F1",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
-                "type": "registration",
-                "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -8674,22 +8556,12 @@
                 }
               },
               {
-                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
                 "type": "registration",
                 "metadata": {
-                  "state": "CA",
+                  "state": "ID",
                   "status": "inactive",
-                  "file_number": "C2249546",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
+                  "file_number": "560266",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -8704,12 +8576,140 @@
                 }
               },
               {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
                 "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
                 "type": "registration",
                 "metadata": {
                   "state": "KS",
                   "status": "inactive",
                   "file_number": "3776085",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
+                "type": "registration",
+                "metadata": {
+                  "state": "MT",
+                  "status": "inactive",
+                  "file_number": "F058451",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
+                "type": "registration",
+                "metadata": {
+                  "state": "FL",
+                  "status": "inactive",
+                  "file_number": "F04000006261",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "C2249546",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "4701 Cox Rd Ste 285, Glen Allen, VA 23060-6808",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -8734,18 +8734,18 @@
             ]
           },
           {
-            "fullAddress": "3800 N Central Ave Ste 460, Phoenix, AZ 85012-1992",
+            "fullAddress": "1010 Dale St N, Saint Paul, MN 55117-5603",
             "labels": [
-              "registered_agent"
+              "primary"
             ],
             "sources": [
               {
-                "id": "aa988b6a-2510-43c3-98b2-4e3d0fc24983",
+                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
                 "type": "registration",
                 "metadata": {
-                  "state": "AZ",
+                  "state": "MN",
                   "status": "inactive",
-                  "file_number": "F11442973",
+                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
                   "jurisdiction": "FOREIGN"
                 }
               }
@@ -8798,7 +8798,7 @@
         ]
       },
       {
-        "id": "009152f1-00e0-4710-96b6-15eaaeb0e7a2",
+        "id": "6266cb43-d24c-4c21-8e18-40810ee33325",
         "name": "STARRIDER INVESTMENTS LLC",
         "confidence": 0.937,
         "connectedBusinessId": null,
@@ -8815,7 +8815,7 @@
         "businesses": []
       },
       {
-        "id": "da458dfe-1cdd-4382-ae19-ec2e937c7a0c",
+        "id": "a503fdaa-aaba-47a7-8fdc-37f1e444cb63",
         "name": "SKYHOOK SERVICE COMPANY",
         "confidence": 0.937,
         "connectedBusinessId": null,
@@ -8831,9 +8831,9 @@
         "businesses": []
       },
       {
-        "id": "29789c09-d532-4219-83bb-01646eaff00c",
+        "id": "600ae01b-dbd4-4555-bfd6-92eadc52caf1",
         "name": "SEQUEL MARKETING, INC.",
-        "confidence": 0.857,
+        "confidence": 0.858,
         "connectedBusinessId": null,
         "people": [
           {
@@ -8844,6 +8844,56 @@
           }
         ],
         "addresses": [
+          {
+            "fullAddress": "4393 S Riverboat Rd Ste 300, Salt Lake City, UT 84123-2524",
+            "labels": [
+              "mailing",
+              "primary",
+              "associated_person"
+            ],
+            "sources": [
+              {
+                "id": "f1c80b56-29e2-4029-a453-3248066994ad",
+                "type": "registration",
+                "metadata": {
+                  "state": "ID",
+                  "status": "inactive",
+                  "file_number": "491096",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "607d72d3-2746-481b-960d-1e16280754c7",
+                "type": "registration",
+                "metadata": {
+                  "state": "OK",
+                  "status": "inactive",
+                  "file_number": "2312107653",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
           {
             "fullAddress": "2511 S West Temple, South Salt Lake, UT 84115-3012",
             "labels": [
@@ -8872,131 +8922,14 @@
                 }
               }
             ]
-          },
-          {
-            "fullAddress": "4393 S Riverboat Rd Ste 300, Salt Lake City, UT 84123-2524",
-            "labels": [
-              "associated_person",
-              "primary",
-              "mailing"
-            ],
-            "sources": [
-              {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
-                "type": "registration",
-                "metadata": {
-                  "state": "NY",
-                  "status": "inactive",
-                  "file_number": "3170841",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "607d72d3-2746-481b-960d-1e16280754c7",
-                "type": "registration",
-                "metadata": {
-                  "state": "OK",
-                  "status": "inactive",
-                  "file_number": "2312107653",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "f1c80b56-29e2-4029-a453-3248066994ad",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "491096",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
           }
         ],
         "businesses": []
       },
       {
-        "id": "798fe51a-2750-41c7-9f05-5c580778d6b1",
-        "name": "UNIVERSITY VENTURE FUND",
-        "confidence": 0.853,
-        "connectedBusinessId": null,
-        "people": [
-          {
-            "name": "JAMES  LEVOY SORENSON",
-            "titles": [
-              "DIRECTOR"
-            ]
-          }
-        ],
-        "addresses": [
-          {
-            "fullAddress": "4393 S Riverboat Rd Ste 300, Salt Lake City, UT 84123-2524",
-            "labels": [
-              "associated_person",
-              "primary",
-              "mailing"
-            ],
-            "sources": [
-              {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
-                "type": "registration",
-                "metadata": {
-                  "state": "NY",
-                  "status": "inactive",
-                  "file_number": "3170841",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "607d72d3-2746-481b-960d-1e16280754c7",
-                "type": "registration",
-                "metadata": {
-                  "state": "OK",
-                  "status": "inactive",
-                  "file_number": "2312107653",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "f1c80b56-29e2-4029-a453-3248066994ad",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "491096",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          }
-        ],
-        "businesses": []
-      },
-      {
-        "id": "3c6c5629-e5b5-47a1-8602-7bfe55c5b70d",
+        "id": "654de8a2-e6ca-458a-91fa-37c86e4830a4",
         "name": "FAMILY BTS, L.L.C.",
-        "confidence": 0.85,
+        "confidence": 0.851,
         "connectedBusinessId": null,
         "people": [
           {
@@ -9011,18 +8944,28 @@
           {
             "fullAddress": "4393 S Riverboat Rd Ste 300, Salt Lake City, UT 84123-2524",
             "labels": [
-              "associated_person",
+              "mailing",
               "primary",
-              "mailing"
+              "associated_person"
             ],
             "sources": [
               {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "id": "f1c80b56-29e2-4029-a453-3248066994ad",
                 "type": "registration",
                 "metadata": {
-                  "state": "NY",
+                  "state": "ID",
                   "status": "inactive",
-                  "file_number": "3170841",
+                  "file_number": "491096",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
                   "jurisdiction": "FOREIGN"
                 }
               },
@@ -9037,6 +8980,153 @@
                 }
               },
               {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          }
+        ],
+        "businesses": []
+      },
+      {
+        "id": "41b748a3-5a1e-407c-8658-5fffe8e7378f",
+        "name": "Allied Communications, LLC",
+        "confidence": 0.849,
+        "connectedBusinessId": null,
+        "people": [
+          {
+            "name": "R SCOTT WOOD",
+            "titles": [
+              "MANAGER"
+            ]
+          }
+        ],
+        "addresses": [
+          {
+            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
+            "labels": [
+              "mailing",
+              "associated_person",
+              "primary"
+            ],
+            "sources": [
+              {
+                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
+                "type": "registration",
+                "metadata": {
+                  "state": "NC",
+                  "status": "inactive",
+                  "file_number": "0762650",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
+                "type": "registration",
+                "metadata": {
+                  "state": "HI",
+                  "status": "inactive",
+                  "file_number": "41365 F1",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
+                "type": "registration",
+                "metadata": {
+                  "state": "SD",
+                  "status": "inactive",
+                  "file_number": "FB033401",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
+                "type": "registration",
+                "metadata": {
+                  "state": "CT",
+                  "status": "inactive",
+                  "file_number": "0820240",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
+                "type": "registration",
+                "metadata": {
+                  "state": "MN",
+                  "status": "inactive",
+                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
+                "type": "registration",
+                "metadata": {
+                  "state": "VT",
+                  "status": "inactive",
+                  "file_number": "0088975",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
+                "type": "registration",
+                "metadata": {
+                  "state": "ID",
+                  "status": "inactive",
+                  "file_number": "560266",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
+                "type": "registration",
+                "metadata": {
+                  "state": "MA",
+                  "status": "inactive",
+                  "file_number": "000886195",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              },
+              {
                 "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
                 "type": "registration",
                 "metadata": {
@@ -9046,6 +9136,389 @@
                   "jurisdiction": "FOREIGN"
                 }
               },
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
+                "type": "registration",
+                "metadata": {
+                  "state": "KS",
+                  "status": "inactive",
+                  "file_number": "3776085",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
+                "type": "registration",
+                "metadata": {
+                  "state": "MT",
+                  "status": "inactive",
+                  "file_number": "F058451",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
+                "type": "registration",
+                "metadata": {
+                  "state": "FL",
+                  "status": "inactive",
+                  "file_number": "F04000006261",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "C2249546",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              }
+            ]
+          }
+        ],
+        "businesses": []
+      },
+      {
+        "id": "ee6241b6-32f8-4ad2-a018-f5bfa5bdf2d4",
+        "name": "INTERACTIVECARE, LLC",
+        "confidence": 0.849,
+        "connectedBusinessId": null,
+        "people": [
+          {
+            "name": "R SCOTT WOOD",
+            "titles": [
+              "MANAGER"
+            ]
+          }
+        ],
+        "addresses": [
+          {
+            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
+            "labels": [
+              "mailing",
+              "associated_person",
+              "primary"
+            ],
+            "sources": [
+              {
+                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
+                "type": "registration",
+                "metadata": {
+                  "state": "NC",
+                  "status": "inactive",
+                  "file_number": "0762650",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "11245edc-306c-4d79-9683-6465519f1b05",
+                "type": "registration",
+                "metadata": {
+                  "state": "MS",
+                  "status": "active",
+                  "file_number": "959722",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
+                "type": "registration",
+                "metadata": {
+                  "state": "HI",
+                  "status": "inactive",
+                  "file_number": "41365 F1",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
+                "type": "registration",
+                "metadata": {
+                  "state": "SD",
+                  "status": "inactive",
+                  "file_number": "FB033401",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
+                "type": "registration",
+                "metadata": {
+                  "state": "CT",
+                  "status": "inactive",
+                  "file_number": "0820240",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
+                "type": "registration",
+                "metadata": {
+                  "state": "MN",
+                  "status": "inactive",
+                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
+                "type": "registration",
+                "metadata": {
+                  "state": "VT",
+                  "status": "inactive",
+                  "file_number": "0088975",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
+                "type": "registration",
+                "metadata": {
+                  "state": "ID",
+                  "status": "inactive",
+                  "file_number": "560266",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
+                "type": "registration",
+                "metadata": {
+                  "state": "MA",
+                  "status": "inactive",
+                  "file_number": "000886195",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
+                "type": "registration",
+                "metadata": {
+                  "state": "IL",
+                  "status": "inactive",
+                  "file_number": "C64323091",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              },
+              {
+                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
+                "type": "registration",
+                "metadata": {
+                  "state": "MO",
+                  "status": "inactive",
+                  "file_number": "F00652209",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
+                "type": "registration",
+                "metadata": {
+                  "state": "NE",
+                  "status": "inactive",
+                  "file_number": "10084290",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
+                "type": "registration",
+                "metadata": {
+                  "state": "KS",
+                  "status": "inactive",
+                  "file_number": "3776085",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
+                "type": "registration",
+                "metadata": {
+                  "state": "RI",
+                  "status": "inactive",
+                  "file_number": "522434",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
+                "type": "registration",
+                "metadata": {
+                  "state": "NY",
+                  "status": "inactive",
+                  "file_number": "3170841",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
+                "type": "registration",
+                "metadata": {
+                  "state": "MT",
+                  "status": "inactive",
+                  "file_number": "F058451",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
+                "type": "registration",
+                "metadata": {
+                  "state": "OR",
+                  "status": "inactive",
+                  "file_number": "28725596",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
+                "type": "registration",
+                "metadata": {
+                  "state": "FL",
+                  "status": "inactive",
+                  "file_number": "F04000006261",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "6507dccc-12fd-4109-bf74-354f49178584",
+                "type": "registration",
+                "metadata": {
+                  "state": "VA",
+                  "status": "inactive",
+                  "file_number": "F1660986",
+                  "jurisdiction": "FOREIGN"
+                }
+              },
+              {
+                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
+                "type": "registration",
+                "metadata": {
+                  "state": "CA",
+                  "status": "inactive",
+                  "file_number": "C2249546",
+                  "jurisdiction": "FOREIGN"
+                }
+              }
+            ]
+          },
+          {
+            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
+            "labels": [
+              "registered_agent"
+            ],
+            "sources": [
+              {
+                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
+                "type": "registration",
+                "metadata": {
+                  "state": "UT",
+                  "status": "inactive",
+                  "file_number": "4737021-0142",
+                  "jurisdiction": "DOMESTIC"
+                }
+              }
+            ]
+          }
+        ],
+        "businesses": []
+      },
+      {
+        "id": "5ff76aca-c7ce-42a3-9bb1-e3c05a7a41a2",
+        "name": "UNIVERSITY VENTURE FUND",
+        "confidence": 0.841,
+        "connectedBusinessId": null,
+        "people": [],
+        "addresses": [
+          {
+            "fullAddress": "4393 S Riverboat Rd Ste 300, Salt Lake City, UT 84123-2524",
+            "labels": [
+              "mailing",
+              "primary",
+              "associated_person"
+            ],
+            "sources": [
               {
                 "id": "f1c80b56-29e2-4029-a453-3248066994ad",
                 "type": "registration",
@@ -9055,133 +9528,6 @@
                   "file_number": "491096",
                   "jurisdiction": "FOREIGN"
                 }
-              }
-            ]
-          }
-        ],
-        "businesses": []
-      },
-      {
-        "id": "67d7c550-8196-46c5-a13b-5ac7a5ffa186",
-        "name": "Allied Communications, LLC",
-        "confidence": 0.845,
-        "connectedBusinessId": null,
-        "people": [
-          {
-            "name": "R SCOTT WOOD",
-            "titles": [
-              "MANAGER"
-            ]
-          }
-        ],
-        "addresses": [
-          {
-            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
-            "labels": [
-              "associated_person",
-              "primary",
-              "mailing"
-            ],
-            "sources": [
-              {
-                "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
-                "type": "registration",
-                "metadata": {
-                  "state": "NY",
-                  "status": "inactive",
-                  "file_number": "3170841",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
-                "type": "registration",
-                "metadata": {
-                  "state": "SD",
-                  "status": "inactive",
-                  "file_number": "FB033401",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
-                "type": "registration",
-                "metadata": {
-                  "state": "CT",
-                  "status": "inactive",
-                  "file_number": "0820240",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
-                "type": "registration",
-                "metadata": {
-                  "state": "MT",
-                  "status": "inactive",
-                  "file_number": "F058451",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              },
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "560266",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
-                "type": "registration",
-                "metadata": {
-                  "state": "NC",
-                  "status": "inactive",
-                  "file_number": "0762650",
-                  "jurisdiction": "FOREIGN"
-                }
               },
               {
                 "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
@@ -9194,150 +9540,15 @@
                 }
               },
               {
-                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
+                "id": "607d72d3-2746-481b-960d-1e16280754c7",
                 "type": "registration",
                 "metadata": {
-                  "state": "MN",
+                  "state": "OK",
                   "status": "inactive",
-                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
+                  "file_number": "2312107653",
                   "jurisdiction": "FOREIGN"
                 }
               },
-              {
-                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
-                "type": "registration",
-                "metadata": {
-                  "state": "FL",
-                  "status": "inactive",
-                  "file_number": "F04000006261",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
-                "type": "registration",
-                "metadata": {
-                  "state": "HI",
-                  "status": "inactive",
-                  "file_number": "41365 F1",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
-                "type": "registration",
-                "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
-                "type": "registration",
-                "metadata": {
-                  "state": "VT",
-                  "status": "inactive",
-                  "file_number": "0088975",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
-                "type": "registration",
-                "metadata": {
-                  "state": "CA",
-                  "status": "inactive",
-                  "file_number": "C2249546",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
-                "type": "registration",
-                "metadata": {
-                  "state": "MA",
-                  "status": "inactive",
-                  "file_number": "000886195",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
-                "type": "registration",
-                "metadata": {
-                  "state": "KS",
-                  "status": "inactive",
-                  "file_number": "3776085",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              }
-            ]
-          }
-        ],
-        "businesses": []
-      },
-      {
-        "id": "8315856f-e959-438a-aa60-8bf505142862",
-        "name": "INTERACTIVECARE, LLC",
-        "confidence": 0.845,
-        "connectedBusinessId": null,
-        "people": [
-          {
-            "name": "R SCOTT WOOD",
-            "titles": [
-              "MANAGER"
-            ]
-          }
-        ],
-        "addresses": [
-          {
-            "fullAddress": "4192 S Riverboat Rd, Salt Lake City, UT 84123-2550",
-            "labels": [
-              "associated_person",
-              "primary",
-              "mailing"
-            ],
-            "sources": [
               {
                 "id": "24f8d5a4-84ac-459b-b044-1df4bd019ef6",
                 "type": "registration",
@@ -9346,224 +9557,6 @@
                   "status": "inactive",
                   "file_number": "3170841",
                   "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "46847c33-8138-485b-86a1-dc7eaca74d4b",
-                "type": "registration",
-                "metadata": {
-                  "state": "SD",
-                  "status": "inactive",
-                  "file_number": "FB033401",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "aded060d-e166-40c8-b7d9-af6ec25ae6a1",
-                "type": "registration",
-                "metadata": {
-                  "state": "CT",
-                  "status": "inactive",
-                  "file_number": "0820240",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fc2df374-3fe1-46c2-9fef-66cf8b066cf6",
-                "type": "registration",
-                "metadata": {
-                  "state": "MT",
-                  "status": "inactive",
-                  "file_number": "F058451",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1cbf7e94-45f3-48b3-84e3-674036659f20",
-                "type": "registration",
-                "metadata": {
-                  "state": "RI",
-                  "status": "inactive",
-                  "file_number": "522434",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
-                }
-              },
-              {
-                "id": "6507dccc-12fd-4109-bf74-354f49178584",
-                "type": "registration",
-                "metadata": {
-                  "state": "VA",
-                  "status": "inactive",
-                  "file_number": "F1660986",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "239d9c5a-2e1b-45f5-94d6-3091c7032778",
-                "type": "registration",
-                "metadata": {
-                  "state": "ID",
-                  "status": "inactive",
-                  "file_number": "560266",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "e48dc079-5c0c-4063-9a4c-aaf3735d6bd3",
-                "type": "registration",
-                "metadata": {
-                  "state": "OR",
-                  "status": "inactive",
-                  "file_number": "28725596",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7c745e43-63ab-400e-a704-2d939ff41492",
-                "type": "registration",
-                "metadata": {
-                  "state": "NC",
-                  "status": "inactive",
-                  "file_number": "0762650",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "eec97200-536b-4b22-aae1-0a6e4a48d3bf",
-                "type": "registration",
-                "metadata": {
-                  "state": "MO",
-                  "status": "inactive",
-                  "file_number": "F00652209",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "69c430ec-fe21-49cb-8a19-8d0acbf6e06a",
-                "type": "registration",
-                "metadata": {
-                  "state": "MN",
-                  "status": "inactive",
-                  "file_number": "f3cf06fe-87d4-e011-a886-001ec94ffe7f",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "85ce3bee-b5be-4292-b5e6-8d09b310d553",
-                "type": "registration",
-                "metadata": {
-                  "state": "FL",
-                  "status": "inactive",
-                  "file_number": "F04000006261",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "497bd8ee-de64-486d-bf0b-ca1b5b6f7977",
-                "type": "registration",
-                "metadata": {
-                  "state": "HI",
-                  "status": "inactive",
-                  "file_number": "41365 F1",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "11245edc-306c-4d79-9683-6465519f1b05",
-                "type": "registration",
-                "metadata": {
-                  "state": "MS",
-                  "status": "active",
-                  "file_number": "959722",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "75dea16d-6d04-424d-b29b-c8be673621f1",
-                "type": "registration",
-                "metadata": {
-                  "state": "NE",
-                  "status": "inactive",
-                  "file_number": "10084290",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "fe1ffe4e-aea4-4c66-af98-0eef094cbce0",
-                "type": "registration",
-                "metadata": {
-                  "state": "VT",
-                  "status": "inactive",
-                  "file_number": "0088975",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "3c482c9e-f5c0-4470-89f8-03f2ceada57a",
-                "type": "registration",
-                "metadata": {
-                  "state": "CA",
-                  "status": "inactive",
-                  "file_number": "C2249546",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "7f85de97-1723-41eb-bc3e-7e3424ee106a",
-                "type": "registration",
-                "metadata": {
-                  "state": "IL",
-                  "status": "inactive",
-                  "file_number": "C64323091",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "47ccc674-1599-4ac7-a279-b1a6d51d9c6b",
-                "type": "registration",
-                "metadata": {
-                  "state": "MA",
-                  "status": "inactive",
-                  "file_number": "000886195",
-                  "jurisdiction": "FOREIGN"
-                }
-              },
-              {
-                "id": "8fe7884f-277c-47e3-ba1e-fcb2f3e9c845",
-                "type": "registration",
-                "metadata": {
-                  "state": "KS",
-                  "status": "inactive",
-                  "file_number": "3776085",
-                  "jurisdiction": "FOREIGN"
-                }
-              }
-            ]
-          },
-          {
-            "fullAddress": "1108 E South Union Ave, Midvale, UT 84047-2904",
-            "labels": [
-              "registered_agent"
-            ],
-            "sources": [
-              {
-                "id": "1331aca3-d598-4e6d-bdea-dd4f8b91e1e7",
-                "type": "registration",
-                "metadata": {
-                  "state": "UT",
-                  "status": "inactive",
-                  "file_number": "4737021-0142",
-                  "jurisdiction": "DOMESTIC"
                 }
               }
             ]
@@ -9573,6 +9566,14 @@
       }
     ],
     "orders": [
+      {
+        "id": "fdf59a9d-bfc8-4451-83b3-2f58aa83eb63",
+        "package": "business_verification_verify",
+        "subproducts": [],
+        "status": "completed",
+        "createdAt": "2026-10-29T20:58:49.988Z",
+        "completedAt": "2026-10-29T20:58:56.177Z"
+      },
       {
         "id": "41eb890f-6f47-44c5-8139-b6996ccdee7d",
         "package": "business_verification_verify",

@@ -46,7 +46,8 @@ const MERGED_INTO: Partial<Record<GroupId, GroupId>> = {
 const LABELS: Partial<Record<GroupId, string>> = {
   formation: 'Registrations',
   website: 'Web presence',
-  tin: 'TIN Match'
+  tin: 'TIN Match',
+  litigation: 'Litigations'
 }
 
 const GROUP_CARDS: ReadonlyArray<ReportCard> = GROUPS.flatMap((g) =>

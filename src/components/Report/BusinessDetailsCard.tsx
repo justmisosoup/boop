@@ -1,10 +1,13 @@
-import { InlineAlert, Surface } from '@/core'
+import { useState, type FormEvent } from 'react'
+
+import { ActionButton, FieldLabel, InlineAlert, Input, Popover, PopoverContent, PopoverTrigger, Surface } from '@/core'
 
 import { maskTin } from '../../lib/attributes'
 import { displayName } from '../../lib/businessNames'
 import type { BusinessRecord, Derived, SourceRef } from '../../lib/deriveResults'
 import dayjs from '../../lib/dayjs'
 import { outcomeOf } from '../../lib/insightOutcome'
+import { createLocalStore } from '../../lib/localStore'
 import { entityTypeShown } from '../../lib/normalise'
 import { domesticOf, notPublished, registrationState } from '../../lib/registrationStatus'
 import { cardAnchor } from '../../lib/reportCards'
@@ -24,6 +27,77 @@ import { AttributeSources } from '../Provenance'
  * business's own submitted fields, which the prototype's pull doesn't keep, so
  * they are left off rather than shown empty.
  */
+/** A TIN the reviewer submitted for a business Middesk found none for. Kept in
+ *  the browser, never in `records.json`, which `pull` rewrites. */
+const SUBMITTED_TIN = createLocalStore<{ tin: string; at: string }>('prototype.submitted-tin.v1')
+
+const digitsOf = (v: string) => v.replace(/\D/g, '').slice(0, 9)
+/** As an EIN reads: "12-3456789". */
+const asEin = (d: string) => (d.length > 2 ? `${d.slice(0, 2)}-${d.slice(2)}` : d)
+
+/**
+ * The TIN where the record has none: Middesk looked for it with prefill and
+ * found nothing, so the cell says that — not a bare "Not submitted" — and
+ * offers to take the TIN from the reviewer, who may have it from the
+ * applicant, to run a TIN match on. Once given, the cell holds it, masked,
+ * with its match still to run.
+ */
+const MissingTin = ({ businessId }: { businessId: string }) => {
+  const submitted = SUBMITTED_TIN.useAll()[businessId]
+  const [open, setOpen] = useState(false)
+  const [digits, setDigits] = useState('')
+  if (submitted)
+    return (
+      <span className="flex flex-col gap-0.5">
+        <span>{maskTin(submitted.tin)}</span>
+        <span className="text-text-secondary">Submitted · TIN match pending</span>
+      </span>
+    )
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (digits.length !== 9) return
+    SUBMITTED_TIN.set(businessId, { tin: asEin(digits), at: new Date().toISOString() })
+    setOpen(false)
+  }
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <span>Not found</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <ActionButton className="-ml-2" size="compact" variant="quiet">
+            Submit TIN
+          </ActionButton>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72 p-4">
+          <form className="flex flex-col gap-3" onSubmit={submit}>
+            <div className="flex flex-col gap-1.5">
+              <FieldLabel htmlFor={`tin-${businessId}`}>TIN (EIN)</FieldLabel>
+              <Input
+                autoComplete="off"
+                autoFocus
+                id={`tin-${businessId}`}
+                inputMode="numeric"
+                onChange={(e) => setDigits(digitsOf(e.target.value))}
+                placeholder="12-3456789"
+                value={asEin(digits)}
+              />
+              <span className="text-text-secondary">We'll run a TIN match against IRS records.</span>
+            </div>
+            <div className="flex justify-end gap-2">
+              <ActionButton onClick={() => setOpen(false)} size="compact" type="button" variant="quiet">
+                Cancel
+              </ActionButton>
+              <ActionButton disabled={digits.length !== 9} size="compact" type="submit" variant="primary">
+                Submit TIN
+              </ActionButton>
+            </div>
+          </form>
+        </PopoverContent>
+      </Popover>
+    </span>
+  )
+}
+
 export const BusinessDetailsCard = ({
   record,
   results,
@@ -89,8 +163,8 @@ export const BusinessDetailsCard = ({
   const items: AttributeCell[] = [
     cell('Business name', displayName(legal), 'name'),
     cell('Office address', office?.fullAddress, 'address_verification'),
-    // A dash would not say why: the applicant gave none, so there was nothing to match.
-    cell('TIN', tin ? maskTin(tin) : 'Not submitted'),
+    // None on the record: say Middesk looked and couldn't find one, and take it if the reviewer has it.
+    tin ? cell('TIN', maskTin(tin)) : { label: 'TIN', values: [{ value: <MissingTin businessId={record.id} /> }] },
     cell('Formation state', f?.state ? stateName(f.state) : undefined),
     cell('Entity type', f?.entityType ? entityTypeShown(record, f.entityType) : undefined),
     // How long ago, then the day: "14 years ago · Dec 19, 2012".
