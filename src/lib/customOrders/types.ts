@@ -93,11 +93,26 @@ export type WorkflowEnvironment =
   | 'production'
   | 'sandbox_and_production'
 
-export type SavedCustomOrderInput = CustomOrderConfig & {
-  name: string
-  description?: string | null
-  environment?: WorkflowEnvironment
+/**
+ * What makes an assessment a variant of another: the one it was duplicated
+ * from, a sentence its summary opens with, and a brief for the Assistant. Its
+ * rules are `status_overrides`; what it reads, `insight_groups`.
+ */
+export type AssessmentVariantFields = {
+  /** The assessment it was duplicated from, e.g. `report:formation`. */
+  based_on?: string | null
+  /** How the summary should be written: guidance for the Assistant, never shown as text. */
+  summary_lead?: string | null
+  /** How the Assistant should read the data for this assessment. */
+  instructions?: string | null
 }
+
+export type SavedCustomOrderInput = CustomOrderConfig &
+  AssessmentVariantFields & {
+    name: string
+    description?: string | null
+    environment?: WorkflowEnvironment
+  }
 
 export type SavedCustomOrder = SavedCustomOrderInput & {
   id: string

@@ -105,8 +105,9 @@ export const OrderPage = () => {
   const order = useOrderDetails({
     selection: { businessId: business?.id ?? null, workflowIds: selected },
     prefill: prefillTin ? { tin: prefillTin } : undefined,
-    onPlaced: (count) => {
-      showToast({ text: count === 1 ? 'Assessment started' : `${count} assessments started`, appearance: 'success' })
+    onPlaced: (count, attached) => {
+      const word = attached ? 'added' : 'started'
+      showToast({ text: count === 1 ? `Assessment ${word}` : `${count} assessments ${word}`, appearance: 'success' })
       navigate(picked ? `/businesses/${picked}` : origin)
     }
   })

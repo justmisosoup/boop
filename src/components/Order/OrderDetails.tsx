@@ -211,7 +211,8 @@ export const useOrderDetails = ({
   prefill
 }: {
   selection: OrderSelection
-  onPlaced: (count: number) => void
+  /** `attached`: added on data the business had, with no order placed. */
+  onPlaced: (count: number, attached?: boolean) => void
   /** Details the reader already gave — a TIN submitted from TIN Match — over the business's own. */
   prefill?: { tin?: string }
 }) => {
@@ -271,6 +272,8 @@ export const useOrderDetails = ({
   }, [initial, form, trigger])
 
   const dryRun = new URLSearchParams(window.location.search).has('dryRun')
+  /** Every assessment chosen is a variant, on a business already here: add, don't order. */
+  const attach = Boolean(existing) && workflows.length > 0 && workflows.every((w) => Boolean(w.based_on))
   // One order at a time: a second click while one is sending does nothing.
   const inFlight = useRef(false)
 
@@ -292,6 +295,9 @@ export const useOrderDetails = ({
           ...(existing && {
             patch: changedFields(toPayload(values), toPayload(initial))
           }),
+          // Variants on a business already assessed read the data it has:
+          // they are attached, with no new order placed.
+          ...(attach && { attach: true }),
           workflows: workflows.map((w) => ({
             id: w.id,
             name: w.name,
@@ -299,7 +305,8 @@ export const useOrderDetails = ({
               packages: w.packages,
               insight_groups: w.insight_groups,
               status_overrides: w.status_overrides
-            }
+            },
+            variant: { based_on: w.based_on, summary_lead: w.summary_lead, instructions: w.instructions }
           }))
         })
       })
@@ -319,7 +326,7 @@ export const useOrderDetails = ({
         })
         return
       }
-      onPlaced(workflows.length)
+      onPlaced(workflows.length, attach)
     } catch {
       setError({ header: 'Couldn’t reach the order endpoint.', messages: [] })
     } finally {
@@ -331,6 +338,7 @@ export const useOrderDetails = ({
   return {
     form,
     workflows,
+    attach,
     existing,
     shown,
     isRequired,
@@ -456,7 +464,8 @@ export const RunButton = ({ state, className }: { state: OrderDetailsState; clas
       variant='primary'
       {...cya('PlaceCustomOrder')}
     >
-      {runLabel(state.workflows.length)}
+      {/* Variants on data already here are added, not run. */}
+      {state.attach ? `Add ${state.workflows.length === 1 ? 'assessment' : `${state.workflows.length} assessments`}` : runLabel(state.workflows.length)}
     </ActionButton>
   )
 }

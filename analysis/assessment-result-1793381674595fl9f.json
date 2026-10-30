@@ -1,0 +1,12 @@
+{
+  "assessmentId": "a-mvv8zbcz-0",
+  "section": {
+    "id": "a-mvv8zbcz-0",
+    "body": [
+      {
+        "text": "None of the registrations show the submitted office address, 2820 Taylor St, San Francisco. 1 is active and in good standing: the California domestic filing, which lists 174 Hillside Dr, Fairfax.",
+        "cites": ["sos_active", "address_verification"]
+      }
+    ]
+  }
+}

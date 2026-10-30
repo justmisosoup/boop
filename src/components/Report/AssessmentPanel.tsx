@@ -45,6 +45,11 @@ export type PanelInsight = {
 export type PanelGroup = {
   /** The report card the insights are read on. */
   cardId: string
+  /** The row's own identity where it is not its card's: a variant, beside
+   *  the assessment it varies, on the same card. */
+  rowKey?: string
+  /** A variant: the ordered assessment it is. */
+  variantOf?: string
   label: string
   /** Worst first: the head of the row, then its chips. */
   insights: PanelInsight[]

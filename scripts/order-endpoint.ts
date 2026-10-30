@@ -107,7 +107,18 @@ type OrderRequest = {
   body: BusinessInputBody
   /** For an existing business: the details the reader changed, sent as a PATCH first. */
   patch?: BusinessInputBody
-  workflows: { id: string; name: string; config: CustomOrderConfig }[]
+  workflows: {
+    id: string
+    name: string
+    config: CustomOrderConfig
+    /** A variant's reading, kept on the ordered assessment as it is now. */
+    variant?: { based_on?: string | null; summary_lead?: string | null; instructions?: string | null }
+  }[]
+  /**
+   * Add the assessments to the business on the data it already has: no order
+   * is placed — a variant reads what an assessment already brought back.
+   */
+  attach?: boolean
 }
 
 /** What the order sends: the business's details and the orders its workflows need. */
@@ -277,12 +288,14 @@ export const orderPlugin = (): Plugin => ({
             : [{ method: 'POST', path: '/businesses', body: { ...request.body, orders } }]
 
           if (url.searchParams.get('dryRun')) {
-            res.end(JSON.stringify({ dryRun: true, requests: apiRequest, insights: expanded.insights }))
+            res.end(JSON.stringify({ dryRun: true, requests: request.attach ? [] : apiRequest, insights: expanded.insights }))
             return
           }
 
+          // Attaching sends nothing to the API: it needs a business that exists.
+          if (request.attach && !request.businessId) return fail(422, [{ message: 'Attach needs an existing business.' }])
           let id = request.businessId
-          for (const r of apiRequest) {
+          for (const r of request.attach ? [] : apiRequest) {
             const created = await call(r.path, { method: r.method, body: r.body })
             id ??= created.id
           }
@@ -298,6 +311,14 @@ export const orderPlugin = (): Plugin => ({
               customOrderId: w.id,
               name: w.name,
               insight_groups: w.config.insight_groups,
+              // Its rules and wording as they are now: editing the saved
+              // assessment later never changes this one.
+              ...(w.config.status_overrides?.length && { status_overrides: w.config.status_overrides }),
+              ...(w.variant?.based_on && { based_on: w.variant.based_on }),
+              ...(w.variant?.summary_lead && { summary_lead: w.variant.summary_lead }),
+              ...(w.variant?.instructions && { instructions: w.variant.instructions }),
+              // On data already pulled: complete as soon as it is added.
+              ...(request.attach && { attached: true, completedAt: now }),
               insights: own.insights,
               orderedAt: now
             }
@@ -308,6 +329,11 @@ export const orderPlugin = (): Plugin => ({
             assessments: [...(ordered[id]?.assessments ?? []), ...added]
           }
           writeOrdered(ordered)
+          // Attached: nothing new to pull — the record is what it reads.
+          if (request.attach) {
+            res.end(JSON.stringify({ id, attached: true }))
+            return
+          }
           // Into the list now, whatever the orders' state; the GETs fill it in.
           try {
             await pull(id)

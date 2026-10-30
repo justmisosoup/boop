@@ -1,0 +1,19 @@
+{
+  "id": "1793381674595fl9f",
+  "requestedAt": "2026-10-30T17:34:34.595Z",
+  "businessId": "4ffaf005-bb2a-4f83-a85c-ad3acc825bfd",
+  "business": {
+    "name": "Fishmonger Don"
+  },
+  "assessment": {
+    "id": "a-mvv8zbcz-0",
+    "name": "Office address registration status",
+    "instructions": "Look at submitted office address against SOS registrations. For all of them inform me which show that address and what their status is.",
+    "insightIds": [
+      "sos_active",
+      "address_verification"
+    ]
+  },
+  "insights": [],
+  "steps": []
+}

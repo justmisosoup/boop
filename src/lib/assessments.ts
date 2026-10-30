@@ -27,6 +27,12 @@ export type Assessment = {
   /** Absent while its orders are still running. */
   completedAt?: string
   full: boolean
+  /** A variant's reading of the same data (`OrderedAssessment`): its rules,
+   *  the assessment it varies, its summary's opening, its brief. */
+  status_overrides?: Array<{ insight: string; outcome: string; status: string }>
+  based_on?: string | null
+  summary_lead?: string | null
+  instructions?: string | null
 }
 
 export const FULL_REPORT = 'full-report'
@@ -45,7 +51,11 @@ export const assessmentsOf = (record: Pick<BusinessRecord, 'id' | 'name'>): Asse
     customOrderId: a.customOrderId,
     orderedAt: a.orderedAt,
     completedAt: a.completedAt,
-    full: false
+    full: false,
+    status_overrides: a.status_overrides,
+    based_on: a.based_on,
+    summary_lead: a.summary_lead,
+    instructions: a.instructions
   }))]
 }
 

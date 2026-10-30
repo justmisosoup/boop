@@ -96,3 +96,21 @@ export const cardFor = (insightId: string, groupFor: (insightId: string) => Grou
 
 /** Where a card sits in the report, for ordering chips the way the cards read. */
 export const cardIndex = (id: string) => REPORT_CARDS.findIndex((c) => c.id === id)
+
+/**
+ * The card a variant reads on: the one its default names (`report:formation`),
+ * else the card most of its insights are read on.
+ */
+export const variantCardOf = (
+  basedOn: string | null | undefined,
+  insightIds: string[],
+  groupFor: (insightId: string) => GroupId
+): string => {
+  if (basedOn?.startsWith('report:')) return basedOn.slice('report:'.length)
+  const tally = new Map<string, number>()
+  for (const id of insightIds) {
+    const c = cardFor(id, groupFor)
+    tally.set(c, (tally.get(c) ?? 0) + 1)
+  }
+  return [...tally.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? REPORT_CARDS[0].id
+}

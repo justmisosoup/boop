@@ -76,6 +76,12 @@ export const useSummaryRuns = (record: BusinessRecord) => {
             name: a.name,
             instructions: [
               `Summarise what the ${a.name} assessment found for ${record.name}, from these insights only: ${groups.join(', ')}.`,
+              // The assessment's own brief: how it reads the data, and how its summary is written.
+              a.instructions,
+              a.summary_lead ? `How to write the summary: ${a.summary_lead}` : undefined,
+              a.status_overrides?.length
+                ? `This assessment applies its own rules: ${a.status_overrides.map((o) => `${o.insight} "${o.outcome.replace(/_/g, ' ')}" counts as ${o.status}`).join('; ')}.`
+                : undefined,
               description
             ]
               .filter(Boolean)

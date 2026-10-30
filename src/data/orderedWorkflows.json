@@ -111,5 +111,30 @@
         "completedAt": "2026-10-29T20:59:05.996Z"
       }
     ]
+  },
+  "4ffaf005-bb2a-4f83-a85c-ad3acc825bfd": {
+    "name": "FISHMONGER DON",
+    "assessments": [
+      {
+        "id": "a-mvv8zbcz-0",
+        "customOrderId": "37873ab0-1221-4643-a4d0-1982c581a223",
+        "name": "Office address registration status",
+        "insight_groups": [
+          "sos_registration_status",
+          "address_verification"
+        ],
+        "summary_lead": "Summary should be straight and to the point. Should only highlight the necessary information. If there are counts lead with only the count not  \"6 or 10 are x\" just say \"6 are x and 4 are y\"",
+        "instructions": "Look at submitted office address against SOS registrations. For all of them inform me which show that address and what their status is.",
+        "insights": [
+          "sos_active",
+          "sos_inactive",
+          "sos_not_found",
+          "sos_unknown",
+          "address_verification"
+        ],
+        "orderedAt": "2026-10-30T17:29:58.595Z",
+        "completedAt": "2026-10-30T17:30:17.846Z"
+      }
+    ]
   }
 }

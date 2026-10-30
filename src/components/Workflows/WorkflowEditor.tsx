@@ -5,6 +5,7 @@ import {
   ChatComposer,
   ErrorState,
   FieldError,
+  FieldLabel,
   InlineAlert,
   PageContainer,
   PageHeader,
@@ -12,7 +13,8 @@ import {
   PageHeaderBar,
   PageHeaderTitles,
   PageHeading,
-  SkeletonPage
+  SkeletonPage,
+  Textarea
 } from '@/core'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
@@ -41,7 +43,8 @@ import cya from '@/utils/cya'
 import { InsightsCard } from './AddedInsights'
 import { InsightPicker } from './InsightPicker'
 import { suggestInsights } from '@/lib/customOrders/suggest'
-import { AttributesCard } from './cards'
+import { AttributesCard, CardRow, SectionCard } from './cards'
+import { REPORT_ASSESSMENTS } from '@/lib/reportAssessments'
 import { WORKFLOWS_PATH, workflowPath } from './paths'
 import { WorkflowTopbar } from './WorkflowTopbar'
 
@@ -112,6 +115,9 @@ const EditorForm = ({
     const body = {
       name: draft.name.trim(),
       description: draft.description.trim() || null,
+      based_on: draft.basedOn,
+      summary_lead: draft.summaryLead.trim() || null,
+      instructions: draft.instructions.trim() || null,
       ...toConfig(catalog, draft)
     }
     try {
@@ -124,6 +130,9 @@ const EditorForm = ({
     }
   }
 
+  const basedOnName = draft.basedOn
+    ? (REPORT_ASSESSMENTS.find(a => a.id === draft.basedOn)?.name ?? null)
+    : null
   const nameError = errors.find(e => e.field === 'name')?.message ?? null
   const otherErrors = errors.filter(e => e.field !== 'name').map(e => e.message)
 
@@ -230,6 +239,42 @@ const EditorForm = ({
               onAdd={() => setPickerOpen(true)}
               onChange={change}
             />
+            {/* How this assessment reads its data: the sentence its summary
+                opens with, and the brief the Assistant follows. A variant's
+                rules are under each insight's "Rules". */}
+            <SectionCard title='Reading'>
+              <CardRow>
+                <div className='flex flex-col gap-4'>
+                  {basedOnName && (
+                    <p className='m-0 text-sm text-text-secondary'>
+                      A variant of {basedOnName}: it reads the same data, by its own rules.
+                    </p>
+                  )}
+                  <div className='flex flex-col gap-1.5'>
+                    <FieldLabel htmlFor='assessment-summary-lead'>How to write the summary</FieldLabel>
+                    <Textarea
+                      id='assessment-summary-lead'
+                      maxLength={500}
+                      onChange={e => change({ ...draft, summaryLead: e.target.value })}
+                      placeholder='e.g. "Lead with the count. Keep it to one or two sentences."'
+                      rows={2}
+                      value={draft.summaryLead}
+                    />
+                  </div>
+                  <div className='flex flex-col gap-1.5'>
+                    <FieldLabel htmlFor='assessment-instructions'>Instructions for the Assistant</FieldLabel>
+                    <Textarea
+                      id='assessment-instructions'
+                      maxLength={1000}
+                      onChange={e => change({ ...draft, instructions: e.target.value })}
+                      placeholder='How the Assistant should interpret this data, e.g. "Treat a missing sub-status as a reason to review."'
+                      rows={4}
+                      value={draft.instructions}
+                    />
+                  </div>
+                </div>
+              </CardRow>
+            </SectionCard>
           </div>
           <div className='flex min-w-0 flex-col gap-4 lg:sticky lg:top-6'>
             <AttributesCard catalog={catalog} draft={draft} />
@@ -253,7 +298,10 @@ export const WorkflowEditor = ({ mode }: { mode: Mode }) => {
   const navigate = useNavigate()
   const { catalog, saved } = useCustomOrderData()
   const needsSaved = mode !== 'new'
-  const source = needsSaved ? saved.data?.find(o => o.id === id) : undefined
+  // The defaults (`report:*`) are not saved, but can be duplicated into a variant.
+  const source = needsSaved
+    ? (saved.data?.find(o => o.id === id) ?? REPORT_ASSESSMENTS.find(o => o.id === id))
+    : undefined
 
   const body = (() => {
     if (catalog.isError || (needsSaved && saved.isError)) {

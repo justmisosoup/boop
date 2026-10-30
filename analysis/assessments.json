@@ -30,5 +30,23 @@
         }
       ]
     }
+  },
+  "4ffaf005-bb2a-4f83-a85c-ad3acc825bfd": {
+    "a-mvv8zbcz-0": {
+      "at": "2026-10-30T17:34:34.615Z",
+      "requestId": "1793381674595fl9f",
+      "section": {
+        "id": "a-mvv8zbcz-0",
+        "body": [
+          {
+            "text": "None of the registrations show the submitted office address, 2820 Taylor St, San Francisco. 1 is active and in good standing: the California domestic filing, which lists 174 Hillside Dr, Fairfax.",
+            "cites": [
+              "sos_active",
+              "address_verification"
+            ]
+          }
+        ]
+      }
+    }
   }
 }

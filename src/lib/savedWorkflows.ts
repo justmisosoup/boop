@@ -86,6 +86,13 @@ const toConfig = (input: CustomOrderConfig): CustomOrderConfig => ({
   status_overrides: [...(input.status_overrides ?? [])]
 })
 
+/** A variant's own fields, trimmed; empty ones are not kept. */
+const variantFields = (input: SavedCustomOrderInput) => ({
+  based_on: input.based_on || null,
+  summary_lead: input.summary_lead?.trim() || null,
+  instructions: input.instructions?.trim() || null
+})
+
 const toSavedResponse = (record: SavedRecord): SavedCustomOrder => ({
   ...record,
   environment: record.environment ?? 'draft',
@@ -133,6 +140,7 @@ export const createSaved = (
     name: input.name.trim(),
     description: input.description?.trim() || null,
     environment: input.environment ?? 'production',
+    ...variantFields(input),
     ...toConfig(input),
     status_overrides: normalizeOverrides(input.status_overrides ?? []),
     catalog_version: ORDER_CATALOG.version,
@@ -157,6 +165,7 @@ export const updateSaved = (
     name: input.name.trim(),
     description: input.description?.trim() || null,
     environment: input.environment ?? existing.environment,
+    ...variantFields(input),
     ...toConfig(input),
     status_overrides: normalizeOverrides(input.status_overrides ?? []),
     catalog_version: ORDER_CATALOG.version,

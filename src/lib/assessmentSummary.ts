@@ -361,7 +361,7 @@ const COMPOSERS: Record<string, Composer> = {
         : [sentence(lead.statement), filings && sentence(filings[0].toUpperCase() + filings.slice(1))].filter(Boolean).join(' ')
     // The sub-status, where it is a fact about the registry or a finding; a pass is the row's.
     const sub = insights.find((i) => keyOf(i) === 'sos_domestic_sub_status' && i !== lead && i.intent !== 'success')
-    const others = insights.filter((i) => i !== lead && against(i) && !/^sos_(inactive|active|domestic)$/.test(keyOf(i)))
+    const others = insights.filter((i) => i !== lead && i !== sub && against(i) && !/^sos_(inactive|active|domestic)$/.test(keyOf(i)))
     return [first, sub && sentence(sub.statement), ...others.map((i) => sentence(i.statement))].filter(Boolean).join(' ')
   },
   liens: lienSummary,

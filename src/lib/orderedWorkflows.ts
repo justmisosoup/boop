@@ -20,6 +20,14 @@ export type OrderedAssessment = {
   orderedAt: string
   /** Set once its orders have finished and the record was pulled after. */
   completedAt?: string
+  /** A variant's reading, kept as it was when added: editing the saved
+   *  assessment later never changes a report already placed. */
+  status_overrides?: Array<{ insight: string; outcome: string; status: string }>
+  based_on?: string | null
+  summary_lead?: string | null
+  instructions?: string | null
+  /** Added on data the business already had: no order was placed. */
+  attached?: boolean
 }
 
 export type OrderedBusiness = {

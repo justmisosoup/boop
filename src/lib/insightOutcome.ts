@@ -137,8 +137,25 @@ function screenReading(r: Derived, record: BusinessRecord): string | undefined {
     : `We found ${hits.length} ${what}s, ${hits.length === 2 ? 'both' : 'all'} dismissed as not a match.`
 }
 
-export const outcomeOf = (r: Derived, record: BusinessRecord): Outcome => {
+/** A variant's rule: what one result of one insight counts as (`StatusOverride`). */
+export type OutcomeRule = { insight: string; outcome: string; status: string }
+
+const RULE_OUTCOME: Record<string, Outcome> = { success: 'pass', warning: 'review', failure: 'fail', neutral: 'neutral' }
+/** "Not Provided by State" and `not_provided_by_state` are one result. */
+const sameResult = (a: string, b: string) => a.toLowerCase().replace(/[^a-z0-9]/g, '') === b.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+/**
+ * How an insight reads. With `rules` — an assessment variant's — a rule for
+ * the result this record came back with decides it, ahead of everything else:
+ * the variant reads the same data, by its own rules. Without, the defaults.
+ */
+export const outcomeOf = (r: Derived, record: BusinessRecord, rules?: readonly OutcomeRule[]): Outcome => {
   const key = keyOf(r.insightId)
+  if (rules?.length) {
+    const result = record.reviewTasks.find((t) => t.key === key)?.subLabel
+    const rule = result ? rules.find((x) => x.insight === key && sameResult(x.outcome, result)) : undefined
+    if (rule && RULE_OUTCOME[rule.status]) return RULE_OUTCOME[rule.status]
+  }
   // A registry that publishes nothing is a fact about the registry (Delaware,
   // New Jersey): never a finding.
   if (r.reason === 'not_published' || r.reason === 'not_required') return N

@@ -406,7 +406,7 @@ export const InsightList = ({
   return (
     <div ref={flipRef}>
       {fulls.map((g, i) => (
-        <div className={cn('bg-card', i > 0 && rowHairline)} data-flip-id={g.cardId} key={g.cardId}>
+        <div className={cn('bg-card', i > 0 && rowHairline)} data-flip-id={g.rowKey ?? g.cardId} key={g.rowKey ?? g.cardId}>
           <InsightRow group={g} onChip={onChip} onSelect={() => onSelect(g)} selected={selected.has(g.cardId)} />
         </div>
       ))}
@@ -425,8 +425,8 @@ export const InsightList = ({
                     spansRow ? 'before:inset-x-4' : i % 2 === 0 ? 'before:left-4 before:right-0' : 'before:left-0 before:right-4'
                   ]
                 )}
-                data-flip-id={g.cardId}
-                key={g.cardId}
+                data-flip-id={g.rowKey ?? g.cardId}
+                key={g.rowKey ?? g.cardId}
               >
                 <InsightCell group={g} onSelect={() => onSelect(g)} selected={selected.has(g.cardId)} />
               </div>

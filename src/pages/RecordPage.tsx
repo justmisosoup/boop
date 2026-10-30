@@ -54,7 +54,7 @@ import {
   type InsightFilter
 } from '../components/Report/InsightsFilterCard'
 import { AssessmentBrief } from '../components/Report/AssessmentBrief'
-import { REPORT_CARDS, cardAnchor, cardById, cardFor, cardIndex } from '../lib/reportCards'
+import { REPORT_CARDS, cardAnchor, cardById, cardFor, cardIndex, variantCardOf } from '../lib/reportCards'
 import { missingInputs, whyOf } from '../lib/assessmentContext'
 import { assessmentSummary } from '../lib/assessmentSummary'
 import { outcomeOf, statementOf } from '../lib/insightOutcome'
@@ -959,7 +959,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     const RANK = { fail: 0, review: 1, pass: 2, neutral: 3 } as const
     shownResults
       .filter((r) => !r.notReported)
-      .map((r) => ({ r, card: cardFor(r.insightId, groupFor), outcome: outcomeOf(r, record) }))
+      // On an assessment's own page, its rules read its insights.
+      .map((r) => ({ r, card: cardFor(r.insightId, groupFor), outcome: outcomeOf(r, record, scope.status_overrides) }))
       .sort((a, b) => cardIndex(a.card) - cardIndex(b.card) || RANK[a.outcome] - RANK[b.outcome] || (STATE_RANK[a.r.state] ?? 3) - (STATE_RANK[b.r.state] ?? 3))
       .forEach(({ r, card, outcome }) => {
         const g = byCard.get(card) ?? { cardId: card, label: cardById(card)?.label ?? card, insights: [] }
@@ -1014,6 +1015,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
       reads
         .filter(
           (r) =>
+            // An assessment of its own counts its runs on its own row.
+            !(r.assessment.customOrderId && !r.assessment.customOrderId.startsWith('report:')) &&
             (r.assessment.completedAt ?? r.runAt) &&
             (!r.assessment.insights || r.assessment.insights.some((k) => cardFor(k, groupFor) === card))
         )
@@ -1037,8 +1040,50 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
     // within a kind. One that can't be read yet sits after the findings.
     const ORDER = ['failure', 'warning', 'pending', 'success', 'unknown']
     const worst = (g: PanelGroup) => ORDER.indexOf(g.needs?.length ? 'pending' : (g.insights[0]?.intent ?? 'unknown'))
-    return [...byCard.values()].sort((a, b) => worst(a) - worst(b))
-  }, [shownResults, groupFor, record, workflowCards, ran, reads])
+    const rows = [...byCard.values()].sort((a, b) => worst(a) - worst(b))
+
+    /* Every assessment created on the Assessments page and added to this
+       business — a variant of a default or one made from scratch — is its
+       own row, by its own name: its insights read by its own rules
+       (`outcomeOf(…, status_overrides)`), its own summary, run and
+       monitoring. The defaults stay the card rows above. */
+    const isOwn = (a: Assessment) => !a.full && Boolean(a.customOrderId) && !a.customOrderId!.startsWith('report:')
+    const variants = reads
+      .filter((x) => isOwn(x.assessment) && (x.assessment.completedAt || x.assessment.orderedAt))
+      // On its own page the assessment is the page's rows already.
+      .filter((x) => !(isOwn(scope) && x.assessment.id === scope.id))
+      .map(({ assessment: a, summary: kept }): PanelGroup => {
+        const own = resultsIn(a, results).filter((r) => !r.notReported)
+        const card = variantCardOf(a.based_on, own.map((r) => r.insightId), groupFor)
+        const insights = own
+          .map((r) => ({ r, outcome: outcomeOf(r, record, a.status_overrides) }))
+          .sort((x, y) => RANK[x.outcome] - RANK[y.outcome] || (STATE_RANK[x.r.state] ?? 3) - (STATE_RANK[y.r.state] ?? 3))
+          .map(({ r, outcome }) => {
+            const statement = statementOf(r, record)
+            return { id: r.insightId, intent: INTENT[outcome], verdict: statement, statement, why: whyOf(r.insightId, record) }
+          })
+        const at = a.completedAt ?? a.orderedAt!
+        const g: PanelGroup = {
+          cardId: card,
+          rowKey: `variant:${a.id}`,
+          variantOf: a.id,
+          label: a.name,
+          insights,
+          runList: [{ id: a.id, name: a.name, at, href: `/businesses/${selected.id}/assessments/${a.id}` }],
+          runs: 1,
+          updated: dayjs(at).format('MMM D, YYYY'),
+          monitorKey: monitorKey(selected.id, `variant:${a.id}`)
+        }
+        // Its written summary — the Assistant's, by its own instructions —
+        // where one is kept; else what its insights say.
+        g.summary = kept?.text || assessmentSummary(g, record)
+        return g
+      })
+    if (!variants.length) return rows
+    const placed = rows.flatMap((row) => [row, ...variants.filter((v) => !row.rowKey && v.cardId === row.cardId)])
+    // A variant whose card has no row of its own here closes the list.
+    return [...placed, ...variants.filter((v) => !placed.includes(v))]
+  }, [shownResults, results, groupFor, record, workflowCards, ran, reads, scope])
   /**
    * What the floating bubble leads with — the Assistant's latest word to the
    * reader, while it is put away: an answer being written; a reply not yet
@@ -1127,7 +1172,8 @@ function Record({ record: selected, scope }: { record: BusinessRecord; scope: As
   }
   /** The panel's assessments, with what the reader can do on TIN Match, and a rerun each. */
   const panelGroupsWithRerun = panelGroups.map((g) =>
-    REPORT_ASSESSMENTS.some((x) => x.id === `report:${g.cardId}`) && !g.needs?.length
+    // A variant reruns as its data does: rerun the assessment it varies.
+    !g.variantOf && REPORT_ASSESSMENTS.some((x) => x.id === `report:${g.cardId}`) && !g.needs?.length
       ? { ...g, onRerun: () => void rerun(g.cardId), rerunning: rerunning === g.cardId }
       : g
   )

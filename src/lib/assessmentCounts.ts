@@ -1,9 +1,9 @@
 import { missingInputs } from './assessmentContext'
-import { businessScopeOf, resultsIn } from './assessments'
+import { assessmentsOf, businessScopeOf, resultsIn } from './assessments'
 import { categoriesOf, deriveResults, type BusinessRecord } from './deriveResults'
 import { makeGroupFor } from './groups'
 import { outcomeOf, type Outcome } from './insightOutcome'
-import { cardFor, REPORT_CARDS } from './reportCards'
+import { cardFor, REPORT_CARDS, variantCardOf } from './reportCards'
 import { heldReportFor } from './heldReports'
 
 /** How a business's assessments stand, by status — not passed, passed,
@@ -55,6 +55,22 @@ export const assessmentCountsOf = (record: BusinessRecord): AssessmentCounts | u
     if (!status) continue
     counts[status] += 1
     counts.items.push({ cardId: id, label, status })
+  }
+  // Variants added to the business: each its own assessment, read on the same
+  // data by its own rules, as the panel reads it.
+  const all = snapshot?.results ?? deriveResults(record)
+  for (const a of assessmentsOf(record)) {
+    if (a.full || !a.customOrderId || a.customOrderId.startsWith('report:') || !(a.completedAt || a.orderedAt)) continue
+    const own = resultsIn(a, all).filter((r) => !r.notReported)
+    let worstOf: Outcome | undefined
+    for (const r of own) {
+      const o = outcomeOf(r, read, a.status_overrides)
+      if (!worstOf || RANK[o] < RANK[worstOf]) worstOf = o
+    }
+    if (!worstOf) continue
+    const status: AssessmentStatus = worstOf === 'fail' || worstOf === 'review' ? 'failure' : worstOf === 'pass' ? 'success' : 'unknown'
+    counts[status] += 1
+    counts.items.push({ cardId: variantCardOf(a.based_on, own.map((r) => r.insightId), groupFor), label: a.name, status })
   }
   return counts
 }

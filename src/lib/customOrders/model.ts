@@ -22,6 +22,11 @@ export type Draft = {
   // Groups are included by default; the draft records what was turned off.
   excludedGroups: string[]
   overrides: StatusOverride[]
+  /** A variant's: the assessment it reads the same data as, the sentence its
+   *  summary opens with, and how the Assistant should read it. */
+  basedOn: string | null
+  summaryLead: string
+  instructions: string
 }
 
 export const emptyDraft = (): Draft => ({
@@ -30,7 +35,10 @@ export const emptyDraft = (): Draft => ({
   description: '',
   packages: [],
   excludedGroups: [],
-  overrides: []
+  overrides: [],
+  basedOn: null,
+  summaryLead: '',
+  instructions: ''
 })
 
 const packageOf = (catalog: OrderCatalog, key: string) =>
@@ -71,7 +79,11 @@ export const draftFromSaved = (
   excludedGroups: availableGroupIds(catalog, saved.packages).filter(
     id => !saved.insight_groups.includes(id)
   ),
-  overrides: saved.status_overrides
+  overrides: saved.status_overrides,
+  // A duplicate reads the same data as what it was made from: that is what it varies.
+  basedOn: duplicate ? (saved.based_on ?? saved.id) : (saved.based_on ?? null),
+  summaryLead: saved.summary_lead ?? '',
+  instructions: saved.instructions ?? ''
 })
 
 export const conflictFor = (
